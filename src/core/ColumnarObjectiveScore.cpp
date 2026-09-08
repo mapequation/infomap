@@ -23,6 +23,7 @@
 #include "../utils/infomath.h"
 
 #include <algorithm>
+#include <limits>
 #include <queue>
 #include <vector>
 
@@ -313,12 +314,19 @@ double ColumnarTwoLevel::codelengthBreakdownFromStack(StackBreakdown& breakdown)
   return base + objectiveCorrection(&breakdown);
 }
 
-double ColumnarTwoLevel::dissolveUnprofitableLevels(double startL)
+double ColumnarTwoLevel::dissolveUnprofitableLevels()
 {
   using infomath::plogp;
   clearDissolvedPaths();
 
   const int top = static_cast<int>(m_hierLevels.size()) - 1; // number of module levels
+  if (top < 1)
+    return 0.0; // no module structure at all: nothing to score, nothing to dissolve
+  // The stack's own codelength and per-module decomposition on the active objective.
+  // The total is what the gains are taken off; the level-1 entries are the kept leaf
+  // modules' stamps, which the pass never changes.
+  StackBreakdown breakdown;
+  const double startL = codelengthBreakdownFromStack(breakdown);
   if (top < 2)
     return startL; // no module-of-modules to dissolve (two-level or flat)
 
@@ -460,14 +468,38 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(double startL)
     children[m].clear();
     totalGain += c.gain;
     ++numDissolved;
+    m_dissolveOrder.push_back(m);
     // p's child set changed: its own gain and its children's gains are stale.
     offer(p);
     for (int ch : pc)
       offer(ch);
   }
 
-  if (numDissolved == 0)
+  if (numDissolved == 0) {
+    m_dissolveOrder.clear();
     return startL;
+  }
+
+  // The kept nodes' stamps on the dissolved tree, for InfomapBase::spliceDissolvedModules
+  // to write onto the materialized tree without a re-score: leaf modules keep the
+  // breakdown's level-1 entries (the pass never touches them); a kept module-of-modules
+  // or the root gets the base term over its final child set plus each correction's
+  // per-node share, exactly as the breakdown would charge them (entropy: a parameter
+  // per child, one less without an exit codeword). Dissolved nodes are NaN.
+  m_dissolveOffset = offset;
+  m_dissolveTerm.assign(N, std::numeric_limits<double>::quiet_NaN());
+  for (int m = 0; m < t.level(1).n; ++m)
+    m_dissolveTerm[offset[1] + m] = breakdown.moduleTerm[1][static_cast<std::size_t>(m)];
+  auto nodeCharge = [&](int p, bool hasExit) {
+    double charge = 0.0;
+    for (const auto& c : m_corrections)
+      charge += c->dissolveNodeCharge(static_cast<int>(children[p].size()), hasExit);
+    return charge;
+  };
+  for (int id = firstModuleOfModules; id < N; ++id)
+    if (alive[id])
+      m_dissolveTerm[id] = term(id) + nodeCharge(id, hasExitCodeword(id));
+  m_dissolveTerm[0] = term(0) + nodeCharge(0, false);
 
   // Emit one ragged module-path per leaf: its level-1 module, then up the current
   // parent chain to the root. Coarsest-first (root side first), root excluded. A

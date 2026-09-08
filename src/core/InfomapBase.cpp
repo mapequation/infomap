@@ -383,21 +383,29 @@ public:
     // equal-depth search cannot represent a ragged optimum, so dissolve intermediate
     // modules that no longer pay for their codebook. Every objective; a two-level run
     // has no interior level to remove (#1074).
+    bool materializedByDissolve = false;
     if (!m_infomap.twoLevel) {
       auto timer = m_timing.scope("dissolve_s");
+      // Whether the tree in memory IS result.bestTree: the last serial trial won (every
+      // -N1 run) and the deep repair above did not change it. Then the pass works on the
+      // trial's own stack and splices the tree in place instead of rebuilding either.
+      const bool treeIsMaterialized = !improved && !(m_trialsRun > 1 && (result.bestTreeNeedsRestore || result.bestTrialIndex < m_trialsRun - 1));
       const double beforeDissolve = result.bestHierarchicalCodelength;
-      if (m_infomap.dissolveColumnarBest(result.bestTree, result.bestHierarchicalCodelength)) {
+      if (m_infomap.dissolveColumnarBest(result.bestTree, result.bestHierarchicalCodelength, treeIsMaterialized)) {
         Console::detail(0, "columnar: dissolving unprofitable levels improved {} -> {}", io::toPrecision(beforeDissolve), io::toPrecision(result.bestHierarchicalCodelength));
         improved = true;
+        materializedByDissolve = true; // the tree in memory is the dissolved tree, stamped
       }
     }
+    m_infomap.m_columnarTrialStack.reset(); // the winner's stack has served; free it before output
     if (!improved)
       return;
     // Materialize the repaired tree and refresh the per-level statistics the
     // summary prints. initTree recomputes a materialized codelength on the
     // reconstructed tree; the columnar core's value is authoritative (see
-    // columnarPartition), so override it the same way.
-    {
+    // columnarPartition), so override it the same way. The dissolve leaves the tree
+    // materialized and stamped itself.
+    if (!materializedByDissolve) {
       Log::ScopedMute mute;
       m_infomap.initTree(result.bestTree);
       // Same re-stamp as restoreBestResult: the per-level table below is rebuilt from
@@ -2716,42 +2724,55 @@ bool InfomapBase::deepRepairColumnarBest(NodePaths& tree, double& codelength, bo
   return true;
 }
 
-bool InfomapBase::dissolveColumnarBest(NodePaths& tree, double& codelength)
+bool InfomapBase::dissolveColumnarBest(NodePaths& tree, double& codelength, bool treeIsMaterialized)
 {
-  // Once-per-run terminal pass, after any deep repair: seed the columnar stack from
-  // the settled winner (rectangular -- the search and deep repair keep it so), propose
-  // the ragged dissolve, and keep it only when it lowers the codelength on the active
-  // objective. Deliberately NOT per trial: a ragged winner cannot be fed back to the
-  // per-run deep repair (seedHierarchyFromLeafPaths is strict-depth), so running this
-  // before it would forfeit the memory/state objectives' repair gain (#1074).
-  ColumnarTwoLevel opt;
-  setupColumnarOptimizer(opt, seedToRandomNumberGenerator + 0x9e3779b9UL);
+  // Once-per-run terminal pass, after any deep repair: dissolve the intermediate
+  // modules of the settled winner whose index codebook no longer pays for itself, and
+  // keep the ragged result only when it lowers the codelength on the active objective.
+  // Deliberately NOT per trial: a ragged winner cannot be fed back to the per-run deep
+  // repair (seedHierarchyFromLeafPaths is strict-depth), so running this before it
+  // would forfeit the memory/state objectives' repair gain (#1074).
+  //
+  // The stack to dissolve is the winning trial's own whenever it is still around and
+  // still IS the tree in memory -- the last serial trial won and nothing changed it
+  // since, which is every single-trial run -- so the common case builds nothing: no
+  // optimizer, no seed, no leaf-CSR aggregation. Otherwise (the best trial was not the
+  // last, a parallel-trial run, or the deep repair changed the winner) seed one from
+  // `tree`, which the search and the deep repair keep rectangular.
+  std::unique_ptr<ColumnarTwoLevel> seeded;
+  ColumnarTwoLevel* stack = nullptr;
+  if (treeIsMaterialized && m_columnarTrialStack && m_columnarTrialStackIsTree) {
+    stack = m_columnarTrialStack.get();
+  } else {
+    seeded = std::make_unique<ColumnarTwoLevel>();
+    setupColumnarOptimizer(*seeded, seedToRandomNumberGenerator + 0x9e3779b9UL);
 
-  std::unordered_map<unsigned int, std::size_t> leafOfState;
-  leafOfState.reserve(m_leafNodes.size());
-  for (std::size_t i = 0; i < m_leafNodes.size(); ++i)
-    leafOfState.emplace(m_leafNodes[i]->stateId, i);
-  std::vector<std::vector<int>> paths(m_leafNodes.size());
-  for (const auto& nodePath : tree) {
-    auto it = leafOfState.find(nodePath.first);
-    if (it == leafOfState.end() || nodePath.second.size() < 2)
-      return false; // tree does not match the leaf network: leave it alone
-    // Every module level, coarsest-first, dropping the trailing leaf-rank slot.
-    std::vector<int> p;
-    p.reserve(nodePath.second.size() - 1);
-    for (std::size_t j = 0; j + 1 < nodePath.second.size(); ++j)
-      p.push_back(static_cast<int>(nodePath.second[j]));
-    paths[it->second] = std::move(p);
+    std::unordered_map<unsigned int, std::size_t> leafOfState;
+    leafOfState.reserve(m_leafNodes.size());
+    for (std::size_t i = 0; i < m_leafNodes.size(); ++i)
+      leafOfState.emplace(m_leafNodes[i]->stateId, i);
+    std::vector<std::vector<int>> paths(m_leafNodes.size());
+    for (const auto& nodePath : tree) {
+      auto it = leafOfState.find(nodePath.first);
+      if (it == leafOfState.end() || nodePath.second.size() < 2)
+        return false; // tree does not match the leaf network: leave it alone
+      // Every module level, coarsest-first, dropping the trailing leaf-rank slot.
+      std::vector<int> p;
+      p.reserve(nodePath.second.size() - 1);
+      for (std::size_t j = 0; j + 1 < nodePath.second.size(); ++j)
+        p.push_back(static_cast<int>(nodePath.second[j]));
+      paths[it->second] = std::move(p);
+    }
+    for (const auto& p : paths)
+      if (p.empty())
+        return false;
+    if (!seeded->seedHierarchyFromLeafPaths(paths))
+      return false; // a ragged winner would land here; the deep-repair path keeps it rectangular
+    stack = seeded.get();
   }
-  for (const auto& p : paths)
-    if (p.empty())
-      return false;
-  if (!opt.seedHierarchyFromLeafPaths(paths))
-    return false; // a ragged winner would land here; the deep-repair path keeps it rectangular
 
-  const double seededL = opt.hierarchicalCodelengthFromStack();
-  const double dissolvedL = opt.dissolveUnprofitableLevels(seededL);
-  if (!opt.hasDissolvedResult())
+  const double dissolvedL = stack->dissolveUnprofitableLevels();
+  if (!stack->hasDissolvedResult())
     return false;
 
   if (!nonRedundant) {
@@ -2761,14 +2782,35 @@ bool InfomapBase::dissolveColumnarBest(NodePaths& tree, double& codelength)
     // which it never touches; see ColumnarCorrection::dissolveGainPerInternalNode).
     // So its own accounting IS the ragged tree's codelength -- the round-trip test in
     // test_partition.cpp re-scores the written tree and gets the same number -- and
-    // the decision needs neither a materialization nor a second stack build. Those
-    // two were 0.6 s of this pass's 1.7 s on web-NotreDame -d -N1 (initTree of the
-    // proposal 0.29 s, the scoring evaluateColumnarPartition 0.31 s); a rejected
-    // proposal now costs the seed and the pass alone, and never touches the tree.
-    if (dissolvedL >= codelength - 1e-10)
+    // the decision needs neither a materialization nor a second stack build. A
+    // rejected proposal costs the pass alone and never touches the tree.
+    if (dissolvedL >= codelength - 1e-10) {
+      stack->clearDissolvedPaths();
       return false;
-    tree = opt.toNodePaths(m_leafNodes); // the caller materializes and re-stamps this
+    }
+    // Apply it to the materialized tree in place -- lift each dissolved module's
+    // children into its parent, the same splice the OO pass makes (#1075) -- and
+    // stamp the kept nodes from the pass's own terms. No rebuild of the InfoNode tree
+    // and no second stack build to re-score it: on web-NotreDame -d -N1 those two were
+    // ~70% of the pass (initTree 0.28 s, the re-score 0.15 s of a 0.6 s pass). A tree
+    // that is not in memory (the best trial was not the last, or the deep repair
+    // changed it) is materialized first, once, as the restore would have.
+    if (!treeIsMaterialized) {
+      Log::ScopedMute mute;
+      initTree(tree);
+    }
+    NodePaths raggedPaths = stack->toNodePaths(m_leafNodes);
+    if (!spliceDissolvedModules(*stack)) {
+      // Defensive; nothing in-tree reaches it: the materialized tree did not map onto
+      // the stack. Materialize the proposal instead and stamp it by re-scoring.
+      Log::ScopedMute mute;
+      initTree(raggedPaths);
+      restampColumnarCodelengths();
+    }
+    stack->clearDissolvedPaths();
+    tree = std::move(raggedPaths);
     codelength = dissolvedL;
+    m_hierarchicalCodelength = dissolvedL;
     return true;
   }
 
@@ -2780,13 +2822,14 @@ bool InfomapBase::dissolveColumnarBest(NodePaths& tree, double& codelength)
   // path restores the winner and the reporting codelengths the caller would otherwise
   // leave corrupted.
   const double savedHierarchicalCodelength = m_hierarchicalCodelength;
-  const double savedColumnarIndexCodelength = m_columnarIndexCodelength;
-  auto raggedPaths = opt.toNodePaths(m_leafNodes);
+  auto raggedPaths = stack->toNodePaths(m_leafNodes);
+  stack->clearDissolvedPaths();
   initTree(raggedPaths);
   const double raggedL = evaluateColumnarPartition();
   if (raggedL < codelength - 1e-10) {
-    tree = std::move(raggedPaths); // the caller re-materializes and re-stamps this
+    tree = std::move(raggedPaths); // materialized and stamped by the scoring above
     codelength = raggedL;
+    m_hierarchicalCodelength = raggedL;
     return true;
   }
   // Revert the scoring materialization back to the kept winner, and re-stamp its own
@@ -2796,8 +2839,63 @@ bool InfomapBase::dissolveColumnarBest(NodePaths& tree, double& codelength)
   initTree(tree);
   restampColumnarCodelengths();
   m_hierarchicalCodelength = savedHierarchicalCodelength;
-  (void)savedColumnarIndexCodelength; // restampColumnarCodelengths resets it
   return false;
+}
+
+bool InfomapBase::spliceDissolvedModules(const ColumnarTwoLevel& stack)
+{
+  // The tree in memory is the rectangular winner the stack holds, so every leaf's
+  // ancestor chain is its module chain in the stack and the two can be walked side by
+  // side to name each stack module's InfoNode. Pointer identity, not module ids:
+  // initTree is free to renumber. Validated in full before anything moves.
+  const int top = static_cast<int>(stack.hierNumLevels()) - 1;
+  if (top < 2 || m_leafNodes.empty() || stack.dissolveNumNodes() == 0)
+    return false;
+  std::vector<InfoNode*> nodeOf(static_cast<std::size_t>(stack.dissolveNumNodes()), nullptr);
+  for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
+    InfoNode* node = m_leafNodes[i]->parent;
+    int module = stack.hierLeafModule(static_cast<int>(i));
+    for (int k = 1; k <= top; ++k) {
+      if (node == nullptr || node->isRoot())
+        return false; // the tree is shallower than the stack here
+      InfoNode*& slot = nodeOf[static_cast<std::size_t>(stack.dissolveNodeId(k, module))];
+      if (slot != nullptr && slot != node)
+        return false; // two leaves disagree on a module's node
+      slot = node;
+      node = node->parent;
+      if (k < top)
+        module = stack.hierUnitParent(k, module);
+    }
+    if (node == nullptr || !node->isRoot())
+      return false; // the tree is deeper than the stack here
+  }
+  for (int id : stack.dissolvedOrder())
+    if (nodeOf[static_cast<std::size_t>(id)] == nullptr)
+      return false;
+
+  // Replay the dissolves in the pass's order: each lifts a module's children into its
+  // then-current parent, which is where the pass had them too.
+  for (int id : stack.dissolvedOrder()) {
+    InfoNode*& node = nodeOf[static_cast<std::size_t>(id)];
+    node->liftChildrenIntoParent();
+    node->destroyLifted();
+    node = nullptr;
+  }
+  // Stamp the kept nodes: their codelength on the dissolved tree, every correction's
+  // share included, so the per-level table and the file agree with the headline.
+  const std::vector<double>& terms = stack.dissolvedNodeTerms();
+  for (std::size_t id = 1; id < terms.size(); ++id)
+    if (nodeOf[id] != nullptr && !std::isnan(terms[id]))
+      nodeOf[id]->codelength = terms[id];
+  m_root.codelength = terms[0];
+  // getIndexCodelength() otherwise falls back to the object-oriented optimizer's
+  // value, which initTree's calcCodelengthOnTree wrote for the RECTANGULAR tree and
+  // nothing has recomputed since (the whole point of splicing is not to). The root's
+  // term on the dissolved tree is the index codelength, corrections' root share
+  // included, as evaluateColumnarPartition's rootTerm would be.
+  m_columnarIndexCodelength = terms[0];
+  m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+  return true;
 }
 
 void InfomapBase::columnarPartition()
@@ -2810,7 +2908,12 @@ void InfomapBase::columnarPartition()
   // Draw the engine seed from m_rand, which runTrial reseeds per trial, so
   // multiple trials (-N) explore different move orders instead of repeating.
   const unsigned long trialSeed = m_rand.randInt(0, std::numeric_limits<int>::max());
-  ColumnarTwoLevel opt;
+  // Owned by the instance, not the frame: kept past the trial so the terminal dissolve
+  // pass can work on the winner's own stack (see dissolveColumnarBest). The previous
+  // trial's is released here, so at most one is alive at a time.
+  m_columnarTrialStack = std::make_shared<ColumnarTwoLevel>();
+  m_columnarTrialStackIsTree = false;
+  ColumnarTwoLevel& opt = *m_columnarTrialStack;
   setupColumnarOptimizer(opt, trialSeed);
 
   // Soft --cluster-data warm start (#824). Before this, the search always started
@@ -2915,6 +3018,7 @@ void InfomapBase::columnarPartition()
     // a value belonging to a tree that no longer exists.
     initTree(paths);
     materializedL = m_hierarchicalCodelength;
+    m_columnarTrialStackIsTree = true; // the stack IS this tree, until the fallback below says otherwise
   }
   // The columnar core is the source of truth for the search codelength; the OO tree
   // re-materialization (calcCodelengthOnTree, via initTree) can disagree — and on this
@@ -2993,6 +3097,7 @@ void InfomapBase::columnarPartition()
       m_root.codelength = 0.0;
       m_columnarIndexCodelength = nonRedundant ? 0.0 : -1.0;
       m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+      m_columnarTrialStackIsTree = false; // the stack still holds the search result, not this
     }
   }
 

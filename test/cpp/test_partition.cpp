@@ -387,12 +387,21 @@ TEST_CASE("Columnar dissolve reports the codelength a re-score of its own tree g
   if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
     return;
   const std::string treePath = "columnar_dissolve_roundtrip.tree";
-  for (const char* flags : { "", "--entropy-corrected", "-d --entropy-corrected", "--markov-time 0.8" }) {
+  // The last entry runs five trials: the winner is then usually not the last trial, so
+  // the pass seeds a stack from the best tree and materializes it before splicing,
+  // rather than working on the last trial's own stack as the single-trial runs do.
+  for (const std::string flags : { infomap::test::defaultFlags(""), infomap::test::defaultFlags("--entropy-corrected"), infomap::test::defaultFlags("-d --entropy-corrected"), infomap::test::defaultFlags("--markov-time 0.8"), infomap::test::withTestEngine("--seed 123 --num-trials 5 --silent") }) {
     CAPTURE(flags);
-    InfomapWrapper im(infomap::test::defaultFlags(flags));
+    InfomapWrapper im(flags);
     im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
     im.run();
     infomap::test::checkRunSanity(im);
+    // The stamps the pass wrote (no re-score) sum to the headline: root plus every module.
+    double stamped = im.root().codelength;
+    for (auto it = im.root().begin_tree(); !it.isEnd(); ++it)
+      if (!it->isLeaf() && !it->isRoot())
+        stamped += it->codelength;
+    CHECK(stamped == doctest::Approx(im.codelength()).epsilon(1e-9));
     // The pass fired: the tree is ragged at the top (some triangles lifted to
     // top-level leaf modules beside super-modules that stayed nested).
     unsigned int leafModuleTops = 0, nestedTops = 0;
@@ -406,7 +415,7 @@ TEST_CASE("Columnar dissolve reports the codelength a re-score of its own tree g
     REQUIRE(nestedTops > 0);
 
     im.writeTree(treePath);
-    InfomapWrapper scored(infomap::test::defaultFlags(std::string(flags) + " --no-infomap --cluster-data " + treePath));
+    InfomapWrapper scored(flags + " --no-infomap --cluster-data " + treePath);
     scored.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
     scored.run();
     std::remove(treePath.c_str());

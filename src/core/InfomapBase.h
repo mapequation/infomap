@@ -548,12 +548,19 @@ private:
   bool deepRepairColumnarBest(NodePaths& tree, double& codelength, bool freshDiscovery);
 
   // Terminal ragged pass on the settled winner, once per run and after any deep
-  // repair (#1074): seed the columnar stack from `tree`, dissolve intermediate
-  // modules whose index codebook no longer pays for itself, and rewrite
-  // tree/codelength when the ragged result lowers the codelength on the active
-  // objective. Runs for every objective (the proposal is scored on the true
-  // objective and reverted if not lower, e.g. under L*). Returns whether it improved.
-  bool dissolveColumnarBest(NodePaths& tree, double& codelength);
+  // repair (#1074): dissolve intermediate modules whose index codebook no longer
+  // pays for itself, and rewrite tree/codelength when the ragged result lowers the
+  // codelength on the active objective. Works on the winning trial's own stack when
+  // `treeIsMaterialized` says the tree in memory IS `tree` (and nothing changed it),
+  // else seeds one from `tree`. On success the tree in memory is the dissolved tree,
+  // materialized and stamped. Runs for every objective (under L* the proposal is
+  // scored on the true objective and reverted if not lower). Returns whether it improved.
+  bool dissolveColumnarBest(NodePaths& tree, double& codelength, bool treeIsMaterialized);
+  // Apply a dissolve proposal to the materialized rectangular tree in place -- lift
+  // each dissolved module's children into its parent, in the pass's order -- and stamp
+  // the kept nodes from the pass's own terms. False, and no change, when the tree
+  // does not map onto the stack.
+  bool spliceDissolvedModules(const ColumnarTwoLevel& stack);
 
   // Whether the (single) trial's regroup arm escalated — the search's own
   // pathology signal, set by columnarPartition from the trial engine. A
@@ -968,6 +975,17 @@ protected:
   std::thread::id m_ownerThreadId;
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
+
+  // The most recent columnar trial's optimizer, kept alive past the trial (see
+  // columnarPartition): when that trial is the run's winner and nothing has changed
+  // its tree since, the terminal dissolve pass runs on this very stack instead of
+  // building and seeding a new one -- every single-trial run. m_columnarTrialStackIsTree
+  // says the stack IS the tree the trial left in memory (false after the one-level
+  // fallback or a kept --cluster-data seed). Reset once the pass has run. A
+  // shared_ptr only because ColumnarTwoLevel is forward-declared here and the
+  // constructors are inline: its deleter is fixed where the type is complete.
+  std::shared_ptr<ColumnarTwoLevel> m_columnarTrialStack;
+  bool m_columnarTrialStackIsTree = false;
 };
 
 /**

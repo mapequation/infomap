@@ -152,6 +152,13 @@ public:
   //    codebook -- non-zero only for the entropy bias (one free parameter fewer).
   virtual bool blocksLevelDissolve() const { return false; }
   virtual double dissolveGainPerInternalNode() const { return 0.0; }
+  //  * dissolveNodeCharge(): this correction's share on a kept module-of-modules or
+  //    the root with `numChildren` children, as the breakdown charges it -- the stamp
+  //    the pass writes to the materialized tree without a re-score. `hasExitCodeword`
+  //    is false for the root and for a module that is its parent's only child all the
+  //    way up. Non-zero only for the entropy bias: one parameter per child, one less
+  //    without an exit codeword (BiasedEntropyCorrection::hierarchicalCorrection).
+  virtual double dissolveNodeCharge(int /*numChildren*/, bool /*hasExitCodeword*/) const { return 0.0; }
 
   // --- Leaf-module merge hooks (mem-aware coarsening) -----------------------
   // The leaf-module merge operator folds one leaf module into another to coarsen
@@ -446,17 +453,33 @@ public:
   // the caller must score/stamp the materialized tree rather than the stack). No
   // change to leaf modules, so mem/meta/lossy/regularized are untouched; disabled
   // under the |K - K_pref| bias (see ColumnarCorrection::blocksLevelDissolve).
-  // `startL` is the incoming hierarchical codelength; returns the (never-greater)
-  // codelength of the dissolved tree from the pass's own accounting -- exact for
-  // every objective but L*, whose module-of-modules term this pass does not price
-  // -- or startL unchanged when nothing dissolves.
-  double dissolveUnprofitableLevels(double startL);
+  // Returns the (never-greater) codelength of the dissolved tree from the pass's own
+  // accounting -- exact for every objective but L*, whose module-of-modules term this
+  // pass does not price -- or the stack's own codelength when nothing dissolves.
+  double dissolveUnprofitableLevels();
 
   // Whether the last search produced a ragged result via dissolveUnprofitableLevels.
   bool hasDissolvedResult() const { return !m_dissolvedPaths.empty(); }
   // Discard a dissolve proposal so toNodePaths emits the rectangular stack again --
   // the caller's never-worse revert when the ragged tree did not lower the objective.
-  void clearDissolvedPaths() { m_dissolvedPaths.clear(); }
+  void clearDissolvedPaths()
+  {
+    m_dissolvedPaths.clear();
+    m_dissolveOffset.clear();
+    m_dissolveOrder.clear();
+    m_dissolveTerm.clear();
+  }
+  // The dissolve's module-tree, for splicing the materialized rectangular tree in
+  // place and stamping it (InfomapBase::spliceDissolvedModules): node id 0 is the
+  // root and dissolveNodeId(k, m) is stack module m at level k. dissolvedOrder() lists
+  // the dissolved ids in the order they were applied, each into its then-current
+  // parent, so replaying it on any tree with the same shape gives the same result.
+  // dissolvedNodeTerms()[id] is a kept node's codelength on the dissolved tree (NaN
+  // for a dissolved node), including every correction's per-node share.
+  int dissolveNodeId(int level, int module) const { return m_dissolveOffset[level] + module; }
+  int dissolveNumNodes() const { return static_cast<int>(m_dissolveTerm.size()); }
+  const std::vector<int>& dissolvedOrder() const { return m_dissolveOrder; }
+  const std::vector<double>& dissolvedNodeTerms() const { return m_dissolveTerm; }
 
   // Flat-first trial (#889, hierarchical half): the hierarchical searches build
   // the bottom of the hierarchy with the full two-level pipeline
@@ -975,6 +998,10 @@ private:
   // slot), the partition the rectangular stack cannot represent. toNodePaths emits
   // these when present; every stack rebuild clears them (clearDissolvedPaths()).
   std::vector<std::vector<int>> m_dissolvedPaths;
+  // The dissolve's module-tree, alongside m_dissolvedPaths (see dissolveNodeId).
+  std::vector<int> m_dissolveOffset;
+  std::vector<int> m_dissolveOrder;
+  std::vector<double> m_dissolveTerm;
 };
 
 /**
@@ -1001,6 +1028,10 @@ public:
   double dissolveGainPerInternalNode() const override
   {
     return m_multiplier / (2.0 * m_totalDegree * std::log(2.0));
+  }
+  double dissolveNodeCharge(int numChildren, bool hasExitCodeword) const override
+  {
+    return dissolveGainPerInternalNode() * (numChildren - (hasExitCodeword ? 0 : 1));
   }
 
 private:
