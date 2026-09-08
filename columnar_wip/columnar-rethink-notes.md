@@ -4305,3 +4305,197 @@ proportionally, bits unchanged. Then re-measure the full A/B, refresh the snapsh
 **DEFERRED (documented, not blockers):** flatten operator (columnar-only small extra gain,
 F51 probe showed ~0.002 bits on webND; dissolve-only matches the OO mechanism, which never
 flattens); L*-aware dissolve proposal (currently reverts under L*).
+
+### F54 — The dissolve pass's cost was not the second build: a profile, four fixes, and what a ragged seed can and cannot do (2026-09-08)
+
+Follow-up to F53 (branch `columnar-dissolve`, commits `b6ed959d`, `dd4627ab`, `7da0aef0` and
+`3566826a` and `ac1f4e26` on top of `f2dea4d3`). F53 left the pass unlanded on one trade — web-NotreDame `-C -d -N1` +70%
+instructions, om4 `-d -N1` +77% with no bit gain — and named "option B" (skip the second
+optimizer build) as the fix. Per the measurement discipline, the pass was **profiled before
+attributing** (`sample`, 1 ms, web-NotreDame `-d -N1` and om4 `-d -N1`, both on the F53 tip).
+
+**What the profile said (web-NotreDame `-d -N1`, 1048 samples ≈ 1.05 s inside
+maybeDeepRepairBest, plus the caller's re-materialization outside it; total new − old ≈ 1.7 s):**
+
+| where | samples | note |
+|---|--:|---|
+| `initTree(raggedPaths)` — the scoring materialization | 328 | InfoNode rebuild of 325k leaves |
+| `evaluateColumnarPartition()` — the decision re-score | 313 | seedHierarchyFromLeafPaths 219 (of which the `std::map<std::vector<int>>` prefix compaction ≈ 95, aggregateLevel 63), leafModulePathsFromTree 52, stamp 19 |
+| `dissolveUnprofitableLevels` — the pass itself | 192 | 170 in the gain lambda, 104 of those in `log2` |
+| `seedHierarchyFromLeafPaths` — build 1 | 151 | compaction ≈ 91 |
+| caller: `initTree(bestTree)` + `restampColumnarCodelengths()` | ≈ 600 | inferred, not sampled: total new − old ≈ 1.7 s minus the 1.05 s measured inside |
+
+**om4 `-d -N1`: 302 of 999 samples in `dissolveUnprofitableLevels` itself** — 30% of the run in
+a pass whose proposal was then rejected. Not the second build at all.
+
+**Findings and commits:**
+
+1. **The gain loop was O(degree²) per dissolve** (`b6ed959d`). `dissolveGain(m)` re-derived the
+   parent's term by walking its whole child list, and every dissolve re-offered every sibling,
+   each re-offer walking the list again. om4's search result (a tree the run then threw away
+   for the one-level solution) has a parent with thousands of children. Fix: per-parent running
+   sums of the children's enter and plogp(enter) — term, gain and apply are O(1); the pass is
+   O(N + Σ re-offered degrees). Same best-first order, same tie-break, same results (bits
+   identical on every A/B row; see below).
+
+2. **The entropy-bias gain was not exact for a node without an exit codeword** (same commit).
+   `BiasedEntropyCorrection::hierarchicalCorrection` counts one free parameter less for a node
+   that is its parent's only child all the way up to the root ("every level of size one").
+   Dissolving such a node saves nothing on that term — its children keep exactly the exit
+   codewords they had — but the pass credited a full parameter. Only one shape reaches it, a
+   sole top module, and its base gain is 0 too, so the F53 code proposed a dissolve the true
+   objective then rejected (a materialization and a re-score for nothing). Now the gain is
+   exact, which is what makes 3 safe.
+
+3. **Option B, done right** (`dd4627ab`): the pass returns `startL − Σgains` and
+   `dissolveColumnarBest` decides on it directly for every objective but L*. No
+   `initTree(proposal)`, no scoring `evaluateColumnarPartition`, no revert `initTree` — a
+   rejected proposal never touches the tree. **Why it is exact:** a dissolve moves base
+   module-of-modules terms (teleportation already folded into the stack's enter/exit) and the
+   entropy bias's parameter count, nothing else; every other correction is a function of the
+   leaf modules — Meta/Mem/Lossy read `hierLeafModule(i)` and `hierLevelSize(1)` only;
+   PreferredModules blocks the pass. Closed end to end by a new test: for each configuration
+   where the pass fires on ninetriangles (base, `--entropy-corrected`, `-d --entropy-corrected`,
+   `--markov-time 0.8`, plus a five-trial run added in 5) the reported codelength equals
+   `--no-infomap -c` on the written tree, and the per-node stamps sum to it. L* keeps the re-score (its module-of-modules term is the non-redundant
+   index codebook, which the pass does not price). Also: a `dissolve_s` key in
+   `--timing-json`, so the once-per-run cost is attributable rather than inferred.
+
+4. **The seed's id compaction** (`7da0aef0`): `seedHierarchyFromLeafPaths` keyed a `std::map`
+   by a `std::vector<int>` copy of each leaf's path prefix, per leaf per level. A level-j module
+   is the pair (level-(j+1) module, next path element), so one 64-bit key per leaf in an
+   `unordered_map`, coarsest level first, first-seen order preserved — the same stack. This is
+   paid by every `-c` warm start, every `evaluateColumnarPartition` (the `-N10` best restore,
+   `--no-infomap -c`) and both winner passes.
+
+5. **Then the rest of the -N1 cost, which was never the pass** (`3566826a`). With 1–4 in, a
+   profile of web-NotreDame `-d -N1` put the post-pass at 617 samples: the caller's
+   `initTree` of the ragged winner 276, the re-score to stamp it 154, the seed build 148 —
+   and the dissolve loop under 12. Daniel's rule for this PR: -N1 must not bear
+   unnecessary cost. Three paths were put to him: (A) keep the once-per-run placement
+   and trim it (stamp from the pass's terms, splice the InfoNode tree in place — the seed
+   build stays, ≈ +4–5%); (B) run the dissolve inside each trial on the trial's own stack
+   and carry the rectangular paths alongside the ragged result so the deep repair still
+   gets a rectangular seed (≈ +1%, but -N10 then selects on the dissolved codelength);
+   (C) land as is. He rejected B as unnecessarily complex (two trees in parallel, more
+   memory) and accepted some InfoNode coupling since output relies on the InfoNode
+   materialization today. What landed is A plus the one thing A lacked: the trial's
+   optimizer now outlives the trial (`m_columnarTrialStack`, one alive at a time,
+   released after the pass), and when the last serial trial won and nothing changed its
+   tree the pass runs on that stack — no optimizer, no seed, no aggregation. The
+   accepted proposal is spliced into the materialized tree in place
+   (`InfoNode::liftChildrenIntoParent`/`destroyLifted`, the OO pass's own operation,
+   after walking tree and stack side by side and validating in full), and the kept
+   nodes are stamped from the pass's terms through a new
+   `ColumnarCorrection::dissolveNodeCharge` hook (entropy: a parameter per child, one
+   less without an exit codeword — the breakdown's own attribution). The pre-existing
+   tree round-trip test caught the one thing the splice left stale: `getIndexCodelength()`
+   fell back to the OO optimizer's value for the RECTANGULAR tree (0.0990602 reported vs
+   0.320153 re-scored); the root's term on the dissolved tree is now the index codelength.
+   **-N1 instructions vs the sync tip (attribution table below): web-NotreDame `-d` +1.9%
+   (F53's tip was +70.9%), om4 `-d` +1.1%, powergrid +1.8%, science2001 `-d` −0.0%**, bits
+   identical to F53's everywhere. One observable consequence: the trial's own stack numbers
+   modules differently from a re-seeded one, so an exact tie resolves the other way —
+   powergrid `-N1` keeps a 52-node module where the re-seeded pass (V3, and any -N10 whose
+   winner is not the last trial) kept a 220-node one, L 4.730850311658421 vs
+   4.7308503116584175 (3.5e-15 apart). Deterministic per command; not a contract between
+   paths.
+
+**Why the OO pass's extra candidate is not needed.** `dissolveUnprofitableModules` also
+dissolves a leaf module that is its parent's only child (the parent becomes the leaf module).
+Counting single-child parents in the columnar output trees (new web-NotreDame `-N1`: 6327
+leaf modules of one node, 1183 modules-of-modules above a single leaf module, 157 above a single
+module-of-modules) looked like a missed opportunity. It is not: that parent p has the same node
+set as its only child, so dissolving p into ITS parent gives the identical tree for the identical
+gain (p's own term; the grandparent's term is unchanged because the child's enter is p's), and p
+is already a candidate. What survives is the zero-exit chains — `term(p) = plogp(0+e) − plogp(e) − 0
+= 0` on a directed web graph's dangling parts — whose gain is 0 under both engines. So the
+remaining columnar–OO gap on web-NotreDame (5.5564 vs 5.5544, 0.036%) is search quality, not the
+candidate set.
+
+**Per-feature attribution** (interleaved, `--seed 123`, instructions retired; `old` = sync tip
+`533d4455`, V0 = F53 tip `f2dea4d3`, V1 = +O(1) gains/exact entropy, V2 = +option B, V3 = +fast
+compaction, V4 = +own stack / in-place splice / stamp from terms; this PR is V4 + `ac1f4e26`, the
+flat-winner skip, which touches no row of this subset):
+
+| configuration | old bits | new bits | old instr | V0 | V1 | V2 | V3 | **V4** | old→V4 time (min) |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| web-NotreDame -d -N1 | 5.56852929 | 5.5564217 (-0.2174%) | 23.88G | +70.9% | +56.0% | +33.5% | +19.2% | **+1.9%** | 2.302s → 2.390s |
+| om4 -d -N1 | 7.9829318 | 7.9829318 (=) | 7.63G | +81.3% | +19.5% | +3.9% | +1.0% | **+1.1%** | 0.759s → 0.749s |
+| powergrid -N1 | 4.75504777 | 4.73085031 (-0.5089%) | 0.36G | +39.5% | +39.3% | +23.8% | +15.3% | **+1.8%** | 0.025s → 0.026s |
+| science2001 -d -N1 | 7.8334366 | 7.80793717 (-0.3255%) | 5.69G | +6.1% | +6.0% | +3.8% | +3.3% | **-0.0%** | 0.395s → 0.391s |
+| malaria -N1 | 7.50222401 | 7.49198036 (-0.1365%) | 5.29G | +2.4% | +2.3% | +1.4% | +1.3% | **-0.0%** | 0.363s → 0.360s |
+| om8 -d -N1 | 6.99609633 | 6.96753576 (-0.4082%) | 7.49G | +26.8% | +24.8% | +15.1% | +8.5% | **-0.5%** | 0.807s → 0.808s |
+| powergrid -N10 | 4.74107206 | 4.71776024 (-0.4917%) | 2.82G | +2.8% | +2.7% | +0.8% | -0.3% | **-0.5%** | 0.274s → 0.238s |
+| web-NotreDame -d -N10 | 5.56852929 | 5.5564217 (-0.2174%) | 183.05G | +5.8% | +3.9% | +0.9% | -1.0% | **-0.9%** | 19.822s → 19.706s |
+| science2001 -d -N10 | 7.8334366 | 7.80793717 (-0.3255%) | 34.05G | +0.6% | +0.6% | +0.3% | +0.2% | **-0.0%** | 2.953s → 2.972s |
+| malaria -N10 | 7.39750171 | 7.39244259 (-0.0684%) | 37.49G | +0.3% | +0.3% | +0.1% | +0.1% | **+0.0%** | 3.094s → 3.069s |
+| netsci -N10 | 4.05454025 | 4.04885795 (-0.1401%) | 0.31G | +2.1% | +0.3% | -1.1% | -1.8% | **-2.2%** | 0.023s → 0.022s |
+
+Instructions retired, delta vs `old`; interleaved, 2 reps for `-N1` rows (min), 1 for `-N10`. Bits are identical across V0–V4 on every row. `dissolve_s` (V4): web-NotreDame `-N1` 0.045 s, `-N10` 0.436 s — at `-N10` the winner was not the last trial, so the key now includes the winner's one materialization that best_restore used to pay.
+
+**Full A/B (old = sync tip `533d4455`, new = this PR `ac1f4e26`, md5 `791a8045…`):** 437 rows, every configuration of the
+snapshot plus the OO arm re-measured for the OO-vs-columnar tables (one session, one instrument).
+**Bits: 25 rows better, 0 worse, 71 identical — and bit-identical to the F53 A/B on all 222 shared
+(key, label, arm) rows**, so the four cost fixes changed no result; the 29 OO rows are identical to
+the sync snapshot's. Instructions: every `-N10` row at or below old where the pass fires
+(web-NotreDame `-C -d -N10` −0.95%, powergrid −0.53%); three `-N1` rows over the +1% line —
+web-NotreDame `-d` +1.88% (2.30 → 2.39 s) for −0.22% bits, powergrid +1.80% for −0.51% bits, and om4
+`-d` +1.09% for no gain, the fallback-tree case above. The OO `-2 -N10 --meta-data` row on air30k was
+killed after 104 CPU-minutes (62,000G instructions and counting) and recorded NA — the same row the
+sync snapshot has no entry for; the OO `-N10 --meta-data` row is `-N1` as before. The machine carried
+a desktop load throughout (load average 6–17, 18 GB of swap in use), so wall times sit above the sync
+session's on both arms; interleaving keeps the comparison fair and instr is load-independent.
+Snapshot: `columnar_wip/columnar-pr-performance-section.md`; rows: `columnar_wip/dissolve-ab-results.tsv`.
+
+**Answer to "can a ragged tree be tuned further?" (asked 2026-09-08).** Not today, and the
+dissolve makes the question sharper because its output IS ragged. Measured: feed the dissolved
+powergrid tree back with `-C -N1 -c` → `columnarSeedPathsFromTree` squares it to the mode depth
+(F52), the search continues from that squared seed and ends at 4.745210893, worse than the input's
+4.730850312, so the #824 guard hands the input back unchanged; science2001 the same (7.836197647
+vs 7.807937174). The terminal dissolve does not run on a kept ragged input either
+(`seedHierarchyFromLeafPaths` is strict-depth). So a ragged tree round-trips exactly (scored via
+the padding theorem of #1070) but is a dead end for tuning; the deep repair rejects it too.
+
+**The design that would fix it, for a separate PR:** make a unary module — a module-of-modules
+with exactly one child — cost 0 in the stack's objective and in the search's move deltas. That
+is not a new approximation: a unary node's term is `plogp(ex+e) − plogp(e) − plogp(ex) > 0`
+whenever `ex > 0`, so no optimal tree has one, and pricing it at 0 makes the rectangular stack's
+objective equal to the codelength of the ragged tree obtained by collapsing every unary chain —
+exactly the padCharge theorem evaluateColumnarPartition already relies on for scoring, applied to
+the search. Any ragged tree pads to a rectangular stack whose phantoms are unary chains between a
+real module and its leaf module (padLeafPathsToUniformDepth appends the finest id), so under that
+rule a ragged seed is exact, the search can polish it at every level, the deep repair can accept
+it, and the dissolve pass becomes the operator that turns "children lifted into the parent" into
+that representation. Cost: the unary rule is a discontinuity in the module-of-modules term
+(child count 1 ↔ 2) that every level's move delta has to see. Not started; F53's "L*-aware
+dissolve" and the flatten operator (F51) stay deferred as well.
+
+**A pre-existing bug seen on the way, recorded, not touched (columnar-only, so a sub-PR into the
+branch):** the columnar one-level fallback in `columnarPartition` ("worse codelength than one-level,
+putting all nodes in one module") calls `InfoNode::replaceChildrenWithOneNode()`, which wraps the
+root's children under one new node and then removes exactly ONE level (`replaceChildrenWithGrandChildren`).
+On a two-level tree — the only shape the OO fallback at the analogous site ever sees — that yields
+root → module → leaves. On the columnar search's multi-level result it yields root → module → the old
+level-2 modules → … → leaves: om4 `-d -N1` writes a tree "partitioned into 4 levels with 1 top
+modules", all 76513 leaves at depth 4, under a header that says `codelength 7.98293` (the one-level
+value) and `relative codelength savings -2.2e-14%`. The file's partition and its headline disagree.
+Fix (three lines, not made here): after the wrap, `while (!module.firstChild->isLeaf())
+module.replaceChildrenWithGrandChildren();` so the module holds the leaves directly. It touches this
+PR only in cost: the pass seeds and scores that 4-level tree (its proposal cannot beat the one-level
+bar), 0.018 s of om4 `-d -N1` = **+1.1% instructions for no bit gain, the one row of the A/B over the
+1% line without a gain**. With the fallback flattened the tree is flat and `ac1f4e26` skips the pass.
+
+`ac1f4e26` itself: **skip the pass on a flat winner** — `!isFlatTree(result.bestTree)` after the deep
+repair. A two-level-shaped winner has no interior level to dissolve, so nothing is built or scored to
+find that out (a flat-first trial that won, or a network whose best is two-level).
+
+**F53 correction (L\*).** F53 reported "Preferred-modules and L\* never-worse (SAME)". Never-worse
+holds by construction (the L\* path re-scores the proposal on L\* and keeps it only if lower), but SAME
+was not checked — F53's A/B ran the `--non-redundant` rows on the new binary only, with nothing to
+compare against. Read against the sync snapshot's L\* table, 4 of 15 rows moved, all down:
+web-NotreDame 5.517073626 → 5.512433077 (−0.084% bits, 184.1G → 182.5G instr), air30k (meta)
+7.215299774 → 7.192724425 (−0.313%, 85.8G → 85.9G), air30k (reg.) −0.009% and air30k −0.002% at
+unchanged instr. So the base-estimated proposal is a usable L\* proposal more often than F53 assumed,
+and the "L\*-aware dissolve" stays deferred on its merits (a better proposal), not because the current
+one never lands.
