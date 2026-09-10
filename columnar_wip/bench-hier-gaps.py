@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Hierarchical-gaps snapshot benchmark (#1041): old (branch tip) vs new (escalation-completed
-flat pipeline + first-trial one-level rescue) over every configuration
+flat pipeline, abandoned doomed builds, run-level rescue) over every configuration
 the snapshot tables need, plus the OO arm (new binary, no -C) for the OO-vs-columnar tables. Interleaved by arm; -N1 rows as 3 reps spread across the batch.
 Row: key label arm rep flags codelength total_s instr top levels
 Resumable: existing (key, label, arm, rep) rows are skipped."""
