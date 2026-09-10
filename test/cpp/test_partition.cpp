@@ -7,6 +7,7 @@
 #include "TestUtils.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <limits>
 #include <map>
@@ -76,6 +77,219 @@ std::map<EdgeKey, double> aggregatedModuleFlow(InfoNode& root, bool undirected)
   return flows;
 }
 
+struct FixedPartitionResult {
+  double codelength;
+  double indexCodelength;
+};
+
+FixedPartitionResult evaluateFixedPartition(const std::string& extraFlags, bool columnar, bool selfLink = false, bool metadata = false)
+{
+  std::string flags = "--seed 123 --num-trials 1 --silent --no-infomap";
+  if (!extraFlags.empty())
+    flags += " " + extraFlags;
+  if (columnar)
+    flags += " --columnar";
+
+  InfomapWrapper im(flags);
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+  if (selfLink)
+    im.addLink(1, 1, 10.0);
+  if (metadata)
+    im.initMetaData(infomap::test::fixturePath("meta/twotriangles.meta"));
+  im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 } });
+  im.run();
+
+  CHECK(std::isfinite(im.codelength()));
+  CHECK(std::isfinite(im.getIndexCodelength()));
+  CHECK(im.codelength() >= 0.0);
+  CHECK(im.getIndexCodelength() >= -1e-12);
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+  return { im.codelength(), im.getIndexCodelength() };
+}
+
+FixedPartitionResult evaluateFixedStatePartition(bool columnar)
+{
+  std::string flags = "--seed 123 --num-trials 1 --silent --no-infomap";
+  if (columnar)
+    flags += " --columnar";
+
+  InfomapWrapper im(flags);
+  infomap::test::readNetworkFixture(im, "states.net");
+  im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 } });
+  im.run();
+
+  CHECK(std::isfinite(im.codelength()));
+  CHECK(std::isfinite(im.getIndexCodelength()));
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } }, true);
+  return { im.codelength(), im.getIndexCodelength() };
+}
+
+// Fixed-partition codelength on the co-located state fixtures. `network` is
+// states_shared_physical.net (two states of one physical node in one module) or
+// states_distinct_physical.net (the same links, no shared physical node).
+double evaluateColocatedStatePartition(const char* network, bool columnar, bool metadata)
+{
+  std::string flags = "--seed 123 --num-trials 1 --silent --no-infomap";
+  if (columnar)
+    flags += " --columnar";
+  if (metadata)
+    flags += " --meta-data " + infomap::test::fixturePath("meta/states_crossing.meta");
+
+  InfomapWrapper im(flags);
+  infomap::test::readNetworkFixture(im, network);
+  im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 } });
+  im.run();
+
+  CHECK(std::isfinite(im.codelength()));
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } }, true);
+  return im.codelength();
+}
+
+TEST_CASE("Columnar composes the metadata and physical-node codebooks [fast][core][partition][columnar][meta]")
+{
+  // The two codebooks are independent, so each one's contribution must be the
+  // same whether or not the other is present. Asserted as two differences rather
+  // than as pinned totals: a difference stays valid if the metadata term is ever
+  // rescaled, and it states the property the fix is about instead of a number
+  // that happens to fall out of it.
+  //
+  // Before #1012 addColumnarCorrections attached MemCorrection in an `else`
+  // branch of the metadata one, so --meta-data on higher-order input dropped the
+  // physical-node codebook: the first difference below was 0 instead of
+  // -0.330578512396694.
+  const double sharedMeta = evaluateColocatedStatePartition("states_shared_physical.net", true, true);
+  const double distinctMeta = evaluateColocatedStatePartition("states_distinct_physical.net", true, true);
+  const double sharedPlain = evaluateColocatedStatePartition("states_shared_physical.net", true, false);
+  const double distinctPlain = evaluateColocatedStatePartition("states_distinct_physical.net", true, false);
+
+  // The physical-node codebook saves the same amount with and without metadata.
+  infomap::test::checkApproxCodelength(sharedMeta - distinctMeta, sharedPlain - distinctPlain);
+  infomap::test::checkApproxCodelength(sharedPlain - distinctPlain, -0.330578512396694);
+
+  // The metadata term costs the same amount with and without the aggregation.
+  infomap::test::checkApproxCodelength(sharedMeta - sharedPlain, distinctMeta - distinctPlain);
+  infomap::test::checkApproxCodelength(distinctMeta - distinctPlain, 0.915516344471709);
+}
+
+TEST_CASE("Columnar reports its own composed codelength across trials [fast][core][partition][columnar][meta]")
+{
+  // restoreBestResult re-materializes the winning trial's tree through the OO
+  // objective, which under --meta-data is metadata-only and therefore disagrees
+  // with the composed value the columnar core actually optimized. The block is
+  // guarded by m_trialsRun > 1, so the disagreement is invisible at one trial:
+  // before #1012 broadened that guard from nonRedundant to columnarSearch, a
+  // 2-trial run printed 2.247219447 to the console and wrote 2.577797959367095 to
+  // the .tree/.json files. codelength() reads the same value the files do.
+  auto search = [](unsigned int numTrials) {
+    InfomapWrapper im("--seed 123 --num-trials " + std::to_string(numTrials) + " --silent --two-level --columnar --meta-data " + infomap::test::fixturePath("meta/states_crossing.meta"));
+    infomap::test::readNetworkFixture(im, "states_shared_physical.net");
+    im.run();
+    infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } }, true);
+    return im.codelength();
+  };
+
+  const double oneTrial = search(1);
+  infomap::test::checkApproxCodelength(oneTrial, 2.247219446970401);
+  // Same partition, same objective: more trials must not change the number that
+  // is reported and written out.
+  infomap::test::checkApproxCodelength(search(2), oneTrial);
+  infomap::test::checkApproxCodelength(search(10), oneTrial);
+}
+
+TEST_CASE("Meta-data on higher-order input diverges between OO and columnar by design [fast][core][partition][columnar-differential][meta]")
+{
+  // The documented exception to the rule the rest of this family enforces.
+  //
+  // Metadata and the physical-node codebook are independent codebooks over the
+  // same leaves, and the columnar core scores both because corrections are
+  // summed. The OO engine cannot: MetaMapEquation and MemMapEquation are sibling
+  // `final` classes with different DeltaFlowDataTypes, so
+  // InfomapOptimizer<Objective> holds exactly one, and initOptimizer picks
+  // metadata. Composing them there means a new objective class, which is a
+  // separate feature (#1012).
+  //
+  // So this is a deliberate divergence, not a tolerance to be loosened: -C
+  // returns a lower codelength here because it is scoring a strictly richer
+  // objective on the same partition. Both values are pinned so that a change to
+  // either engine has to come here and say which one moved.
+  const double oo = evaluateColocatedStatePartition("states_shared_physical.net", false, true);
+  const double columnar = evaluateColocatedStatePartition("states_shared_physical.net", true, true);
+
+  infomap::test::checkApproxCodelength(oo, 2.577797959367095);
+  infomap::test::checkApproxCodelength(columnar, 2.247219446970401);
+  CHECK(columnar < oo);
+
+  // The divergence needs BOTH conditions. Without metadata the two engines score
+  // the same objective, and with metadata but no co-located states (states.net
+  // splits its shared physical node across the modules) the physical-node
+  // codebook saves nothing, so they agree there too -- which is why the existing
+  // meta+state coverage never saw this.
+  infomap::test::checkApproxCodelength(evaluateColocatedStatePartition("states_shared_physical.net", true, false),
+                                       evaluateColocatedStatePartition("states_shared_physical.net", false, false));
+  const auto ooSplit = evaluateFixedStatePartition(false);
+  const auto columnarSplit = evaluateFixedStatePartition(true);
+  infomap::test::checkApproxCodelength(columnarSplit.codelength, ooSplit.codelength);
+}
+
+TEST_CASE("Fixed partitions have identical OO and columnar codelengths [fast][core][partition][columnar-differential]")
+{
+  // Exception: --meta-data on higher-order input. See the divergence test above
+  // -- the columnar core composes the metadata and physical-node codebooks and
+  // the OO objective dispatch selects one of them. The `--meta-data-rate 2` case
+  // below is on a first-order network, where there is no second codebook, so it
+  // still belongs to this family.
+  struct TestCase {
+    const char* flags;
+    bool selfLink;
+    bool metadata;
+  };
+  const TestCase cases[] = {
+    { "", false, false },
+    { "--directed", false, false },
+    { "--directed --recorded-teleportation", false, false },
+    { "--markov-time 2", false, false },
+    { "--variable-markov-time", false, false },
+    { "--regularized", false, false },
+    { "--entropy-corrected", false, false },
+    { "--meta-data-rate 2", false, true },
+    { "--directed --recorded-teleportation", true, false },
+  };
+
+  for (const auto& testCase : cases) {
+    INFO("flags: " << testCase.flags);
+    CAPTURE(testCase.selfLink);
+    CAPTURE(testCase.metadata);
+    const auto oo = evaluateFixedPartition(testCase.flags, false, testCase.selfLink, testCase.metadata);
+    const auto columnar = evaluateFixedPartition(testCase.flags, true, testCase.selfLink, testCase.metadata);
+    infomap::test::checkApproxCodelength(columnar.codelength, oo.codelength);
+    infomap::test::checkApproxCodelength(columnar.indexCodelength, oo.indexCodelength);
+  }
+
+  const auto ooState = evaluateFixedStatePartition(false);
+  const auto columnarState = evaluateFixedStatePartition(true);
+  infomap::test::checkApproxCodelength(columnarState.codelength, ooState.codelength);
+  infomap::test::checkApproxCodelength(columnarState.indexCodelength, ooState.indexCodelength);
+}
+
+TEST_CASE("Two-level search finds the same optimum on OO and columnar engines [fast][core][partition][columnar-differential]")
+{
+  auto runTwoLevel = [](bool columnar) {
+    std::string flags = "--seed 123 --num-trials 5 --silent --two-level";
+    if (columnar)
+      flags += " --columnar";
+    InfomapWrapper im(flags);
+    infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+    im.run();
+    CHECK(im.maxTreeDepth() == 2); // --two-level must not build a deeper hierarchy
+    infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+    return im.codelength();
+  };
+
+  const double oo = runTwoLevel(false);
+  const double columnar = runTwoLevel(true);
+  infomap::test::checkApproxCodelength(columnar, oo);
+}
+
 //! Sum InfoNode::codelength over every module including the root, i.e. the quantity
 //! calcCodelengthOnTree(root(), true) returns. Leaves carry no codelength of their own.
 double sumModuleCodelengths(const InfoNode& node)
@@ -102,7 +316,113 @@ unsigned int numScoredModules(const InfoNode& node)
   return count;
 }
 
-TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition]")
+TEST_CASE("Columnar dissolve turns the symmetric nine-triangles optimum ragged [fast][core][partition][columnar][columnar-contract]")
+{
+  // The columnar search builds an equal-depth stack; the terminal dissolve pass then
+  // removes an intermediate module whose index codebook no longer pays for itself,
+  // making the tree ragged. Nine triangles in three super-groups: two super-groups
+  // stay nested (their triangles at depth 3) and the third dissolves (its triangles
+  // top-level at depth 2), the same ragged optimum the OO dissolve reaches (#1074).
+  // Runs only when the active engine is columnar (the pass is columnar-only).
+  if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
+    return;
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  CHECK(im.codelength() == doctest::Approx(3.371875026).epsilon(1e-8));
+  CHECK(im.numTopModules() == 5);
+  CHECK(im.maxTreeDepth() == 3);
+  // Ragged: three top modules are leaf modules (the dissolved super-group's
+  // triangles) and two are modules of modules (the super-groups still nested).
+  unsigned int leafModuleTops = 0, nestedTops = 0;
+  for (const auto& top : im.root().children()) {
+    if (top.isLeafModule())
+      ++leafModuleTops;
+    else if (!top.isLeaf())
+      ++nestedTops;
+  }
+  CHECK(leafModuleTops == 3);
+  CHECK(nestedTops == 2);
+  // No module ever mixes a leaf node with a sub-module (#990) — the dissolve moves
+  // only modules, so every internal node's children are all leaves or all modules.
+  for (auto it = im.root().begin_tree(); !it.isEnd(); ++it) {
+    if (it->isLeaf() || it->isLeafModule())
+      continue;
+    for (const auto& child : it->children())
+      CHECK_FALSE(child.isLeaf());
+  }
+}
+
+TEST_CASE("Columnar dissolve is never worse than the equal-depth stack it starts from [fast][core][partition][columnar][columnar-contract]")
+{
+  // The pass proposes a ragged tree scored on the base map equation, but commits it
+  // only if it lowers the codelength on the TRUE objective. Under L* the proposal is
+  // not an L* gain, so the run must fall back to the equal-depth stack unchanged.
+  if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
+    return;
+  const auto codelength = [](const std::string& flags) {
+    InfomapWrapper im(infomap::test::defaultFlags(flags));
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    infomap::test::checkRunSanity(im);
+    return im.codelength();
+  };
+  // Base: dissolve helps (a strict improvement over the equal-depth 3.38583082).
+  CHECK(codelength("") < 3.38583082 - 1e-6);
+  // L*: never worse — the base-estimated proposal is not an L* gain, so the guard
+  // reverts to the equal-depth stack's own L* (3.078067323) rather than a worse tree.
+  CHECK(codelength("--non-redundant") == doctest::Approx(3.078067323).epsilon(1e-7));
+}
+
+TEST_CASE("Columnar dissolve reports the codelength a re-score of its own tree gives [fast][core][partition][columnar][columnar-contract]")
+{
+  // Under every objective but L* the pass decides and reports from its own
+  // accounting -- base module-of-modules terms plus the entropy bias's free-parameter
+  // count -- without re-scoring the ragged tree (#1074). That is exact only if no other
+  // term moves, so check it end to end: the reported codelength must equal what
+  // --no-infomap -c gives for the written tree, which scores it on the full stack.
+  // Each configuration is one where the pass fires on ninetriangles (-d alone does not).
+  if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
+    return;
+  const std::string treePath = "columnar_dissolve_roundtrip.tree";
+  // The last entry runs five trials: the winner is then usually not the last trial, so
+  // the pass seeds a stack from the best tree and materializes it before splicing,
+  // rather than working on the last trial's own stack as the single-trial runs do.
+  for (const std::string flags : { infomap::test::defaultFlags(""), infomap::test::defaultFlags("--entropy-corrected"), infomap::test::defaultFlags("-d --entropy-corrected"), infomap::test::defaultFlags("--markov-time 0.8"), infomap::test::withTestEngine("--seed 123 --num-trials 5 --silent") }) {
+    CAPTURE(flags);
+    InfomapWrapper im(flags);
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    infomap::test::checkRunSanity(im);
+    // The stamps the pass wrote (no re-score) sum to the headline: root plus every module.
+    double stamped = im.root().codelength;
+    for (auto it = im.root().begin_tree(); !it.isEnd(); ++it)
+      if (!it->isLeaf() && !it->isRoot())
+        stamped += it->codelength;
+    CHECK(stamped == doctest::Approx(im.codelength()).epsilon(1e-9));
+    // The pass fired: at least one triangle was lifted to a top-level leaf module,
+    // which the equal-depth three-level search never produces. Whether any super-module
+    // survives beside it is platform-dependent (-d --entropy-corrected dissolves all
+    // three on Linux and Windows and keeps two on macOS -- a libm tie), so only the
+    // lifting is required here.
+    unsigned int leafModuleTops = 0;
+    for (const auto& top : im.root().children())
+      if (top.isLeafModule())
+        ++leafModuleTops;
+    REQUIRE(leafModuleTops > 0);
+
+    im.writeTree(treePath);
+    InfomapWrapper scored(flags + " --no-infomap --cluster-data " + treePath);
+    scored.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    scored.run();
+    std::remove(treePath.c_str());
+    CHECK(scored.codelength() == doctest::Approx(im.codelength()).epsilon(1e-9));
+  }
+}
+
+TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -121,7 +441,7 @@ TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][cor
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
-TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core][partition]")
+TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -592,7 +912,7 @@ TEST_CASE("An unknown node id in cluster data leaves the partition alone [fast][
   CHECK(withUnknownId == clean);
 }
 
-TEST_CASE("Tree cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle]")
+TEST_CASE("Tree cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -1175,7 +1495,70 @@ TEST_CASE("InfoNode owns outgoing edges while incoming edges are non-owning refe
   CHECK(target.inDegree() == 1);
 }
 
-TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition]")
+TEST_CASE("Soft cluster-data seeds the columnar search [fast][core][partition][columnar][cluster-data]")
+{
+  // #824: columnarPartition() built its optimizer from the leaf network and never
+  // looked at the InfoNode tree, so a soft --cluster-data partition was read, echoed
+  // in the options banner and then discarded. `-C -c` came out bit-identical to `-C`.
+  //
+  // The clique ring is the smallest input where that is visible: 32 triangles in a
+  // ring, seeded with the planted one-module-per-triangle partition. The planted
+  // partition is OVER-FINE for the map equation (adjacent triangles want merging), so
+  // it is worse on its own than what the search finds from scratch -- yet continuing
+  // from it lands in a better basin than either. It therefore pins both halves of the
+  // fix: that the seed is consumed at all, and that the merge operator runs on an
+  // externally supplied partition (it is skipped for the base objective on a partition
+  // the engine's own aggregation produced, which has already settled every merge --
+  // with it skipped this returned the planted partition unchanged, at 3.652410119).
+  auto twoLevel = [](const std::string& extraFlags) {
+    InfomapWrapper im("--seed 123 --num-trials 1 --silent --two-level --columnar" + extraFlags);
+    infomap::test::readNetworkFixture(im, "clique_ring.net");
+    im.run();
+    return im.codelength();
+  };
+  const std::string seed = " --cluster-data " + infomap::test::clusterFixturePath("clique_ring_planted.clu");
+
+  const double inputPartition = twoLevel(seed + " --no-infomap");
+  const double fromScratch = twoLevel("");
+  const double fromSeed = twoLevel(seed);
+
+  infomap::test::checkApproxCodelength(inputPartition, 3.6524101186092026);
+  infomap::test::checkApproxCodelength(fromSeed, 3.5661656266226012);
+  // The seed is not discarded (that is the bug), and continuing from it beats both the
+  // partition supplied and the from-scratch search.
+  CHECK(fromSeed < fromScratch - 1e-9);
+  CHECK(fromSeed < inputPartition - 1e-9);
+  // fromScratch is deliberately NOT pinned. A ring of identical triangles is maximally
+  // tied, so which pair of triangles the from-scratch aggregation merges first is decided
+  // by floating-point ordering rather than by the objective, and that is a property of
+  // the toolchain: 3.5695918914487512 on macOS clang and on every non-OpenMP build,
+  // 3.5675... on gcc and MSVC with -fopenmp (the columnar core contains no OpenMP at all
+  // -- enabling it only changes codegen). The seeded arm has no such freedom, since it
+  // starts from the planted partition, and 3.5661656266226012 held on all five CI
+  // toolchains.
+}
+
+TEST_CASE("Columnar never returns worse than the soft cluster-data partition [fast][core][partition][columnar][cluster-data]")
+{
+  // The other half of #824's impact: `-C -c` must not hand back something worse than
+  // what the user supplied. The seeded search is gated on the true stack codelength, so
+  // it cannot come out above the SEEDED STACK -- but a ragged input tree has to be
+  // squared up to fit the strict-level stack, and the squared partition is not the
+  // input. So the run also compares against the input tree's own codelength and keeps
+  // the input when nothing beat it, which is the only way a ragged tree can be returned
+  // exactly as given.
+  auto run = [](const std::string& clusterFile, const std::string& extraFlags) {
+    InfomapWrapper im("--seed 123 --num-trials 1 --silent --columnar --cluster-data " + infomap::test::clusterFixturePath(clusterFile) + extraFlags);
+    infomap::test::readNetworkFixture(im, "clique_ring.net");
+    im.run();
+    return im.codelength();
+  };
+  const double inputPartition = run("clique_ring_planted.clu", " --no-infomap");
+  CHECK(run("clique_ring_planted.clu", "") <= inputPartition + 1e-9);
+  CHECK(run("clique_ring_planted.clu", " --two-level") <= inputPartition + 1e-9);
+}
+
+TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -1193,7 +1576,7 @@ TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
-TEST_CASE("Hard cluster-data preserves the imposed coarse partition [fast][core][partition]")
+TEST_CASE("Hard cluster-data preserves the imposed coarse partition [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -1213,7 +1596,21 @@ TEST_CASE("Hard cluster-data preserves the imposed coarse partition [fast][core]
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
-TEST_CASE("Embedded JSON path seeds the initial partition [fast][core][partition][json]")
+TEST_CASE("Hard cluster-data loaded during run preserves the imposed partition [fast][core][partition][columnar-contract]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--cluster-data " + infomap::test::clusterFixturePath("twotriangles_two_modules.clu")));
+  im.clusterDataIsHard = true;
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.numLeafNodes() == 6);
+  CHECK(im.numTopModules() == 2);
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+}
+
+TEST_CASE("Embedded JSON path seeds the initial partition [fast][core][partition][json][columnar-contract]")
 {
   // The embedded nodes[].path assigns three modules {1,2}, {3,4}, {5,6}.
   // With --no-infomap the result is exactly that imposed initial partition,
@@ -1227,7 +1624,7 @@ TEST_CASE("Embedded JSON path seeds the initial partition [fast][core][partition
   infomap::test::checkCanonicalPartition(im, { { 1, 2 }, { 3, 4 }, { 5, 6 } });
 }
 
-TEST_CASE("Hard cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle]")
+TEST_CASE("Hard cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -1259,7 +1656,7 @@ TEST_CASE("Hard cluster-data reinit and rerun stay stable on the same instance [
   CHECK(im.codelength() == doctest::Approx(firstCodelength));
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
 }
-TEST_CASE("Hard cluster-data rerun preserves leaf metadata on the same instance [fast][core][partition][lifecycle][parser]")
+TEST_CASE("Hard cluster-data rerun preserves leaf metadata on the same instance [fast][core][partition][lifecycle][parser][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--meta-data-rate 2"));
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -1425,7 +1822,7 @@ TEST_CASE("Tree with rows that mix physical and state id columns fails determini
       std::runtime_error);
 }
 
-TEST_CASE("Tree round-trip reproduces codelength on a regular network [fast][core][partition][parser][lifecycle]")
+TEST_CASE("Tree round-trip reproduces codelength on a regular network [fast][core][partition][parser][lifecycle][columnar-contract]")
 {
   auto baseline = infomap::test::makeRunningInfomap(
       [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net")); },
@@ -1434,7 +1831,7 @@ TEST_CASE("Tree round-trip reproduces codelength on a regular network [fast][cor
   writeAndCheckRoundTrip(*baseline, infomap::test::repoPath("examples/networks/ninetriangles.net"), false, "ninetriangles");
 }
 
-TEST_CASE("Tree round-trip reproduces codelength on a higher-order (states) network [fast][core][partition][parser][lifecycle]")
+TEST_CASE("Tree round-trip reproduces codelength on a higher-order (states) network [fast][core][partition][parser][lifecycle][columnar-contract]")
 {
   auto baseline = infomap::test::makeRunningInfomap(
       [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/states.net")); });
@@ -1445,7 +1842,7 @@ TEST_CASE("Tree round-trip reproduces codelength on a higher-order (states) netw
   writeAndCheckRoundTrip(*baseline, infomap::test::repoPath("examples/networks/states.net"), true, "states_state");
 }
 
-TEST_CASE("Tree round-trip reproduces codelength on a multilayer network [fast][core][partition][parser][lifecycle]")
+TEST_CASE("Tree round-trip reproduces codelength on a multilayer network [fast][core][partition][parser][lifecycle][columnar-contract]")
 {
   auto baseline = infomap::test::makeRunningInfomap(
       [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/multilayer.net")); });
@@ -1456,7 +1853,7 @@ TEST_CASE("Tree round-trip reproduces codelength on a multilayer network [fast][
   writeAndCheckRoundTrip(*baseline, infomap::test::repoPath("examples/networks/multilayer.net"), true, "multilayer_state");
 }
 
-TEST_CASE("Tree cluster-data tolerates repeated reinit on the same higher-order instance [fast][core][partition][lifecycle]")
+TEST_CASE("Tree cluster-data tolerates repeated reinit on the same higher-order instance [fast][core][partition][lifecycle][columnar-contract]")
 {
   auto baseline = infomap::test::makeRunningInfomap(
       [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/states.net")); });
@@ -1478,7 +1875,7 @@ TEST_CASE("Tree cluster-data tolerates repeated reinit on the same higher-order 
   std::remove(treePath.c_str());
 }
 
-TEST_CASE("No-infomap tree cluster-data reruns preserve loaded codelength [fast][core][partition][lifecycle]")
+TEST_CASE("No-infomap tree cluster-data reruns preserve loaded codelength [fast][core][partition][lifecycle][columnar-contract]")
 {
   auto baseline = infomap::test::makeRunningInfomap(
       [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net")); },
@@ -1509,7 +1906,7 @@ TEST_CASE("No-infomap tree cluster-data reruns preserve loaded codelength [fast]
 // must be 0. Before the fix in partition(), the one-level fallback path (triggered when
 // the found codelength is worse than the one-level codelength) left m_numNonTrivialTopModules
 // at its pre-fallback value instead of recalculating it.
-TEST_CASE("numNonTrivialTopModules is zero when all nodes are in one module [fast][core][partition]")
+TEST_CASE("numNonTrivialTopModules is zero when all nodes are in one module [fast][core][partition][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   // Complete graph K5 — no community structure, one-level codelength is optimal.
@@ -1532,6 +1929,39 @@ TEST_CASE("numNonTrivialTopModules is zero when all nodes are in one module [fas
   CHECK(im.codelength() == doctest::Approx(im.getOneLevelCodelength()));
   infomap::test::checkRunSanity(im);
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3, 4, 5 } });
+}
+
+// #827: --preferred-number-of-modules is wired into the columnar engine as the
+// |K - K_pref| move-loop bias (PreferredModulesCorrection), the columnar
+// analogue of BiasedMapEquation. On the OO path this flag was dead under
+// --columnar. Here we verify the columnar two-level search is steered to the
+// requested module count, and that the flag-off run is unaffected.
+TEST_CASE("Columnar --preferred-number-of-modules steers the two-level module count [fast][core][partition][columnar]")
+{
+  // Four 5-cliques in a ring joined by single bridge edges: the unbiased
+  // two-level optimum is the four natural cliques.
+  auto build = [](InfomapWrapper& im) {
+    constexpr int C = 4, S = 5;
+    auto nid = [](int c, int i) { return c * S + i + 1; };
+    for (int c = 0; c < C; ++c)
+      for (int i = 0; i < S; ++i)
+        for (int j = i + 1; j < S; ++j)
+          im.addLink(nid(c, i), nid(c, j));
+    for (int c = 0; c < C; ++c)
+      im.addLink(nid(c, 0), nid((c + 1) % C, 0));
+  };
+  auto topModules = [&](const std::string& extra) {
+    InfomapWrapper im("--seed 123 --num-trials 1 --silent --two-level --columnar " + extra);
+    build(im);
+    im.run();
+    return im.numTopModules();
+  };
+
+  CHECK(topModules("") == 4); // unbiased: the four natural cliques
+  CHECK(topModules("--preferred-number-of-modules 1") == 1); // merge past structure
+  CHECK(topModules("--preferred-number-of-modules 2") == 2);
+  CHECK(topModules("--preferred-number-of-modules 3") == 3);
+  CHECK(topModules("--preferred-number-of-modules 6") == 6); // split the cliques
 }
 
 TEST_CASE("--num-threads bounds parallel-trials workers without changing the result [fast][core][threads]")
