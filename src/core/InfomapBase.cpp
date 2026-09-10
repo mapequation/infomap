@@ -3007,6 +3007,10 @@ void InfomapBase::columnarPartition()
     Console::detail(2, "columnar: flat-first trial (two-level optimum as the bottom)");
     opt.setFlatFirstBottom(true);
   }
+  // Abandon a hierarchical build that starts worse than one module (#1041, F56),
+  // exactly where the one-level fallback below applies -- the same predicate, so a
+  // biased objective (preferred number of modules, prefer-modular) keeps refining.
+  opt.setAbandonDoomedBuild(!twoLevel && !seeded && !preferModularSolution && preferredNumberOfModules == 0);
 
   // With -2 (--two-level): the two-level search only, no hierarchy build.
   // With -F (--fast-hierarchical-solution, reused here as the columnar fast

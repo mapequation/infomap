@@ -65,24 +65,8 @@ configs = []
 for label, net, fl in BASE:
     configs.append(("C10", label, net, f"-C -N10 {fl}", ("old", "new"), 1))
     configs.append(("C2_10", label, net, f"-C -2 -N10 {fl}", ("old", "new"), 1))
-    # The object-oriented arm, for the OO-vs-columnar tables: the dissolve PR does not
-    # touch it, but the snapshot's rule is one session, one instrument for every table,
-    # so it is re-measured here rather than carried from the sync's session.
-    # air30k (meta) OO does not finish -N10 in budget (same convention as every snapshot).
-    configs.append(
-        (
-            "OO10",
-            label,
-            net,
-            f"-N1 {fl}" if label == "air30k (meta)" else f"-N10 {fl}",
-            ("new",),
-            1,
-        )
-    )
-    # air30k (meta) does not finish -2 -N10 on the OO arm either (killed once at 104 CPU-minutes,
-    # 62,000G instructions); the sync snapshot's OO -2 table has no row for it and neither does this.
-    if label != "air30k (meta)":
-        configs.append(("OO2_10", label, net, f"-2 -N10 {fl}", ("new",), 1))
+    # No object-oriented arm: this PR does not touch that engine, its rows are carried
+    # from the #1078 snapshot session (same machine, same instrument).
     configs.append(("C1", label, net, f"-C -N1 {fl}", ("old", "new"), 3))
     configs.append(("F10", label, net, f"-C -F -N10 {fl}", ("new",), 1))
     configs.append(("L10", label, net, f"-C --non-redundant -N10 {fl}", ("new",), 1))
@@ -193,8 +177,6 @@ configs.append(("F10", "wikispeedia `-d`", WIKI, "-C -F -d -N10", ("new",), 1))
 configs.append(
     ("L10", "wikispeedia `-d`", WIKI, "-C --non-redundant -d -N10", ("new",), 1)
 )
-configs.append(("OO10", "wikispeedia `-d`", WIKI, "-d -N10", ("new",), 1))
-configs.append(("OO2_10", "wikispeedia `-2d`", WIKI, "-2d -N10", ("new",), 1))
 
 done = set()
 if os.path.exists(OUT):

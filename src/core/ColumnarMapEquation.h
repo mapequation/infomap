@@ -491,6 +491,19 @@ public:
   // this across trials (even-numbered trials flat-first, so -N1 is unchanged)
   // and best-of-N picks per network between the two search directions.
   void setFlatFirstBottom(bool on) { m_flatFirstBottom = on; }
+  // Whether a hierarchical build whose unrefined codelength is already worse than
+  // one module is abandoned instead of refined (#1041, F56). Refinement cannot
+  // pull such a build into the right basin -- it only squeezes it under the
+  // one-level bound (om2 `-d --regularized -N1`: build 9.85 -> refined 7.49 while
+  // the two-level search reaches 6.95; om5 `-d -N1` 7.81 against 6.87) -- so the
+  // trial is left above one-level for InfomapBase's fallback, and the run-level
+  // rescue answers with the two-level search when every trial ended there. At
+  // -N10 this is bit-identical on every benchmark row and removes the doomed
+  // trials' refinement (malaria -16%, air30k -11%, om4 -24% in seconds). The
+  // caller enables it exactly where its one-level fallback applies: not under
+  // the preferred-modules bias, whose unrefined builds all look far above
+  // one-level and whose fallback is off.
+  void setAbandonDoomedBuild(bool on) { m_abandonDoomedBuild = on; }
 
   // Materialize the best hierarchy (m_hier*) as one module-path per leaf, in the
   // shape InfomapBase::initTree expects: coarsest-first (path[0] = top module),
@@ -752,6 +765,7 @@ private:
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
   unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
   bool m_flatFirstBottom = false; // build the bottom with the full two-level pipeline (see setFlatFirstBottom)
+  bool m_abandonDoomedBuild = false; // skip refining a build already worse than one-level (see setAbandonDoomedBuild)
   // True while m_hierLevels' bottom (leaf -> level-1) is the converged two-level
   // optimum produced by completeFlatFromAggregation, rather than a fine-blocks
   // or up-built bottom. The leaf partition is then already at the two-level

@@ -2433,6 +2433,11 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
   } else {
     L = optimizeHierarchical(bottomBlockLimit);
   }
+  // Same verdict as optimizeColumnar's (see setAbandonDoomedBuild): a build
+  // already worse than one module, with no completed flat candidate to beat it,
+  // is handed back unrefined for the fallback and the run-level rescue.
+  if (m_abandonDoomedBuild && !(flatL < L) && L > oneLevelCodelength())
+    return L;
   // A single bottom re-partition within grandparents. refineBottomWithinParents
   // keeps every leaf inside its level-2 grandparent, so the leaf-set per
   // grandparent is invariant; re-running it re-partitions the same leaf-sets
@@ -3162,7 +3167,14 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   m_numTopModules = bestTop;
   m_superAggLimit = bestSuperAgg;
   m_bottomConverged = bestBottomConverged;
-  double bestL = refineHierarchy(bestBuildL, sweepLimit);
+  // A build that starts worse than one module is in the wrong basin; see
+  // setAbandonDoomedBuild. A completed flat candidate (flatL finite) beats it
+  // below anyway, so the abandoned build never reaches the caller in that case.
+  const bool doomed = m_abandonDoomedBuild && bestBuildL > oneLevelCodelength();
+#ifdef COLUMNAR_DEBUG
+  std::fprintf(stderr, "[build] best=%.6f one-level=%.6f ratio=%.4f %s\n", bestBuildL, oneLevelCodelength(), bestBuildL / oneLevelCodelength(), doomed ? "abandoned" : "refine");
+#endif
+  double bestL = doomed ? bestBuildL : refineHierarchy(bestBuildL, sweepLimit);
   // Flat-first trial: the super-build may not pay for itself — keep the flat
   // two-level stack when it beats the refined hierarchy.
   if (flatL < bestL - kMinImprovement) {

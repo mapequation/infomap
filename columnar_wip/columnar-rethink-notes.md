@@ -4635,3 +4635,41 @@ one-level under the regularized prior (om6 and up it is worse than one-level, F4
 intermediate merge on the way to it looks worse than one module. Closing #1042 needs a proposal the
 map equation's own flow does not generate — a research question, not a parity fix — and the row stays
 in the family as the marker of that boundary.
+
+**F56 addendum — two ways to make the rescue cheaper, measured (same day).** Daniel asked for the
+`-N1` cost of the rescue to be weighed rather than accepted. Two candidates on the experiment binary,
+env-gated, arms interleaved, `-N1` rows as min of 3:
+
+- **Seed the rescue's two-level search from the collapsed trial's pass-1 blocks** instead of
+  restarting from singletons — rejected. The seeded pass-1 sweep still runs to convergence and the
+  ladder, fine-tune and deep repair dominate, so no time moved (rescue 0.55 → 0.58 s on om3) while the
+  answer stopped being `-2d -N1`'s: om4 `-d -N1` 6.8617 → **6.9546 (+1.35%)**, om3 +0.013%.
+- **Abandon a build that starts worse than one module** (skip its refinement, let the trial fall to
+  the one-level fallback, let the run-level rescue answer) — shipped, margin 0, gated by the fallback's
+  own predicate. On the 17 healthy `-N10` rows it is bit-identical everywhere and removes the doomed
+  trials' refinement: malaria −16%, air30k −11%, air30k reg −9%, om4 `-d` −24%, science2001 pref −28%
+  in seconds. On the rescue rows at `-N1` it saves 5–26%. And it fires on rows the fallback never
+  reached, because refinement had squeezed the doomed build under one-level without leaving the
+  basin: om2 `-d --regularized -N1` 7.4886 → **6.9501 (−7.19%)**, om5 `-d -N1` 7.8123 → **6.8681
+  (−12.09%)**, air30k `-N1` 5.4704 → 5.3935 (−1.41%), air30k reg `-N1` 5.6579 → 5.5914 (−1.18%). One
+  row goes the other way: **malaria `-N1` 7.4920 → 7.5259 (+0.45%)**, where the refined doomed build
+  (ratio 1.033) beat the flat answer; nothing in the build/one-level ratio separates it from om5
+  (ratio 1.008, flat 12% better), so the rule ships as it is and malaria is the reported regression.
+  Without the gate the preferred-modules objective broke (science2001 pref `-N1` 8.46 → 443 bits):
+  under that bias every unrefined build looks far above "one-level" and the fallback that would catch
+  the abandoned trial is off, so the trial returned its raw build. The gate is the fallback's
+  predicate, `!preferModularSolution && preferredNumberOfModules == 0`.
+
+**Where the `-N1` time goes** (`--timing-json` phases, min of 2), the rows Daniel asked about:
+
+| row | old `-d -N1` | new `-d -N1` | `-2 -N1`, the answer now returned |
+|---|---|---|---|
+| om5 | 0.77 s, 7.8123 (4 levels, wrong basin) | 2.17 s = 0.29 abandoned attempt + 0.59 flat solve + 1.12 deep repair, 6.8681 | 1.90 s = 0.66 + 1.12 repair, 6.8681 |
+| om2 reg | 0.48 s, 7.4886 | 1.02 s = 0.21 + 0.36 + 0.35, 6.9501 | 0.84 s, 6.9501 |
+| air30k reg | 0.49 s, 5.6579 | 0.75 s = 0.24 + 0.32 + 0.05, 5.5914 | 0.57 s, 5.5914 |
+| malaria | 0.37 s, 7.4920 | 0.42 s = 0.13 + 0.19 + 0.02, 7.5259 | 0.33 s, 7.5259 |
+
+The large percentages are against a cheap run that returned a worse answer. Against `-2 -N1` the
+rescued run costs 14–32% more, and that surcharge is the abandoned attempt (pass-1 sweep + two
+up-builds), which cannot be skipped without knowing it is doomed before building it. Half of om5's new
+time is the deep repair every `-2d -N1` pays, worth 5% in bits (om4: 7.2309 → 6.8617).

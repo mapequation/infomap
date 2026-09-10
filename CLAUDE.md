@@ -19,6 +19,10 @@ When working on the new columnar core (wip branch `columnar-hierarchical-core`),
 - **A configuration that appears in more than one table must show the same numbers in all of them.**
   Measure every table's rows in ONE session with ONE instrument; a reader diffing the `-2` table
   against the comparison table must never find two different times for the same run.
+- **Do not rerun the object-oriented (OO) arms when the PR changes nothing that affects the OO
+  engine's results or performance.** The OO rows are the expensive part of a snapshot and they do not
+  move for a columnar-only change; carry them from the previous snapshot's session, say so in the
+  snapshot's opening note, and spend the session on the columnar arms (old and new) instead.
 - **Codelength and time are one trade-off — never report one without the other.** A codelength change
   quoted without the time change on the same rows is meaningless, and vice versa. Every mention of a
   gain / change / drift / regression — with or without a percentage — must make unambiguous from its
