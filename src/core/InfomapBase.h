@@ -941,7 +941,6 @@ protected:
   // index (deterministic and identical across serial and parallel trial
   // modes); the first trial keeps hierarchical-first, so -N1 is unchanged.
   bool m_columnarFlatFirstTrial = false;
-  bool m_columnarFirstTrial = true; // global trial index 0: the trial -N1 returns, no flat-first sibling
 
   double m_oneLevelCodelength = 0.0;
   unsigned long m_baseSeed = 0;

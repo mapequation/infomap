@@ -348,6 +348,38 @@ public:
       if (result.bestTree.empty())
         return;
     }
+    // Run-level rescue (#1041): every trial's hierarchical build ended worse than
+    // one-level and the per-trial fallback replaced each with a single module, so
+    // the run's answer IS the one-level codelength. On the overlapping state
+    // networks the fine-blocks up-build grows in the wrong basin (F42) while the
+    // two-level search on the same seed lands 12-14% below one-level (om3 / om4
+    // `-C -d -N1`: 7.97 / 7.98 against 6.82 / 6.86; every om row `-d --regularized
+    // -N1` the same way). Run that search once, on the first trial's seed -- the
+    // trial -N1 ran -- and keep it when it beats the collapse; the deep repair and
+    // the dissolve below then treat it as any flat winner. After the trial loop,
+    // so it costs nothing when any trial escaped (every -N10 run with a flat-first
+    // trial) and is identical in serial and parallel-trial modes. A --cluster-data
+    // run keeps its own semantics: the input is handed back when nothing beats it.
+    bool rescuedFlat = false;
+    if (!m_infomap.twoLevel && m_infomap.clusterDataFile.empty() && m_infomap.m_columnarOneLevelCodelength >= 0.0
+        && result.bestHierarchicalCodelength >= m_infomap.m_columnarOneLevelCodelength - 1e-10) {
+      auto timer = m_timing.scope("flat_rescue_s");
+      ColumnarTwoLevel opt;
+      // The first trial's engine seed, drawn exactly as columnarPartition draws it,
+      // so the rescue returns what `-2` would have returned for the same --seed.
+      Random rescueRand(trialSeed(0));
+      m_infomap.setupColumnarOptimizer(opt, rescueRand.randInt(0, std::numeric_limits<int>::max()));
+      const double rescued = opt.optimizeTwoLevelStack();
+      if (rescued < result.bestHierarchicalCodelength - 1e-10) {
+        Console::detail(0, "columnar: every trial collapsed to one module ({}); the two-level search reaches {}", io::toPrecision(result.bestHierarchicalCodelength), io::toPrecision(rescued));
+        result.bestTree = opt.toNodePaths(m_infomap.m_leafNodes);
+        result.bestHierarchicalCodelength = rescued;
+        // The repair below gates its fresh split discovery on the winner's own
+        // escalation signal; the winner is now this search, not the collapsed trial.
+        m_infomap.m_columnarRegroupEscalated = m_infomap.m_columnarRegroupEscalated || opt.regroupEscalated();
+        rescuedFlat = true;
+      }
+    }
     // Tree paths carry one slot per module level plus the trailing leaf-rank
     // slot: a two-level (flat) tree has paths of length 2.
     const bool deepWinner = !m_infomap.twoLevel && !isFlatTree(result.bestTree);
@@ -392,7 +424,7 @@ public:
       // Whether the tree in memory IS result.bestTree: the last serial trial won (every
       // -N1 run) and the deep repair above did not change it. Then the pass works on the
       // trial's own stack and splices the tree in place instead of rebuilding either.
-      const bool treeIsMaterialized = !improved && !(m_trialsRun > 1 && (result.bestTreeNeedsRestore || result.bestTrialIndex < m_trialsRun - 1));
+      const bool treeIsMaterialized = !improved && !rescuedFlat && !(m_trialsRun > 1 && (result.bestTreeNeedsRestore || result.bestTrialIndex < m_trialsRun - 1));
       const double beforeDissolve = result.bestHierarchicalCodelength;
       if (m_infomap.dissolveColumnarBest(result.bestTree, result.bestHierarchicalCodelength, treeIsMaterialized)) {
         Console::detail(0, "columnar: dissolving unprofitable levels improved {} -> {}", io::toPrecision(beforeDissolve), io::toPrecision(result.bestHierarchicalCodelength));
@@ -401,7 +433,7 @@ public:
       }
     }
     m_infomap.m_columnarTrialStack.reset(); // the winner's stack has served; free it before output
-    if (!improved)
+    if (!improved && !rescuedFlat)
       return;
     // Materialize the repaired tree and refresh the per-level statistics the
     // summary prints. initTree recomputes a materialized codelength on the
@@ -618,7 +650,6 @@ private:
           worker.m_haveBaseSeed = true;
           worker.reseed(static_cast<unsigned int>(seed));
           worker.m_columnarFlatFirstTrial = ((m_infomap.trialOffset + trialIndex) % 2) == 1;
-          worker.m_columnarFirstTrial = (m_infomap.trialOffset + trialIndex) == 0;
           int threadNumber = 0;
 #ifdef _OPENMP
           threadNumber = omp_get_thread_num();
@@ -1289,7 +1320,6 @@ private:
   {
     seedTrial(trialIndex);
     m_infomap.m_columnarFlatFirstTrial = ((m_infomap.trialOffset + trialIndex) % 2) == 1;
-    m_infomap.m_columnarFirstTrial = (m_infomap.trialOffset + trialIndex) == 0;
     m_infomap.removeModules();
     auto startDate = Date();
     Stopwatch timer(true);
@@ -2977,10 +3007,6 @@ void InfomapBase::columnarPartition()
     Console::detail(2, "columnar: flat-first trial (two-level optimum as the bottom)");
     opt.setFlatFirstBottom(true);
   }
-  // The run's first trial is the one -N1 returns and the only hierarchical-first
-  // trial without a flat-first sibling, so it alone may run the two-level search
-  // instead of collapsing to one module (#1041, see ColumnarTwoLevel::setFlatRescue).
-  opt.setFlatRescue(m_columnarFirstTrial && !twoLevel && !seeded);
 
   // With -2 (--two-level): the two-level search only, no hierarchy build.
   // With -F (--fast-hierarchical-solution, reused here as the columnar fast

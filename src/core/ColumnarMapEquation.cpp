@@ -2455,29 +2455,6 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
   // +14%). With it, -F matches converge on those objectives at a fraction of the
   // cost, and stays unchanged on base networks.
   coarsenModules(L, sweepLimit > 0 ? static_cast<int>(sweepLimit) : 1000);
-  // A refined hierarchy worse than one-level is the fine-blocks up-build having
-  // grown in the wrong basin (#1041: om3 / om4 `-C -d -N1` end at 8.45 / 8.33
-  // against one-level 7.97 / 7.98). Left alone, the one-level fallback in
-  // InfomapBase collapses the trial to a single module, though the two-level
-  // search reaches 6.83 / 6.86 on the same seed. Run that search here and keep
-  // the better stack: the collapse stays the last resort, not the first. Free on
-  // a trial that did not collapse, and never reached from a flat-first trial
-  // that completed its flat pipeline (flatL is finite there). Enabled on the
-  // run's first trial only, see setFlatRescue.
-  if (m_flatRescue && !(flatL < std::numeric_limits<double>::infinity()) && L > oneLevelCodelength()) {
-    std::vector<Level> hierLevels = std::move(m_hierLevels);
-    std::vector<std::vector<int>> hierAssign = std::move(m_hierAssign);
-    const unsigned int hierTop = m_numTopModules;
-    const double rescued = optimizeTwoLevelStack();
-    if (rescued < L - kMinImprovement) {
-      L = rescued;
-      m_bottomConverged = true;
-    } else {
-      m_hierLevels = std::move(hierLevels);
-      m_hierAssign = std::move(hierAssign);
-      m_numTopModules = hierTop;
-    }
-  }
   // Flat-first trial: the super-build may not pay for itself — keep the flat
   // two-level stack when it beats the refined hierarchy.
   if (flatL < L - kMinImprovement) {
@@ -3186,29 +3163,6 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   m_superAggLimit = bestSuperAgg;
   m_bottomConverged = bestBottomConverged;
   double bestL = refineHierarchy(bestBuildL, sweepLimit);
-  // A refined hierarchy worse than one-level is the fine-blocks up-build having
-  // grown in the wrong basin (#1041: om3 / om4 `-C -d -N1` end at 8.45 / 8.33
-  // against one-level 7.97 / 7.98). Left alone, the one-level fallback in
-  // InfomapBase collapses the trial to a single module, though the two-level
-  // search reaches 6.83 / 6.86 on the same seed. Run that search here and keep
-  // the better stack: the collapse stays the last resort, not the first. Free on
-  // a trial that did not collapse, and never reached from a flat-first trial
-  // that completed its flat pipeline (flatL is finite there). Enabled on the
-  // run's first trial only, see setFlatRescue.
-  if (m_flatRescue && !(flatL < std::numeric_limits<double>::infinity()) && bestL > oneLevelCodelength()) {
-    std::vector<Level> hierLevels = std::move(m_hierLevels);
-    std::vector<std::vector<int>> hierAssign = std::move(m_hierAssign);
-    const unsigned int hierTop = m_numTopModules;
-    const double rescued = optimizeTwoLevelStack();
-    if (rescued < bestL - kMinImprovement) {
-      bestL = rescued;
-      m_bottomConverged = true;
-    } else {
-      m_hierLevels = std::move(hierLevels);
-      m_hierAssign = std::move(hierAssign);
-      m_numTopModules = hierTop;
-    }
-  }
   // Flat-first trial: the super-build may not pay for itself — keep the flat
   // two-level stack when it beats the refined hierarchy.
   if (flatL < bestL - kMinImprovement) {

@@ -4603,13 +4603,14 @@ two regimes — it fires on every om row and on none of the healthy rows.
 | always | probe every trial (+ esc) | om4 / om8 `-N1` fixed, but +160% s at `-N1`, air30k +13% s, **malaria +0.11% bits worse**, om7 +0.011% worse |
 | complete | unconditional flat completion every trial | **netsci +0.95%, powergrid +6.4%, science2001 +0.34% bits worse** — the flat-bottom up-builds win the *unrefined* screen and lose after refinement, F21's honest-reference caveat made concrete |
 | esc + rescue-all | plus: a hierarchical trial refined to worse than one-level runs the two-level search before the collapse | om3 / om4 `-d -N1` 7.975 / 7.983 → **6.8235 / 6.8617** (= `-2d -N1`); `-N10` bits identical, **+32% / +35% s** (five rescues per run, each a `-2d` solve the flat-first sibling already covers) |
-| esc + rescue on the first trial only | the rescue where it decides the run: trial index 0, what `-N1` returns and the only hierarchical-first trial without a flat-first sibling | same `-N1` result; `-N10` +11% / +4.5% s on om3 / om4 in single busy-machine runs, snapshot has the interleaved numbers |
+| esc + rescue on the first trial only | the per-trial rescue gated to trial index 0 | same `-N1` result; `-N10` still +11% / +4.5% s on om3 / om4 for identical bits, and the om4 / om6 `-d --regularized -N10` winners moved +0.003% / +0.006% because the rescued trial 1 won the pre-repair selection over a trial whose repair landed lower |
+| **esc + run-level rescue (shipped)** | after the trial loop, only when every trial collapsed to one module: one `optimizeTwoLevelStack()` on the first trial's engine seed, drawn as `columnarPartition` draws it, then the ordinary deep repair | `-N1` returns exactly what `-2d -N1` returns (om4: 7.230911814 → repaired 6.861724654); any run where a trial escaped is untouched in bits and time by construction |
 
 The verification sweep of esc + rescue against the tip (om2–om8 `-d` at `-N1` / `-N10`, om4 / om8
 `-2d`, wikispeedia, air30k plain and regularized, malaria, politicalblogs, netsci, powergrid,
 science2001, ninetriangles, jazz, web-NotreDame `-N1` / `-N10`) is bit-identical everywhere the fix
 does not fire. `-F` shares both changes (`optimizeFlexible`): om4 `-F -N1` 7.991 → 6.8675, science2001
-and om8 `-F -N10` bit-identical. Shipped: esc + first-trial rescue. What this does not do: make `-d`
+and om8 `-F -N10` bit-identical. Shipped: esc + the run-level rescue (`maybeDeepRepairBest`, `flat_rescue_s` in `--timing-json`). What this does not do: make `-d`
 ≥ `-2d` per trial in general — the fine-blocks up-build still grows in the wrong basin on this family
 (F42), the fix only stops the run from losing to it.
 
