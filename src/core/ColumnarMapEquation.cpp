@@ -2398,6 +2398,7 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
     // only when the probe is competitive — then keep the better build and the
     // flat stack as a gated candidate (below).
     const double flatEst = optimizeTwoLevel(0, false);
+    const bool probeEscalated = m_regroupEscalated; // same verdict as in optimizeColumnar
     std::vector<int> flatAggTop = m_leafTop;
     const int flatAggK = static_cast<int>(m_numTopModules);
     m_leafTop = m_leafBlocks;
@@ -2407,7 +2408,7 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
         fineK = b + 1;
     m_numTopModules = static_cast<unsigned int>(fineK);
     L = buildHierarchyFromBottom(fineK);
-    const bool complete = flatEst < L * (1.0 + kFlatProbeMargin);
+    const bool complete = probeEscalated || flatEst < L * (1.0 + kFlatProbeMargin);
 #ifdef COLUMNAR_DEBUG
     std::fprintf(stderr, "[flat-first -F] est=%.6f build=%.6f ratio=%.4f %s\n", flatEst, L, flatEst / L, complete ? "complete" : "skip");
 #endif
@@ -2454,6 +2455,29 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
   // +14%). With it, -F matches converge on those objectives at a fraction of the
   // cost, and stays unchanged on base networks.
   coarsenModules(L, sweepLimit > 0 ? static_cast<int>(sweepLimit) : 1000);
+  // A refined hierarchy worse than one-level is the fine-blocks up-build having
+  // grown in the wrong basin (#1041: om3 / om4 `-C -d -N1` end at 8.45 / 8.33
+  // against one-level 7.97 / 7.98). Left alone, the one-level fallback in
+  // InfomapBase collapses the trial to a single module, though the two-level
+  // search reaches 6.83 / 6.86 on the same seed. Run that search here and keep
+  // the better stack: the collapse stays the last resort, not the first. Free on
+  // a trial that did not collapse, and never reached from a flat-first trial
+  // that completed its flat pipeline (flatL is finite there). Enabled on the
+  // run's first trial only, see setFlatRescue.
+  if (m_flatRescue && !(flatL < std::numeric_limits<double>::infinity()) && L > oneLevelCodelength()) {
+    std::vector<Level> hierLevels = std::move(m_hierLevels);
+    std::vector<std::vector<int>> hierAssign = std::move(m_hierAssign);
+    const unsigned int hierTop = m_numTopModules;
+    const double rescued = optimizeTwoLevelStack();
+    if (rescued < L - kMinImprovement) {
+      L = rescued;
+      m_bottomConverged = true;
+    } else {
+      m_hierLevels = std::move(hierLevels);
+      m_hierAssign = std::move(hierAssign);
+      m_numTopModules = hierTop;
+    }
+  }
   // Flat-first trial: the super-build may not pay for itself — keep the flat
   // two-level stack when it beats the refined hierarchy.
   if (flatL < L - kMinImprovement) {
@@ -3063,6 +3087,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   static const unsigned int kSuperAggSettings[] = { 0u, 1u };
 
   double flatEst = std::numeric_limits<double>::infinity();
+  bool probeEscalated = false;
   std::vector<int> flatAggTop;
   int flatAggK = 0;
   if (m_flatFirstBottom) {
@@ -3070,8 +3095,10 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
     // full aggregation only (module-level cost, no leaf fine-tune), and keep
     // the fine-blocks bottom from the same pass-1 (m_leafBlocks) for the
     // regular screen below — no second leaf sweep. The expensive leaf-level
-    // flat pipeline runs after the screen, only when the probe is competitive.
+    // flat pipeline runs after the screen, only when the probe is competitive
+    // or the probe's own regroup ladder escalated (below).
     flatEst = optimizeTwoLevel(0, false);
+    probeEscalated = m_regroupEscalated;
     flatAggTop = m_leafTop;
     flatAggK = static_cast<int>(m_numTopModules);
     m_leafTop = m_leafBlocks;
@@ -3116,7 +3143,17 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   std::vector<Level> flatLevels;
   std::vector<std::vector<int>> flatAssign;
   if (m_flatFirstBottom) {
-    const bool complete = flatEst < bestBuildL * (1.0 + kFlatProbeMargin);
+    // The regroup ladder escalating inside the probe is the detector's own
+    // verdict that this trial sits in the group-hysteresis basin (F42): the
+    // greedy fixpoint is not the objective's optimum, and the fine-blocks
+    // up-build is the same greedy machinery. There the probe is the wrong
+    // instrument for the gate -- on om8 E100000 it undersells the completed
+    // flat pipeline by 3.7% (7.257 against 7.000), because the correction-driven
+    // merge/retune that completion runs is where this family's gain is, the
+    // reverse of the asymmetry the 0.5% margin was calibrated on (F21) -- so
+    // complete regardless of the margin. With a quiet detector the margin
+    // decides as before, so healthy rows are bit-identical (#1041, F56).
+    const bool complete = probeEscalated || flatEst < bestBuildL * (1.0 + kFlatProbeMargin);
 #ifdef COLUMNAR_DEBUG
     std::fprintf(stderr, "[flat-first] est=%.6f build=%.6f ratio=%.4f %s\n", flatEst, bestBuildL, flatEst / bestBuildL, complete ? "complete" : "skip");
 #endif
@@ -3149,6 +3186,29 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   m_superAggLimit = bestSuperAgg;
   m_bottomConverged = bestBottomConverged;
   double bestL = refineHierarchy(bestBuildL, sweepLimit);
+  // A refined hierarchy worse than one-level is the fine-blocks up-build having
+  // grown in the wrong basin (#1041: om3 / om4 `-C -d -N1` end at 8.45 / 8.33
+  // against one-level 7.97 / 7.98). Left alone, the one-level fallback in
+  // InfomapBase collapses the trial to a single module, though the two-level
+  // search reaches 6.83 / 6.86 on the same seed. Run that search here and keep
+  // the better stack: the collapse stays the last resort, not the first. Free on
+  // a trial that did not collapse, and never reached from a flat-first trial
+  // that completed its flat pipeline (flatL is finite there). Enabled on the
+  // run's first trial only, see setFlatRescue.
+  if (m_flatRescue && !(flatL < std::numeric_limits<double>::infinity()) && bestL > oneLevelCodelength()) {
+    std::vector<Level> hierLevels = std::move(m_hierLevels);
+    std::vector<std::vector<int>> hierAssign = std::move(m_hierAssign);
+    const unsigned int hierTop = m_numTopModules;
+    const double rescued = optimizeTwoLevelStack();
+    if (rescued < bestL - kMinImprovement) {
+      bestL = rescued;
+      m_bottomConverged = true;
+    } else {
+      m_hierLevels = std::move(hierLevels);
+      m_hierAssign = std::move(hierAssign);
+      m_numTopModules = hierTop;
+    }
+  }
   // Flat-first trial: the super-build may not pay for itself — keep the flat
   // two-level stack when it beats the refined hierarchy.
   if (flatL < bestL - kMinImprovement) {

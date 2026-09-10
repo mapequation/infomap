@@ -491,6 +491,15 @@ public:
   // this across trials (even-numbered trials flat-first, so -N1 is unchanged)
   // and best-of-N picks per network between the two search directions.
   void setFlatFirstBottom(bool on) { m_flatFirstBottom = on; }
+  // Whether a hierarchical trial whose refined result is worse than one-level
+  // runs the two-level search before InfomapBase's one-level fallback gets to
+  // collapse it (#1041). The caller enables it on the run's first trial only:
+  // every later hierarchical-first trial has a flat-first sibling (the trial
+  // alternation), so a rescue there costs a full two-level solve for a
+  // partition the sibling already offers -- measured +32% / +35% in seconds
+  // on om3 / om4 `-C -d -N10` for identical bits -- while the first trial is
+  // what `-N1` returns and has no sibling at all.
+  void setFlatRescue(bool on) { m_flatRescue = on; }
 
   // Materialize the best hierarchy (m_hier*) as one module-path per leaf, in the
   // shape InfomapBase::initTree expects: coarsest-first (path[0] = top module),
@@ -752,6 +761,7 @@ private:
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
   unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
   bool m_flatFirstBottom = false; // build the bottom with the full two-level pipeline (see setFlatFirstBottom)
+  bool m_flatRescue = true; // two-level search before a one-level collapse (see setFlatRescue)
   // True while m_hierLevels' bottom (leaf -> level-1) is the converged two-level
   // optimum produced by completeFlatFromAggregation, rather than a fine-blocks
   // or up-built bottom. The leaf partition is then already at the two-level

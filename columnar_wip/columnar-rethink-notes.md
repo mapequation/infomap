@@ -4576,3 +4576,61 @@ What the two densities show:
 Bookkeeping: om3 / om7 are added to `bench-dissolve.py`'s family list so the next engine PR's snapshot
 carries them; the E50000 variants of om3–om8 and om2 E100000 are in `benchmark-networks.md` and should
 join the snapshot's regularized rows, since that is the density on which om2 used to fail.
+
+### F56 — #1041 closed at the gate and at the fallback; #1042 is a landscape both engines fail on (2026-09-10)
+
+Throwaway experiment binary at the tip `a02dc105`, `COLUMNAR_DEBUG` plus env-gated variants, never
+committed; the production change is the PR this snapshot belongs to. All `--seed 123`, `MODE=release
+OPENMP=0`, engine `timing.total_s`.
+
+**What `-C -d` does on the family (`[screen]` / `[flat-first]` prints, E100000).** Trial 1 is
+hierarchical-first: the fine-blocks up-build lands at 7.155 / 7.177 (superAgg 0 / 1) on om8 and refines
+to 6.996 (4 levels, 206 top); on om4 it lands at 8.57 / 8.62, refines to 8.327 — worse than one-level
+7.983 — and InfomapBase collapses the trial to one module; om3 the same at 8.447 against 7.975. Trial 2
+is flat-first: on om4 / om3 the probe passes the gate (est / build 0.911 / 0.811) and the completed flat
+stack wins at 6.883 / 6.827; on om8 the probe reads 7.257 against a build of 7.156, ratio 1.014, and
+the 0.5% gate **skips** — although `-2d` on the same seed reaches 7.000, and its trial 1 6.9645 → deep
+repair 6.893. The gate's calibration (F21: refinement gains more than completion, so a generous margin
+only buys false positives) is inverted on this family: completion 7.257 → 7.000 (3.5%), refinement
+7.156 → 7.001 (2.2%). The escalation of the probe's own regroup ladder is the signal that separates the
+two regimes — it fires on every om row and on none of the healthy rows.
+
+**Arms, one experiment binary, 20 rows, arms interleaved per row:**
+
+| arm | what | effect |
+|---|---|---|
+| esc | complete the flat pipeline when the probe's ladder escalated | om8 `-d -N10` 6.959413622 → **6.887234466** (= `-2d`); every other row bit-identical, times within noise |
+| always | probe every trial (+ esc) | om4 / om8 `-N1` fixed, but +160% s at `-N1`, air30k +13% s, **malaria +0.11% bits worse**, om7 +0.011% worse |
+| complete | unconditional flat completion every trial | **netsci +0.95%, powergrid +6.4%, science2001 +0.34% bits worse** — the flat-bottom up-builds win the *unrefined* screen and lose after refinement, F21's honest-reference caveat made concrete |
+| esc + rescue-all | plus: a hierarchical trial refined to worse than one-level runs the two-level search before the collapse | om3 / om4 `-d -N1` 7.975 / 7.983 → **6.8235 / 6.8617** (= `-2d -N1`); `-N10` bits identical, **+32% / +35% s** (five rescues per run, each a `-2d` solve the flat-first sibling already covers) |
+| esc + rescue on the first trial only | the rescue where it decides the run: trial index 0, what `-N1` returns and the only hierarchical-first trial without a flat-first sibling | same `-N1` result; `-N10` +11% / +4.5% s on om3 / om4 in single busy-machine runs, snapshot has the interleaved numbers |
+
+The verification sweep of esc + rescue against the tip (om2–om8 `-d` at `-N1` / `-N10`, om4 / om8
+`-2d`, wikispeedia, air30k plain and regularized, malaria, politicalblogs, netsci, powergrid,
+science2001, ninetriangles, jazz, web-NotreDame `-N1` / `-N10`) is bit-identical everywhere the fix
+does not fire. `-F` shares both changes (`optimizeFlexible`): om4 `-F -N1` 7.991 → 6.8675, science2001
+and om8 `-F -N10` bit-identical. Shipped: esc + first-trial rescue. What this does not do: make `-d`
+≥ `-2d` per trial in general — the fine-blocks up-build still grows in the wrong basin on this family
+(F42), the fix only stops the run from losing to it.
+
+**#1042 — om5 E100000 `-2d --regularized`, traced rung by rung.** The aggregation from singletons
+converges at **8.6098 with 88 modules, worse than one-level (7.9896)**; the leaf fine-tune takes it to
+8.5965 and the coarsen/retune interleave to 7.9700 — one module holding 99% of the states and 87
+crumbs. The detector's rung 0 regroups the 88 units into 42 at 7.9927 (accept → escalate); the
+escalated ladder from the 9104 pass-1 blocks offers 714 groups (9.104, one leaf sweep 8.886, reject)
+and 42 groups (8.627, reject), and stops. Four variants, none reaches the basin: keeping the detector's
+42-group win instead of rolling it back — its fine-tune ends *above* one-level and the trial collapses
+to 7.9896; judging every escalated rung by a leaf fine-tune to convergence — the 20-group proposals
+converge at 8.48; link-only index rates (`COL_TELE_INDEX_RATE=0`) and a probe with teleportation
+switched off — different groupings (124 / 42, 724 / 61 / 20), same 7.9675 at `-N10`. NMI against the
+planted cover: final partition 0.017, aggregation optimum 0.023, the 42-group rung 0.003. **The
+proposals are unrelated to the planted structure — a proposal problem, not a gate problem.**
+
+**And it is not a columnar problem.** The object-oriented engine on the same row, `-2d --regularized
+--seed 123`: **7.989613065 = one-level on 3 of 3 trials** (10 s each), where the columnar search at
+least holds 7.9675; OO soft-seeded from the planted partition 7.745 against columnar's 7.735. Both
+engines' greedy search lives in the giant-module basin; at om5 the planted structure is only 2.5% below
+one-level under the regularized prior (om6 and up it is worse than one-level, F47 / F55), so every
+intermediate merge on the way to it looks worse than one module. Closing #1042 needs a proposal the
+map equation's own flow does not generate — a research question, not a parity fix — and the row stays
+in the family as the marker of that boundary.

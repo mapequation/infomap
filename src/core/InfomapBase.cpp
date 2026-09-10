@@ -618,6 +618,7 @@ private:
           worker.m_haveBaseSeed = true;
           worker.reseed(static_cast<unsigned int>(seed));
           worker.m_columnarFlatFirstTrial = ((m_infomap.trialOffset + trialIndex) % 2) == 1;
+          worker.m_columnarFirstTrial = (m_infomap.trialOffset + trialIndex) == 0;
           int threadNumber = 0;
 #ifdef _OPENMP
           threadNumber = omp_get_thread_num();
@@ -1288,6 +1289,7 @@ private:
   {
     seedTrial(trialIndex);
     m_infomap.m_columnarFlatFirstTrial = ((m_infomap.trialOffset + trialIndex) % 2) == 1;
+    m_infomap.m_columnarFirstTrial = (m_infomap.trialOffset + trialIndex) == 0;
     m_infomap.removeModules();
     auto startDate = Date();
     Stopwatch timer(true);
@@ -2975,6 +2977,10 @@ void InfomapBase::columnarPartition()
     Console::detail(2, "columnar: flat-first trial (two-level optimum as the bottom)");
     opt.setFlatFirstBottom(true);
   }
+  // The run's first trial is the one -N1 returns and the only hierarchical-first
+  // trial without a flat-first sibling, so it alone may run the two-level search
+  // instead of collapsing to one module (#1041, see ColumnarTwoLevel::setFlatRescue).
+  opt.setFlatRescue(m_columnarFirstTrial && !twoLevel && !seeded);
 
   // With -2 (--two-level): the two-level search only, no hierarchy build.
   // With -F (--fast-hierarchical-solution, reused here as the columnar fast
