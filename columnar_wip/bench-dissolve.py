@@ -49,9 +49,11 @@ BASE = [
 ]
 OM = [
     ("om2", "E50000"),
+    ("om3", "E100000"),
     ("om4", "E100000"),
     ("om5", "E100000"),
     ("om6", "E100000"),
+    ("om7", "E100000"),
     ("om8", "E100000"),
 ]
 WIKI = "/Users/daniel/dev/projects/icelab/code/networks/examples/wikispeedia_states.net"
