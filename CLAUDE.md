@@ -73,12 +73,35 @@ make test-native MODE=release OPENMP=0
 make test-native MODE=release OPENMP=1 FEATURES="lossy-map-equation regularized-multilayer"
 git commit                      # then refresh the perf snapshot, then open the PR
 gh pr create --base columnar-hierarchical-core --head sync-master-into-columnar
+git fetch origin                                                 # BOTH must pass, or the push is not a ff
+git merge-base --is-ancestor origin/columnar-hierarchical-core sync-master-into-columnar
+git merge-base --is-ancestor origin/master sync-master-into-columnar
 git push origin origin/sync-master-into-columnar:columnar-hierarchical-core   # land: fast-forward
 ```
 
 Land it with that **fast-forward push**, not `gh pr merge`: GitHub marks the PR merged once its head is
 reachable from the base, and both merge modes this repo allows would flatten master out of the branch,
 breaking the "master is an ancestor" property the next sync depends on.
+
+**"Fast-forward" is a precondition, and only half of it is enforced.** A sync runs for hours — three
+test configurations plus a full perf snapshot — and both of its ends can move inside that window.
+Assert both invariants against freshly fetched refs *immediately* before landing, as above, because
+they fail in very different ways (checked on #1073, where the branch advanced `090d9ab9` → `0de361f8`
+and master `7c20b6a9` → `aaaab137` while the sweep ran):
+
+- **`origin/columnar-hierarchical-core` contained in the head** — git enforces this one: the push is
+  refused as `! [rejected] (non-fast-forward)`, verified in a throwaway repo, so nothing is lost. But
+  it fails at the *last* step, after the tests and the snapshot are done, which is the expensive place
+  to learn it. Check it early and you merge and re-measure on purpose instead of in a hurry.
+- **`origin/master` an ancestor of the head** — nothing enforces this one, and it is the reason to
+  check. If master advances and the head has not picked it up, the push is still a perfectly legal
+  fast-forward *of the branch ref*, so it succeeds: it lands a sync that silently leaves master commits
+  behind, makes the "master is an ancestor" property false, and gives the next sync a baseline boundary
+  that is not where it claims to be.
+
+If either assertion fails, **merge the moved ref in** (never rebase, per above), re-run the tests, and
+re-assert. If the new commits touch no `src/`, a clean rebuild reproducing the measured md5 is enough
+to keep the snapshot — say so in it rather than quietly reusing the numbers.
 
 ### What the GitHub API allows here (checked, not assumed)
 `allow_merge_commit: false`, `allow_squash_merge: true`, `allow_rebase_merge: true`,
