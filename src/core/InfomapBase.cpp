@@ -3009,8 +3009,13 @@ void InfomapBase::columnarPartition()
   }
   // Abandon a hierarchical build that starts worse than one module (#1041, F56),
   // exactly where the one-level fallback below applies -- the same predicate, so a
-  // biased objective (preferred number of modules, prefer-modular) keeps refining.
-  opt.setAbandonDoomedBuild(!twoLevel && !seeded && !preferModularSolution && preferredNumberOfModules == 0);
+  // biased objective (preferred number of modules, prefer-modular) keeps refining --
+  // and only when the run has a flat-first sibling trial to fall back on
+  // (numTrials > 1: trial 2 is flat-first). The single trial of a -N1 run has no
+  // sibling, and abandoning it would force the run-level rescue's two-level answer
+  // even where refining the build wins (malaria -C -N1: refined 7.4920 against 7.5259
+  // flat) or a hierarchy on top of it would (air30k); measured in the F56 addendum.
+  opt.setAbandonDoomedBuild(!twoLevel && !seeded && numTrials > 1 && !preferModularSolution && preferredNumberOfModules == 0);
 
   // With -2 (--two-level): the two-level search only, no hierarchy build.
   // With -F (--fast-hierarchical-solution, reused here as the columnar fast

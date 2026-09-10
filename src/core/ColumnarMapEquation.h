@@ -500,9 +500,11 @@ public:
   // rescue answers with the two-level search when every trial ended there. At
   // -N10 this is bit-identical on every benchmark row and removes the doomed
   // trials' refinement (malaria -16%, air30k -11%, om4 -24% in seconds). The
-  // caller enables it exactly where its one-level fallback applies: not under
+  // caller enables it exactly where its one-level fallback applies -- not under
   // the preferred-modules bias, whose unrefined builds all look far above
-  // one-level and whose fallback is off.
+  // one-level and whose fallback is off -- and only in runs with more than one
+  // trial, where the flat-first sibling supplies the flat answer for free; the
+  // lone trial of a -N1 run is refined as before (F56 addendum).
   void setAbandonDoomedBuild(bool on) { m_abandonDoomedBuild = on; }
 
   // Materialize the best hierarchy (m_hier*) as one module-path per leaf, in the

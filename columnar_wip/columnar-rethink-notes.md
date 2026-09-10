@@ -4673,3 +4673,21 @@ The large percentages are against a cheap run that returned a worse answer. Agai
 rescued run costs 14–32% more, and that surcharge is the abandoned attempt (pass-1 sweep + two
 up-builds), which cannot be skipped without knowing it is doomed before building it. Half of om5's new
 time is the deep repair every `-2d -N1` pays, worth 5% in bits (om4: 7.2309 → 6.8617).
+
+**F56 second addendum — the abandonment needs a sibling (same day).** Daniel rejected two of the
+abandon rule's `-N1` outcomes: malaria `-C -N1` 7.4920 → 7.5259 (+0.45%, +10% s) and air30k `-N1`
+5.4704 → 5.3935 / reg 5.6579 → 5.5914 — better bits, but a two-level answer where the old run had a
+3-level hierarchy, at +75% / +47% s. The mechanism is the alternation itself: abandoning a doomed build
+is free exactly when a flat-first sibling trial supplies the flat answer (every `-N10` row is
+bit-identical and 13–46% cheaper in instructions), and the single hierarchical-first trial of a `-N1`
+run has no sibling, so abandoning it forces the run-level rescue's flat answer even where refining the
+build wins. The rule is therefore gated on `numTrials > 1` (trial 2 is flat-first): at `-N1` every row is
+back to the old refined-build behaviour except the genuine collapses (om3 / om4 plain and `-F`, the
+seven `-d --regularized` rows), which the run-level rescue still turns into the `-2d -N1` answer. Given
+up with it: om5 `-d -N1` −12.1% and om2 `-d --regularized -N1` −7.2%, both of which came from forcing
+the collapse. Re-checked on the final binary: malaria / air30k / air30k reg / web-NotreDame `-N1`
+bit-identical to old at the old time, om4 `-d -N10` −23%, malaria `-N10` −17% in seconds. The
+principled successor — abandon on the regroup *detector's* verdict for the doomed build's own
+partition, which separates the om family (escalates) from malaria / air30k (quiet) without a trial
+count — needs the detector lifted out of `optimizeTwoLevel`'s ladder closure, and is left for the
+#1042 work where that closure is being touched anyway.
