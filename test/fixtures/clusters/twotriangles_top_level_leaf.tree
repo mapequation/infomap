@@ -1,0 +1,14 @@
+# path flow name node_id
+# A BARE top-level row (`2 0.15 "A" 1`) next to three-level branches. The row names a
+# top-level slot without saying what is in it; the reader completes it to `2:1`, so node
+# A is alone in top module 2. See completeTopLevelLeafPaths (#1067).
+#
+# NOT a shape Infomap writes -- its writer gives a one-node top module a full path, and
+# the one-level fallback puts every leaf at depth 1 -- so this arises only from
+# hand-written or third-party cluster files, which is what the fixture pins.
+1:1:1 0.3 "C" 3
+1:1:2 0.2 "B" 2
+1:2:1 0.15 "D" 4
+1:2:2 0.1 "E" 5
+1:2:3 0.1 "F" 6
+2 0.15 "A" 1

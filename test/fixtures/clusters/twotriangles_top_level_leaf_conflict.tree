@@ -1,0 +1,11 @@
+# path flow name node_id
+# A bare top-level row whose module ALSO has a sub-module (`2` and `2:1:1` share top-level
+# id 2). Completing the bare row to `2:1` puts a leaf and a sub-module under module 2,
+# which is the shape validateClusterDataTreeShape rejects (#898). Before #1067 the bare
+# row was invisible to that check.
+1:1:1 0.3 "C" 3
+1:1:2 0.2 "B" 2
+2 0.15 "A" 1
+2:1:1 0.15 "D" 4
+2:1:2 0.1 "E" 5
+2:1:3 0.1 "F" 6
