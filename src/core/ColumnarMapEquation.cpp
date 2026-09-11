@@ -2398,6 +2398,7 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
     // only when the probe is competitive — then keep the better build and the
     // flat stack as a gated candidate (below).
     const double flatEst = optimizeTwoLevel(0, false);
+    const bool probeEscalated = m_regroupEscalated; // same verdict as in optimizeColumnar
     std::vector<int> flatAggTop = m_leafTop;
     const int flatAggK = static_cast<int>(m_numTopModules);
     m_leafTop = m_leafBlocks;
@@ -2407,7 +2408,7 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
         fineK = b + 1;
     m_numTopModules = static_cast<unsigned int>(fineK);
     L = buildHierarchyFromBottom(fineK);
-    const bool complete = flatEst < L * (1.0 + kFlatProbeMargin);
+    const bool complete = probeEscalated || flatEst < L * (1.0 + kFlatProbeMargin);
 #ifdef COLUMNAR_DEBUG
     std::fprintf(stderr, "[flat-first -F] est=%.6f build=%.6f ratio=%.4f %s\n", flatEst, L, flatEst / L, complete ? "complete" : "skip");
 #endif
@@ -2432,6 +2433,11 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
   } else {
     L = optimizeHierarchical(bottomBlockLimit);
   }
+  // Same verdict as optimizeColumnar's (see setAbandonDoomedBuild): a build
+  // already worse than one module, with no completed flat candidate to beat it,
+  // is handed back unrefined for the fallback and the run-level rescue.
+  if (m_abandonDoomedBuild && !(flatL < L) && L > oneLevelCodelength())
+    return L;
   // A single bottom re-partition within grandparents. refineBottomWithinParents
   // keeps every leaf inside its level-2 grandparent, so the leaf-set per
   // grandparent is invariant; re-running it re-partitions the same leaf-sets
@@ -3063,6 +3069,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   static const unsigned int kSuperAggSettings[] = { 0u, 1u };
 
   double flatEst = std::numeric_limits<double>::infinity();
+  bool probeEscalated = false;
   std::vector<int> flatAggTop;
   int flatAggK = 0;
   if (m_flatFirstBottom) {
@@ -3070,8 +3077,10 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
     // full aggregation only (module-level cost, no leaf fine-tune), and keep
     // the fine-blocks bottom from the same pass-1 (m_leafBlocks) for the
     // regular screen below — no second leaf sweep. The expensive leaf-level
-    // flat pipeline runs after the screen, only when the probe is competitive.
+    // flat pipeline runs after the screen, only when the probe is competitive
+    // or the probe's own regroup ladder escalated (below).
     flatEst = optimizeTwoLevel(0, false);
+    probeEscalated = m_regroupEscalated;
     flatAggTop = m_leafTop;
     flatAggK = static_cast<int>(m_numTopModules);
     m_leafTop = m_leafBlocks;
@@ -3116,7 +3125,17 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   std::vector<Level> flatLevels;
   std::vector<std::vector<int>> flatAssign;
   if (m_flatFirstBottom) {
-    const bool complete = flatEst < bestBuildL * (1.0 + kFlatProbeMargin);
+    // The regroup ladder escalating inside the probe is the detector's own
+    // verdict that this trial sits in the group-hysteresis basin (F42): the
+    // greedy fixpoint is not the objective's optimum, and the fine-blocks
+    // up-build is the same greedy machinery. There the probe is the wrong
+    // instrument for the gate -- on om8 E100000 it undersells the completed
+    // flat pipeline by 3.7% (7.257 against 7.000), because the correction-driven
+    // merge/retune that completion runs is where this family's gain is, the
+    // reverse of the asymmetry the 0.5% margin was calibrated on (F21) -- so
+    // complete regardless of the margin. With a quiet detector the margin
+    // decides as before, so healthy rows are bit-identical (#1041, F56).
+    const bool complete = probeEscalated || flatEst < bestBuildL * (1.0 + kFlatProbeMargin);
 #ifdef COLUMNAR_DEBUG
     std::fprintf(stderr, "[flat-first] est=%.6f build=%.6f ratio=%.4f %s\n", flatEst, bestBuildL, flatEst / bestBuildL, complete ? "complete" : "skip");
 #endif
@@ -3148,7 +3167,14 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   m_numTopModules = bestTop;
   m_superAggLimit = bestSuperAgg;
   m_bottomConverged = bestBottomConverged;
-  double bestL = refineHierarchy(bestBuildL, sweepLimit);
+  // A build that starts worse than one module is in the wrong basin; see
+  // setAbandonDoomedBuild. A completed flat candidate (flatL finite) beats it
+  // below anyway, so the abandoned build never reaches the caller in that case.
+  const bool doomed = m_abandonDoomedBuild && bestBuildL > oneLevelCodelength();
+#ifdef COLUMNAR_DEBUG
+  std::fprintf(stderr, "[build] best=%.6f one-level=%.6f ratio=%.4f %s\n", bestBuildL, oneLevelCodelength(), bestBuildL / oneLevelCodelength(), doomed ? "abandoned" : "refine");
+#endif
+  double bestL = doomed ? bestBuildL : refineHierarchy(bestBuildL, sweepLimit);
   // Flat-first trial: the super-build may not pay for itself — keep the flat
   // two-level stack when it beats the refined hierarchy.
   if (flatL < bestL - kMinImprovement) {
