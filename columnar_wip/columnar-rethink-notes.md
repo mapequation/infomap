@@ -4691,3 +4691,29 @@ principled successor — abandon on the regroup *detector's* verdict for the doo
 partition, which separates the om family (escalates) from malaria / air30k (quiet) without a trial
 count — needs the detector lifted out of `optimizeTwoLevel`'s ladder closure, and is left for the
 #1042 work where that closure is being touched anyway.
+
+**F56 third addendum — where a rescued `-N1` run's time goes, and why one trial can beat ten
+(2026-09-11).** Daniel read two things off the snapshot: om4 `-d -N1` 6.8617 in 2.16 s against `-d -N10`
+6.8669 in 6.22 s (one trial better than ten, at a third of ten trials' time but three times a trial's),
+and om5 `-d --regularized -N1` 3.41 s against 0.79 s per trial at `-N10`. Phase timings
+(`--timing-json`, loaded machine, so read the shares not the seconds):
+
+| run | trials | rescue (flat solve) | deep repair | result |
+|---|--:|--:|--:|--:|
+| om4 `-d -N1` | 0.85 (the collapsed hierarchical attempt) | 0.76 | 1.09 | 7.2309 → **6.8617** |
+| om4 `-2d -N1` | 0.74 | — | 1.10 | 7.2309 → 6.8617 |
+| om4 `-d -N10` | 6.71 (5 abandoned at ~0.33, 5 flat-first at ~0.98) | — | 0.82 | 6.8798 → 6.8669 |
+| om5 reg `-d -N1` | 1.08 (collapsed attempt) | 0.48 | **2.78** | 7.96999 → 7.966995 |
+| om5 reg `-2d -N1` | 0.52 | — | 2.88 | same |
+| om5 reg `-d -N10` | 5.84 | — | 3.89 | 7.96957 → 7.965010 |
+
+So a rescued `-N1` run costs exactly `-2d -N1` plus the failed hierarchical attempt (20–30% of it), and
+`-2d -N1`'s cost is dominated by the once-per-run deep repair with fresh discovery: 1.1 s for −5.1% on
+om4 (worth it), 2.8 s for −0.04% on om5 regularized (not). At `-N10` the same repair is paid once for
+ten trials, which is why the per-trial mean looks cheap. The `-N1 < -N10` inversion is the two-level
+pipeline's own: the winner is selected by *pre-repair* codelength and only it is repaired, and the
+coarse 7.2309 partition repairs to 6.8617 while the finer 6.8798 winner repairs to 6.8669 — identical
+in `-2d -N1` / `-2d -N10`, untouched by this PR, filed as **#1083** with the cost side (stop the fresh
+discovery when its first round buys less than it costs). Both levers — a repair that earns its cost,
+and a winner chosen after repair — belong to the `-2` pipeline and would lower every `-2 -N1` row, not
+only the rescued ones.

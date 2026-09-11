@@ -69,11 +69,15 @@ Every configuration where old and new differ in bits, both arms. Every move is o
   one-level (F55): the completed flat candidates tie the hierarchical answer instead of beating it, so
   the work does not pay here; the removed refinement of the abandoned builds roughly cancels it in
   wall time.
-- **Two wall-time outliers on flat instruction counts, re-measured interleaved after the session (two
-  reps each):** air30k (reg.) `-C -2 -N10` read +40.0% wall on +0.27% instr — re-measured old 4.12 /
-  4.16 s, new 4.24 / 4.06 s, 41.23G both; powergrid `-C -N10` read +10.3% on +0.23% — re-measured
-  0.245 / 0.244 s against 0.251 / 0.244 s, 2.80G against 2.81G. Both are the session's load (1-minute
-  load 5–23), not the change.
+- **Two wall-time outliers on flat instruction counts.** air30k (reg.) `-C -2 -N10` read +40% wall on
+  +0.27% instr in the session's single run (5.56 s against 3.97 s); two more interleaved reps were
+  appended afterwards on a machine at 1-minute load 14–17 (old 4.87 / 4.65 s, new 4.68 / 5.52 s,
+  41.4–41.5G both arms) and the table now shows the minimum of the three, +17.7% wall on +0.27%
+  instr; a quiet-machine interleaved check earlier read old 4.12 / 4.16 s against new 4.24 / 4.06 s.
+  powergrid `-C -N10` read +10.3% wall on +0.23% instr and stays there under the added reps (0.245 s
+  against 0.273 s, 2.80G against 2.81G). Instructions are the instrument on a loaded machine (F-notes
+  convention); both rows run untouched code — the `-C -2` table is bit-identical throughout — and both
+  are load, not the change.
 - **Every other cell with new wall above old** (politicalblogs +3%, multilayer +3%, netsci `-2` +5%,
   web-NotreDame `-2` +3%, om3 E50000 `-2d` +2%, ninetriangles / netsci `-N1` +3–6%, om5 E50000 / om7
   `-2d --regularized -N10` +2%) **sits on an instruction delta below 1%**, the noise floor of this
@@ -242,7 +246,7 @@ row is bit-identical; the time column is the session's noise floor.
 <tr><td align="right">multilayer (ex.)</td><td align="right">2.011405238</td><td align="right">0.001s</td><td align="right">0.1G</td><td align="right">2</td><td align="right">2</td><td align="right">2.011405238 (=)</td><td align="right">0.001s (-9.0%)</td><td align="right">0.1G (-9.13%)</td><td align="right">2</td><td align="right">2</td></tr>
 <tr><td align="right">malaria</td><td align="right">7.400445378</td><td align="right">2.69s</td><td align="right">32.3G</td><td align="right">168</td><td align="right">2</td><td align="right">7.400445378 (=)</td><td align="right">2.69s (-0.1%)</td><td align="right">32.3G (-0.00%)</td><td align="right">168</td><td align="right">2</td></tr>
 <tr><td align="right">air30k</td><td align="right">5.393055049</td><td align="right">4.08s</td><td align="right">41.9G</td><td align="right">334</td><td align="right">2</td><td align="right">5.393055049 (=)</td><td align="right">3.90s (-4.5%)</td><td align="right">41.9G (-0.03%)</td><td align="right">334</td><td align="right">2</td></tr>
-<tr><td align="right">air30k (reg.)</td><td align="right">5.571539329</td><td align="right">3.97s</td><td align="right">41.2G</td><td align="right">304</td><td align="right">2</td><td align="right">5.571539329 (=)</td><td align="right">5.56s (+40.0%)</td><td align="right">41.3G (+0.27%)</td><td align="right">304</td><td align="right">2</td></tr>
+<tr><td align="right">air30k (reg.)</td><td align="right">5.571539329</td><td align="right">3.97s</td><td align="right">41.2G</td><td align="right">304</td><td align="right">2</td><td align="right">5.571539329 (=)</td><td align="right">4.68s (+17.7%)</td><td align="right">41.3G (+0.27%)</td><td align="right">304</td><td align="right">2</td></tr>
 <tr><td align="right">air30k (meta)</td><td align="right">7.424143707</td><td align="right">10.4s</td><td align="right">104.7G</td><td align="right">2237</td><td align="right">2</td><td align="right">7.424143707 (=)</td><td align="right">10.3s (-0.7%)</td><td align="right">104.7G (+0.00%)</td><td align="right">2237</td><td align="right">2</td></tr>
 <tr><td align="right">science2001 (pref.)</td><td align="right">8.235585529</td><td align="right">3.08s</td><td align="right">31.6G</td><td align="right">25</td><td align="right">2</td><td align="right">8.235585529 (=)</td><td align="right">3.08s (-0.0%)</td><td align="right">31.6G (-0.02%)</td><td align="right">25</td><td align="right">2</td></tr>
 <tr><td align="right">overlapping om2 `-2d`</td><td align="right">6.739271968</td><td align="right">3.96s</td><td align="right">39.8G</td><td align="right">638</td><td align="right">2</td><td align="right">6.739271968 (=)</td><td align="right">3.88s (-2.2%)</td><td align="right">39.8G (-0.02%)</td><td align="right">638</td><td align="right">2</td></tr>
@@ -268,7 +272,11 @@ row is bit-identical; the time column is the session's noise floor.
 Interleaved minimum of 3 per arm. This is where the run-level rescue fires: a `-d -N1` row whose only
 trial collapsed to one module now returns the `-2d -N1` answer, and pays the collapsed hierarchical
 attempt plus that two-level solve and its deep repair. Every other `-N1` row is the old refined build,
-bit-identical (F56 second addendum).
+bit-identical (F56 second addendum). The rescued run therefore costs `-2d -N1` plus the failed attempt
+(20–30% of it), and `-2d -N1` is dominated by the once-per-run deep repair — 1.1 s for −5.1% on om4,
+2.8 s for −0.04% on om5 regularized; that repair, and the pre-repair winner selection that lets om4
+`-N1` (6.8617) beat `-N10` (6.8669) in both `-2d` and `-d`, are the two-level pipeline's own and are
+filed as #1083 (F56 third addendum).
 
 <table>
 <thead>
@@ -577,7 +585,7 @@ air30k (meta) OO is `-N1` (it does not finish `-N10` in budget).
 <tr><td align="right">multilayer (ex.)</td><td align="right">2.011405238</td><td align="right">0.001s</td><td align="right">0.1G</td><td align="right">2</td><td align="right">2</td><td align="right">2.011405238 (=)</td><td align="right">0.001s (-37.3%)</td><td align="right">0.1G (-38.92%)</td><td align="right">2</td><td align="right">2</td></tr>
 <tr><td align="right">malaria</td><td align="right">7.50595639</td><td align="right">6.58s</td><td align="right">55.2G</td><td align="right">142</td><td align="right">2</td><td align="right">7.400445378 (-1.4057%)</td><td align="right">2.69s (-59.1%)</td><td align="right">32.3G (-41.53%)</td><td align="right">168</td><td align="right">2</td></tr>
 <tr><td align="right">air30k</td><td align="right">5.393312779</td><td align="right">4.70s</td><td align="right">43.9G</td><td align="right">332</td><td align="right">2</td><td align="right">5.393055049 (-0.0048%)</td><td align="right">3.90s (-17.0%)</td><td align="right">41.9G (-4.58%)</td><td align="right">334</td><td align="right">2</td></tr>
-<tr><td align="right">air30k (reg.)</td><td align="right">5.579216889</td><td align="right">5.84s</td><td align="right">58.6G</td><td align="right">301</td><td align="right">2</td><td align="right">5.571539329 (-0.1376%)</td><td align="right">5.56s (-4.7%)</td><td align="right">41.3G (-29.46%)</td><td align="right">304</td><td align="right">2</td></tr>
+<tr><td align="right">air30k (reg.)</td><td align="right">5.579216889</td><td align="right">5.84s</td><td align="right">58.6G</td><td align="right">301</td><td align="right">2</td><td align="right">5.571539329 (-0.1376%)</td><td align="right">4.68s (-19.9%)</td><td align="right">41.3G (-29.46%)</td><td align="right">304</td><td align="right">2</td></tr>
 <tr><td align="right">science2001 (pref.)</td><td align="right">8.131110023</td><td align="right">5.04s</td><td align="right">36.7G</td><td align="right">25</td><td align="right">2</td><td align="right">8.235585529 (+1.2849%)</td><td align="right">3.08s (-39.0%)</td><td align="right">31.6G (-14.01%)</td><td align="right">25</td><td align="right">2</td></tr>
 <tr><td align="right">wikispeedia `-2d`</td><td align="right">5.892212121</td><td align="right">1.70s</td><td align="right">17.2G</td><td align="right">184</td><td align="right">2</td><td align="right">5.907904741 (+0.2663%)</td><td align="right">0.658s (-61.3%)</td><td align="right">6.9G (-59.79%)</td><td align="right">199</td><td align="right">2</td></tr>
 </tbody>
