@@ -493,6 +493,89 @@ TEST_CASE("Mixed-depth cluster data is rejected instead of crashing [fast][core]
   }
 }
 
+namespace {
+
+double scoreTreeFixture(const std::string& cluster)
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--no-infomap --cluster-data " + infomap::test::clusterFixturePath(cluster)));
+  im.readInputData(infomap::test::networkFixturePath("twotriangles_flow.net"));
+  im.run();
+  return im.codelength();
+}
+
+} // namespace
+
+TEST_CASE("A bare top-level tree row is a module of one node [fast][core][partition][parser]")
+{
+  // `2 0.15 "A" 1` names a top-level slot without saying what is in it, and its two
+  // readings are different partitions: the root's second child IS the leaf A, or module 2
+  // with the child index left off. The reader completes it to `2:1`, so every spelling of
+  // the partition scores alike and row order cannot matter (#1067).
+  //
+  // Both numbers are the object-oriented scorer's, and their difference is one codebook:
+  // A's flow is 0.15 and all of it crosses the module boundary, so the module of one node
+  // costs (0.15 + 0.15) * H(1/2, 1/2) = 0.3 bits. The root's own codebook is 0.3 bits
+  // either way -- it codes A's slot at rate 0.15 whether that slot is a node visit or a
+  // module entry -- which is why the old leaf-under-the-root reading came out exactly one
+  // codebook cheap at 2.714170945.
+  const double explicitModule = scoreTreeFixture("twotriangles_top_level_leaf_module.tree");
+  CHECK(explicitModule == doctest::Approx(3.014170945).epsilon(1e-9));
+  CHECK(scoreTreeFixture("twotriangles_top_level_leaf.tree") == doctest::Approx(explicitModule).epsilon(1e-12));
+  CHECK(scoreTreeFixture("twotriangles_top_level_leaf_first.tree") == doctest::Approx(explicitModule).epsilon(1e-12));
+
+  // The shape behind the number: the root's children are all modules, whichever row came
+  // first. haveModules() tests the root's FIRST child alone, so a bare row sorting first
+  // used to answer "no modules" for the whole file and score the leaf network instead.
+  for (const auto* fixture : { "twotriangles_top_level_leaf.tree", "twotriangles_top_level_leaf_first.tree" }) {
+    InfomapWrapper im(infomap::test::defaultFlags());
+    im.readInputData(infomap::test::networkFixturePath("twotriangles_flow.net"));
+    im.initNetwork(im.network());
+    im.initPartition(infomap::test::clusterFixturePath(fixture), false, &im.network());
+
+    CHECK(im.numTopModules() == 2);
+    CHECK(im.maxTreeDepth() == 3);
+    for (const auto& child : im.root()) {
+      CHECK_FALSE(child.isLeaf());
+    }
+  }
+}
+
+TEST_CASE("A tree of bare rows only keeps its one module per node [fast][core][partition][parser]")
+{
+  // Completing the paths must not disturb a file that is flat to begin with: initTree
+  // takes its `maxDepth == 2` shortcut for both spellings and reads the top-level id as
+  // the module, so the six one-node modules are the same six either way.
+  CHECK(scoreTreeFixture("twotriangles_all_bare.tree") == doctest::Approx(4.470950594).epsilon(1e-9));
+
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::networkFixturePath("twotriangles_flow.net"));
+  im.initNetwork(im.network());
+  im.initPartition(infomap::test::clusterFixturePath("twotriangles_all_bare.tree"), false, &im.network());
+
+  CHECK(im.numTopModules() == 6);
+  CHECK(im.maxTreeDepth() == 2);
+}
+
+TEST_CASE("A bare top-level row colliding with a sub-module is rejected [fast][core][partition][parser]")
+{
+  // Completing `2` to `2:1` puts a leaf and a sub-module side by side under module 2,
+  // which is the shape that has no defined codelength and is refused (#898). The bare
+  // spelling used to slip past that check by being in no module at all.
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::networkFixturePath("twotriangles_flow.net"));
+  im.initNetwork(im.network());
+
+  try {
+    im.initPartition(infomap::test::clusterFixturePath("twotriangles_top_level_leaf_conflict.tree"), false, &im.network());
+    FAIL("expected a bare row under a module with sub-modules to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    const std::string message(e.what());
+    CHECK(message.find("mixes depths") != std::string::npos);
+    CHECK(message.find("module 2") != std::string::npos);
+  }
+}
+
 TEST_CASE("A two-level search from a deeper tree keeps its top level [fast][core][partition]")
 {
   // --two-level with a deeper cluster tree reported codelength 0 on a tree that still
