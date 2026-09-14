@@ -113,10 +113,14 @@ def _is_package_frame(frame: FrameType) -> bool:
     # dataclasses synthesizes for Options is compiled from a string, and
     # dataclasses.replace() lives in the standard library. A warning
     # attributed to either is invisible even in __main__, since PEP 565's
-    # default filter matches on the module (#915).
+    # default filter matches on the module (#915). The string-compiled
+    # frame is ours only when it runs in this module's globals, which is
+    # what dataclasses gives the functions it builds; a "<string>" frame
+    # from python -c, exec() or compile() is the caller's own and must be
+    # the one the warning names.
     return (
         filename.startswith(_PACKAGE_PREFIX)
-        or filename == "<string>"
+        or (filename == "<string>" and frame.f_globals.get("__name__") == __name__)
         or filename == _DATACLASSES_FILE
     )
 
@@ -314,20 +318,18 @@ def _warn_advanced_tier_kwargs(passed, context):
         default = spec[baseline]
         if passed.get(name, default) != default:
             action, replacement = spec[2], spec[3]
-            # The lead has to follow the action. A keep/alias keyword really does
-            # only leave the signatures, and Options is where it goes. A keyword
-            # classified `remove` leaves the Python surface altogether -- its
-            # replacement is another option, the logging module or the CLI binary,
-            # never Options -- so naming the signatures implied a refuge that does
-            # not exist, and contradicted the `.. deprecated::` note on the same
-            # field in the Options reference (#915).
+            # A keyword classified `remove` leaves the Python surface altogether
+            # -- its replacement is another option, the logging module or the CLI
+            # binary, never Options -- so the signature lead below would name a
+            # refuge that does not exist. Those are announced by the option merge
+            # instead (_warn_removed_overrides), which every route reaches,
+            # including the in-package adapters this frame gate skips (#915).
             if action == "remove":
-                lead = f"'{name}' leaves the Python surface in 3.0. "
-            else:
-                lead = (
-                    f"'{name}' is deprecated on the Infomap() and run() "
-                    "signatures and leaves them in 3.0. "
-                )
+                continue
+            lead = (
+                f"'{name}' is deprecated on the Infomap() and run() "
+                "signatures and leaves them in 3.0. "
+            )
             if action in ("keep", "alias"):
                 guidance = (
                     "Pass it via Options to infomap.run() or "
@@ -350,17 +352,23 @@ _REMOVED_FIELDS = {
 }
 
 
+def _removed_field_message(name, spec):
+    # One sentence for every route a removed field can arrive by --
+    # Options(), a mapping carrier, a bare keyword on any entry point -- and
+    # none of them names the signatures, since Options is not where these
+    # survive either.
+    return f"'{name}' leaves the Python surface in 3.0. " + (spec.replacement or "")
+
+
 def _warn_removed_fields(options):
     # Announce a removed field set to a non-default value on Options itself,
     # as visibly as the same keyword on the Infomap() signature: the migration
     # points every advanced keyword at Options, and for these four that is not
-    # where they survive. The same lead as the signature route, so both routes
-    # read the same sentence and neither names a refuge.
+    # where they survive.
     for name, spec in _REMOVED_FIELDS.items():
         if options[name] != spec.default:
             warnings.warn(
-                f"'{name}' leaves the Python surface in 3.0. "
-                + (spec.replacement or ""),
+                _removed_field_message(name, spec),
                 LEGACY_SURFACE_WARNING,
                 stacklevel=_external_stacklevel(),
             )
@@ -1117,6 +1125,27 @@ def _context_default(name, context):
     return getattr(_OPTION_DEFAULTS, name)
 
 
+def _warn_removed_overrides(overrides, context):
+    """Announce the removed fields among keyword ``overrides`` the caller typed.
+
+    The counterpart of the construction-time check in ``Options.__post_init__``
+    for values that never build an Options of their own: bare keywords on
+    ``Infomap()`` / ``Infomap.run()`` / ``Network.run()`` / ``infomap.run()``
+    and on the in-package adapters (``find_communities`` and friends), which
+    are merged into an existing carrier under ``_internal_construction()``.
+    Measured against the context default, so ``run(silent=True)`` on an
+    instance -- a real choice in the run context, where the no-op default
+    is False -- is announced and ``run(silent=False)`` is not.
+    """
+    for name, spec in _REMOVED_FIELDS.items():
+        if name in overrides and overrides[name] != _context_default(name, context):
+            warnings.warn(
+                _removed_field_message(name, spec),
+                LEGACY_SURFACE_WARNING,
+                stacklevel=_external_stacklevel(),
+            )
+
+
 # The starting point when no options= carrier is supplied: the dataclass
 # defaults, with the run context's no-op flag defaults applied on top (see
 # _RUN_DEFAULT_OVERRIDES).
@@ -1180,9 +1209,11 @@ def _merge_options(base, keyword_overrides, context):
         raise TypeError(
             "options must be an Options instance, a mapping, or None"
         )
-    # The keyword overrides were already announced by
-    # _warn_advanced_tier_kwargs where they were typed; merging them is
-    # plumbing.
+    # The keyword overrides are the caller's typing whichever frame reached
+    # the constructor -- a direct call, or an in-package adapter such as
+    # find_communities() forwarding its caller's kwargs -- so their removed
+    # fields are announced here, once. Merging them is then plumbing.
+    _warn_removed_overrides(keyword_overrides, context)
     with _internal_construction():
         return replace(base, **keyword_overrides)
 

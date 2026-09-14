@@ -379,7 +379,12 @@ class Network(_NetworkWritersMixin):
         run through the stateful :class:`~infomap.Infomap` (constructed with
         ``silent=False``) or pass the input directly to :func:`infomap.run`.
         """
-        from ._options import Options, _construct_args, _internal_construction
+        from ._options import (
+            Options,
+            _construct_args,
+            _internal_construction,
+            _warn_removed_overrides,
+        )
         from ._run import _warn_inert_output_options
         from .result import build_result
 
@@ -410,8 +415,11 @@ class Network(_NetworkWritersMixin):
             if value is not _UNSET
         }
         if common or overrides:
-            # The mapping branch above is the caller's own typing and warns
-            # about a removed field there; merging the overrides is plumbing.
+            # The mapping branch above announces a removed field where it is
+            # converted; bare overrides build no Options of their own, so they
+            # are announced here (run context, like Infomap.run()). Merging
+            # them is then plumbing.
+            _warn_removed_overrides(overrides, "run")
             with _internal_construction():
                 resolved = resolved.replace(**{**common, **overrides})
 

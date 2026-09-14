@@ -25,7 +25,12 @@ import warnings
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any
 
-from ._options import _OPTION_FIELD_NAMES, Options, _internal_construction
+from ._options import (
+    _OPTION_FIELD_NAMES,
+    Options,
+    _internal_construction,
+    _warn_removed_overrides,
+)
 from ._options import _UNSET as _OPTIONS_UNSET
 
 if TYPE_CHECKING:
@@ -552,8 +557,12 @@ def run(
         for name, value in {**overrides, **common}.items()
         if name in _OPTION_FIELD_NAMES
     }
-    facade_kwargs = {name: overrides[name] for name in ("pretty",) if name in overrides}
+    facade_kwargs = {name: resolved[name] for name in ("pretty",) if name in resolved}
     if isinstance(options, Options):
+        # Bare keywords next to an Options instance are the caller's typing and
+        # build no Options of their own, so their removed fields are announced
+        # here; this front door forwards keywords to Options, i.e. init context.
+        _warn_removed_overrides(field_overrides, "init")
         with _internal_construction():
             resolved_options = (
                 options.replace(**field_overrides) if field_overrides else options

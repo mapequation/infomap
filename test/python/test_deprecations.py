@@ -622,7 +622,7 @@ def test_removed_field_warns_once_across_the_internal_merges():
 
 
 @pytest.mark.fast
-def test_removed_field_on_network_run_mapping_warns():
+def test_removed_field_on_network_run_warns_for_mapping_and_bare_keyword():
     from infomap import Network
 
     net = Network().add_links([(0, 1), (1, 2), (2, 0)])
@@ -630,6 +630,85 @@ def test_removed_field_on_network_run_mapping_warns():
         warnings.simplefilter("always")
         net.run(options={"threads": 1, "seed": 1})
     assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+
+    # Network.run() has no signature route: a bare keyword used to slip through
+    # the merge unannounced.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        net.run(threads=1, seed=1)
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+
+
+@pytest.mark.fast
+def test_removed_field_next_to_an_options_instance_warns_once():
+    """run(edges, options=Options(...), threads=1): the instance announced itself
+    already, the bare keyword has not, and the merge must announce exactly it."""
+    options = Options(seed=1)
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        run([(0, 1), (1, 2), (2, 0)], options=options, threads=1)
+    assert [m for m in _pending(records) if "'threads'" in m] == _pending(records)
+    assert len(_pending(records)) == 1
+
+
+@pytest.mark.fast
+def test_removed_field_through_an_in_package_adapter_warns_at_the_caller():
+    """find_communities(g, threads=1) reaches Infomap(**kwargs) from inside the
+    package, where the signature route's frame gate is silent by design; the
+    option merge announces the removed field instead, attributed to the caller."""
+    nx = pytest.importorskip("networkx")
+    from infomap import find_communities
+
+    graph = nx.Graph([(0, 1), (1, 2), (2, 0)])
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        find_communities(graph, threads=1, seed=1)
+    legacy = [r for r in records if issubclass(r.category, LEGACY_SURFACE_WARNING)]
+    assert [str(r.message) for r in legacy if "'threads'" in str(r.message)]
+    assert len(legacy) == 1
+    assert legacy[0].filename == __file__
+
+
+@pytest.mark.fast
+def test_run_context_default_decides_what_counts_as_typed():
+    """On an instance, run(silent=True) is a real choice (the run context's no-op
+    default is False) and is announced; run(silent=False) restates that default
+    and is not. Mirrors the signature route this replaces for removed fields."""
+    im = _two_triangles()
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        im.run(silent=True)
+    assert len([m for m in _pending(records) if "'silent'" in m]) == 1
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        im.run(silent=False)
+    assert _pending(records) == []
+
+
+@pytest.mark.fast
+def test_pretty_in_a_mapping_carrier_still_reaches_the_constructor():
+    """options={"pretty": True} on infomap.run() is not an engine option and must
+    keep its own path to Infomap(), where it emits the typed-parameter warning."""
+    with pytest.warns(TYPED_PARAMETER_WARNING, match="pretty is deprecated"):
+        run([(0, 1), (1, 2), (2, 0)], options={"pretty": True, "seed": 1})
+
+
+@pytest.mark.fast
+def test_removed_field_on_options_is_visible_with_python_dash_c():
+    """python -c compiles the caller's code as a "<string>" frame too, and that
+    one must not be mistaken for the dataclass-synthesized __init__: the warning
+    names the caller's own line 2 rather than overshooting the stack."""
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONWARNINGS"}
+    result = subprocess.run(
+        [sys.executable, "-c", "from infomap import Options\nOptions(threads=4)"],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "LegacySurfaceWarning" in result.stderr, result.stderr
+    assert "<string>:2" in result.stderr, result.stderr
 
 
 @pytest.mark.fast
