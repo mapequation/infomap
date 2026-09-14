@@ -25,10 +25,10 @@ import warnings
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any
 
+from ._options import _OPTION_FIELD_NAMES, Options, _internal_construction
 from ._options import _UNSET as _OPTIONS_UNSET
 
 if TYPE_CHECKING:
-    from ._options import Options
     from .result import Result
 
 
@@ -536,6 +536,36 @@ def run(
 
     resolved = _resolve_options(options, {**overrides, **common})
     _reject_unknown_options(resolved)
+    # One Options for the whole dispatch below, built once at this boundary
+    # (#915). A mapping or bare keywords are the caller's own typing, so a field
+    # the 3.0 policy removes warns here, attributed to their run() line; an
+    # Options instance already announced its fields where it was constructed,
+    # so folding the overrides into it is plumbing. Passing the instance on as
+    # options= keeps every downstream merge internal too, where **resolved used
+    # to re-create it from scratch. Only engine options go on it: ``pretty`` is
+    # a facade-only keyword the constructor announces itself, and the adapter
+    # kwargs (weight, edge_weight, ...) are rejected per input kind below with a
+    # message naming the right constructor, which has to win over Options'
+    # generic unknown-option error.
+    field_overrides = {
+        name: value
+        for name, value in {**overrides, **common}.items()
+        if name in _OPTION_FIELD_NAMES
+    }
+    facade_kwargs = {name: overrides[name] for name in ("pretty",) if name in overrides}
+    if isinstance(options, Options):
+        with _internal_construction():
+            resolved_options = (
+                options.replace(**field_overrides) if field_overrides else options
+            )
+    else:
+        resolved_options = Options(
+            **{
+                name: value
+                for name, value in resolved.items()
+                if name in _OPTION_FIELD_NAMES
+            }
+        )
     # Advanced engine options passed as bare keywords forward to Options (the
     # canonical carrier) without a deprecation on this functional front door;
     # only the giant explicit Infomap()/Infomap.run() signatures are slimmed in
@@ -554,24 +584,30 @@ def run(
     # conveniences that route back through here.
     if isinstance(input, Network):
         return input.run(
-            options=resolved, args=args, initial_partition=initial_partition
+            options=resolved_options,
+            args=args,
+            initial_partition=initial_partition,
+            **facade_kwargs,
         )
     if isinstance(input, Infomap):
         return input.run(
-            options=resolved, args=args, initial_partition=initial_partition
+            options=resolved_options,
+            args=args,
+            initial_partition=initial_partition,
+            **facade_kwargs,
         )
 
     # 2. A network file path.
     if isinstance(input, (str, os.PathLike)):
         _reject_adapter_kwargs("file", user_keys)
-        im = Infomap(args=args, **resolved)
+        im = Infomap(args=args, options=resolved_options, **facade_kwargs)
         im.read_file(input)
         return im.run(initial_partition=initial_partition)
 
     # 3. A networkx graph.
     if _is_networkx_graph(input):
         _reject_adapter_kwargs("networkx", user_keys)
-        im = Infomap(args=args, **resolved)
+        im = Infomap(args=args, options=resolved_options, **facade_kwargs)
         im._add_networkx_graph_impl(input)
         return im.run(
             initial_partition=_partition_to_internal_ids(
@@ -582,7 +618,7 @@ def run(
     # 4. An igraph graph.
     if _is_igraph_graph(input):
         _reject_adapter_kwargs("igraph", user_keys)
-        im = Infomap(args=args, **resolved)
+        im = Infomap(args=args, options=resolved_options, **facade_kwargs)
         im._add_igraph_graph_impl(input)
         return im.run(
             initial_partition=_partition_to_internal_ids(
@@ -593,7 +629,7 @@ def run(
     # 5. A SciPy sparse adjacency matrix.
     if _is_scipy_sparse(input):
         _reject_adapter_kwargs("scipy", user_keys)
-        im = Infomap(args=args, **resolved)
+        im = Infomap(args=args, options=resolved_options, **facade_kwargs)
         im._add_scipy_sparse_matrix_impl(input)
         return im.run(
             initial_partition=_partition_to_internal_ids(
@@ -604,7 +640,7 @@ def run(
     # 6. A (2, E) edge index (ndarray or tensor).
     if _is_edge_index(input):
         _reject_adapter_kwargs("edge_index", user_keys)
-        im = Infomap(args=args, **resolved)
+        im = Infomap(args=args, options=resolved_options, **facade_kwargs)
         im._add_edge_index_impl(input)
         return im.run(
             initial_partition=_partition_to_internal_ids(
@@ -656,7 +692,7 @@ def run(
     # 7. An iterable of (u, v[, w]) links.
     if isinstance(input, Iterable):
         _reject_iterable_adapter_kwargs(user_keys)
-        im = Infomap(args=args, **resolved)
+        im = Infomap(args=args, options=resolved_options, **facade_kwargs)
         im.add_links(input)
         return im.run(initial_partition=initial_partition)
 

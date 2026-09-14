@@ -156,7 +156,14 @@ def test_network_silent_advisory_warns_once_per_instance():
     with pytest.warns(UserWarning, match="silent for its whole lifetime"):
         net.run(options={"silent": False, "num_trials": 1, "seed": 1})
     with warnings.catch_warnings():
-        warnings.simplefilter("error")  # any further warning fails the test
+        warnings.simplefilter("error")  # any further *advisory* fails the test
+        # The legacy tier is a different contract: silent is a field the 3.0
+        # policy removes, so typing it on every call is announced on every call
+        # (deduplicated per call site by the warnings module under default
+        # filters, like any DeprecationWarning). That tier is asserted in
+        # test_deprecations.py; here it is out of scope, and the class is its
+        # own subclass precisely so it can be named alone (#915).
+        warnings.simplefilter("ignore", LEGACY_SURFACE_WARNING)
         net.run(options={"silent": False, "num_trials": 1, "seed": 1})
 
 
