@@ -36904,6 +36904,78 @@ R_swig_Network_addMultilayerNode__SWIG_2 ( SEXP self, SEXP stateId, SEXP layerId
 
 
 SWIGEXPORT SEXP
+R_swig_Network_addMultilayerNode__SWIG_3 ( SEXP self, SEXP stateId, SEXP layerId, SEXP physicalId, SEXP weight, SEXP name, SEXP s_swig_copy)
+{
+  {
+    unsigned int result;
+    infomap::Network *arg1 = 0 ;
+    unsigned int arg2 ;
+    unsigned int arg3 ;
+    unsigned int arg4 ;
+    double arg5 ;
+    std::string arg6 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
+    int val4 ;
+    int ecode4 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Network, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Network_addMultilayerNode" "', argument " "1"" of type '" "infomap::Network *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Network * >(argp1);
+    ecode2 = SWIG_AsVal_int(stateId, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Network_addMultilayerNode" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    ecode3 = SWIG_AsVal_int(layerId, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "Network_addMultilayerNode" "', argument " "3"" of type '" "unsigned int""'");
+    } 
+    arg3 = static_cast< unsigned int >(val3);
+    ecode4 = SWIG_AsVal_int(physicalId, &val4);
+    if (!SWIG_IsOK(ecode4)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "Network_addMultilayerNode" "', argument " "4"" of type '" "unsigned int""'");
+    } 
+    arg4 = static_cast< unsigned int >(val4);
+    arg5 = static_cast< double >(REAL(weight)[0]);
+    {
+      std::string *ptr = (std::string *)0;
+      int res = SWIG_AsPtr_std_string(name, &ptr);
+      if (!SWIG_IsOK(res) || !ptr) {
+        SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "Network_addMultilayerNode" "', argument " "6"" of type '" "std::string""'"); 
+      }
+      arg6 = *ptr;
+      if (SWIG_IsNewObj(res)) delete ptr;
+    }
+    {
+      try {
+        result = (unsigned int)(arg1)->addMultilayerNode(arg2,arg3,arg4,arg5,SWIG_STD_MOVE(arg6));
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_Network_addMultilayerLink__SWIG_0 ( SEXP self, SEXP layer1, SEXP n1, SEXP layer2, SEXP n2, SEXP weight)
 {
   {
@@ -50747,6 +50819,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Network_addMultilayerNode__SWIG_2", (DL_FUNC) &R_swig_Network_addMultilayerNode__SWIG_2, 6},
    {"R_swig_InfomapIterator_calculatePath", (DL_FUNC) &R_swig_InfomapIterator_calculatePath, 2},
    {"R_swig_StateNetwork_sumDegree", (DL_FUNC) &R_swig_StateNetwork_sumDegree, 2},
+   {"R_swig_Network_addMultilayerNode__SWIG_3", (DL_FUNC) &R_swig_Network_addMultilayerNode__SWIG_3, 7},
    {"R_swig_InfomapIterator_begin_inEdge", (DL_FUNC) &R_swig_InfomapIterator_begin_inEdge, 2},
    {"R_swig_InfomapBase_codelengths", (DL_FUNC) &R_swig_InfomapBase_codelengths, 2},
    {"R_swig_Config_printJson_set", (DL_FUNC) &R_swig_Config_printJson_set, 2},

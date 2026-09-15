@@ -1066,6 +1066,31 @@ TEST_CASE("JSON node and state weights must be finite and non-negative [fast][co
   CHECK_FALSE(parses(header + R"("states":[{"id":1,"node":1,"weight":-2.5}],"links":[{"source":1,"target":2}]})"));
 }
 
+TEST_CASE("addMultilayerNode records the state node name it is given [fast][core][network]")
+{
+  // The bindings' multilayer import paths build their state nodes here, not via
+  // addStateNode, so a per-state name from a networkx/igraph graph had nowhere
+  // to go and Result.state_names came back empty for multilayer input (#798).
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  CHECK(network.addMultilayerNode(7u, 1u, 3u, 1.0, "alpha in layer 1") == 7u);
+  CHECK(network.nodes().at(7u).name == "alpha in layer 1");
+  CHECK(network.nodes().at(7u).layerId == 1u);
+  CHECK(network.nodes().at(7u).physicalId == 3u);
+
+  // As with addStateNode, the name is fixed when the node is created: a repeat
+  // for the same (layer, physical node) returns the existing state node and
+  // keeps its name.
+  CHECK(network.addMultilayerNode(7u, 1u, 3u, 1.0, "renamed") == 7u);
+  CHECK(network.nodes().at(7u).name == "alpha in layer 1");
+
+  // The unnamed overload behaves as before.
+  CHECK(network.addMultilayerNode(8u, 2u, 3u, 1.0) == 8u);
+  CHECK(network.nodes().at(8u).name.empty());
+}
+
 TEST_CASE("Matchable multilayer ids reject a physical id that would wrap [fast][core][crash]")
 {
   // The state id is `physId << (ceil(log2(N)) + 1) | layerId`, and only layerId was

@@ -211,11 +211,15 @@ def add_igraph_graph(
     if is_multilayer_network:
         assert layers is not None  # implied by is_multilayer_network (see above)
         for vertex_id in vertices:
+            # The vertex name travels with the state node, as on the
+            # state-network branch below (#798).
+            name = names[vertex_id] if names is not None else None
             infomap.network.add_multilayer_node(
                 vertex_id,
                 layers[vertex_id],
                 phys[vertex_id],
                 1.0,
+                name=name,
             )
     elif is_state_network:
         for vertex_id in vertices:
