@@ -86,6 +86,7 @@ def _run_networkx(
     multilayer_inter_intra_format: bool = True,
     initial_partition: Any = None,
     meta_attribute: str | None = None,
+    options: Any = None,
     **infomap_options: Any,
 ) -> tuple[Any, Any, dict[int, Any]]:
     from .._facade import Infomap
@@ -94,7 +95,11 @@ def _run_networkx(
     # finder does not force silent (a deprecated bare kwarg leaving in 3.0) or
     # no_file_output (redundant: the library surface writes no files without an
     # output directory). Both stay overridable through infomap_options.
-    infomap = Infomap(**infomap_options)
+    # The options= carrier travels as itself rather than flattened into
+    # keywords: an Options instance announced its removed fields where it was
+    # built, and flattening it would present every field as a freshly typed
+    # keyword to the merge, which announces them again (#915).
+    infomap = Infomap(options=options, **infomap_options)
     node_mapping = add_networkx_graph(
         infomap,
         g,
@@ -218,12 +223,11 @@ def find_communities(
     if len(g.nodes) == 0:
         return []
 
-    from .._run import _resolve_options
-
-    # Merge the options= carrier under the caller's bare keyword arguments (bare
-    # kwargs win) and apply the `trials` alias. num_trials is left to the engine
+    # The options= carrier goes through as the base configuration and the
+    # caller's bare keyword arguments override it (Infomap()'s own merge rule),
+    # with the `trials` alias applied on top. num_trials is left to the engine
     # default (1), matching infomap.run().
-    engine_options = _resolve_options(options, infomap_options)
+    engine_options = dict(infomap_options)
     if trials is not None:
         engine_options["num_trials"] = trials
 
@@ -235,6 +239,7 @@ def find_communities(
         multilayer_inter_intra_format=multilayer_inter_intra_format,
         initial_partition=initial_partition,
         meta_attribute=meta_attribute,
+        options=options,
         **engine_options,
     )
 

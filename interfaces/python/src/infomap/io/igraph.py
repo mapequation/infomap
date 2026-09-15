@@ -415,18 +415,21 @@ def find_igraph_communities(
         return clustering
 
     from .._facade import Infomap
-    from .._run import _resolve_options
 
-    # Merge the options= carrier under the caller's bare keyword arguments (bare
-    # kwargs win) and apply the `trials` alias. num_trials is left to the engine
+    # The options= carrier goes through as the base configuration and the
+    # caller's bare keyword arguments override it (Infomap()'s own merge rule),
+    # with the `trials` alias applied on top. num_trials is left to the engine
     # default (1), matching infomap.run(). The engine is quiet by default, so
     # silent is not forced (a deprecated bare kwarg leaving in 3.0); no_file_output
-    # is not forced either (redundant without an output directory).
-    engine_options = _resolve_options(options, infomap_options)
+    # is not forced either (redundant without an output directory). The carrier
+    # is not flattened into keywords: an Options instance announced its removed
+    # fields where it was built, and flattened fields would be announced again
+    # by the merge as if freshly typed (#915).
+    engine_options = dict(infomap_options)
     if trials is not None:
         engine_options["num_trials"] = trials
 
-    infomap = Infomap(**engine_options)
+    infomap = Infomap(options=options, **engine_options)
     node_mapping = add_igraph_graph(
         infomap,
         g,

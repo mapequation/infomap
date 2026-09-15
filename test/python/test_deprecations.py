@@ -670,6 +670,58 @@ def test_removed_field_through_an_in_package_adapter_warns_at_the_caller():
 
 
 @pytest.mark.fast
+def test_options_carrier_through_the_adapters_is_not_re_announced():
+    """find_communities(g, options=Options(threads=1)) and the legacy
+    from_options / run_with_options used to flatten the carrier into keywords,
+    so every field reached the merge as if freshly typed and the removed field
+    was announced a second time. The carrier now travels as itself."""
+    nx = pytest.importorskip("networkx")
+    from infomap import find_communities
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        options = Options(threads=1, seed=1)
+    assert len(_pending(records)) == 1
+
+    graph = nx.Graph([(0, 1), (1, 2), (2, 0)])
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        find_communities(graph, options=options)
+        # A bare keyword next to the carrier is still announced, once.
+        find_communities(graph, options=options, print_config_fingerprint=True)
+    assert _pending(records) == [
+        m for m in _pending(records) if "'print_config_fingerprint'" in m
+    ]
+    assert len(_pending(records)) == 1
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        im = Infomap.from_options(options)
+        im.add_link(0, 1)
+        im.run_with_options(options)
+    # Only the method deprecations themselves, nothing about the carrier's fields.
+    assert [m for m in _pending(records) if "'threads'" in m] == []
+    assert all(
+        "from_options" in m or "run_with_options" in m for m in _pending(records)
+    )
+
+
+@pytest.mark.fast
+def test_options_carrier_through_the_igraph_finder_is_not_re_announced():
+    ig = pytest.importorskip("igraph")
+    from infomap import find_igraph_communities
+
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        options = Options(threads=1, seed=1)
+    graph = ig.Graph(edges=[(0, 1), (1, 2), (2, 0)])
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        find_igraph_communities(graph, options=options)
+    assert _pending(records) == []
+
+
+@pytest.mark.fast
 def test_run_context_default_decides_what_counts_as_typed():
     """On an instance, run(silent=True) is a real choice (the run context's no-op
     default is False) and is announced; run(silent=False) restates that default
