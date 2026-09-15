@@ -242,6 +242,45 @@ def test_add_networkx_multilayer_graph_uses_name_attribute_for_integer_labels():
     }
 
 
+def test_add_networkx_multilayer_graph_names_mixed_label_types_per_node():
+    # The naming rule is decided per node: a string label is its own name, an
+    # integer label takes its "name" attribute. Read off the first label only,
+    # the rule handed the int to the std::string name parameter (TypeError) or,
+    # in the other order, dropped every string label's name.
+    string_first = [
+        ("alpha@1", {"node_id": "alpha", "layer_id": 1}),
+        (7, {"node_id": "beta", "layer_id": 1, "name": "seven"}),
+    ]
+    for leading_pair in (string_first, list(reversed(string_first))):
+        graph = nx.Graph()
+        graph.add_nodes_from(leading_pair)
+        graph.add_node("alpha@2", node_id="alpha", layer_id=2)
+        graph.add_edge("alpha@1", 7)
+        graph.add_edge("alpha@1", "alpha@2")
+
+        im = infomap.Infomap(num_trials=1, seed=1)
+        mapping = im.add_networkx_graph(graph)  # {state_id: label}
+        result = im.run()
+
+        state_id = {label: sid for sid, label in mapping.items()}
+        assert result.state_names == {
+            state_id["alpha@1"]: "alpha@1",
+            state_id[7]: "seven",
+            state_id["alpha@2"]: "alpha@2",
+        }
+
+
+def test_add_networkx_graph_mixed_labels_keep_string_names_in_either_order():
+    # First-order counterpart: the same per-node rule on plain nodes.
+    for edges in ([(1, "a"), ("a", 2)], [("a", 1), (1, 2)]):
+        graph = nx.Graph(edges)
+        im = infomap.Infomap(num_trials=1, seed=1)
+        mapping = im.add_networkx_graph(graph)
+        result = im.run()
+        node_id = {label: nid for nid, label in mapping.items()}
+        assert result.names.get(node_id["a"]) == "a"
+
+
 # -- error / edge paths (parity with test_scipy.py / test_igraph.py) -----------
 
 

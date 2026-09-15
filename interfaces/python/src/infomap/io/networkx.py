@@ -25,6 +25,15 @@ def _label_to_internal_id(labels):
     return {label: index for index, label in enumerate(labels)}
 
 
+def _state_label_name(label, attribute_name):
+    # Decided per node, not from the first label of the graph: a string label
+    # is the name, any other label type (an int, a tuple, ...) is not and the
+    # "name" attribute stands in. Labels may be mixed -- _label_to_internal_id
+    # enumerates [1, "a"] -- and a graph-wide rule read off the first label
+    # would hand an int to the std::string name parameter for the rest.
+    return label if isinstance(label, str) else attribute_name
+
+
 def _stable_unique_labels(labels):
     unique = []
     seen = set()
@@ -281,17 +290,14 @@ def add_networkx_graph(
     forwarded to ``add_link`` (their weights accumulate in the engine), and
     self-loops (``g.add_edge(n, n)``) are passed through to ``add_link`` as-is.
     """
-    try:
-        nodes = list(g.nodes)
-        first = nodes[0]
-    except IndexError:
+    nodes = list(g.nodes)
+    if not nodes:
         return {}
 
     if g.is_directed():
         infomap._core.note_inferred_flow_model("directed")
 
     node_map = _label_to_internal_id(nodes)
-    is_string_id = isinstance(first, str)
     node_ids = dict(g.nodes.data(node_id))
     layer_ids = dict(g.nodes.data(layer_id))
     is_state_network = None not in node_ids.values()
@@ -317,10 +323,9 @@ def add_networkx_graph(
                 infomap.set_name(label, f"{label}")
 
         if is_multilayer_network:
-            # Same naming rule as the state-network branch below: a string
-            # label is the name, otherwise the "name" attribute if any (#798).
+            # Same naming rule as the state-network branch below (#798).
             for state_label, data in g.nodes.data():
-                node_name = state_label if is_string_id else data.get("name")
+                node_name = _state_label_name(state_label, data.get("name"))
                 infomap.network.add_multilayer_node(
                     node_map[state_label],
                     data[layer_id],
@@ -330,7 +335,7 @@ def add_networkx_graph(
                 )
         else:
             for state_label, state_name in g.nodes.data("name"):
-                node_name = state_label if is_string_id else state_name
+                node_name = _state_label_name(state_label, state_name)
                 infomap.add_state_node(
                     node_map[state_label],
                     phys_map[node_ids[state_label]],
@@ -339,7 +344,7 @@ def add_networkx_graph(
     else:
         for node, name in g.nodes.data("name"):
             _node_id = node_map[node]
-            node_name = node if is_string_id else name
+            node_name = _state_label_name(node, name)
             infomap.add_node(_node_id, name=node_name)
 
     if is_multilayer_network:
