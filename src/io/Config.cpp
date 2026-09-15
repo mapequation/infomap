@@ -13,6 +13,7 @@
 #include "ParameterCatalog.h"
 #include "ProgramInterface.h"
 #include "SafeFile.h"
+#include "../utils/Console.h"
 #include "../utils/FileURI.h"
 #include "../utils/Log.h"
 #include "../utils/convert.h"
@@ -343,6 +344,22 @@ namespace {
     Log::init(config.verbosity, config.silent, config.verboseNumberPrecision);
   }
 
+  // --pretty/--no-pretty have been no-ops since pretty console output became the
+  // only rendering (applyRuntimeOutputInteractions), and the 3.0 cleanup removes
+  // the flag from the command line (#756) -- but it never said so on any surface,
+  // so the first notice a script would get was the rejection (#915). One line
+  // where the flag was typed, emitted after logging is initialised so --silent
+  // mutes it like every other warning.
+  void warnAboutDeprecatedNoOps(const Config& config)
+  {
+    for (const auto& option : config.parsedOptions) {
+      if (option.longName == "pretty") {
+        Console::warn(0, "--pretty/--no-pretty is deprecated and has no effect: pretty console output is always on. The flag leaves the command line in 3.0; drop it from your invocation.");
+        return;
+      }
+    }
+  }
+
   // What the flags say about silence, read before anything is parsed.
   //
   // Log visibility comes from the parsed Config, which does not exist yet while
@@ -443,6 +460,7 @@ namespace {
     }
 
     initializeLogging(config);
+    warnAboutDeprecatedNoOps(config);
   }
 
 } // namespace

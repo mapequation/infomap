@@ -189,6 +189,15 @@ OPTION_DEFAULTS <- list(
   max_degree_for_random_moves = 2L
 )
 
+# Options the 3.0 parameter policy removes from the R surface
+# (interfaces/parameters/overrides.json, action `remove`). construct_args()
+# announces one that is set away from its default; options classified
+# `deprecate` carry a note in ?infomap_options only, pending #757.
+REMOVED_OPTIONS <- list(
+  list(name = "print_config_fingerprint", msg = "print_config_fingerprint leaves the infomap R surface in 3.0. A print-and-exit CLI diagnostic; run the infomap binary."),
+  list(name = "threads", msg = "threads leaves the infomap R surface in 3.0. Use num_threads; threads is a redundant alias of the same engine option.")
+)
+
 #' Build a reusable Infomap options list
 #'
 #' Returns a named list with one entry per Infomap CLI option. All
@@ -231,7 +240,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`hide_bipartite_nodes`}{Hide bipartite nodes in output by projecting the solution to primary nodes.}
 #'   \item{`print_all_trials`}{Write each trial to separate output files. Has effect only when --num-trials is greater than 1.}
 #'   \item{`no_overwrite`}{Fail with an output error if any target output file already exists. By default existing files are replaced.}
-#'   \item{`print_config_fingerprint`}{Print the canonical configuration fingerprint and exit.}
+#'   \item{`print_config_fingerprint`}{Print the canonical configuration fingerprint and exit. Deprecated: leaves the R surface in 3.0. A print-and-exit CLI diagnostic; run the infomap binary.}
 #'   \item{`timing_json`}{Write machine-readable run timing JSON to this path. Use - for stdout.}
 #'   \item{`summary_json`}{Write machine-readable final run summary JSON to this path. Use - for stdout.}
 #'   \item{`manifest_json`}{Write a machine-readable run manifest JSON to this path. Use - for stdout.}
@@ -239,8 +248,8 @@ OPTION_DEFAULTS <- list(
 #'   \item{`trial_offset`}{Global index of the first trial this process runs; trial i uses seed = base_seed + (trial_offset + i). Default 0 (single-process behavior).}
 #'   \item{`trial_results`}{Write this shard's per-trial results (codelengths, seeds, best-tree reference, fingerprints) as JSON to this path, for deterministic merging of distributed shard runs into a final solution.}
 #'   \item{`no_final_output`}{Skip writing this process's aggregate best result. Per-trial outputs and --trial-results are still written.}
-#'   \item{`verbosity_level`}{Increase console verbosity. Add more v flags to increase verbosity up to -vvv.}
-#'   \item{`silent`}{Suppress console output.}
+#'   \item{`verbosity_level`}{Increase console verbosity. Add more v flags to increase verbosity up to -vvv. Deprecated in 2.x. Pending the R option-surface decision.}
+#'   \item{`silent`}{Suppress console output. Deprecated in 2.x. Pending the R option-surface decision; the library default is expected to stay quiet.}
 #' }
 #'
 #' Algorithm
@@ -288,7 +297,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`parallel_trials`}{Run independent trials in parallel with OpenMP. --num-trials remains the total number of trials; the number of parallel workers follows the OpenMP thread count (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory scales with the worker count. Nested OpenMP and --inner-parallelization are disabled inside workers.}
 #'   \item{`converge`}{Treat the trial count as a cap and stop early once the best codelength has plateaued (no meaningful improvement over several consecutive trials). Runs trials serially; cannot be combined with parallel trials or distributed sharding. With no explicit trial count, a default cap is used.}
 #'   \item{`num_threads`}{Effective thread budget: 'auto' (resolve from --num-threads > INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset > hardware), or a positive integer. 1 forces fully serial. Governs the recursive partition, parallel trials, and inner parallelization.}
-#'   \item{`threads`}{Alias for --num-threads.}
+#'   \item{`threads`}{Alias for --num-threads. Deprecated: leaves the R surface in 3.0. Use num_threads; threads is a redundant alias of the same engine option.}
 #'   \item{`prefer_modular_solution`}{Prefer a modular solution even when one module gives a lower codelength.}
 #'   \item{`num_random_moves`}{Try this many random moves in each core loop to merge weakly connected nodes.}
 #'   \item{`max_degree_for_random_moves`}{Try random moves only for nodes with degree at most this value.}
@@ -455,6 +464,12 @@ construct_args <- function(args = NULL, opts = NULL) {
       old = "include_self_links",
       msg = "include_self_links is deprecated; use no_self_links = TRUE to exclude self-links."
     )
+  }
+
+  for (removed in REMOVED_OPTIONS) {
+    if (!identical(opts[[removed$name]], OPTION_DEFAULTS[[removed$name]])) {
+      .Deprecated(package = "infomap", old = removed$name, msg = removed$msg)
+    }
   }
 
   parts <- .append_specs(parts, opts, INPUT_OPTIONS)
