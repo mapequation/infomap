@@ -60,6 +60,24 @@ as properties (``result.codelength``) and collections as methods
 (``result.modules()``, ``result.nodes()``, ``result.tree()``). See
 :doc:`/working-with-infomap/results-and-iteration`.
 
+The tree-level selector
+-----------------------
+
+From 2.16 the :class:`Result` readers and ``write_clu`` select a level of the
+hierarchy with ``level`` (``1`` is the top, coarsest level; ``-1`` the bottom)::
+
+    result.modules(level=2)
+    result.to_dataframe(level=-1)
+    result.write_clu("bottom.clu", level=-1)
+
+``depth`` was the selector through 2.15, but the same word is
+:attr:`TreeNode.depth`, a node's distance from the root, so
+``result.nodes(depth=1)`` yielded nodes whose ``.depth`` is ``2``. ``depth``
+and the older ``depth_level`` keep working as aliases through 2.x and emit the
+legacy tier's :class:`DeprecationWarning`; they leave in 3.0. On the same
+grounds :attr:`Result.max_depth` is a deprecated alias of
+:attr:`Result.num_levels`.
+
 Compatibility aliases
 ---------------------
 

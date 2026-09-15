@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 from infomap import Infomap, Result, datasets, run
+from infomap._options import LEGACY_SURFACE_WARNING
 
 
 def _two_triangles() -> Infomap:
@@ -340,18 +341,21 @@ def test_to_dataframe_depth_and_deprecated_aliases_agree(
     im.read_file(str(example_network_path("ninetriangles.net")))
     result = im.run()
 
-    by_depth = result.to_dataframe(columns=["node_id", "module_id"], depth=2)
     by_level = result.to_dataframe(columns=["node_id", "module_id"], level=2)
-    by_depth_level = result.to_dataframe(
-        columns=["node_id", "module_id"], depth_level=2
-    )
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth' is deprecated"):
+        by_depth = result.to_dataframe(columns=["node_id", "module_id"], depth=2)
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level' is deprecated"):
+        by_depth_level = result.to_dataframe(
+            columns=["node_id", "module_id"], depth_level=2
+        )
 
-    assert by_depth.equals(by_level)
-    assert by_depth.equals(by_depth_level)
+    assert by_level.equals(by_depth)
+    assert by_level.equals(by_depth_level)
 
     # Equal values across the primary kwarg and an alias are accepted.
-    both = result.to_dataframe(columns=["node_id"], depth=2, depth_level=2)
-    assert both.equals(result.to_dataframe(columns=["node_id"], depth=2))
+    with pytest.warns(LEGACY_SURFACE_WARNING):
+        both = result.to_dataframe(columns=["node_id"], level=2, depth_level=2)
+    assert both.equals(result.to_dataframe(columns=["node_id"], level=2))
 
 
 def test_to_dataframe_conflicting_depth_aliases_raise(
@@ -363,7 +367,7 @@ def test_to_dataframe_conflicting_depth_aliases_raise(
     im.read_file(str(example_network_path("ninetriangles.net")))
     result = im.run()
 
-    with pytest.raises(ValueError, match="Conflicting values for the tree depth"):
+    with pytest.raises(ValueError, match="Conflicting values for the tree level"):
         result.to_dataframe(depth=1, level=2)
 
 
@@ -384,10 +388,12 @@ def test_to_dataframe_index_true_is_rejected(make_infomap, example_network_path)
     assert result.to_dataframe(index=False).index.name is None
 
 
-def test_to_dataframe_deprecated_aliases_stay_silent(
+def test_level_is_the_canonical_selector_and_the_aliases_announce_themselves(
     make_infomap, example_network_path
 ):
-    # Docs-only deprecation policy: the aliases must not warn at runtime.
+    """#789: `level` selects the tree level everywhere and is silent; `depth`
+    and `depth_level` keep working, announce themselves on the legacy tier
+    (they leave in 3.0), and name the caller's line."""
     pytest.importorskip("pandas")
     import warnings
 
@@ -397,8 +403,37 @@ def test_to_dataframe_deprecated_aliases_stay_silent(
 
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
+        warnings.simplefilter("error", FutureWarning)
+        expected_modules = result.modules(level=2)
+        expected_nodes = [n.node_id for n in result.nodes(level=2)]
+        expected_tree = sum(1 for _ in result.tree(level=2))
+        expected_effective = result.effective_num_modules(level=2)
         result.to_dataframe(level=2)
-        result.to_dataframe(depth_level=2)
+        # Positional stays the level, as before.
+        assert result.modules(2) == expected_modules
+
+    for call in (
+        lambda: result.modules(depth=2),
+        lambda: [n.node_id for n in result.nodes(depth=2)],
+        lambda: sum(1 for _ in result.tree(depth=2)),
+        lambda: result.effective_num_modules(depth=2),
+    ):
+        with warnings.catch_warnings(record=True) as records:
+            warnings.simplefilter("always")
+            call()
+        legacy = [r for r in records if issubclass(r.category, LEGACY_SURFACE_WARNING)]
+        assert len(legacy) == 1, [str(r.message) for r in records]
+        assert "'depth' is deprecated as the level selector" in str(legacy[0].message)
+        assert "level=2" in str(legacy[0].message)
+        assert legacy[0].filename == __file__
+    assert result.modules(depth=2) == expected_modules
+    assert [n.node_id for n in result.nodes(depth=2)] == expected_nodes
+    assert sum(1 for _ in result.tree(depth=2)) == expected_tree
+    assert result.effective_num_modules(depth=2) == expected_effective
+
+    # A node's own depth is a different quantity and keeps its name: the leaves
+    # of the level-2 view sit below the two module levels above them.
+    assert all(n.depth >= 2 for n in result.nodes(level=2))
 
 
 @pytest.mark.fast

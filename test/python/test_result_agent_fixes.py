@@ -68,22 +68,32 @@ def test_stale_result_message_carries_a_remedy():
     assert "its own engine" in message
 
 
-def test_write_clu_depth_alias_matches_depth_level(tmp_path):
+def test_write_clu_level_aliases_match_and_announce_themselves(tmp_path):
+    from infomap._options import LEGACY_SURFACE_WARNING
+
     result = run(datasets.nine_triangles(), num_trials=2, seed=123)
+    by_level = tmp_path / "level.clu"
     by_depth = tmp_path / "depth.clu"
     by_legacy = tmp_path / "legacy.clu"
-    result.write_clu(by_depth, depth=2)
-    result.write_clu(by_legacy, depth_level=2)
-    assert by_depth.read_bytes() == by_legacy.read_bytes()
+    positional = tmp_path / "positional.clu"
+    result.write_clu(by_level, level=2)
+    result.write_clu(positional, False, 2)  # the level stays the third positional
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth' is deprecated"):
+        result.write_clu(by_depth, depth=2)
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level' is deprecated"):
+        result.write_clu(by_legacy, depth_level=2)
+    assert by_level.read_bytes() == by_depth.read_bytes()
+    assert by_level.read_bytes() == by_legacy.read_bytes()
+    assert by_level.read_bytes() == positional.read_bytes()
 
 
-def test_write_clu_depth_overrides_depth_level(tmp_path):
+def test_write_clu_conflicting_level_spellings_raise(tmp_path):
+    # Two spellings with different values used to be resolved silently (depth
+    # won); picking one would hide a migration mistake, so it is an error, as
+    # on to_dataframe.
     result = run(datasets.nine_triangles(), num_trials=2, seed=123)
-    both = tmp_path / "both.clu"
-    only = tmp_path / "only.clu"
-    result.write_clu(both, depth=2, depth_level=1)  # depth wins
-    result.write_clu(only, depth=2)
-    assert both.read_bytes() == only.read_bytes()
+    with pytest.raises(ValueError, match="Conflicting values for the tree level"):
+        result.write_clu(tmp_path / "both.clu", level=2, depth_level=1)
 
 
 def test_result_write_no_extension_message_excludes_net(tmp_path):

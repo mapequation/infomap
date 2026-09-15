@@ -95,7 +95,7 @@ To write the mapequation.org native files in Python, call the writers on the `Re
 
 - `result.write_tree(path)` — `.tree`
 - `result.write_flow_tree(path)` — `.ftree`
-- `result.write_clu(path, depth=1)` — `.clu` at a chosen hierarchy depth
+- `result.write_clu(path, level=1)` — `.clu` at a chosen hierarchy level
 - `network.write_pajek(path)` — Pajek serialization of the input network
 - `network.write_state_network(path)` — the internal state/multilayer network
 

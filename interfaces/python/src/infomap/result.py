@@ -42,6 +42,7 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from ._level import resolve_level
 from ._optional import require_pandas
 from ._results import (
     _DATAFRAME_COLUMN_ALIASES,
@@ -549,12 +550,22 @@ class Result(_ResultWritersMixin):
 
     @property
     def num_levels(self) -> int:
-        """The max depth of the hierarchical tree."""
+        """The number of levels in the hierarchical tree.
+
+        The bottom level is ``result.modules(level=-1)``; ``level`` counts from
+        ``1`` at the top, so ``num_levels`` is also the largest positive
+        ``level`` a reader accepts.
+        """
         return self._num_levels
 
     @property
     def max_depth(self) -> int:
-        """Alias of :attr:`num_levels`."""
+        """Alias of :attr:`num_levels`.
+
+        .. deprecated:: 2.16
+            Use :attr:`num_levels`; the tree is described in levels, and
+            ``depth`` is a node's distance from the root (:attr:`TreeNode.depth`).
+        """
         return self._num_levels
 
     @property
@@ -725,23 +736,33 @@ class Result(_ResultWritersMixin):
 
     # -- collection accessors (§9: methods with defaults) -------------------
 
-    def modules(self, depth: int = 1, *, states: bool = False) -> dict[int, int]:
+    def modules(
+        self,
+        level: int | None = None,
+        *,
+        states: bool = False,
+        depth: int | None = None,
+    ) -> dict[int, int]:
         """Map ``node_id`` (or ``state_id`` when ``states``) to ``module_id``.
 
-        Equivalent to the legacy ``Infomap.get_modules(depth, states)``: for a
-        higher-order (multilayer/memory) network, requesting physical-node
+        Equivalent to the legacy ``Infomap.get_modules(depth_level, states)``:
+        for a higher-order (multilayer/memory) network, requesting physical-node
         modules without ``states`` is ambiguous and raises, mirroring the C++
         ``getModules`` guard.
 
         Parameters
         ----------
-        depth : int, optional
-            The depth in the hierarchical tree of the reported module ids.
+        level : int, optional
+            The level in the hierarchical tree of the reported module ids.
             ``1`` (default) is the top (coarsest) level; ``-1`` the bottom
             (finest) level.
         states : bool, optional
             Key the mapping by ``state_id`` when ``True``, by ``node_id``
             when ``False`` (the default).
+        depth : int, optional
+            .. deprecated:: 2.16
+                Alias of ``level``; leaves in 3.0. (:attr:`TreeNode.depth` is
+                a node's distance from the root, a different quantity.)
 
         Returns
         -------
@@ -763,16 +784,22 @@ class Result(_ResultWritersMixin):
             # shared with the legacy Infomap.get_modules path (_results.py) so
             # both surfaces are byte-identical -- parity tests pin type and text.
             raise InfomapError(_HIGHER_ORDER_MODULES_MESSAGE)
-        snapshot = self._snapshot(depth, states)
+        snapshot = self._snapshot(resolve_level("modules", level, depth), states)
         ids = snapshot.state_id if states else snapshot.node_id
         return dict(zip(ids, snapshot.module_id, strict=True))
 
-    def nodes(self, depth: int = 1, *, states: bool = False) -> Iterator[TreeNode]:
+    def nodes(
+        self,
+        level: int | None = None,
+        *,
+        states: bool = False,
+        depth: int | None = None,
+    ) -> Iterator[TreeNode]:
         """Iterate leaf :class:`TreeNode` views, depth first from the root.
 
         Parameters
         ----------
-        depth : int, optional
+        level : int, optional
             The module level reported by ``node.module_id``. ``1`` (default)
             is the top (coarsest) level; ``-1`` the bottom (finest).
         states : bool, optional
@@ -780,13 +807,17 @@ class Result(_ResultWritersMixin):
             iterate physical nodes, merging state nodes with the same
             ``node_id`` if they are in the same module; the same physical
             node may then appear on different paths in the tree.
+        depth : int, optional
+            .. deprecated:: 2.16
+                Alias of ``level``; leaves in 3.0. Not the yielded
+                ``node.depth``, which is the node's distance from the root.
 
         Yields
         ------
         TreeNode
             An immutable snapshot view per leaf node.
         """
-        snapshot = self._snapshot(depth, states)
+        snapshot = self._snapshot(resolve_level("nodes", level, depth), states)
         names = self._names
         state_names = self._state_names
         for i in range(len(snapshot)):
@@ -807,23 +838,30 @@ class Result(_ResultWritersMixin):
             )
 
     def tree(
-        self, depth: int = 1, *, states: bool = False
+        self,
+        level: int | None = None,
+        *,
+        states: bool = False,
+        depth: int | None = None,
     ) -> Iterator[InfomapIterator | InfomapIteratorPhysical]:
         """Iterate the hierarchical tree, modules and leaf nodes alike, depth
         first from the root.
 
-        Equivalent to the legacy ``Infomap.get_tree(depth, states)``. For a
-        higher-order (multilayer/memory) network the physical tree is used
+        Equivalent to the legacy ``Infomap.get_tree(depth_level, states)``.
+        For a higher-order (multilayer/memory) network the physical tree is used
         unless ``states`` is requested, mirroring the legacy semantics.
 
         Parameters
         ----------
-        depth : int, optional
+        level : int, optional
             The module level reported by ``iterator.module_id``. ``1``
             (default) is the top (coarsest) level; ``-1`` the bottom (finest).
         states : bool, optional
             Iterate over state nodes when ``True``, physical nodes when
             ``False`` (the default).
+        depth : int, optional
+            .. deprecated:: 2.16
+                Alias of ``level``; leaves in 3.0.
 
         Returns
         -------
@@ -833,9 +871,10 @@ class Result(_ResultWritersMixin):
             The iterator is generation-guarded: consuming it after the bound
             engine re-runs raises instead of walking a rebuilt C++ tree.
         """
+        resolved = resolve_level("tree", level, depth)
         self._check_generation()
         return self._guard_iteration(
-            self._tree_iterator(self._engine._core, depth, states)
+            self._tree_iterator(self._engine._core, resolved, states)
         )
 
     def multilevel_modules(self, *, states: bool = False) -> dict[int, tuple[int, ...]]:
@@ -909,19 +948,26 @@ class Result(_ResultWritersMixin):
 
         return self._guard_iteration(_link_items())
 
-    def effective_num_modules(self, depth: int = 1) -> float:
-        """Return the flow-weighted effective number of modules at ``depth``.
+    def effective_num_modules(
+        self, level: int | None = None, *, depth: int | None = None
+    ) -> float:
+        """Return the flow-weighted effective number of modules at ``level``.
 
         Measured as the perplexity of the module flow distribution. Equivalent
-        to the legacy ``Infomap.get_effective_num_modules(depth)``.
+        to the legacy ``Infomap.get_effective_num_modules(depth_level)``.
 
         Parameters
         ----------
-        depth : int, optional
+        level : int, optional
             The module level. ``1`` (default) is the top (coarsest) level;
             ``-1`` the bottom (leaf-module) level.
+        depth : int, optional
+            .. deprecated:: 2.16
+                Alias of ``level``; leaves in 3.0.
         """
-        return self._effective_num_modules_cached(depth)
+        return self._effective_num_modules_cached(
+            resolve_level("effective_num_modules", level, depth)
+        )
 
     def summary(self) -> dict[str, Any]:
         """Return the result's scalar metrics as a plain ``dict``.
@@ -1036,10 +1082,10 @@ class Result(_ResultWritersMixin):
         columns: Sequence[str] | None = None,
         *,
         states: bool = False,
-        depth: int | None = None,
+        level: int | None = None,
         index: str | bool | None = None,
         sort: bool | str | Sequence[str] = False,
-        level: int | None = None,
+        depth: int | None = None,
         depth_level: int | None = None,
     ) -> pandas.DataFrame:
         """Return a pandas DataFrame of the leaf nodes.
@@ -1059,7 +1105,7 @@ class Result(_ResultWritersMixin):
         states : bool, optional
             Use state nodes when ``True`` and physical nodes when ``False``
             (the default).
-        depth : int, optional
+        level : int, optional
             The module level reported by ``module_id``, as in
             :meth:`modules`. ``1`` (default) is the top (coarsest) level;
             ``-1`` the bottom (finest).
@@ -1069,12 +1115,13 @@ class Result(_ResultWritersMixin):
         sort : bool, str, or sequence of str, optional
             Sort by one or more columns. Use ``True`` to sort by
             ``["module_id", "node_id"]`` when available. Default ``False``.
-        level : int, optional
-            .. deprecated:: 2.15
-                Alias for ``depth``.
+        depth : int, optional
+            .. deprecated:: 2.16
+                Alias of ``level``; leaves in 3.0. (The ``"depth"`` column is
+                a node's distance from the root, a different quantity.)
         depth_level : int, optional
             .. deprecated:: 2.15
-                Alias for ``depth``.
+                Alias of ``level``; leaves in 3.0.
 
         Returns
         -------
@@ -1086,27 +1133,12 @@ class Result(_ResultWritersMixin):
         ImportError
             If pandas is not installed.
         ValueError
-            If an unknown column is requested, or if ``depth`` and one of its
+            If an unknown column is requested, or if ``level`` and one of its
             aliases are given conflicting values.
         """
         pandas = require_pandas("the DataFrame accessors")
 
-        supplied = {
-            name: value
-            for name, value in (
-                ("depth", depth),
-                ("level", level),
-                ("depth_level", depth_level),
-            )
-            if value is not None
-        }
-        if len(set(supplied.values())) > 1:
-            raise ValueError(
-                f"Conflicting values for the tree depth: {supplied!r}. "
-                "Pass only `depth` (`level` and `depth_level` are deprecated "
-                "aliases)."
-            )
-        resolved_depth = next(iter(supplied.values()), 1)
+        resolved_level = resolve_level("to_dataframe", level, depth, depth_level)
 
         if columns is None:
             columns = _DEFAULT_TO_DATAFRAME_COLUMNS
@@ -1117,7 +1149,7 @@ class Result(_ResultWritersMixin):
             for column in requested_columns
         ]
 
-        snapshot = self._snapshot(resolved_depth, states)
+        snapshot = self._snapshot(resolved_level, states)
         names = self._names
 
         data = {}
