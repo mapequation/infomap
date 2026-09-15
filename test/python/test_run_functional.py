@@ -504,6 +504,25 @@ def test_network_run_initial_partition_matches_infomap():
 # -- adapter-argument guard (run() configures the engine, not input building) --
 
 
+def test_run_rejects_a_foreign_adapter_kwarg_instead_of_dropping_it():
+    # The boundary keeps only engine fields on the Options it builds; anything
+    # else the caller typed has to be rejected, not dropped -- including an
+    # adapter kwarg of a *different* input kind, which the per-kind guard does
+    # not know, and any adapter kwarg on an already built engine, which takes
+    # none.
+    graph = nx.Graph([(0, 1), (1, 2)])
+    with pytest.raises(TypeError, match="'edge_weight'.*Network.from_edge_index"):
+        infomap.run(graph, edge_weight=[1.0, 1.0])
+    with pytest.raises(TypeError, match="'weight'.*already built Network"):
+        infomap.run(Network().add_links(_LINKS), weight="capacity")
+    im = Infomap(num_trials=1, seed=1)
+    im.add_links(_LINKS)
+    with pytest.raises(TypeError, match="'node_ids'.*already built Infomap"):
+        infomap.run(im, node_ids=[1, 2, 3])
+    with pytest.raises(TypeError, match="'weight'.*already built Network"):
+        infomap.run(Network().add_links(_LINKS), options={"weight": "capacity"})
+
+
 def test_run_rejects_networkx_adapter_kwarg():
     graph = nx.Graph()
     graph.add_edge("a", "b", capacity=5.0)

@@ -25,6 +25,14 @@ def _label_to_internal_id(labels):
     return {label: index for index, label in enumerate(labels)}
 
 
+def _announce_removed_fields(options, infomap_options):
+    from .._options import _warn_removed_overrides
+
+    _warn_removed_overrides(infomap_options, "init")
+    if isinstance(options, Mapping):
+        _warn_removed_overrides(options, "init")
+
+
 def _stable_unique_labels(labels):
     unique = []
     seen = set()
@@ -221,6 +229,11 @@ def find_communities(
         )
 
     if len(g.nodes) == 0:
+        # No engine is built for an empty graph, so the constructor's merge --
+        # which is where a removed field typed here is normally announced --
+        # never runs. Announce it before returning, so the notice does not
+        # depend on the input's size (#915).
+        _announce_removed_fields(options, infomap_options)
         return []
 
     # The options= carrier goes through as the base configuration and the

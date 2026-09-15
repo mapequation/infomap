@@ -406,6 +406,12 @@ def find_igraph_communities(
     if trials is not None and "num_trials" in infomap_options:
         raise ValueError("Pass only one of `trials` and `num_trials`.")
     if g.vcount() == 0:
+        # No engine is built for an empty graph, so the constructor's merge --
+        # where a removed field typed here is normally announced -- never
+        # runs; announce it before returning (#915).
+        from .networkx import _announce_removed_fields
+
+        _announce_removed_fields(options, infomap_options)
         if module_attribute is not None:
             g.vs[module_attribute] = []
         if flow_attribute is not None:

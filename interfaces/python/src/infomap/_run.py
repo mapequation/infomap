@@ -352,6 +352,37 @@ _COMMON_TIER_KEYS = frozenset(
 )
 
 
+def _reject_foreign_adapter_kwargs(target: str, leftover: list) -> None:
+    """Reject adapter kwargs that belong to a *different* input kind.
+
+    ``_reject_unknown_options`` lets every adapter kwarg through so the per-kind
+    guard can name the right constructor, and that guard only knows its own
+    kind. What is left after it -- ``edge_weight`` on a networkx graph, or any
+    adapter kwarg on an already-built Network/Infomap, which takes none -- used
+    to surface as a bare unexpected-keyword TypeError from the constructor; the
+    engine-field filter at the boundary would otherwise drop it silently.
+    """
+    if not leftover:
+        return
+    owners = {
+        name: sorted(
+            ctor for ctor, kwargs in _ADAPTER_KWARGS.values() if name in kwargs
+        )
+        for name in leftover
+    }
+    rendered = ", ".join(
+        f"{name!r} (an argument of {' / '.join(ctors)})" if ctors else repr(name)
+        for name, ctors in owners.items()
+    )
+    verb = "does" if len(leftover) == 1 else "do"
+    raise TypeError(
+        f"infomap.run() got {rendered}, which {verb} not apply to {target}. "
+        "Adapter arguments belong on the Network.from_* constructor of the "
+        "input they configure; engine options are listed by "
+        "inspect.getdoc(infomap.Options)."
+    )
+
+
 def _reject_iterable_adapter_kwargs(user_keys: set) -> None:
     """Reject input-adapter kwargs on a link-iterable / file input.
 
@@ -558,6 +589,14 @@ def run(
         if name in _OPTION_FIELD_NAMES
     }
     facade_kwargs = {name: resolved[name] for name in ("pretty",) if name in resolved}
+    # Everything else that is neither an engine field nor ``pretty`` is an
+    # adapter kwarg; each branch below rejects it, its own kind's first with the
+    # targeted message, so nothing the caller typed is dropped on the floor.
+    leftover = sorted(
+        name
+        for name in resolved
+        if name not in _OPTION_FIELD_NAMES and name != "pretty"
+    )
     # Bare keywords are announced against the context they land in, so this
     # front door agrees with the method it forwards to: on an existing Infomap
     # or Network they are Infomap.run()-style overrides, where the no-op default
@@ -616,6 +655,7 @@ def run(
     # place. These are the surfaces whose own run() methods are thin
     # conveniences that route back through here.
     if isinstance(input, Network):
+        _reject_foreign_adapter_kwargs("an already built Network", leftover)
         return input.run(
             options=resolved_options,
             args=args,
@@ -623,6 +663,7 @@ def run(
             **facade_kwargs,
         )
     if isinstance(input, Infomap):
+        _reject_foreign_adapter_kwargs("an already built Infomap", leftover)
         return input.run(
             options=resolved_options,
             args=args,
@@ -633,6 +674,7 @@ def run(
     # 2. A network file path.
     if isinstance(input, (str, os.PathLike)):
         _reject_adapter_kwargs("file", user_keys)
+        _reject_foreign_adapter_kwargs("a network file", leftover)
         im = Infomap(args=args, options=resolved_options, **facade_kwargs)
         im.read_file(input)
         return im.run(initial_partition=initial_partition)
@@ -640,6 +682,7 @@ def run(
     # 3. A networkx graph.
     if _is_networkx_graph(input):
         _reject_adapter_kwargs("networkx", user_keys)
+        _reject_foreign_adapter_kwargs("a networkx graph", leftover)
         im = Infomap(args=args, options=resolved_options, **facade_kwargs)
         im._add_networkx_graph_impl(input)
         return im.run(
@@ -651,6 +694,7 @@ def run(
     # 4. An igraph graph.
     if _is_igraph_graph(input):
         _reject_adapter_kwargs("igraph", user_keys)
+        _reject_foreign_adapter_kwargs("an igraph graph", leftover)
         im = Infomap(args=args, options=resolved_options, **facade_kwargs)
         im._add_igraph_graph_impl(input)
         return im.run(
@@ -662,6 +706,7 @@ def run(
     # 5. A SciPy sparse adjacency matrix.
     if _is_scipy_sparse(input):
         _reject_adapter_kwargs("scipy", user_keys)
+        _reject_foreign_adapter_kwargs("a scipy sparse matrix", leftover)
         im = Infomap(args=args, options=resolved_options, **facade_kwargs)
         im._add_scipy_sparse_matrix_impl(input)
         return im.run(
@@ -673,6 +718,7 @@ def run(
     # 6. A (2, E) edge index (ndarray or tensor).
     if _is_edge_index(input):
         _reject_adapter_kwargs("edge_index", user_keys)
+        _reject_foreign_adapter_kwargs("an edge index", leftover)
         im = Infomap(args=args, options=resolved_options, **facade_kwargs)
         im._add_edge_index_impl(input)
         return im.run(
@@ -725,6 +771,7 @@ def run(
     # 7. An iterable of (u, v[, w]) links.
     if isinstance(input, Iterable):
         _reject_iterable_adapter_kwargs(user_keys)
+        _reject_foreign_adapter_kwargs("a link iterable", leftover)
         im = Infomap(args=args, options=resolved_options, **facade_kwargs)
         im.add_links(input)
         return im.run(initial_partition=initial_partition)

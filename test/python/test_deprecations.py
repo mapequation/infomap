@@ -707,6 +707,40 @@ def test_options_carrier_through_the_adapters_is_not_re_announced():
 
 
 @pytest.mark.fast
+def test_removed_field_on_an_empty_graph_finder_is_still_announced():
+    """The finders return before building an engine for an empty graph, so the
+    constructor's merge never sees the keyword; the notice must not depend on
+    the input's size."""
+    nx = pytest.importorskip("networkx")
+    from infomap import find_communities
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        assert find_communities(nx.Graph(), threads=4) == []
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        assert find_communities(nx.Graph(), options={"threads": 4}) == []
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        assert find_communities(nx.Graph(), seed=1) == []
+    assert _pending(records) == []
+
+
+@pytest.mark.fast
+def test_removed_field_on_an_empty_igraph_finder_is_still_announced():
+    ig = pytest.importorskip("igraph")
+    from infomap import find_igraph_communities
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        find_igraph_communities(ig.Graph(), threads=4)
+        find_igraph_communities(ig.Graph(), options={"threads": 4})
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 2
+
+
+@pytest.mark.fast
 def test_options_carrier_through_the_igraph_finder_is_not_re_announced():
     ig = pytest.importorskip("igraph")
     from infomap import find_igraph_communities
