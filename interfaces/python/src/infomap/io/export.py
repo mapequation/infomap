@@ -648,13 +648,24 @@ def write_gexf(
 
 
 def annotate_networkx_graph(
-    graph: networkx.Graph, im: Infomap | Result, **kwargs: Any
+    graph: networkx.Graph,
+    im: Infomap | Result,
+    *,
+    node_mapping: Mapping[Any, Any] | None = None,
+    module_attribute: str | None = _DEFAULT_MODULE_ATTRIBUTE,
+    path_attribute: str | None = _DEFAULT_PATH_ATTRIBUTE,
+    include_hierarchy: bool = True,
+    flow_attribute: str | None = None,
+    copy: bool = True,
+    strict: bool = True,
 ) -> networkx.Graph:
     """Deprecated spelling of :func:`annotate_networkx`.
 
+    Same parameters, spelled out so introspection, completion and type
+    checking see them.
+
     .. deprecated:: 2.16
-        Use :func:`annotate_networkx`, which takes the same arguments; this
-        name leaves in 3.0.
+        Use :func:`annotate_networkx`; this name leaves in 3.0.
     """
     warnings.warn(
         "annotate_networkx_graph is deprecated and leaves in 3.0; call "
@@ -662,17 +673,37 @@ def annotate_networkx_graph(
         LEGACY_SURFACE_WARNING,
         stacklevel=_external_stacklevel(),
     )
-    return annotate_networkx(graph, im, **kwargs)
+    return annotate_networkx(
+        graph,
+        im,
+        node_mapping=node_mapping,
+        module_attribute=module_attribute,
+        path_attribute=path_attribute,
+        include_hierarchy=include_hierarchy,
+        flow_attribute=flow_attribute,
+        copy=copy,
+        strict=strict,
+    )
 
 
 def annotate_igraph_graph(
-    graph: igraph.Graph, im: Infomap | Result, **kwargs: Any
+    graph: igraph.Graph,
+    im: Infomap | Result,
+    *,
+    module_attribute: str | None = _DEFAULT_MODULE_ATTRIBUTE,
+    path_attribute: str | None = _DEFAULT_PATH_ATTRIBUTE,
+    include_hierarchy: bool = True,
+    flow_attribute: str | None = None,
+    copy: bool = True,
+    strict: bool = True,
 ) -> igraph.Graph:
     """Deprecated spelling of :func:`annotate_igraph`.
 
+    Same parameters, spelled out so introspection, completion and type
+    checking see them.
+
     .. deprecated:: 2.16
-        Use :func:`annotate_igraph`, which takes the same arguments; this
-        name leaves in 3.0.
+        Use :func:`annotate_igraph`; this name leaves in 3.0.
     """
     warnings.warn(
         "annotate_igraph_graph is deprecated and leaves in 3.0; call "
@@ -680,4 +711,13 @@ def annotate_igraph_graph(
         LEGACY_SURFACE_WARNING,
         stacklevel=_external_stacklevel(),
     )
-    return annotate_igraph(graph, im, **kwargs)
+    return annotate_igraph(
+        graph,
+        im,
+        module_attribute=module_attribute,
+        path_attribute=path_attribute,
+        include_hierarchy=include_hierarchy,
+        flow_attribute=flow_attribute,
+        copy=copy,
+        strict=strict,
+    )
