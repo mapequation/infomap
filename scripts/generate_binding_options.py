@@ -1393,6 +1393,35 @@ def generate_r(catalog: ParameterCatalog) -> str:
         suffix = "," if i + 1 < len(defaults) else ""
         lines.append(f"  {default}{suffix}")
     lines.append(")")
+    # The R side of the 3.0 parameter policy (#915, item 4). `remove` options
+    # are announced at construct_args() with .Deprecated() when set away from
+    # their default; `deprecate` options get a note in ?infomap_options only,
+    # since their removal waits on the R option-surface decision (#757) and a
+    # runtime warning on, say, silent = TRUE would nag every current script.
+    # include_self_links is binding-only and keeps its hand-written stamp above.
+    removed = []
+    for group in GROUPS:
+        for param in grouped[group]:
+            decision = param.policy("r")
+            if decision["action"] == "remove":
+                removed.append((param.name("r"), decision.get("replacement", "")))
+    lines.extend(
+        [
+            "",
+            "# Options the 3.0 parameter policy removes from the R surface",
+            "# (interfaces/parameters/overrides.json, action `remove`). construct_args()",
+            "# announces one that is set away from its default; options classified",
+            "# `deprecate` carry a note in ?infomap_options only, pending #757.",
+            "REMOVED_OPTIONS <- list(",
+        ]
+    )
+    for i, (name, replacement) in enumerate(removed):
+        msg = f"{name} leaves the infomap R surface in 3.0. {replacement}".strip()
+        suffix = "," if i + 1 < len(removed) else ""
+        lines.append(
+            f"  list(name = {json.dumps(name)}, msg = {json.dumps(msg)}){suffix}"
+        )
+    lines.append(")")
     lines.extend(
         [
             "",
@@ -1420,8 +1449,18 @@ def generate_r(catalog: ParameterCatalog) -> str:
             )
         for param in grouped[group]:
             name = param.name("r")
+            decision = param.policy("r")
+            text = param.description
+            # The policy note, in the words the runtime warning uses, so the
+            # reference and the .Deprecated() message never diverge.
+            if decision["action"] == "remove":
+                text += f" Deprecated: leaves the R surface in 3.0. {decision.get('replacement', '')}".rstrip()
+            elif decision["action"] == "deprecate":
+                text += (
+                    f" Deprecated in 2.x. {decision.get('replacement', '')}".rstrip()
+                )
             desc = (
-                param.description.replace("\\", "\\\\")
+                text.replace("\\", "\\\\")
                 .replace("{", "\\{")
                 .replace("}", "\\}")
                 .replace("[", "\\[")
@@ -1593,6 +1632,12 @@ def generate_r(catalog: ParameterCatalog) -> str:
             '      old = "include_self_links",',
             '      msg = "include_self_links is deprecated; use no_self_links = TRUE to exclude self-links."',
             "    )",
+            "  }",
+            "",
+            "  for (removed in REMOVED_OPTIONS) {",
+            "    if (!identical(opts[[removed$name]], OPTION_DEFAULTS[[removed$name]])) {",
+            '      .Deprecated(package = "infomap", old = removed$name, msg = removed$msg)',
+            "    }",
             "  }",
             "",
             "  parts <- .append_specs(parts, opts, INPUT_OPTIONS)",
