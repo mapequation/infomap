@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from .._optional import require_igraph, require_networkx
-from .._options import _external_stacklevel
+from .._options import LEGACY_SURFACE_WARNING, _external_stacklevel
 from ._arrays import require_modules as _require_modules
 
 if TYPE_CHECKING:
@@ -18,7 +18,9 @@ if TYPE_CHECKING:
 
 
 __all__ = [
+    "annotate_igraph",
     "annotate_igraph_graph",
+    "annotate_networkx",
     "annotate_networkx_graph",
     "to_igraph",
     "to_networkx",
@@ -152,7 +154,7 @@ def _resolve_run_source(im_or_result: Any) -> Any:
     return im_or_result
 
 
-def _annotate_networkx_graph(
+def _annotate_networkx(
     graph: Any,
     im: Any,
     *,
@@ -193,7 +195,7 @@ def _annotate_networkx_graph(
     return output_graph
 
 
-def annotate_networkx_graph(
+def annotate_networkx(
     graph: networkx.Graph,
     im: Infomap | Result,
     *,
@@ -247,7 +249,7 @@ def annotate_networkx_graph(
     networkx.Graph
         The annotated graph (a copy when ``copy=True``, otherwise ``graph``).
     """
-    return _annotate_networkx_graph(
+    return _annotate_networkx(
         graph,
         im,
         node_mapping=node_mapping,
@@ -260,7 +262,7 @@ def annotate_networkx_graph(
     )
 
 
-def _annotate_igraph_graph(
+def _annotate_igraph(
     graph: Any,
     im: Any,
     *,
@@ -309,7 +311,7 @@ def _annotate_igraph_graph(
     return output_graph
 
 
-def annotate_igraph_graph(
+def annotate_igraph(
     graph: igraph.Graph,
     im: Infomap | Result,
     *,
@@ -359,7 +361,7 @@ def annotate_igraph_graph(
     igraph.Graph
         The annotated graph (a copy when ``copy=True``, otherwise ``graph``).
     """
-    return _annotate_igraph_graph(
+    return _annotate_igraph(
         graph,
         im,
         module_attribute=module_attribute,
@@ -426,7 +428,7 @@ def to_networkx(
     See Also
     --------
     infomap.Result.to_networkx : The same conversion as a ``Result`` method.
-    annotate_networkx_graph : Annotate an existing graph in place instead
+    annotate_networkx : Annotate an existing graph in place instead
         (string-valued attributes).
     """
     nx = _import_networkx()
@@ -486,7 +488,7 @@ def to_igraph(
     See Also
     --------
     infomap.Result.to_igraph : The same conversion as a ``Result`` method.
-    annotate_igraph_graph : Annotate an existing graph in place instead
+    annotate_igraph : Annotate an existing graph in place instead
         (string-valued attributes).
     """
     ig = _import_igraph()
@@ -553,8 +555,8 @@ def write_graphml(
     path : str or os.PathLike
         Output file path.
     **options
-        Passed through to :func:`annotate_networkx_graph` or
-        :func:`annotate_igraph_graph` (e.g. ``module_attribute``,
+        Passed through to :func:`annotate_networkx` or
+        :func:`annotate_igraph` (e.g. ``module_attribute``,
         ``flow_attribute``, ``strict``). The special key ``writer_options``
         (a dict) is instead passed to the underlying GraphML writer.
 
@@ -566,7 +568,7 @@ def write_graphml(
     if _is_igraph_graph(graph):
         writer_options = {}
         writer_options.update(options.pop("writer_options", {}))
-        annotated_graph = _annotate_igraph_graph(
+        annotated_graph = _annotate_igraph(
             graph,
             im,
             **options,
@@ -577,7 +579,7 @@ def write_graphml(
     nx = _import_networkx()
     writer_options = {}
     writer_options.update(options.pop("writer_options", {}))
-    annotated_graph = _annotate_networkx_graph(
+    annotated_graph = _annotate_networkx(
         graph,
         im,
         **options,
@@ -606,7 +608,7 @@ def write_gexf(
     path : str or os.PathLike
         Output file path.
     **options
-        Passed through to :func:`annotate_networkx_graph` (e.g.
+        Passed through to :func:`annotate_networkx` (e.g.
         ``module_attribute``, ``flow_attribute``, ``strict``). The special
         key ``writer_options`` (a dict) is instead passed to
         ``networkx.write_gexf``.
@@ -632,9 +634,50 @@ def write_gexf(
     nx = _import_networkx()
     writer_options = {}
     writer_options.update(options.pop("writer_options", {}))
-    annotated_graph = _annotate_networkx_graph(
+    annotated_graph = _annotate_networkx(
         graph,
         im,
         **options,
     )
     nx.write_gexf(annotated_graph, path, **writer_options)
+
+
+# The pre-2.16 spellings. ``to_networkx`` / ``from_networkx`` never carried a
+# ``_graph`` suffix, so these two were the odd ones out (#791); they keep
+# working through 2.x and leave in 3.0.
+
+
+def annotate_networkx_graph(
+    graph: networkx.Graph, im: Infomap | Result, **kwargs: Any
+) -> networkx.Graph:
+    """Deprecated spelling of :func:`annotate_networkx`.
+
+    .. deprecated:: 2.16
+        Use :func:`annotate_networkx`, which takes the same arguments; this
+        name leaves in 3.0.
+    """
+    warnings.warn(
+        "annotate_networkx_graph is deprecated and leaves in 3.0; call "
+        "annotate_networkx with the same arguments.",
+        LEGACY_SURFACE_WARNING,
+        stacklevel=_external_stacklevel(),
+    )
+    return annotate_networkx(graph, im, **kwargs)
+
+
+def annotate_igraph_graph(
+    graph: igraph.Graph, im: Infomap | Result, **kwargs: Any
+) -> igraph.Graph:
+    """Deprecated spelling of :func:`annotate_igraph`.
+
+    .. deprecated:: 2.16
+        Use :func:`annotate_igraph`, which takes the same arguments; this
+        name leaves in 3.0.
+    """
+    warnings.warn(
+        "annotate_igraph_graph is deprecated and leaves in 3.0; call "
+        "annotate_igraph with the same arguments.",
+        LEGACY_SURFACE_WARNING,
+        stacklevel=_external_stacklevel(),
+    )
+    return annotate_igraph(graph, im, **kwargs)

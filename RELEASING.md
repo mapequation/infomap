@@ -225,7 +225,9 @@ also hide the warnings a test is there to catch.
   `from_options` / `run_with_options` / `from_scipy_sparse_matrix` /
   `from_edge_index`, the `depth` / `depth_level` spellings of the `level`
   selector on the `Result` readers and `write_clu` together with the
-  `Result.max_depth` alias of `num_levels` (#789, 2.16), and the
+  `Result.max_depth` alias of `num_levels` (#789, 2.16), the
+  `annotate_networkx_graph` / `annotate_igraph_graph` spellings of
+  `annotate_networkx` / `annotate_igraph` (#791, 2.16), and the
   `Options` fields the parameter policy classifies
   `remove` for Python (`threads`, `silent`, `verbosity_level`,
   `print_config_fingerprint`) when one is set on `Options` itself — those leave

@@ -81,6 +81,11 @@ grounds :attr:`Result.max_depth` is a deprecated alias of
 Compatibility aliases
 ---------------------
 
+- ``annotate_networkx_graph`` and ``annotate_igraph_graph`` are the pre-2.16
+  spellings of :func:`infomap.io.export.annotate_networkx` and
+  :func:`infomap.io.export.annotate_igraph` -- the ``_graph`` suffix that
+  ``to_networkx`` / ``from_networkx`` never carried. Same arguments; the long
+  names emit the legacy tier's :class:`DeprecationWarning` and leave in 3.0.
 - ``include_self_links`` is a deprecated alias kept for backward compatibility.
   Infomap includes self-links by default. Pass ``no_self_links=True`` to
   exclude them. Passing ``include_self_links`` explicitly emits a
@@ -92,6 +97,10 @@ Compatibility aliases
 
 Error base classes
 ------------------
+
+:class:`infomap.merge.MergeError` derives from :class:`InfomapError` since 2.16,
+so ``except InfomapError`` catches shard-merge failures too; it derived from
+plain ``Exception`` before. ``except MergeError`` keeps working.
 
 Through 2.x, :class:`InfomapError` inherits :class:`RuntimeError`, and
 :class:`NotRunError` also keeps :class:`ValueError` in its MRO. Pre-taxonomy

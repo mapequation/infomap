@@ -95,6 +95,8 @@ DEPRECATED_ANY_RECEIVER = (
     "add_scipy_sparse_matrix",
     "add_edge_index",
     "run_with_options",
+    "annotate_networkx_graph",
+    "annotate_igraph_graph",
 )
 
 _IM_RECEIVER = re.compile(r"\bim\.(" + "|".join(DEPRECATED_INSTANCE_MEMBERS) + r")\b")

@@ -255,7 +255,7 @@ print("Temp directory removed.")
   result's (state) nodes keyed by `state_id`, so your original graph is left
   untouched: its attributes are *not* carried into the export. Use
   {func}`infomap.find_communities` or
-  {func}`infomap.io.export.annotate_networkx_graph` to annotate your own graph
+  {func}`infomap.io.export.annotate_networkx` to annotate your own graph
   instead.
 
 ## API pointers
@@ -275,7 +275,7 @@ print("Temp directory removed.")
   `nx.write_gexf`.
 - {func}`infomap.to_igraph` builds the same graph as an `igraph.Graph`.
 - {func}`infomap.io.export.write_graphml`, {func}`infomap.io.export.write_gexf`,
-  and {func}`infomap.io.export.annotate_networkx_graph` instead annotate *your
+  and {func}`infomap.io.export.annotate_networkx` instead annotate *your
   own* graph with the partition. They accept either a post-run stateful
   {class}`~infomap.Infomap` or the {class}`~infomap.Result` it returned.
   (`write_gexf` supports NetworkX only.)
