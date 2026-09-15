@@ -212,6 +212,34 @@ namespace {
     unsigned long m_previous;
   };
 
+  // A one-level tree path -- `2 0.15 "A" 1` -- names a top-level slot without saying
+  // what sits in it, and its two readings are different partitions: "the root's second
+  // child IS the leaf A", so A is in no module, or "module 2, with the child index left
+  // off". Read it as the module.
+  //
+  // That is already what the rest of the reader does with the same spelling. A file
+  // whose rows are ALL one level deep never reaches this ambiguity -- initTree's
+  // `maxDepth == 2` shortcut routes it through initPartition, which gives every
+  // top-level id a real module -- and neither does --two-level, which keeps path[0] as
+  // the module id. Only a file that mixes a bare row with a deeper one took the other
+  // reading, and it took it silently and inconsistently: whether it did depended on
+  // which row sorted first, because haveModules() tests the root's first child alone
+  // (#1067). The leaf-under-the-root shape it produced is also one the search never
+  // builds and one Infomap will not accept a level down, where a parent holding a leaf
+  // and a sub-module side by side is rejected outright (#898).
+  //
+  // Only the DEPTH of the path matters here: initTree builds the module chain from
+  // path[0..n-2] and never looks at the last index, so appending 1 says "in module k"
+  // and nothing more. Two bare rows sharing a top-level id therefore land in the same
+  // module, which is what the file says they do.
+  void completeTopLevelLeafPaths(NodePaths& tree)
+  {
+    for (auto& nodePath : tree) {
+      if (nodePath.second.size() == 1)
+        nodePath.second.push_back(1);
+    }
+  }
+
 } // namespace
 
 class InfomapBase::RunSession {
@@ -1567,6 +1595,7 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
   if (allState) {
     for (const auto& tp : tree)
       normalized.emplace_back(tp.nodeId, tp.path);
+    completeTopLevelLeafPaths(normalized);
     return normalized;
   }
 
@@ -1640,6 +1669,7 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
                   numSplitPhysicalNodes == 1 ? "physical node has its" : "physical nodes have their");
   }
 
+  completeTopLevelLeafPaths(normalized);
   return normalized;
 }
 
