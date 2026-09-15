@@ -394,37 +394,37 @@ class Result(_ResultWritersMixin):
         object.__setattr__(self, "_snapshots", {})
 
     @staticmethod
-    def _tree_iterator(core, depth: int, states: bool):
+    def _tree_iterator(core, level: int, states: bool):
         """Mirror :meth:`Infomap.get_tree`: physical tree for higher-order
         networks unless ``states`` is requested."""
         if core.haveMemory() and not states:
-            return core.iterTreePhysical(depth)
-        return core.iterTree(depth)
+            return core.iterTreePhysical(level)
+        return core.iterTree(level)
 
-    def _effective_num_modules_cached(self, depth: int) -> float:
-        """Lazily compute and cache the effective number of modules at ``depth``.
+    def _effective_num_modules_cached(self, level: int) -> float:
+        """Lazily compute and cache the effective number of modules at ``level``.
 
         Each computation walks the result tree, so it is deferred until first
         access and memoized. The generation guard fires only if the bound engine
-        was re-run *before* the first read at this depth; a value read while the
+        was re-run *before* the first read at this level; a value read while the
         Result was fresh stays valid afterwards (snapshot semantics).
         """
         cache = self._effective_cache
-        if depth not in cache:
+        if level not in cache:
             self._check_generation()
-            cache[depth] = self._compute_effective_num_modules(
-                self._engine._core, depth
+            cache[level] = self._compute_effective_num_modules(
+                self._engine._core, level
             )
-        return cache[depth]
+        return cache[level]
 
     @classmethod
-    def _compute_effective_num_modules(cls, core, depth: int) -> float:
+    def _compute_effective_num_modules(cls, core, level: int) -> float:
         """Mirror legacy ``Infomap.get_effective_num_modules`` over ``core``."""
         return perplexity(
             [
                 module.flow
-                for module in cls._tree_iterator(core, depth, False)
-                if (depth == -1 and module.is_leaf_module) or module.depth == depth
+                for module in cls._tree_iterator(core, level, False)
+                if (level == -1 and module.is_leaf_module) or module.depth == level
             ]
         )
 
