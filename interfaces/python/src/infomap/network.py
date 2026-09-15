@@ -641,6 +641,35 @@ class Network(_NetworkWritersMixin):
         self._core.addLink(source_id, target_id, weight)
         return self
 
+    def reserve_links(self, num_links: int) -> Network:
+        """Pre-size the link build buffer for ``num_links`` further links.
+
+        Optional. Links are stored in a buffer that grows by doubling, so
+        building a large network reserves up to twice the memory it needs and
+        copies the buffer on each growth. Telling it the count up front avoids
+        both. Counts from the links already added, so it composes across calls.
+
+        :meth:`add_links` and the NumPy bulk path do this for you from the length
+        of what you pass; call it directly when you add links one at a time with
+        :meth:`add_link` and know the total in advance.
+
+        Parameters
+        ----------
+        num_links : int
+            Number of links about to be added.
+
+        Examples
+        --------
+        >>> from infomap import Network
+        >>> network = Network()
+        >>> network.reserve_links(2)              # doctest: +ELLIPSIS
+        <infomap.network.Network object at ...>
+        >>> _ = network.add_link(1, 2)
+        >>> _ = network.add_link(1, 3)
+        """
+        self._core.reserveLinks(num_links)
+        return self
+
     def add_links(self, links: Any) -> Network:
         """Add several links.
 
