@@ -1009,7 +1009,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         )
         if not isinstance(options, Options):
             raise TypeError("options must be an Options instance")
-        return cls(args=args, **options.to_kwargs())
+        # As the carrier, not flattened: its removed fields were announced where
+        # it was built and must not be re-announced by the merge (#915).
+        return cls(args=args, options=options)
 
     @classmethod
     def from_scipy_sparse_matrix(
@@ -2359,10 +2361,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         )
         if not isinstance(options, Options):
             raise TypeError("options must be an Options instance")
+        # As the carrier, not flattened (see from_options).
         return self.run(
             args=args,
             initial_partition=initial_partition,
-            **options.to_kwargs(),
+            options=options,
         )
 
     @property

@@ -222,12 +222,26 @@ also hide the warnings a test is there to catch.
 - **`LEGACY_SURFACE_WARNING`, a `DeprecationWarning`** — the legacy stateful
   surface: the `Result` accessors mirrored on `Infomap` (`get_modules`,
   `codelength`, …), the advanced-tier keywords on `Infomap()` / `Infomap.run`,
-  and `from_options` / `run_with_options` / `from_scipy_sparse_matrix` /
-  `from_edge_index`. Shown in `__main__` under PEP 565, so `python analysis.py`
-  sees it while a library that merely imports Infomap does not. This tier was
-  `PendingDeprecationWarning` until #915: CPython's default filters ignore that
-  class outright, so the removal window reached nobody and the exit criterion it
-  was supposed to satisfy was self-certifying.
+  `from_options` / `run_with_options` / `from_scipy_sparse_matrix` /
+  `from_edge_index`, and the `Options` fields the parameter policy classifies
+  `remove` for Python (`threads`, `silent`, `verbosity_level`,
+  `print_config_fingerprint`) when one is set on `Options` itself — those leave
+  `Options` too, so the object the migration points at has to say so. Shown in
+  `__main__` under PEP 565, so `python analysis.py` sees it while a library that
+  merely imports Infomap does not. This tier was `PendingDeprecationWarning`
+  until #915: CPython's default filters ignore that class outright, so the
+  removal window reached nobody and the exit criterion it was supposed to
+  satisfy was self-certifying.
+
+  The removed-field warning fires from `Options.__post_init__`, so every place
+  the package builds an `Options` on its own behalf (merging keyword overrides,
+  the run-context base, the rendered-args funnel, folding in an inferred flow
+  model) runs under `_internal_construction()` from `_options.py`. A new
+  internal funnel that constructs an `Options` from values the caller already
+  supplied must do the same, or the caller hears about one field once per
+  plumbing step and `test_no_self_warnings_on_import_construct_run_repr_summary`
+  fails. A caller's mapping or bare keywords are *not* internal: converting
+  them is where their removed fields get announced.
 - **Docs-only, no runtime warning** — the `add_*` build-from-graph adapters
   (`add_networkx_graph`, `add_scipy_sparse_matrix`, `add_edge_index`,
   `add_igraph_graph`). The `.. deprecated::` note is the only signal.
