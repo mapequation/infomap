@@ -558,14 +558,38 @@ def run(
         if name in _OPTION_FIELD_NAMES
     }
     facade_kwargs = {name: resolved[name] for name in ("pretty",) if name in resolved}
+    # Bare keywords are announced against the context they land in, so this
+    # front door agrees with the method it forwards to: on an existing Infomap
+    # or Network they are Infomap.run()-style overrides, where the no-op default
+    # of a flag is False and run(im, silent=True) is the real choice; on a fresh
+    # instance they are Infomap()-style keywords, measured against the dataclass
+    # defaults.
+    on_instance = isinstance(input, (Network, Infomap))
+    context = "run" if on_instance else "init"
     if isinstance(options, Options):
-        # Bare keywords next to an Options instance are the caller's typing and
-        # build no Options of their own, so their removed fields are announced
-        # here; this front door forwards keywords to Options, i.e. init context.
-        _warn_removed_overrides(field_overrides, "init")
+        # The instance announced its own fields where it was constructed; the
+        # bare keywords next to it build no Options of their own and are
+        # announced here.
+        _warn_removed_overrides(field_overrides, context)
         with _internal_construction():
             resolved_options = (
                 options.replace(**field_overrides) if field_overrides else options
+            )
+    elif on_instance:
+        # Mirror Infomap.run(options=mapping, **kwargs): the mapping carrier is
+        # converted as a full Options, announcing its removed fields against the
+        # dataclass defaults where it is converted; the bare keywords are
+        # run-context overrides.
+        carrier = {
+            name: value
+            for name, value in (options or {}).items()
+            if name in _OPTION_FIELD_NAMES
+        }
+        base = Options(**carrier)
+        _warn_removed_overrides(field_overrides, "run")
+        with _internal_construction():
+            resolved_options = (
+                base.replace(**field_overrides) if field_overrides else base
             )
     else:
         resolved_options = Options(

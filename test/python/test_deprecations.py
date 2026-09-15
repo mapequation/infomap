@@ -686,6 +686,39 @@ def test_run_context_default_decides_what_counts_as_typed():
 
 
 @pytest.mark.fast
+def test_functional_run_on_an_instance_uses_the_run_context():
+    """run(im, silent=True) agrees with im.run(silent=True): on an existing
+    Infomap or Network a bare keyword is a run-context override, where the
+    no-op default of a flag is False, so True is the typed choice and False is
+    not. A mapping carrier stays a full Options, announced against the
+    dataclass defaults, as on im.run(options=mapping)."""
+    from infomap import Network
+
+    im = _two_triangles()
+    net = Network().add_links([(0, 1), (1, 2), (2, 0)])
+    for instance in (im, net):
+        with warnings.catch_warnings(record=True) as records:
+            warnings.simplefilter("always")
+            run(instance, silent=True, seed=1)
+        assert len([m for m in _pending(records) if "'silent'" in m]) == 1
+        with warnings.catch_warnings(record=True) as records:
+            warnings.simplefilter("always")
+            run(instance, silent=False, seed=1)
+        assert _pending(records) == []
+        with warnings.catch_warnings(record=True) as records:
+            warnings.simplefilter("always")
+            run(instance, options={"silent": False, "seed": 1})
+        assert len([m for m in _pending(records) if "'silent'" in m]) == 1
+
+    # And the direct route it mirrors, for the record.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        im.run(silent=False)
+        im.run(options={"seed": 1})
+    assert _pending(records) == []
+
+
+@pytest.mark.fast
 def test_pretty_in_a_mapping_carrier_still_reaches_the_constructor():
     """options={"pretty": True} on infomap.run() is not an engine option and must
     keep its own path to Infomap(), where it emits the typed-parameter warning."""
