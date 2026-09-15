@@ -371,6 +371,24 @@ def test_to_dataframe_conflicting_depth_aliases_raise(
         result.to_dataframe(depth=1, level=2)
 
 
+def test_nodes_iterator_acquired_before_a_rerun_raises_on_iteration(
+    make_infomap,
+    example_network_path,
+):
+    # The selector is resolved when nodes() is called, but the snapshot is
+    # taken when the first node is pulled, so the generation guard still
+    # fires for an iterator that outlived a re-run -- as tree() does.
+    from infomap.result import _StaleResultError
+
+    im = make_infomap(num_trials=1, seed=1)
+    im.read_file(str(example_network_path("ninetriangles.net")))
+    result = im.run()
+    stale = result.nodes(level=1)
+    im.run()
+    with pytest.raises(_StaleResultError):
+        list(stale)
+
+
 def test_modules_conflicting_spellings_raise_before_the_higher_order_guard(
     network_fixture_path,
 ):
@@ -457,6 +475,17 @@ def test_level_is_the_canonical_selector_and_the_aliases_announce_themselves(
         unconsumed = result.nodes(depth=2)
     assert any(issubclass(r.category, LEGACY_SURFACE_WARNING) for r in records)
     del unconsumed
+
+    # The pre-redesign spelling is an alias on every reader, not only on
+    # to_dataframe and write_clu.
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level' is deprecated"):
+        assert result.modules(depth_level=2) == expected_modules
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level'"):
+        assert [n.node_id for n in result.nodes(depth_level=2)] == expected_nodes
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level'"):
+        assert sum(1 for _ in result.tree(depth_level=2)) == expected_tree
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level'"):
+        assert result.effective_num_modules(depth_level=2) == expected_effective
 
     # max_depth follows the same word: deprecated alias of num_levels.
     with warnings.catch_warnings(record=True) as records:

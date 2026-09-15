@@ -29,8 +29,8 @@ scalar metrics (``result.codelength``) and the fixed label / per-trial tables
 (``result.names``, ``result.state_names``, ``result.codelengths``). Call a
 **method** to slice, walk, or convert the partition: either you pass a view
 (``result.modules(level=1)``, ``result.nodes(states=True)``,
-``result.effective_num_modules(depth)``) or you ask for a built structure
-(``result.summary()``, ``result.to_dataframe()``). The two canonical depths of
+``result.effective_num_modules(level)``) or you ask for a built structure
+(``result.summary()``, ``result.to_dataframe()``). The two canonical levels of
 ``effective_num_modules`` are also exposed as the ``effective_num_top_modules``
 / ``effective_num_leaf_modules`` properties. Output is byte-identical to the
 legacy ``Infomap`` accessors (parity is a gate).
@@ -751,6 +751,7 @@ class Result(_ResultWritersMixin):
         *,
         states: bool = False,
         depth: int | None = None,
+        depth_level: int | None = None,
     ) -> dict[int, int]:
         """Map ``node_id`` (or ``state_id`` when ``states``) to ``module_id``.
 
@@ -772,6 +773,9 @@ class Result(_ResultWritersMixin):
             .. deprecated:: 2.16
                 Alias of ``level``; leaves in 3.0. (:attr:`TreeNode.depth` is
                 a node's distance from the root, a different quantity.)
+        depth_level : int, optional
+            .. deprecated:: 2.16
+                Alias of ``level`` (the pre-redesign spelling); leaves in 3.0.
 
         Returns
         -------
@@ -790,7 +794,7 @@ class Result(_ResultWritersMixin):
         """
         # Resolve the selector first, so a conflicting pair of spellings is the
         # documented ValueError on every reader, higher-order input included.
-        resolved = resolve_level("modules", level, depth)
+        resolved = resolve_level("modules", level, depth, depth_level)
         if self._have_memory and not states:
             # InfomapError (not ValueError) on purpose, and the exact message is
             # shared with the legacy Infomap.get_modules path (_results.py) so
@@ -806,6 +810,7 @@ class Result(_ResultWritersMixin):
         *,
         states: bool = False,
         depth: int | None = None,
+        depth_level: int | None = None,
     ) -> Iterator[TreeNode]:
         """Iterate leaf :class:`TreeNode` views, depth first from the root.
 
@@ -823,19 +828,27 @@ class Result(_ResultWritersMixin):
             .. deprecated:: 2.16
                 Alias of ``level``; leaves in 3.0. Not the yielded
                 ``node.depth``, which is the node's distance from the root.
+        depth_level : int, optional
+            .. deprecated:: 2.16
+                Alias of ``level`` (the pre-redesign spelling); leaves in 3.0.
 
         Returns
         -------
         iterator of TreeNode
-            An immutable snapshot view per leaf node.
+            An immutable snapshot view per leaf node. Materialized when the
+            first node is pulled, so an iterator acquired before the bound
+            engine re-runs raises the stale-result error on iteration, as
+            :meth:`tree` does.
         """
         # Not a generator function: the selector is resolved -- and a
         # deprecated spelling announced, at the caller's line -- when nodes()
-        # is called, not when the first node is pulled.
-        snapshot = self._snapshot(resolve_level("nodes", level, depth), states)
-        return self._iter_tree_nodes(snapshot)
+        # is called, not when the first node is pulled. The snapshot itself is
+        # taken lazily so the generation guard still fires on iteration.
+        resolved = resolve_level("nodes", level, depth, depth_level)
+        return self._iter_tree_nodes(resolved, states)
 
-    def _iter_tree_nodes(self, snapshot: _Snapshot) -> Iterator[TreeNode]:
+    def _iter_tree_nodes(self, level: int, states: bool) -> Iterator[TreeNode]:
+        snapshot = self._snapshot(level, states)
         names = self._names
         state_names = self._state_names
         for i in range(len(snapshot)):
@@ -861,6 +874,7 @@ class Result(_ResultWritersMixin):
         *,
         states: bool = False,
         depth: int | None = None,
+        depth_level: int | None = None,
     ) -> Iterator[InfomapIterator | InfomapIteratorPhysical]:
         """Iterate the hierarchical tree, modules and leaf nodes alike, depth
         first from the root.
@@ -880,6 +894,9 @@ class Result(_ResultWritersMixin):
         depth : int, optional
             .. deprecated:: 2.16
                 Alias of ``level``; leaves in 3.0.
+        depth_level : int, optional
+            .. deprecated:: 2.16
+                Alias of ``level`` (the pre-redesign spelling); leaves in 3.0.
 
         Returns
         -------
@@ -889,7 +906,7 @@ class Result(_ResultWritersMixin):
             The iterator is generation-guarded: consuming it after the bound
             engine re-runs raises instead of walking a rebuilt C++ tree.
         """
-        resolved = resolve_level("tree", level, depth)
+        resolved = resolve_level("tree", level, depth, depth_level)
         self._check_generation()
         return self._guard_iteration(
             self._tree_iterator(self._engine._core, resolved, states)
@@ -967,7 +984,11 @@ class Result(_ResultWritersMixin):
         return self._guard_iteration(_link_items())
 
     def effective_num_modules(
-        self, level: int | None = None, *, depth: int | None = None
+        self,
+        level: int | None = None,
+        *,
+        depth: int | None = None,
+        depth_level: int | None = None,
     ) -> float:
         """Return the flow-weighted effective number of modules at ``level``.
 
@@ -982,9 +1003,12 @@ class Result(_ResultWritersMixin):
         depth : int, optional
             .. deprecated:: 2.16
                 Alias of ``level``; leaves in 3.0.
+        depth_level : int, optional
+            .. deprecated:: 2.16
+                Alias of ``level`` (the pre-redesign spelling); leaves in 3.0.
         """
         return self._effective_num_modules_cached(
-            resolve_level("effective_num_modules", level, depth)
+            resolve_level("effective_num_modules", level, depth, depth_level)
         )
 
     def summary(self) -> dict[str, Any]:

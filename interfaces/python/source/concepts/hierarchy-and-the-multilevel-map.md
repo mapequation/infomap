@@ -57,8 +57,8 @@ until none shortens the description, then stops.
 
 The result is a tree of modules. Each leaf is a network node. Internal tree
 nodes are modules at different granularities. You can read off the coarse
-super-group membership at depth 1, the fine-grained triangle membership at
-depth 2, and so on.
+super-group membership at level 1, the fine-grained triangle membership at
+level 2, and so on.
 
 ## Nested codebooks
 
@@ -217,10 +217,10 @@ bits; dropping exactly one saves 0.014 bits.)
 ### Read module assignments at each level
 
 ```{code-cell} python
-# Coarsest level (depth 1): two super-groups plus the three triangles of the third
+# Coarsest level (level 1): two super-groups plus the three triangles of the third
 modules_l1 = result.modules(level=1)
 
-# Finer level (depth 2): the nine individual triangles
+# Finer level (level 2): the nine individual triangles
 modules_l2 = result.modules(level=2)
 
 print("Level-1 assignment (top modules):")

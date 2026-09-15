@@ -194,7 +194,7 @@ for two_level in [False, True]:
 
     print(f"two_level={two_level}:")
     print(f"  levels={result.num_levels}, top modules={result.num_top_modules}")
-    print(f"  distinct groups at depth 1:      {len(set(m_top.values()))}")
+    print(f"  distinct groups at level 1:      {len(set(m_top.values()))}")
     print(f"  distinct groups at finest level: {len(set(m_leaf.values()))}")
     print(f"  L={result.codelength:.4f}")
 ```
