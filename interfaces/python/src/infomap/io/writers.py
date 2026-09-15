@@ -25,6 +25,7 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, ClassVar
 
+from .._level import resolve_level
 from ..errors import _translate_engine_errors
 
 if TYPE_CHECKING:
@@ -117,8 +118,9 @@ class _ResultWritersMixin(_WritersBase):
         self,
         filename: str | os.PathLike[str],
         states: bool = False,
-        depth: int | None = None,
+        level: int | None = None,
         *,
+        depth: int | None = None,
         depth_level: int | None = None,
     ) -> None:
         """Write result to a clu file.
@@ -135,20 +137,23 @@ class _ResultWritersMixin(_WritersBase):
         filename : str or os.PathLike
         states : bool, optional
             If the state nodes should be included. Default ``False``.
+        level : int, optional
+            The level in the hierarchical tree to write. Accepted positionally,
+            matching ``result.modules(level=...)`` and
+            ``result.to_dataframe(level=...)``. ``1`` (default) is the top
+            level, ``-1`` the bottom.
         depth : int, optional
-            The depth in the hierarchical tree to write. Accepted positionally,
-            matching ``result.modules(depth=...)`` and
-            ``result.to_dataframe(depth=...)``. ``1`` (default) is the top
-            level, ``-1`` the bottom; it overrides ``depth_level`` when given.
+            .. deprecated:: 2.16
+                Alias of ``level``; leaves in 3.0.
         depth_level : int, optional
-            Legacy keyword alias of ``depth`` (the historical ``write_clu``
-            keyword); still accepted.
+            .. deprecated:: 2.15
+                Alias of ``level`` (the historical ``write_clu`` keyword);
+                leaves in 3.0.
         """
-        if depth is None:
-            depth = depth_level if depth_level is not None else 1
+        resolved = resolve_level("write_clu", level, depth, depth_level)
         core = self._writer_core()
         with _translate_engine_errors():
-            core.writeClu(os.fsdecode(filename), states, depth)
+            core.writeClu(os.fsdecode(filename), states, resolved)
 
     def write_tree(
         self, filename: str | os.PathLike[str], states: bool = False

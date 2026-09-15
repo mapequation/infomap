@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 from infomap import Infomap, Result, datasets, run
+from infomap._options import LEGACY_SURFACE_WARNING
 
 
 def _two_triangles() -> Infomap:
@@ -340,18 +341,21 @@ def test_to_dataframe_depth_and_deprecated_aliases_agree(
     im.read_file(str(example_network_path("ninetriangles.net")))
     result = im.run()
 
-    by_depth = result.to_dataframe(columns=["node_id", "module_id"], depth=2)
     by_level = result.to_dataframe(columns=["node_id", "module_id"], level=2)
-    by_depth_level = result.to_dataframe(
-        columns=["node_id", "module_id"], depth_level=2
-    )
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth' is deprecated"):
+        by_depth = result.to_dataframe(columns=["node_id", "module_id"], depth=2)
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level' is deprecated"):
+        by_depth_level = result.to_dataframe(
+            columns=["node_id", "module_id"], depth_level=2
+        )
 
-    assert by_depth.equals(by_level)
-    assert by_depth.equals(by_depth_level)
+    assert by_level.equals(by_depth)
+    assert by_level.equals(by_depth_level)
 
     # Equal values across the primary kwarg and an alias are accepted.
-    both = result.to_dataframe(columns=["node_id"], depth=2, depth_level=2)
-    assert both.equals(result.to_dataframe(columns=["node_id"], depth=2))
+    with pytest.warns(LEGACY_SURFACE_WARNING):
+        both = result.to_dataframe(columns=["node_id"], level=2, depth_level=2)
+    assert both.equals(result.to_dataframe(columns=["node_id"], level=2))
 
 
 def test_to_dataframe_conflicting_depth_aliases_raise(
@@ -363,8 +367,73 @@ def test_to_dataframe_conflicting_depth_aliases_raise(
     im.read_file(str(example_network_path("ninetriangles.net")))
     result = im.run()
 
-    with pytest.raises(ValueError, match="Conflicting values for the tree depth"):
+    with pytest.raises(ValueError, match="Conflicting values for the tree level"):
         result.to_dataframe(depth=1, level=2)
+
+
+def test_to_dataframe_resolves_the_selector_before_needing_pandas(
+    monkeypatch, make_infomap, example_network_path
+):
+    # Without pandas, a conflicting pair of spellings is still the documented
+    # ValueError, and a deprecated spelling is still announced -- the selector
+    # is resolved before the pandas guard, as on every other reader.
+    import infomap.result as result_module
+
+    def no_pandas(_what):
+        raise ImportError("pandas is not installed")
+
+    monkeypatch.setattr(result_module, "require_pandas", no_pandas)
+    im = make_infomap(num_trials=1, seed=1)
+    im.read_file(str(example_network_path("ninetriangles.net")))
+    result = im.run()
+    with pytest.raises(ValueError, match="Conflicting values for the tree level"):
+        result.to_dataframe(level=1, depth=2)
+    with (
+        pytest.warns(LEGACY_SURFACE_WARNING, match="'depth' is deprecated"),
+        pytest.raises(ImportError),
+    ):
+        result.to_dataframe(depth=2)
+
+
+def test_legacy_max_depth_points_at_num_levels():
+    # The legacy Infomap.max_depth used to steer to result.max_depth, itself a
+    # deprecated alias now; the replacement is the canonical property.
+    from infomap._results import _LEGACY_RESULT_ACCESSORS
+
+    assert _LEGACY_RESULT_ACCESSORS["max_depth"] == "result.num_levels"
+
+
+def test_nodes_iterator_acquired_before_a_rerun_raises_on_iteration(
+    make_infomap,
+    example_network_path,
+):
+    # The selector is resolved when nodes() is called, but the snapshot is
+    # taken when the first node is pulled, so the generation guard still
+    # fires for an iterator that outlived a re-run -- as tree() does.
+    import infomap.result as result_module
+
+    im = make_infomap(num_trials=1, seed=1)
+    im.read_file(str(example_network_path("ninetriangles.net")))
+    result = im.run()
+    stale = result.nodes(level=1)
+    im.run()
+    with pytest.raises(result_module._StaleResultError):
+        list(stale)
+
+
+def test_modules_conflicting_spellings_raise_before_the_higher_order_guard(
+    network_fixture_path,
+):
+    # On a higher-order result, modules() without states= raises InfomapError;
+    # a conflicting selector pair must still be the documented ValueError, so
+    # the selector is resolved first.
+    from infomap import Infomap
+
+    im = Infomap(num_trials=1, seed=1)
+    im.read_file(str(network_fixture_path("states.net")))
+    result = im.run()
+    with pytest.raises(ValueError, match="Conflicting values for the tree level"):
+        result.modules(level=2, depth=1)
 
 
 def test_to_dataframe_index_true_is_rejected(make_infomap, example_network_path):
@@ -384,10 +453,12 @@ def test_to_dataframe_index_true_is_rejected(make_infomap, example_network_path)
     assert result.to_dataframe(index=False).index.name is None
 
 
-def test_to_dataframe_deprecated_aliases_stay_silent(
+def test_level_is_the_canonical_selector_and_the_aliases_announce_themselves(
     make_infomap, example_network_path
 ):
-    # Docs-only deprecation policy: the aliases must not warn at runtime.
+    """#789: `level` selects the tree level everywhere and is silent; `depth`
+    and `depth_level` keep working, announce themselves on the legacy tier
+    (they leave in 3.0), and name the caller's line."""
     pytest.importorskip("pandas")
     import warnings
 
@@ -397,8 +468,64 @@ def test_to_dataframe_deprecated_aliases_stay_silent(
 
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
+        warnings.simplefilter("error", FutureWarning)
+        expected_modules = result.modules(level=2)
+        expected_nodes = [n.node_id for n in result.nodes(level=2)]
+        expected_tree = sum(1 for _ in result.tree(level=2))
+        expected_effective = result.effective_num_modules(level=2)
         result.to_dataframe(level=2)
-        result.to_dataframe(depth_level=2)
+        # Positional stays the level, as before.
+        assert result.modules(2) == expected_modules
+
+    for call in (
+        lambda: result.modules(depth=2),
+        lambda: [n.node_id for n in result.nodes(depth=2)],
+        lambda: sum(1 for _ in result.tree(depth=2)),
+        lambda: result.effective_num_modules(depth=2),
+    ):
+        with warnings.catch_warnings(record=True) as records:
+            warnings.simplefilter("always")
+            call()
+        legacy = [r for r in records if issubclass(r.category, LEGACY_SURFACE_WARNING)]
+        assert len(legacy) == 1, [str(r.message) for r in records]
+        assert "'depth' is deprecated as the level selector" in str(legacy[0].message)
+        assert "level=2" in str(legacy[0].message)
+        assert legacy[0].filename == __file__
+    assert result.modules(depth=2) == expected_modules
+    assert [n.node_id for n in result.nodes(depth=2)] == expected_nodes
+    assert sum(1 for _ in result.tree(depth=2)) == expected_tree
+    assert result.effective_num_modules(depth=2) == expected_effective
+
+    # A node's own depth is a different quantity and keeps its name: the leaves
+    # of the level-2 view sit below the two module levels above them.
+    assert all(n.depth >= 2 for n in result.nodes(level=2))
+
+    # nodes() announces the alias when called, not when the first node is
+    # pulled, so an unconsumed iterator still tells the caller.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        unconsumed = result.nodes(depth=2)
+    assert any(issubclass(r.category, LEGACY_SURFACE_WARNING) for r in records)
+    del unconsumed
+
+    # The pre-redesign spelling is an alias on every reader, not only on
+    # to_dataframe and write_clu.
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level' is deprecated"):
+        assert result.modules(depth_level=2) == expected_modules
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level'"):
+        assert [n.node_id for n in result.nodes(depth_level=2)] == expected_nodes
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level'"):
+        assert sum(1 for _ in result.tree(depth_level=2)) == expected_tree
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level'"):
+        assert result.effective_num_modules(depth_level=2) == expected_effective
+
+    # max_depth follows the same word: deprecated alias of num_levels.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        assert result.max_depth == result.num_levels
+    legacy = [r for r in records if issubclass(r.category, LEGACY_SURFACE_WARNING)]
+    assert len(legacy) == 1 and "num_levels" in str(legacy[0].message)
+    assert legacy[0].filename == __file__
 
 
 @pytest.mark.fast

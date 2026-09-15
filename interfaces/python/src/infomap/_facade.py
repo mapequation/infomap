@@ -398,7 +398,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         no_file_output : bool, optional
@@ -410,7 +410,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         tree : bool, optional
@@ -423,7 +423,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         ftree : bool, optional
@@ -436,7 +436,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         clu : bool, optional
@@ -448,7 +448,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         clu_level : int, optional
@@ -461,7 +461,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         output : sequence of str, optional
@@ -475,7 +475,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         hide_bipartite_nodes : bool, optional
@@ -496,7 +496,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         no_overwrite : bool, optional
@@ -509,7 +509,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         print_config_fingerprint : bool, optional
