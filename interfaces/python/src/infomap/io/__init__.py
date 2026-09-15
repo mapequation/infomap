@@ -15,7 +15,13 @@ third-party imports, so this keeps ``import infomap`` dependency-free.
 from __future__ import annotations
 
 from .export import (
+    annotate_igraph as annotate_igraph,
+)
+from .export import (
     annotate_igraph_graph as annotate_igraph_graph,
+)
+from .export import (
+    annotate_networkx as annotate_networkx,
 )
 from .export import (
     annotate_networkx_graph as annotate_networkx_graph,
@@ -36,7 +42,9 @@ from .export import (
 # A curated __all__ so ``from infomap.io import *`` and tooling see only the
 # public export helpers, not the submodules or their imported names.
 __all__ = [
+    "annotate_igraph",
     "annotate_igraph_graph",
+    "annotate_networkx",
     "annotate_networkx_graph",
     "to_igraph",
     "to_networkx",
