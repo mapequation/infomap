@@ -1360,7 +1360,7 @@ class _InfomapResultsMixin:
             The max depth
 
         .. deprecated:: 2.15
-            Use ``result = im.run(); result.max_depth``.
+            Use ``result = im.run(); result.num_levels``.
         """
         return self._max_depth_impl()
 
@@ -1591,7 +1591,7 @@ _LEGACY_RESULT_ACCESSORS = {
     "get_effective_num_modules": "result.effective_num_modules()",
     "effective_num_top_modules": "result.effective_num_top_modules",
     "effective_num_leaf_modules": "result.effective_num_leaf_modules",
-    "max_depth": "result.max_depth",
+    "max_depth": "result.num_levels",
     "num_levels": "result.num_levels",
     "have_memory": "result.have_memory",
     "index_codelength": "result.index_codelength",

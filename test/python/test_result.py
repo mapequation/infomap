@@ -371,6 +371,38 @@ def test_to_dataframe_conflicting_depth_aliases_raise(
         result.to_dataframe(depth=1, level=2)
 
 
+def test_to_dataframe_resolves_the_selector_before_needing_pandas(
+    monkeypatch, make_infomap, example_network_path
+):
+    # Without pandas, a conflicting pair of spellings is still the documented
+    # ValueError, and a deprecated spelling is still announced -- the selector
+    # is resolved before the pandas guard, as on every other reader.
+    import infomap.result as result_module
+
+    def no_pandas(_what):
+        raise ImportError("pandas is not installed")
+
+    monkeypatch.setattr(result_module, "require_pandas", no_pandas)
+    im = make_infomap(num_trials=1, seed=1)
+    im.read_file(str(example_network_path("ninetriangles.net")))
+    result = im.run()
+    with pytest.raises(ValueError, match="Conflicting values for the tree level"):
+        result.to_dataframe(level=1, depth=2)
+    with (
+        pytest.warns(LEGACY_SURFACE_WARNING, match="'depth' is deprecated"),
+        pytest.raises(ImportError),
+    ):
+        result.to_dataframe(depth=2)
+
+
+def test_legacy_max_depth_points_at_num_levels():
+    # The legacy Infomap.max_depth used to steer to result.max_depth, itself a
+    # deprecated alias now; the replacement is the canonical property.
+    from infomap._results import _LEGACY_RESULT_ACCESSORS
+
+    assert _LEGACY_RESULT_ACCESSORS["max_depth"] == "result.num_levels"
+
+
 def test_nodes_iterator_acquired_before_a_rerun_raises_on_iteration(
     make_infomap,
     example_network_path,

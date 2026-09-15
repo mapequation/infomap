@@ -1186,9 +1186,11 @@ class Result(_ResultWritersMixin):
             If an unknown column is requested, or if ``level`` and one of its
             aliases are given conflicting values.
         """
-        pandas = require_pandas("the DataFrame accessors")
-
+        # The selector first, as on every other reader: a conflicting pair of
+        # spellings is a ValueError (and a deprecated one is announced) whether
+        # or not pandas is installed.
         resolved_level = resolve_level("to_dataframe", level, depth, depth_level)
+        pandas = require_pandas("the DataFrame accessors")
 
         if columns is None:
             columns = _DEFAULT_TO_DATAFRAME_COLUMNS
