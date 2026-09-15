@@ -199,6 +199,49 @@ def test_find_communities_partitions_multilayer_network_nodes():
     assert _flatten(communities) == set(graph.nodes)
 
 
+def test_add_networkx_multilayer_graph_keeps_string_labels_as_state_names():
+    # The multilayer branch builds its state nodes through add_multilayer_node,
+    # which had no name parameter, so string labels that the state-network
+    # branch keeps were dropped for multilayer input (#798).
+    graph = nx.Graph()
+    graph.add_node("alpha@1", node_id="alpha", layer_id=1)
+    graph.add_node("beta@1", node_id="beta", layer_id=1)
+    graph.add_node("alpha@2", node_id="alpha", layer_id=2)
+    graph.add_edge("alpha@1", "beta@1")
+    graph.add_edge("alpha@1", "alpha@2")
+
+    im = infomap.Infomap(num_trials=1, seed=1)
+    mapping = im.add_networkx_graph(graph)  # {state_id: label}
+    result = im.run()
+
+    assert mapping == {0: "alpha@1", 1: "beta@1", 2: "alpha@2"}
+    assert result.state_names == mapping
+    # Physical names are unaffected and still keyed by physical node id.
+    assert set(result.names.values()) == {"alpha", "beta"}
+
+
+def test_add_networkx_multilayer_graph_uses_name_attribute_for_integer_labels():
+    # Same rule as the state-network branch: an integer label is not a name,
+    # the "name" attribute is.
+    graph = nx.Graph()
+    graph.add_node(10, node_id=1, layer_id=1, name="one in layer 1")
+    graph.add_node(20, node_id=2, layer_id=1, name="two in layer 1")
+    graph.add_node(11, node_id=1, layer_id=2, name="one in layer 2")
+    graph.add_edge(10, 20)
+    graph.add_edge(10, 11)
+
+    im = infomap.Infomap(num_trials=1, seed=1)
+    mapping = im.add_networkx_graph(graph)  # {state_id: label}
+    result = im.run()
+
+    state_id = {label: sid for sid, label in mapping.items()}
+    assert result.state_names == {
+        state_id[10]: "one in layer 1",
+        state_id[20]: "two in layer 1",
+        state_id[11]: "one in layer 2",
+    }
+
+
 # -- error / edge paths (parity with test_scipy.py / test_igraph.py) -----------
 
 

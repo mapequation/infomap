@@ -317,12 +317,16 @@ def add_networkx_graph(
                 infomap.set_name(label, f"{label}")
 
         if is_multilayer_network:
+            # Same naming rule as the state-network branch below: a string
+            # label is the name, otherwise the "name" attribute if any (#798).
             for state_label, data in g.nodes.data():
+                node_name = state_label if is_string_id else data.get("name")
                 infomap.network.add_multilayer_node(
                     node_map[state_label],
                     data[layer_id],
                     phys_map[data[node_id]],
                     1.0,
+                    name=node_name,
                 )
         else:
             for state_label, state_name in g.nodes.data("name"):
