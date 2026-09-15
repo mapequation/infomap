@@ -101,7 +101,7 @@ one convention:
 - **Call a method to slice, walk, or convert the partition** — either you pass a
   view (`result.modules(level=1)`, `result.nodes(states=True)`,
   `result.effective_num_modules(level)`) or you ask for a built structure
-  (`result.summary()`, `result.to_dataframe()`). The two canonical depths of
+  (`result.summary()`, `result.to_dataframe()`). The two canonical levels of
   `effective_num_modules` are also exposed as the
   `result.effective_num_top_modules` / `result.effective_num_leaf_modules`
   properties.
