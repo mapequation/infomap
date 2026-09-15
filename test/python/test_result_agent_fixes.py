@@ -87,6 +87,22 @@ def test_write_clu_level_aliases_match_and_announce_themselves(tmp_path):
     assert by_level.read_bytes() == positional.read_bytes()
 
 
+def test_infomap_write_clu_alias_warning_names_no_receiver(tmp_path):
+    # The same writer mixin serves the stateful Infomap, so the message must
+    # not claim the caller used Result.
+    from infomap import Infomap
+    from infomap._options import LEGACY_SURFACE_WARNING
+
+    im = Infomap(num_trials=1, seed=1)
+    im.add_links([(0, 1), (1, 2), (2, 0)])
+    im.run()
+    with pytest.warns(LEGACY_SURFACE_WARNING) as records:
+        im.write_clu(tmp_path / "im.clu", depth=1)
+    messages = [str(r.message) for r in records if "'depth'" in str(r.message)]
+    assert messages and "on write_clu()" in messages[0]
+    assert "Result." not in messages[0]
+
+
 def test_write_clu_conflicting_level_spellings_raise(tmp_path):
     # Two spellings with different values used to be resolved silently (depth
     # won); picking one would hide a migration mistake, so it is an error, as

@@ -371,6 +371,21 @@ def test_to_dataframe_conflicting_depth_aliases_raise(
         result.to_dataframe(depth=1, level=2)
 
 
+def test_modules_conflicting_spellings_raise_before_the_higher_order_guard(
+    network_fixture_path,
+):
+    # On a higher-order result, modules() without states= raises InfomapError;
+    # a conflicting selector pair must still be the documented ValueError, so
+    # the selector is resolved first.
+    from infomap import Infomap
+
+    im = Infomap(num_trials=1, seed=1)
+    im.read_file(str(network_fixture_path("states.net")))
+    result = im.run()
+    with pytest.raises(ValueError, match="Conflicting values for the tree level"):
+        result.modules(level=2, depth=1)
+
+
 def test_to_dataframe_index_true_is_rejected(make_infomap, example_network_path):
     pytest.importorskip("pandas")
 
@@ -434,6 +449,22 @@ def test_level_is_the_canonical_selector_and_the_aliases_announce_themselves(
     # A node's own depth is a different quantity and keeps its name: the leaves
     # of the level-2 view sit below the two module levels above them.
     assert all(n.depth >= 2 for n in result.nodes(level=2))
+
+    # nodes() announces the alias when called, not when the first node is
+    # pulled, so an unconsumed iterator still tells the caller.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        unconsumed = result.nodes(depth=2)
+    assert any(issubclass(r.category, LEGACY_SURFACE_WARNING) for r in records)
+    del unconsumed
+
+    # max_depth follows the same word: deprecated alias of num_levels.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        assert result.max_depth == result.num_levels
+    legacy = [r for r in records if issubclass(r.category, LEGACY_SURFACE_WARNING)]
+    assert len(legacy) == 1 and "num_levels" in str(legacy[0].message)
+    assert legacy[0].filename == __file__
 
 
 @pytest.mark.fast

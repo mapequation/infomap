@@ -278,8 +278,8 @@ description.
 
 ## API pointers
 
-All on {class}`~infomap.Result`: {attr}`~infomap.Result.num_levels` (alias
-{attr}`~infomap.Result.max_depth`), {attr}`~infomap.Result.num_top_modules`,
+All on {class}`~infomap.Result`: {attr}`~infomap.Result.num_levels`,
+{attr}`~infomap.Result.num_top_modules`,
 {meth}`~infomap.Result.modules` (pass `level=k`, or `level=-1` for the leaf
 level), and {meth}`~infomap.Result.effective_num_modules`; see
 {doc}`/working-with-infomap/results-and-iteration`. The engine option

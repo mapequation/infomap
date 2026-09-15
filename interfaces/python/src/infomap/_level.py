@@ -28,7 +28,9 @@ def resolve_level(
     values is a ``ValueError``, since silently picking one would hide a
     migration mistake. Equal values are accepted. A typed alias emits the legacy
     tier's ``DeprecationWarning`` -- the keyword keeps working and leaves in 3.0,
-    like an advanced-tier keyword -- attributed to the caller's line.
+    like an advanced-tier keyword -- attributed to the caller's line. ``method``
+    is the bare method name: ``write_clu`` is reached from ``Result`` and from
+    the stateful ``Infomap`` writers alike, so the message names no receiver.
     """
     supplied = {
         name: value
@@ -47,10 +49,10 @@ def resolve_level(
     for alias in _ALIASES:
         if alias in supplied:
             warnings.warn(
-                f"'{alias}' is deprecated as the level selector on "
-                f"Result.{method}() and leaves in 3.0; pass level={supplied[alias]!r} "
-                "instead. (TreeNode.depth keeps its meaning: a node's distance "
-                "from the root.)",
+                f"'{alias}' is deprecated as the level selector on {method}() "
+                f"and leaves in 3.0; pass level={supplied[alias]!r} instead. "
+                "(TreeNode.depth keeps its meaning: a node's distance from the "
+                "root.)",
                 LEGACY_SURFACE_WARNING,
                 stacklevel=_external_stacklevel(),
             )

@@ -28,7 +28,7 @@ Surface conventions: read the run's intrinsic results as **properties** -- the
 scalar metrics (``result.codelength``) and the fixed label / per-trial tables
 (``result.names``, ``result.state_names``, ``result.codelengths``). Call a
 **method** to slice, walk, or convert the partition: either you pass a view
-(``result.modules(depth=1)``, ``result.nodes(states=True)``,
+(``result.modules(level=1)``, ``result.nodes(states=True)``,
 ``result.effective_num_modules(depth)``) or you ask for a built structure
 (``result.summary()``, ``result.to_dataframe()``). The two canonical depths of
 ``effective_num_modules`` are also exposed as the ``effective_num_top_modules``
@@ -38,12 +38,14 @@ legacy ``Infomap`` accessors (parity is a gate).
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from ._level import resolve_level
 from ._optional import require_pandas
+from ._options import LEGACY_SURFACE_WARNING, _external_stacklevel
 from ._results import (
     _DATAFRAME_COLUMN_ALIASES,
     _DEFAULT_TO_DATAFRAME_COLUMNS,
@@ -550,11 +552,11 @@ class Result(_ResultWritersMixin):
 
     @property
     def num_levels(self) -> int:
-        """The number of levels in the hierarchical tree.
+        """The number of levels in the hierarchical tree, leaves included.
 
-        The bottom level is ``result.modules(level=-1)``; ``level`` counts from
-        ``1`` at the top, so ``num_levels`` is also the largest positive
-        ``level`` a reader accepts.
+        A two-level result has one module level above the leaves. The module
+        levels a reader selects are ``level=1`` (top) through
+        ``level=num_levels - 1`` (finest), or ``level=-1`` for the finest.
         """
         return self._num_levels
 
@@ -566,6 +568,13 @@ class Result(_ResultWritersMixin):
             Use :attr:`num_levels`; the tree is described in levels, and
             ``depth`` is a node's distance from the root (:attr:`TreeNode.depth`).
         """
+        warnings.warn(
+            "Result.max_depth is deprecated and leaves in 3.0; read "
+            "result.num_levels instead. (TreeNode.depth keeps its meaning: a "
+            "node's distance from the root.)",
+            LEGACY_SURFACE_WARNING,
+            stacklevel=_external_stacklevel(),
+        )
         return self._num_levels
 
     @property
@@ -779,12 +788,15 @@ class Result(_ResultWritersMixin):
         multilevel_modules : Module ids for every level at once.
         tree : Walk the full hierarchical tree.
         """
+        # Resolve the selector first, so a conflicting pair of spellings is the
+        # documented ValueError on every reader, higher-order input included.
+        resolved = resolve_level("modules", level, depth)
         if self._have_memory and not states:
             # InfomapError (not ValueError) on purpose, and the exact message is
             # shared with the legacy Infomap.get_modules path (_results.py) so
             # both surfaces are byte-identical -- parity tests pin type and text.
             raise InfomapError(_HIGHER_ORDER_MODULES_MESSAGE)
-        snapshot = self._snapshot(resolve_level("modules", level, depth), states)
+        snapshot = self._snapshot(resolved, states)
         ids = snapshot.state_id if states else snapshot.node_id
         return dict(zip(ids, snapshot.module_id, strict=True))
 
@@ -812,12 +824,18 @@ class Result(_ResultWritersMixin):
                 Alias of ``level``; leaves in 3.0. Not the yielded
                 ``node.depth``, which is the node's distance from the root.
 
-        Yields
-        ------
-        TreeNode
+        Returns
+        -------
+        iterator of TreeNode
             An immutable snapshot view per leaf node.
         """
+        # Not a generator function: the selector is resolved -- and a
+        # deprecated spelling announced, at the caller's line -- when nodes()
+        # is called, not when the first node is pulled.
         snapshot = self._snapshot(resolve_level("nodes", level, depth), states)
+        return self._iter_tree_nodes(snapshot)
+
+    def _iter_tree_nodes(self, snapshot: _Snapshot) -> Iterator[TreeNode]:
         names = self._names
         state_names = self._state_names
         for i in range(len(snapshot)):
@@ -1003,8 +1021,7 @@ class Result(_ResultWritersMixin):
         properties when needed). A few eager scalars are also omitted to keep
         the row focused on the common case -- add them yourself when a sweep
         needs them: ``meta_codelength`` / ``meta_entropy`` (metadata runs),
-        ``num_physical_nodes`` and ``have_memory`` (higher-order networks), and
-        ``max_depth``.
+        ``num_physical_nodes`` and ``have_memory`` (higher-order networks).
 
         Returns
         -------
