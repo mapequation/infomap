@@ -134,7 +134,7 @@ single module, the natural baseline for judging how much structure Infomap found
 larger number means stronger, more compressible community structure.
 
 `result.num_top_modules` is the number of top-level modules.
-`result.num_levels` is the depth of the hierarchical tree; a value of 2 means one
+`result.num_levels` is the depth of the hierarchical tree (its deepest branch, on a ragged tree); a value of 2 means one
 level of modules above the leaves, the standard two-level result.
 
 ### Getting assignments: `modules()`

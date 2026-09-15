@@ -557,6 +557,15 @@ class Result(_ResultWritersMixin):
         A two-level result has one module level above the leaves. The module
         levels a reader selects are ``level=1`` (top) through
         ``level=num_levels - 1`` (finest), or ``level=-1`` for the finest.
+
+        On a ragged tree, where some branches end earlier than others, this is
+        the depth of the deepest leaf -- the same number the console summary,
+        the ``.tree`` header and the JSON output report.
+
+        .. versionchanged:: 2.16
+            Counts the deepest branch. It used to follow one arbitrary branch,
+            so a ragged tree could report fewer levels here than in the
+            engine's own output.
         """
         return self._num_levels
 
