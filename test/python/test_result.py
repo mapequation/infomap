@@ -410,14 +410,14 @@ def test_nodes_iterator_acquired_before_a_rerun_raises_on_iteration(
     # The selector is resolved when nodes() is called, but the snapshot is
     # taken when the first node is pulled, so the generation guard still
     # fires for an iterator that outlived a re-run -- as tree() does.
-    from infomap.result import _StaleResultError
+    import infomap.result as result_module
 
     im = make_infomap(num_trials=1, seed=1)
     im.read_file(str(example_network_path("ninetriangles.net")))
     result = im.run()
     stale = result.nodes(level=1)
     im.run()
-    with pytest.raises(_StaleResultError):
+    with pytest.raises(result_module._StaleResultError):
         list(stale)
 
 
