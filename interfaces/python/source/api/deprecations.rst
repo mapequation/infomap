@@ -81,6 +81,17 @@ grounds :attr:`Result.max_depth` is a deprecated alias of
 Compatibility aliases
 ---------------------
 
+- On the graph constructors and finders, ``node_id`` and ``layer_id`` were
+  the *attribute names* to read ids from, while ``node_ids`` on the matrix
+  constructors was a *sequence of labels* -- two unrelated parameters that read
+  as singular and plural of one. From 2.16 the attribute names are
+  ``node_id_attribute`` / ``layer_id_attribute`` (the ``*_attribute`` spelling
+  ``meta_attribute`` already uses) and the label sequence is ``node_labels``,
+  on :meth:`Network.from_networkx`, :meth:`Network.from_igraph`,
+  :meth:`Network.from_scipy_sparse_matrix`, :meth:`Network.from_edge_index`,
+  :func:`find_communities` and :func:`find_igraph_communities`. The old
+  spellings keep working, emit the legacy tier's :class:`DeprecationWarning`,
+  and leave in 3.0.
 - ``annotate_networkx_graph`` and ``annotate_igraph_graph`` are the pre-2.16
   spellings of :func:`infomap.io.export.annotate_networkx` and
   :func:`infomap.io.export.annotate_igraph` -- the ``_graph`` suffix that

@@ -290,7 +290,9 @@ _ADAPTER_KWARGS = {
             {
                 "weight",
                 "node_id",
+                "node_id_attribute",
                 "layer_id",
+                "layer_id_attribute",
                 "multilayer_inter_intra_format",
                 "meta_attribute",
             }
@@ -303,7 +305,9 @@ _ADAPTER_KWARGS = {
                 "edge_weights",
                 "vertex_weights",
                 "node_id",
+                "node_id_attribute",
                 "layer_id",
+                "layer_id_attribute",
                 "multilayer_inter_intra_format",
                 "meta_attribute",
             }
@@ -311,11 +315,11 @@ _ADAPTER_KWARGS = {
     ),
     "scipy": (
         "Network.from_scipy_sparse_matrix",
-        frozenset({"directed", "weighted", "node_ids"}),
+        frozenset({"directed", "weighted", "node_ids", "node_labels"}),
     ),
     "edge_index": (
         "Network.from_edge_index",
-        frozenset({"edge_weight", "num_nodes", "directed", "node_ids"}),
+        frozenset({"edge_weight", "num_nodes", "directed", "node_ids", "node_labels"}),
     ),
 }
 

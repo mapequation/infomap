@@ -36,6 +36,7 @@ from ._network_input import add_bulk_links as _add_bulk_links
 from ._network_input import first_order_unpacker as _first_order_unpacker
 from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
+from ._renamed import renamed_keyword as _renamed_keyword
 from ._run import _UNSET
 from .errors import NetworkParseError, _translate_engine_errors
 from .io.writers import _NetworkWritersMixin
@@ -161,10 +162,12 @@ class Network(_NetworkWritersMixin):
         g: networkx.Graph,
         *,
         weight: str | None = "weight",
-        node_id: str = "node_id",
-        layer_id: str = "layer_id",
+        node_id_attribute: str = "node_id",
+        layer_id_attribute: str = "layer_id",
         multilayer_inter_intra_format: bool = True,
         meta_attribute: str | None = None,
+        node_id: str | None = None,
+        layer_id: str | None = None,
     ) -> Network:
         """Build a :class:`Network` from a NetworkX graph.
 
@@ -173,6 +176,17 @@ class Network(_NetworkWritersMixin):
         :attr:`node_id_to_label`. Pass ``meta_attribute`` to use a node
         attribute as Infomap metadata (values are encoded to integers, so
         string categories work).
+
+        ``node_id_attribute`` names the node attribute holding the physical
+        node id (implying a state network) and ``layer_id_attribute`` the one
+        holding the layer id (implying a multilayer network) -- the
+        ``*_attribute`` spelling ``meta_attribute`` already uses.
+
+        .. deprecated:: 2.16
+            ``node_id`` and ``layer_id`` are the pre-2.16 spellings of
+            ``node_id_attribute`` and ``layer_id_attribute``; they emit a
+            :class:`DeprecationWarning` and leave in 3.0. (``node_id`` read as
+            the singular of ``node_ids``, a different parameter.)
 
         The ``weight`` parameter -- the edge-data key to read, or ``None`` to
         treat every edge as unit weight -- matches networkx's own ``weight``
@@ -184,13 +198,29 @@ class Network(_NetworkWritersMixin):
         """
         from .io.networkx import add_networkx_graph as _add_networkx_graph
 
+        node_id_attribute = _renamed_keyword(
+            "Network.from_networkx",
+            new_name="node_id_attribute",
+            new_value=node_id_attribute,
+            old_name="node_id",
+            old_value=node_id,
+            default="node_id",
+        )
+        layer_id_attribute = _renamed_keyword(
+            "Network.from_networkx",
+            new_name="layer_id_attribute",
+            new_value=layer_id_attribute,
+            old_name="layer_id",
+            old_value=layer_id,
+            default="layer_id",
+        )
         net = cls()
         net.node_id_to_label = _add_networkx_graph(
             net,
             g,
             weight=weight,
-            node_id=node_id,
-            layer_id=layer_id,
+            node_id=node_id_attribute,
+            layer_id=layer_id_attribute,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
             meta_attribute=meta_attribute,
         )
@@ -203,10 +233,12 @@ class Network(_NetworkWritersMixin):
         *,
         edge_weights: Any = None,
         vertex_weights: Any = None,
-        node_id: str = "node_id",
-        layer_id: str = "layer_id",
+        node_id_attribute: str = "node_id",
+        layer_id_attribute: str = "layer_id",
         multilayer_inter_intra_format: bool = True,
         meta_attribute: str | None = None,
+        node_id: str | None = None,
+        layer_id: str | None = None,
     ) -> Network:
         """Build a :class:`Network` from a python-igraph graph.
 
@@ -215,6 +247,15 @@ class Network(_NetworkWritersMixin):
         :attr:`node_id_to_label`. Pass ``meta_attribute`` to use a vertex
         attribute as Infomap metadata (values are encoded to integers, so
         string categories work).
+
+        ``node_id_attribute`` names the vertex attribute holding the physical
+        node id (implying a state network) and ``layer_id_attribute`` the one
+        holding the layer id (implying a multilayer network).
+
+        .. deprecated:: 2.16
+            ``node_id`` and ``layer_id`` are the pre-2.16 spellings of
+            ``node_id_attribute`` and ``layer_id_attribute``; they emit a
+            :class:`DeprecationWarning` and leave in 3.0.
 
         The ``edge_weights`` / ``vertex_weights`` parameters match
         python-igraph's own ``Graph.community_infomap(edge_weights,
@@ -226,14 +267,30 @@ class Network(_NetworkWritersMixin):
         """
         from .io.igraph import add_igraph_graph as _add_igraph_graph
 
+        node_id_attribute = _renamed_keyword(
+            "Network.from_igraph",
+            new_name="node_id_attribute",
+            new_value=node_id_attribute,
+            old_name="node_id",
+            old_value=node_id,
+            default="node_id",
+        )
+        layer_id_attribute = _renamed_keyword(
+            "Network.from_igraph",
+            new_name="layer_id_attribute",
+            new_value=layer_id_attribute,
+            old_name="layer_id",
+            old_value=layer_id,
+            default="layer_id",
+        )
         net = cls()
         net.node_id_to_label = _add_igraph_graph(
             net,
             g,
             edge_weights=edge_weights,
             vertex_weights=vertex_weights,
-            node_id=node_id,
-            layer_id=layer_id,
+            node_id=node_id_attribute,
+            layer_id=layer_id_attribute,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
             meta_attribute=meta_attribute,
         )
@@ -246,6 +303,7 @@ class Network(_NetworkWritersMixin):
         *,
         directed: bool = False,
         weighted: bool = True,
+        node_labels: Any = None,
         node_ids: Any = None,
     ) -> Network:
         """Build a :class:`Network` from a SciPy sparse adjacency matrix.
@@ -254,6 +312,15 @@ class Network(_NetworkWritersMixin):
         :meth:`Infomap.add_scipy_sparse_matrix` uses. The
         ``{internal_id: label}`` mapping is stored on
         :attr:`node_id_to_label`.
+
+        ``node_labels`` gives the matrix rows external labels, one per row;
+        without it the row indices are the node ids.
+
+        .. deprecated:: 2.16
+            ``node_ids`` is the pre-2.16 spelling of ``node_labels``; it emits a
+            :class:`DeprecationWarning` and leaves in 3.0. (It read as the
+            plural of ``node_id`` on the graph constructors, which names an
+            attribute rather than a sequence.)
 
         ``directed`` defaults to ``False``: a symmetric adjacency is the common
         undirected case, so ``A[i, j]`` and ``A[j, i]`` are folded together.
@@ -270,13 +337,21 @@ class Network(_NetworkWritersMixin):
         """
         from .io.scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 
+        node_labels = _renamed_keyword(
+            "Network.from_scipy_sparse_matrix",
+            new_name="node_labels",
+            new_value=node_labels,
+            old_name="node_ids",
+            old_value=node_ids,
+            default=None,
+        )
         net = cls()
         net.node_id_to_label = _add_scipy_sparse_matrix(
             net,
             A,
             directed=directed,
             weighted=weighted,
-            node_ids=node_ids,
+            node_ids=node_labels,
         )
         return net
 
@@ -288,6 +363,7 @@ class Network(_NetworkWritersMixin):
         edge_weight: Any = None,
         num_nodes: int | None = None,
         directed: bool = True,
+        node_labels: Any = None,
         node_ids: Any = None,
     ) -> Network:
         """Build a :class:`Network` from a PyG-style edge index.
@@ -295,6 +371,13 @@ class Network(_NetworkWritersMixin):
         Loads ``edge_index`` via the same adapter
         :meth:`Infomap.add_edge_index` uses. The ``{internal_id: label}``
         mapping is stored on :attr:`node_id_to_label`.
+
+        ``node_labels`` gives the nodes external labels, one per node index;
+        without it the indices are the node ids.
+
+        .. deprecated:: 2.16
+            ``node_ids`` is the pre-2.16 spelling of ``node_labels``; it emits a
+            :class:`DeprecationWarning` and leaves in 3.0.
 
         ``directed`` defaults to ``True``: a PyG ``edge_index`` is directed by
         convention -- each column is a ``source -> target`` edge, and undirected
@@ -312,6 +395,14 @@ class Network(_NetworkWritersMixin):
         """
         from .io.edge_index import add_edge_index as _add_edge_index
 
+        node_labels = _renamed_keyword(
+            "Network.from_edge_index",
+            new_name="node_labels",
+            new_value=node_labels,
+            old_name="node_ids",
+            old_value=node_ids,
+            default=None,
+        )
         net = cls()
         net.node_id_to_label = _add_edge_index(
             net,
@@ -319,7 +410,7 @@ class Network(_NetworkWritersMixin):
             edge_weight=edge_weight,
             num_nodes=num_nodes,
             directed=directed,
-            node_ids=node_ids,
+            node_ids=node_labels,
         )
         return net
 
