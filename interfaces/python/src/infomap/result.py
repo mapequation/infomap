@@ -1054,13 +1054,13 @@ class Result(_ResultWritersMixin):
 
         Examples
         --------
-        >>> from infomap import Infomap
-        >>> im = Infomap(seed=7)
-        >>> im.add_link(1, 2)
-        >>> result = im.run()
+        >>> import infomap
+        >>> result = infomap.run([(1, 2), (2, 3), (3, 1)], seed=7)
         >>> record = result.provenance()
-        >>> record["seed"], record["input"], len(record["configFingerprint"])
-        (7, None, 16)
+        >>> record["seed"], len(record["configFingerprint"])
+        (7, 16)
+        >>> record["input"] is None  # built in memory, so no file to identify
+        True
         """
         return copy.deepcopy(self._provenance)
 

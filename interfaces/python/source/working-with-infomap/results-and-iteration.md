@@ -145,9 +145,17 @@ the engine version, the effective seed and trial counts, the canonical
 configuration with its fingerprint, and the identity (`path`, `size`, `mtime`
 and a whole-content `hash`) of every file the run read. A network built in
 memory has no input identity, so `result.provenance()["input"]` is `None`
-then; the configuration and seed are always present. Log it next to
-`result.summary()` and a published number can be re-run months later. The
-options an `Infomap` instance was built with are on `im.options`.
+then; the configuration and seed are always present.
+
+```{code-cell} python
+record = result.provenance()
+print(f"seed:        {record['seed']}")
+print(f"config hash: {record['configFingerprint']}")
+print(f"input:       {record['input']}")
+```
+
+Log it next to `result.summary()` and a published number can be re-run months
+later.
 
 ### Getting assignments: `modules()`
 

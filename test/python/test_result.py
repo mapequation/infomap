@@ -564,9 +564,8 @@ def test_result_provenance_records_seed_config_and_input(example_network_path):
     # trip. The record is the engine's own, so it matches the headers.
     import infomap as infomap_module
 
-    im = Infomap(seed=7, num_trials=2)
-    im.read_file(str(example_network_path("twotriangles.net")))
-    result = im.run()
+    path = str(example_network_path("twotriangles.net"))
+    result = run(path, seed=7, num_trials=2)
     record = result.provenance()
 
     assert record["version"] == f"v{infomap_module.__version__}"
