@@ -1031,10 +1031,12 @@ class Result(_ResultWritersMixin):
     def provenance(self) -> dict[str, Any]:
         """What a reader needs to reproduce this run, as a plain ``dict``.
 
-        The same record the engine writes into the ``.tree`` / ``.clu`` headers,
-        the JSON tree and ``--manifest-json``, read programmatically -- so a run
+        The engine's own record of the run, read programmatically -- so a run
         can be logged from a running program without a manifest-file round trip
-        (#1026). Keys:
+        (#1026). The published artifacts carry *parts* of it: the ``.tree`` /
+        ``.ftree`` / ``.clu`` headers and the JSON tree stamp the fingerprints
+        (and the input size), but only ``--manifest-json`` and this method carry
+        the canonical config and the input paths. Keys:
 
         - ``version``: the engine version, e.g. ``"v2.16.0"``.
         - ``args``: the raw argument string the engine was configured with.

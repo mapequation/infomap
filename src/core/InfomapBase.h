@@ -756,6 +756,7 @@ protected:
   // between must not be hashed in the name of a partition built from the old
   // content. Dropped by any in-memory build call (InfomapWrapper).
   InputIdentity m_inputIdentityFromRead;
+  bool m_networkHasInMemoryContent = false;
   unsigned int m_numNonTrivialTopModules = 0;
   unsigned int m_tuneIterationIndex = 0;
   bool m_isCoarseTune = false;
