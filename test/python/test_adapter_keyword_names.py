@@ -181,3 +181,49 @@ def test_functional_run_steers_the_new_names_to_the_constructor():
         TypeError, match="node_labels.*Network.from_scipy_sparse_matrix"
     ):
         infomap.run(sp.csr_matrix([[0, 1], [1, 0]]), node_labels=["a", "b"])
+
+
+def test_explicit_none_for_the_old_spelling_is_still_a_typed_old_spelling():
+    # None is a legitimate value of node_ids ("no labels"), so it cannot double
+    # as the omission marker: node_ids=None is typed, gets its notice, and next
+    # to node_labels it is the documented conflict.
+    sp = pytest.importorskip("scipy.sparse")
+    matrix = sp.csr_matrix([[0, 1], [1, 0]])
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'node_ids' is deprecated"):
+        net = infomap.Network.from_scipy_sparse_matrix(matrix, node_ids=None)
+    assert net.node_id_to_label == {0: 0, 1: 1}
+    with pytest.raises(ValueError, match="pass only node_labels"):
+        infomap.Network.from_scipy_sparse_matrix(
+            matrix, node_labels=["a", "b"], node_ids=None
+        )
+
+
+def test_finders_announce_the_old_spelling_on_an_empty_graph_too():
+    # The finders return before building an engine for an empty graph; the
+    # renamed keywords are resolved before that return so the notice does not
+    # depend on the input's size.
+    with pytest.warns(
+        LEGACY_SURFACE_WARNING, match="'node_id' is deprecated on find_communities"
+    ):
+        assert infomap.find_communities(nx.Graph(), node_id="phys") == []
+    with pytest.raises(ValueError, match="both node_id_attribute"):
+        infomap.find_communities(nx.Graph(), node_id_attribute="phys", node_id="other")
+    ig = pytest.importorskip("igraph")
+    with pytest.warns(
+        LEGACY_SURFACE_WARNING,
+        match="'layer_id' is deprecated on find_igraph_communities",
+    ):
+        infomap.find_igraph_communities(ig.Graph(), layer_id="layer")
+
+
+def test_label_validation_errors_name_the_parameter_the_caller_used():
+    sp = pytest.importorskip("scipy.sparse")
+    matrix = sp.csr_matrix([[0, 1], [1, 0]])
+    with pytest.raises(ValueError, match="`node_labels` length must match"):
+        infomap.Network.from_scipy_sparse_matrix(matrix, node_labels=["a"])
+    with pytest.raises(ValueError, match="`node_labels` values must be unique"):
+        infomap.Network.from_edge_index([[0], [1]], node_labels=["a", "a"])
+    # The legacy add_* surface keeps its own wording.
+    im = infomap.Infomap(num_trials=1, seed=1)
+    with pytest.raises(ValueError, match="`node_ids` values must be unique"):
+        im.add_scipy_sparse_matrix(matrix, node_ids=["a", "a"])

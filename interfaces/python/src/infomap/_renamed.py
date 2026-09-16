@@ -15,7 +15,7 @@ from __future__ import annotations
 import warnings
 from typing import Any
 
-from ._options import LEGACY_SURFACE_WARNING, _external_stacklevel
+from ._options import _UNSET, LEGACY_SURFACE_WARNING, _external_stacklevel
 
 
 def renamed_keyword(
@@ -29,15 +29,17 @@ def renamed_keyword(
 ) -> Any:
     """Return the value of a renamed keyword, announcing the old spelling.
 
-    ``old_value`` is ``None`` unless the caller typed the deprecated keyword.
-    A typed old spelling emits the legacy tier's ``DeprecationWarning`` at the
+    ``old_value`` is the ``_UNSET`` sentinel unless the caller typed the
+    deprecated keyword -- a sentinel rather than ``None``, so an explicit
+    ``node_ids=None`` is still a typed old spelling that gets its notice. A
+    typed old spelling emits the legacy tier's ``DeprecationWarning`` at the
     caller's line and wins over the new parameter's *default*; typing both
     spellings with the new one set away from its default is a ``ValueError``,
     since picking one silently would hide a migration mistake.
     """
-    if old_value is None:
+    if old_value is _UNSET:
         return new_value
-    if new_value is not None and new_value != default:
+    if new_value is not default and (default is None or new_value != default):
         raise ValueError(
             f"{method}() got both {new_name}={new_value!r} and the deprecated "
             f"{old_name}={old_value!r}; pass only {new_name}."

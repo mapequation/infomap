@@ -166,8 +166,8 @@ class Network(_NetworkWritersMixin):
         layer_id_attribute: str = "layer_id",
         multilayer_inter_intra_format: bool = True,
         meta_attribute: str | None = None,
-        node_id: str | None = None,
-        layer_id: str | None = None,
+        node_id: str | None = _UNSET,
+        layer_id: str | None = _UNSET,
     ) -> Network:
         """Build a :class:`Network` from a NetworkX graph.
 
@@ -237,8 +237,8 @@ class Network(_NetworkWritersMixin):
         layer_id_attribute: str = "layer_id",
         multilayer_inter_intra_format: bool = True,
         meta_attribute: str | None = None,
-        node_id: str | None = None,
-        layer_id: str | None = None,
+        node_id: str | None = _UNSET,
+        layer_id: str | None = _UNSET,
     ) -> Network:
         """Build a :class:`Network` from a python-igraph graph.
 
@@ -304,7 +304,7 @@ class Network(_NetworkWritersMixin):
         directed: bool = False,
         weighted: bool = True,
         node_labels: Any = None,
-        node_ids: Any = None,
+        node_ids: Any = _UNSET,
     ) -> Network:
         """Build a :class:`Network` from a SciPy sparse adjacency matrix.
 
@@ -352,6 +352,7 @@ class Network(_NetworkWritersMixin):
             directed=directed,
             weighted=weighted,
             node_ids=node_labels,
+            labels_parameter="node_labels",
         )
         return net
 
@@ -364,7 +365,7 @@ class Network(_NetworkWritersMixin):
         num_nodes: int | None = None,
         directed: bool = True,
         node_labels: Any = None,
-        node_ids: Any = None,
+        node_ids: Any = _UNSET,
     ) -> Network:
         """Build a :class:`Network` from a PyG-style edge index.
 
@@ -411,6 +412,7 @@ class Network(_NetworkWritersMixin):
             num_nodes=num_nodes,
             directed=directed,
             node_ids=node_labels,
+            labels_parameter="node_labels",
         )
         return net
 

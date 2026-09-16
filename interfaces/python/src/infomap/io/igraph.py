@@ -6,6 +6,7 @@ from numbers import Integral, Real
 from typing import TYPE_CHECKING, Any
 
 from .._optional import require_igraph
+from .._options import _UNSET
 from ..errors import InfomapError
 from ._arrays import apply_node_meta_data, community_node_data
 
@@ -334,8 +335,8 @@ def find_igraph_communities(
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
     meta_attribute: str | None = None,
-    node_id: str | None = None,
-    layer_id: str | None = None,
+    node_id: str | None = _UNSET,
+    layer_id: str | None = _UNSET,
     **infomap_options: Any,
 ) -> igraph.VertexClustering:
     """Find communities in a python-igraph graph.
@@ -417,6 +418,24 @@ def find_igraph_communities(
     ig = _validate_igraph_graph(g)
     if trials is not None and "num_trials" in infomap_options:
         raise ValueError("Pass only one of `trials` and `num_trials`.")
+    from .._renamed import renamed_keyword
+
+    node_id_attribute = renamed_keyword(
+        "find_igraph_communities",
+        new_name="node_id_attribute",
+        new_value=node_id_attribute,
+        old_name="node_id",
+        old_value=node_id,
+        default="node_id",
+    )
+    layer_id_attribute = renamed_keyword(
+        "find_igraph_communities",
+        new_name="layer_id_attribute",
+        new_value=layer_id_attribute,
+        old_name="layer_id",
+        old_value=layer_id,
+        default="layer_id",
+    )
     if g.vcount() == 0:
         # No engine is built for an empty graph, so the constructor's merge --
         # where a removed field typed here is normally announced -- never
@@ -448,24 +467,6 @@ def find_igraph_communities(
         engine_options["num_trials"] = trials
 
     infomap = Infomap(options=options, **engine_options)
-    from .._renamed import renamed_keyword
-
-    node_id_attribute = renamed_keyword(
-        "find_igraph_communities",
-        new_name="node_id_attribute",
-        new_value=node_id_attribute,
-        old_name="node_id",
-        old_value=node_id,
-        default="node_id",
-    )
-    layer_id_attribute = renamed_keyword(
-        "find_igraph_communities",
-        new_name="layer_id_attribute",
-        new_value=layer_id_attribute,
-        old_name="layer_id",
-        old_value=layer_id,
-        default="layer_id",
-    )
     node_mapping = add_igraph_graph(
         infomap,
         g,

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
+from .._options import _UNSET
 from ._arrays import apply_node_meta_data, community_node_data
 
 if TYPE_CHECKING:
@@ -147,8 +148,8 @@ def find_communities(
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
     meta_attribute: str | None = None,
-    node_id: str | None = None,
-    layer_id: str | None = None,
+    node_id: str | None = _UNSET,
+    layer_id: str | None = _UNSET,
     **infomap_options: Any,
 ) -> list[set[Any]]:
     """Find communities in a NetworkX-style graph.
@@ -246,22 +247,6 @@ def find_communities(
             "find_communities expects a networkx graph (with a `.nodes` view)." + hint
         )
 
-    if len(g.nodes) == 0:
-        # No engine is built for an empty graph, so the constructor's merge --
-        # which is where a removed field typed here is normally announced --
-        # never runs. Announce it before returning, so the notice does not
-        # depend on the input's size (#915).
-        _announce_removed_fields(options, infomap_options)
-        return []
-
-    # The options= carrier goes through as the base configuration and the
-    # caller's bare keyword arguments override it (Infomap()'s own merge rule),
-    # with the `trials` alias applied on top. num_trials is left to the engine
-    # default (1), matching infomap.run().
-    engine_options = dict(infomap_options)
-    if trials is not None:
-        engine_options["num_trials"] = trials
-
     from .._renamed import renamed_keyword
 
     node_id_attribute = renamed_keyword(
@@ -280,6 +265,22 @@ def find_communities(
         old_value=layer_id,
         default="layer_id",
     )
+    if len(g.nodes) == 0:
+        # No engine is built for an empty graph, so the constructor's merge --
+        # which is where a removed field typed here is normally announced --
+        # never runs. Announce it before returning, so the notice does not
+        # depend on the input's size (#915).
+        _announce_removed_fields(options, infomap_options)
+        return []
+
+    # The options= carrier goes through as the base configuration and the
+    # caller's bare keyword arguments override it (Infomap()'s own merge rule),
+    # with the `trials` alias applied on top. num_trials is left to the engine
+    # default (1), matching infomap.run().
+    engine_options = dict(infomap_options)
+    if trials is not None:
+        engine_options["num_trials"] = trials
+
     infomap, _, node_mapping = _run_networkx(
         g,
         weight=weight,
