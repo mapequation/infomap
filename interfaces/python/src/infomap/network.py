@@ -777,7 +777,7 @@ class Network(_NetworkWritersMixin):
         source_id : int
         target_id : int
         """
-        self._core.network().removeLink(source_id, target_id)
+        self._core.removeLink(source_id, target_id)
         return self
 
     def remove_links(self, links: Any) -> Network:
@@ -970,9 +970,9 @@ class Network(_NetworkWritersMixin):
         """
         if meta_category is None and hasattr(node_id, "items"):
             for nid, category in node_id.items():
-                self._core.network().addMetaData(nid, category)
+                self._core.addMetaData(nid, category)
             return self
-        self._core.network().addMetaData(node_id, meta_category)
+        self._core.addMetaData(node_id, meta_category)
         return self
 
     # ----------------------------------------

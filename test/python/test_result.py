@@ -631,11 +631,35 @@ def test_provenance_input_identity_follows_what_was_actually_read(
     assert after_failure.run().provenance()["input"]["path"] == str(first)
 
     # Building on top of a file makes the network a mixture the file alone does
-    # not describe, so it stops identifying the run.
+    # not describe, so it stops identifying the run -- in either order, since
+    # a read with the default accumulate=True keeps what was there.
     extended = Infomap(num_trials=1, seed=1)
     extended.read_file(str(first))
     extended.add_link(90, 91)
     assert extended.run().provenance()["input"] is None
+
+    built_first = Infomap(num_trials=1, seed=1)
+    built_first.add_link(90, 91)
+    built_first.read_file(str(first))
+    assert built_first.run().provenance()["input"] is None
+
+    # accumulate=False replaces the network, so the in-memory content is gone
+    # and the file is the sole source again.
+    built_then_replaced = Infomap(num_trials=1, seed=1)
+    built_then_replaced.add_link(90, 91)
+    built_then_replaced.read_file(str(first), accumulate=False)
+    assert built_then_replaced.run().provenance()["input"]["path"] == str(first)
+
+    # The mutators Python reaches through the network proxy invalidate too.
+    removed = Infomap(num_trials=1, seed=1)
+    removed.read_file(str(first))
+    removed.remove_link(1, 2)
+    assert removed.run().provenance()["input"] is None
+
+    with_meta = Infomap(num_trials=1, seed=1)
+    with_meta.read_file(str(first))
+    with_meta.set_meta_data(1, 7)
+    assert with_meta.run().provenance()["input"] is None
 
 
 def test_provenance_hashes_the_content_that_was_read(tmp_path):

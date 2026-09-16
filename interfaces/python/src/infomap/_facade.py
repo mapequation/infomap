@@ -1445,7 +1445,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         bool
             ``True`` if the link existed and was removed.
         """
-        return self._core.network().removeLink(source_id, target_id)
+        return self._core.removeLink(source_id, target_id)
 
     def remove_links(self, links: Any) -> None:
         """Remove several links.
@@ -1793,9 +1793,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         """
         if meta_category is None and hasattr(node_id, "items"):
             for nid, category in node_id.items():
-                self._core.network().addMetaData(nid, category)
+                self._core.addMetaData(nid, category)
             return
-        self._core.network().addMetaData(node_id, meta_category)
+        self._core.addMetaData(node_id, meta_category)
 
     def add_networkx_graph(
         self,

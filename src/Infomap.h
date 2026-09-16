@@ -85,11 +85,15 @@ public:
     // content.
     const std::string path = filename;
     m_network.readInputData(std::move(filename), accumulate);
-    if (!accumulate)
+    if (!accumulate) {
+      // The network is replaced, so whatever was built or read before it is
+      // gone -- including any in-memory content.
       m_readInputPaths.clear();
+      m_networkHasInMemoryContent = false;
+    }
     if (!path.empty())
       m_readInputPaths.push_back(path);
-    m_inputIdentityFromRead = m_readInputPaths.size() == 1
+    m_inputIdentityFromRead = (m_readInputPaths.size() == 1 && !m_networkHasInMemoryContent)
         ? infomap::inputIdentity(m_readInputPaths.front())
         : InputIdentity();
   }
@@ -105,6 +109,25 @@ public:
   {
     m_readInputPaths.clear();
     m_inputIdentityFromRead = InputIdentity();
+    // Sticky until accumulate=false replaces the network: a read that follows
+    // an in-memory build with the default accumulate=true keeps both sources,
+    // so the file does not describe the network then either.
+    m_networkHasInMemoryContent = true;
+  }
+
+  // Reached from Python's remove_link() and set_meta_data(), which used to call
+  // straight through to the network and so left a file identity standing over a
+  // network the call had changed (#1026).
+  bool removeLink(unsigned int sourceId, unsigned int targetId)
+  {
+    noteInMemoryMutation();
+    return m_network.removeLink(sourceId, targetId);
+  }
+
+  void addMetaData(unsigned int nodeId, int meta)
+  {
+    noteInMemoryMutation();
+    m_network.addMetaData(nodeId, meta);
   }
 
   void addNode(unsigned int id)

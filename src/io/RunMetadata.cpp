@@ -118,10 +118,11 @@ std::string canonicalConfigJson(const Config& config)
   // Input identity (path, size, content) is captured separately by the input
   // fingerprints -- network, cluster data and metadata each get one in the
   // manifest and the artifact headers (#1026); the config fingerprint covers
-  // only algorithm-affecting settings, so it stays stable when the same input
-  // is referenced via a different path. The cluster/meta-data paths below stay
-  // in the config so a run that reads a file at all differs from one that does
-  // not.
+  // only algorithm-affecting settings. That makes it stable across paths for
+  // the *network* alone: the cluster-data and meta-data paths are still fields
+  // below, so moving either of those unchanged files does change this
+  // fingerprint. Their identities are published beside it, so a consumer that
+  // wants path-independence can compare hashes instead.
   //
   // How the trial budget is *divided* is deliberately excluded -- numTrials and
   // trialOffset name which slice of one budget a run executed, not what it
