@@ -37,12 +37,24 @@ InputIdentity inputIdentity(const std::string& path);
 // ``{"path","size","mtime","hash"}`` as JSON text, or ``null`` when unknown.
 std::string inputIdentityJson(const InputIdentity& identity);
 
+// The identities a run captured when it started, for the artifacts it writes.
+// An empty fingerprint means "compute it from the config".
+struct RunIdentities {
+  InputIdentity input;
+  InputIdentity clusterData;
+  InputIdentity metaData;
+  std::string configFingerprint;
+};
+
 std::string canonicalConfigJson(const Config& config);
 std::string configFingerprint(const Config& config);
 std::string inputFingerprintJson(const std::string& path);
 // Node-stable content hash of the input network (no size/mtime). Used by the
 // distributed-trial merge guard to confirm all shards ran on the same network.
 std::string networkFingerprint(const std::string& path);
+// Writes the identities the run captured. The Config-only overload re-reads
+// the paths in the config and exists for callers with no captured run.
+std::string runManifestJson(const Config& config, const RunIdentities& identities);
 std::string runManifestJson(const Config& config);
 
 } // namespace infomap

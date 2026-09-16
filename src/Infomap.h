@@ -73,12 +73,17 @@ public:
 
   void readInputData(std::string filename = "", bool accumulate = true)
   {
-    // Remembered for the run's input identity: the bindings never set
-    // networkFile, so this is the only record of which file was read (#1026).
-    // The last file read wins when several are accumulated.
-    if (!filename.empty())
-      m_lastReadInputPath = filename;
+    // The bindings never set networkFile, so this is the only record of what a
+    // run read (#1026). Recorded after the read, so a failed one leaves no
+    // claim; cleared when accumulate is false, since the network is replaced.
+    // Several accumulated files are a union no single path identifies, which
+    // the run start turns into an unknown identity rather than a wrong one.
+    const std::string path = filename;
     m_network.readInputData(std::move(filename), accumulate);
+    if (!accumulate)
+      m_readInputPaths.clear();
+    if (!path.empty())
+      m_readInputPaths.push_back(path);
   }
 
   // See provenanceJson() in io/Output.h: everything a caller needs to log or

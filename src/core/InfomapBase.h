@@ -745,13 +745,13 @@ protected:
   double m_oneLevelCodelength = 0.0;
   unsigned long m_baseSeed = 0;
   bool m_haveBaseSeed = false;
-  // See inputIdentity(). The wrapper's readInputData records the path it read
-  // in m_lastReadInputPath, since the bindings never set networkFile.
+  // See inputIdentity(). The wrapper's readInputData records the files it read
+  // in m_readInputPaths, since the bindings never set networkFile.
   InputIdentity m_inputIdentity;
   InputIdentity m_clusterDataIdentity;
   InputIdentity m_metaDataIdentity;
   std::string m_configFingerprint;
-  std::string m_lastReadInputPath;
+  std::vector<std::string> m_readInputPaths;
   unsigned int m_numNonTrivialTopModules = 0;
   unsigned int m_tuneIterationIndex = 0;
   bool m_isCoarseTune = false;

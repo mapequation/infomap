@@ -79,6 +79,12 @@ namespace {
       if (got < CHUNK_SIZE)
         break;
     }
+    // A short read is EOF *or* an I/O error, and the two must not be confused:
+    // hashing only the readable prefix would publish a valid-looking identity
+    // for content nobody read.
+    if (input.bad()) {
+      throw std::runtime_error(fmt::format(FMT_STRING("Cannot read input file '{}': the read failed partway through."), path));
+    }
 
     std::ostringstream out;
     out << std::hex << std::setw(16) << std::setfill('0') << hash;
@@ -251,7 +257,7 @@ std::string networkFingerprint(const std::string& path)
   return inputIdentity(path).hash;
 }
 
-std::string runManifestJson(const Config& config)
+std::string runManifestJson(const Config& config, const RunIdentities& identities)
 {
   const auto canonicalConfig = canonicalConfigJson(config);
   Json json;
@@ -259,15 +265,29 @@ std::string runManifestJson(const Config& config)
   json["command"] = config.parsedString;
   json["num_trials"] = config.numTrials;
   json["config"] = Json::parse(canonicalConfig);
-  json["config_fingerprint"] = fnvHex(canonicalConfig);
-  json["input"] = Json::parse(inputFingerprintJson(config.networkFile));
+  json["config_fingerprint"] = identities.configFingerprint.empty() ? fnvHex(canonicalConfig) : identities.configFingerprint;
+  // The identities the run captured when it started, not a re-hash of whatever
+  // the paths point at now: re-reading could disagree if a file changed since,
+  // and a network built through the bindings has no path in the config to
+  // re-read at all, so the manifest used to report a null input for a run whose
+  // headers named a file (#1026).
+  json["input"] = Json::parse(inputIdentityJson(identities.input));
   // Every file that changes the published partition, not only the network:
   // a --cluster-data seed and a --meta-data file used to be recorded by path
-  // alone, so two runs on different files could not be told apart (#1026).
-  json["cluster_data"] = Json::parse(inputFingerprintJson(config.clusterDataFile));
-  json["meta_data"] = Json::parse(inputFingerprintJson(config.metaDataFile));
+  // alone, so two runs on different files could not be told apart.
+  json["cluster_data"] = Json::parse(inputIdentityJson(identities.clusterData));
+  json["meta_data"] = Json::parse(inputIdentityJson(identities.metaData));
   json["outputs"] = Json::parse(outputArtifactsJson(config));
   return json.dump() + '\n';
+}
+
+std::string runManifestJson(const Config& config)
+{
+  RunIdentities identities;
+  identities.input = inputIdentity(config.networkFile);
+  identities.clusterData = inputIdentity(config.clusterDataFile);
+  identities.metaData = inputIdentity(config.metaDataFile);
+  return runManifestJson(config, identities);
 }
 
 } // namespace infomap

@@ -261,7 +261,12 @@ public:
     // path is the CLI's networkFile, or the file the bindings' readInputData
     // last read; an in-memory network has none.
     // Qualified: the unqualified name is InfomapBase::inputIdentity(), the accessor.
-    m_infomap.m_inputIdentity = infomap::inputIdentity(!m_infomap.networkFile.empty() ? m_infomap.networkFile : m_infomap.m_lastReadInputPath);
+    // A network the bindings accumulated from several files is a union that no
+    // single path identifies, so it gets no identity rather than a wrong one.
+    const std::string networkPath = !m_infomap.networkFile.empty()
+        ? m_infomap.networkFile
+        : (m_infomap.m_readInputPaths.size() == 1 ? m_infomap.m_readInputPaths.front() : std::string());
+    m_infomap.m_inputIdentity = infomap::inputIdentity(networkPath);
     m_infomap.m_clusterDataIdentity = infomap::inputIdentity(m_infomap.clusterDataFile);
     m_infomap.m_metaDataIdentity = infomap::inputIdentity(m_infomap.metaDataFile);
     m_infomap.m_configFingerprint = configFingerprint(m_infomap.getConfig());
@@ -1234,7 +1239,12 @@ public:
     }
 
     if (!m_infomap.runManifestPath.empty()) {
-      writeJsonReport(m_infomap.runManifestPath, runManifestJson(m_infomap), m_infomap.overwriteOutput());
+      RunIdentities identities;
+      identities.input = m_infomap.inputIdentity();
+      identities.clusterData = m_infomap.clusterDataIdentity();
+      identities.metaData = m_infomap.metaDataIdentity();
+      identities.configFingerprint = m_infomap.runConfigFingerprint();
+      writeJsonReport(m_infomap.runManifestPath, runManifestJson(m_infomap, identities), m_infomap.overwriteOutput());
     }
 
     if (!m_infomap.trialResultsPath.empty()) {
