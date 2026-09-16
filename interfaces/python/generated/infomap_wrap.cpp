@@ -57037,35 +57037,6 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_InfomapWrapper_noteInMemoryMutation(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::InfomapWrapper *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_noteInMemoryMutation" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
-  {
-    try {
-      (arg1)->noteInMemoryMutation();
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_InfomapWrapper_removeLink(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::InfomapWrapper *arg1 = 0 ;
@@ -61286,7 +61257,6 @@ static PyMethodDef SwigMethods[] = {
 	 { "delete_InfomapWrapper", _wrap_delete_InfomapWrapper, METH_O, NULL},
 	 { "InfomapWrapper_readInputData", _wrap_InfomapWrapper_readInputData, METH_VARARGS, NULL},
 	 { "InfomapWrapper_provenanceJson", _wrap_InfomapWrapper_provenanceJson, METH_O, NULL},
-	 { "InfomapWrapper_noteInMemoryMutation", _wrap_InfomapWrapper_noteInMemoryMutation, METH_O, NULL},
 	 { "InfomapWrapper_removeLink", _wrap_InfomapWrapper_removeLink, METH_VARARGS, NULL},
 	 { "InfomapWrapper_addMetaData", _wrap_InfomapWrapper_addMetaData, METH_VARARGS, NULL},
 	 { "InfomapWrapper_addNode", _wrap_InfomapWrapper_addNode, METH_VARARGS, NULL},
