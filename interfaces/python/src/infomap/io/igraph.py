@@ -103,9 +103,12 @@ def _integer_like(value, *, name):
     raise ValueError(f"`{name}` values must be integer-like.")
 
 
-def _node_ids(values):
+def _node_ids(values, *, name: str = "node_id"):
+    # ``name`` is the vertex attribute the values were read from, as the caller
+    # spelled it, so an error names the attribute -- not a keyword the caller
+    # may never have typed (node_id_attribute vs the deprecated node_id).
     if all(isinstance(value, Real) and not isinstance(value, bool) for value in values):
-        ids = [_integer_like(value, name="node_id") for value in values]
+        ids = [_integer_like(value, name=name) for value in values]
         # Coercing integer-valued floats to ints can make two textually distinct
         # labels (e.g. 1 and 1.0, or 2 and 2.0) collapse onto the same physical
         # id. Detect that here and name the colliding labels instead of silently
@@ -115,7 +118,7 @@ def _node_ids(values):
             seen = labels_by_id.setdefault(_node_id, label)
             if repr(seen) != repr(label):
                 raise ValueError(
-                    f"`node_id` labels {seen!r} and {label!r} both map to physical "
+                    f"`{name}` labels {seen!r} and {label!r} both map to physical "
                     f"id {_node_id}. Use distinct integer-valued node ids."
                 )
         return ids, {_node_id: str(_node_id) for _node_id in dict.fromkeys(ids)}
@@ -133,7 +136,7 @@ def _node_ids(values):
             seen = canonical[label]
             if repr(seen) != repr(label):
                 raise ValueError(
-                    f"`node_id` labels {seen!r} and {label!r} are distinct but "
+                    f"`{name}` labels {seen!r} and {label!r} are distinct but "
                     f"collide as the same key. Use distinct node ids."
                 )
         else:
@@ -144,8 +147,8 @@ def _node_ids(values):
     return ids, names
 
 
-def _layer_ids(values):
-    return [_integer_like(value, name="layer_id") for value in values]
+def _layer_ids(values, *, name: str = "layer_id"):
+    return [_integer_like(value, name=name) for value in values]
 
 
 def _vertex_names(g):
@@ -201,10 +204,10 @@ def add_igraph_graph(
 
     phys_names = {}
     if is_state_network:
-        phys, phys_names = _node_ids(phys_values)
+        phys, phys_names = _node_ids(phys_values, name=node_id)
     else:
         phys = vertices
-    layers = _layer_ids(layer_values) if is_multilayer_network else None
+    layers = _layer_ids(layer_values, name=layer_id) if is_multilayer_network else None
 
     for _node_id, name in phys_names.items():
         infomap.set_name(_node_id, name)

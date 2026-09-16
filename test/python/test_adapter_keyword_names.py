@@ -227,3 +227,25 @@ def test_label_validation_errors_name_the_parameter_the_caller_used():
     im = infomap.Infomap(num_trials=1, seed=1)
     with pytest.raises(ValueError, match="`node_ids` values must be unique"):
         im.add_scipy_sparse_matrix(matrix, node_ids=["a", "a"])
+
+
+def test_igraph_value_errors_name_the_attribute_the_caller_selected():
+    # The validators report the vertex attribute as the caller spelled it, so a
+    # call through node_id_attribute / layer_id_attribute is never told that a
+    # keyword it did not type ("node_id", "layer_id") holds bad values.
+    ig = pytest.importorskip("igraph")
+    graph = ig.Graph(edges=[(0, 1)])
+    graph.vs["phys"] = ["alpha", "beta"]
+    graph.vs["layer"] = ["one", "two"]
+    with pytest.raises(ValueError, match="`layer` values must be integer-like") as info:
+        infomap.Network.from_igraph(
+            graph, node_id_attribute="phys", layer_id_attribute="layer"
+        )
+    assert "layer_id" not in str(info.value)
+
+    # With the default attribute names the wording is unchanged.
+    legacy = ig.Graph(edges=[(0, 1)])
+    legacy.vs["node_id"] = ["alpha", "beta"]
+    legacy.vs["layer_id"] = ["one", "two"]
+    with pytest.raises(ValueError, match="`layer_id` values must be integer-like"):
+        infomap.Infomap(num_trials=1).add_igraph_graph(legacy)
