@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from infomap import Infomap, Result, datasets, run
+from infomap import Infomap, NetworkParseError, Result, __version__, datasets, run
 from infomap._options import LEGACY_SURFACE_WARNING
 
 
@@ -557,3 +557,101 @@ def test_stale_result_html_declines():
     first = im.run()
     im.run()  # re-run makes `first` stale
     assert first._repr_html_() is None
+
+
+def test_result_provenance_records_seed_config_and_input(example_network_path):
+    # #1026: a program could not log what it ran without a manifest-file round
+    # trip. The record is the engine's own, so it matches the headers.
+    path = example_network_path("twotriangles.net")
+    result = run(str(path), seed=7, num_trials=2)
+    record = result.provenance()
+
+    assert record["version"] == f"v{__version__}"
+    assert record["seed"] == 7
+    assert record["trials"] == 2 and record["numTrials"] == 2
+    assert record["config"]["seed"] == 7
+    assert len(record["configFingerprint"]) == 16
+    assert record["input"]["path"] == str(path)
+    assert record["input"]["size"] == path.stat().st_size
+    assert len(record["input"]["hash"]) == 16
+    assert record["clusterData"] is None and record["metaData"] is None
+    # A copy: mutating it does not touch the Result.
+    record["seed"] = 0
+    assert result.provenance()["seed"] == 7
+
+    # In memory: no input identity, but the configuration and seed are there.
+    in_memory = run([(0, 1), (1, 2), (2, 0)], seed=7)
+    assert in_memory.provenance()["input"] is None
+    assert in_memory.provenance()["seed"] == 7
+
+
+def test_infomap_keeps_the_options_it_was_built_with():
+    from infomap import Options
+
+    im = Infomap(seed=7, options=Options(num_trials=3, regularized=True))
+    assert im.options.seed == 7
+    assert im.options.num_trials == 3
+    assert im.options.regularized is True
+    assert isinstance(im.options, Options)
+
+
+def test_provenance_input_identity_follows_what_was_actually_read(
+    tmp_path, example_network_path
+):
+    """Only a network that came from one file gets an input identity.
+
+    The path is recorded after a successful read, so a failed one leaves no
+    claim, and a union accumulated from several files has no single identity to
+    report rather than the last file's.
+    """
+    first = example_network_path("twotriangles.net")
+    second = example_network_path("ninetriangles.net")
+
+    im = Infomap(num_trials=1, seed=1)
+    im.read_file(str(first))
+    assert im.run().provenance()["input"]["path"] == str(first)
+
+    # A second accumulated file makes the network a union of both.
+    union = Infomap(num_trials=1, seed=1)
+    union.read_file(str(first))
+    union.read_file(str(second))
+    assert union.run().provenance()["input"] is None
+
+    # accumulate=False replaces the network, so the new file is the sole source.
+    replaced = Infomap(num_trials=1, seed=1)
+    replaced.read_file(str(first))
+    replaced.read_file(str(second), accumulate=False)
+    assert replaced.run().provenance()["input"]["path"] == str(second)
+
+    # A read that failed never becomes the identity of what did get read.
+    after_failure = Infomap(num_trials=1, seed=1)
+    with pytest.raises(NetworkParseError):
+        after_failure.read_file(str(tmp_path / "missing.net"))
+    after_failure.read_file(str(first))
+    assert after_failure.run().provenance()["input"]["path"] == str(first)
+
+    # Building on top of a file makes the network a mixture the file alone does
+    # not describe, so it stops identifying the run.
+    extended = Infomap(num_trials=1, seed=1)
+    extended.read_file(str(first))
+    extended.add_link(90, 91)
+    assert extended.run().provenance()["input"] is None
+
+
+def test_provenance_hashes_the_content_that_was_read(tmp_path):
+    """The identity is captured at the read, not at the run.
+
+    A file edited in between would otherwise be hashed in the name of a
+    partition computed from the content that was actually parsed.
+    """
+    path = tmp_path / "net.net"
+    path.write_text("*Edges\n1 2 1.0\n2 3 1.0\n3 1 1.0\n", encoding="utf-8")
+
+    im = Infomap(num_trials=1, seed=1)
+    im.read_file(str(path))
+    at_read = run(str(path), seed=1).provenance()["input"]["hash"]
+
+    # Same length, different content: the run must report what it parsed.
+    path.write_text("*Edges\n1 2 9.0\n2 3 1.0\n3 1 1.0\n", encoding="utf-8")
+    assert im.run().provenance()["input"]["hash"] == at_read
+    assert run(str(path), seed=1).provenance()["input"]["hash"] != at_read

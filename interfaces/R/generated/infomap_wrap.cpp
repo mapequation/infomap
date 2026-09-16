@@ -47405,6 +47405,77 @@ R_swig_InfomapWrapper_readInputData__SWIG_2 ( SEXP self)
 
 
 SWIGEXPORT SEXP
+R_swig_InfomapWrapper_provenanceJson ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    std::string result;
+    infomap::InfomapWrapper *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_provenanceJson" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+    {
+      try {
+        result = ((infomap::InfomapWrapper const *)arg1)->provenanceJson();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_std_string(static_cast< std::string >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_InfomapWrapper_noteInMemoryMutation ( SEXP self)
+{
+  {
+    infomap::InfomapWrapper *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_noteInMemoryMutation" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+    {
+      try {
+        (arg1)->noteInMemoryMutation();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_InfomapWrapper_addNode__SWIG_0 ( SEXP self, SEXP id)
 {
   {
@@ -50925,6 +50996,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_children__SWIG_0", (DL_FUNC) &R_swig_InfomapIterator_children__SWIG_0, 2},
    {"R_swig_PerLevelStat_numNodes", (DL_FUNC) &R_swig_PerLevelStat_numNodes, 2},
    {"R_swig_InfomapIterator_children__SWIG_1", (DL_FUNC) &R_swig_InfomapIterator_children__SWIG_1, 2},
+   {"R_swig_InfomapWrapper_noteInMemoryMutation", (DL_FUNC) &R_swig_InfomapWrapper_noteInMemoryMutation, 1},
    {"R_swig_InfomapConfigInfomapBase_getConfig__SWIG_0", (DL_FUNC) &R_swig_InfomapConfigInfomapBase_getConfig__SWIG_0, 2},
    {"R_swig_InfomapConfigInfomapBase_getConfig__SWIG_1", (DL_FUNC) &R_swig_InfomapConfigInfomapBase_getConfig__SWIG_1, 2},
    {"R_swig_Config_noCoarseTune_set", (DL_FUNC) &R_swig_Config_noCoarseTune_set, 2},
@@ -51581,6 +51653,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_index_get", (DL_FUNC) &R_swig_InfomapIterator_index_get, 2},
    {"R_swig_StateNetwork_numAggregatedLinks", (DL_FUNC) &R_swig_StateNetwork_numAggregatedLinks, 2},
    {"R_swig_InfomapWrapper_addMultilayerIntraLink", (DL_FUNC) &R_swig_InfomapWrapper_addMultilayerIntraLink, 5},
+   {"R_swig_InfomapWrapper_provenanceJson", (DL_FUNC) &R_swig_InfomapWrapper_provenanceJson, 2},
    {"R_swig_InfoNode_replaceWithChildrenDebug", (DL_FUNC) &R_swig_InfoNode_replaceWithChildrenDebug, 1},
    {"R_swig_Config_isMultilayerNetwork", (DL_FUNC) &R_swig_Config_isMultilayerNetwork, 2},
    {"R_swig_Config_printAllTrials_get", (DL_FUNC) &R_swig_Config_printAllTrials_get, 2},

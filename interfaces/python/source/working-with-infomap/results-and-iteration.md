@@ -137,6 +137,32 @@ larger number means stronger, more compressible community structure.
 `result.num_levels` is the depth of the hierarchical tree (its deepest branch, on a ragged tree); a value of 2 means one
 level of modules above the leaves, the standard two-level result.
 
+### Recording what produced a result
+
+`result.provenance()` returns, as a plain `dict`, the same record the engine
+writes into the `.tree` / `.clu` headers, the JSON tree and `--manifest-json`:
+the engine version, the effective seed and trial counts, the canonical
+configuration with its fingerprint, and the identity (`path`, `size`, `mtime`
+and a whole-content `hash`) of every file the run read. A network built in
+memory has no input identity, so `result.provenance()["input"]` is `None`
+then; the configuration and seed are always present.
+
+```{code-cell} python
+record = result.provenance()
+print(f"seed:        {record['seed']}")
+print(f"config hash: {record['configFingerprint']}")
+print(f"input:       {record['input']}")
+```
+
+Log it next to `result.summary()` and a published number can be re-run months
+later.
+
+`.tree`, `.ftree`, `.clu` and the JSON tree carry this record in the file
+itself. **CSV and Newick deliberately do not**: a comment row breaks readers
+that take the first line as the header, and Newick has no comment syntax. Ship
+them next to a `.tree` or a `--manifest-json` file, or record
+`result.provenance()` yourself.
+
 ### Getting assignments: `modules()`
 
 ```{code-cell} python

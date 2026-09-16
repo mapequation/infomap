@@ -256,6 +256,19 @@ public:
     // Before the first seedTrial, so this is the seed the run was asked for.
     m_infomap.m_baseSeed = m_infomap.seedToRandomNumberGenerator;
     m_infomap.m_haveBaseSeed = true;
+    // The identity of what this run reads, captured before anything is written
+    // so the headers, the JSON tree and the manifest agree (#1026). The network
+    // path is the CLI's networkFile, or the file the bindings' readInputData
+    // last read; an in-memory network has none.
+    // Qualified: the unqualified name is InfomapBase::inputIdentity(), the accessor.
+    // The CLI names its file in the config; the bindings hashed theirs when they
+    // read it, which is also where a multi-file union was already resolved to
+    // "unknown" (InfomapWrapper::readInputData).
+    m_infomap.m_inputIdentity = !m_infomap.networkFile.empty()
+        ? infomap::inputIdentity(m_infomap.networkFile)
+        : m_infomap.m_inputIdentityFromRead;
+    m_infomap.m_clusterDataIdentity = infomap::inputIdentity(m_infomap.clusterDataFile);
+    m_infomap.m_metaDataIdentity = infomap::inputIdentity(m_infomap.metaDataFile);
     {
       auto timer = m_timing.scope("configure_network_s");
       configureNetworkMode();
@@ -273,6 +286,11 @@ public:
       writeOutputArtifacts(m_infomap, m_network, OutputPhase::BeforeFlow);
     }
     calculateFlowAndInitNetwork();
+    // Only now: configureNetworkMode() and the flow calculation settle flowModel
+    // and bipartite, both of which the canonical config hashes. Taken earlier,
+    // the fingerprint would not hash the config the manifest publishes beside
+    // it, and would disagree with the trial-results fingerprint.
+    m_infomap.m_configFingerprint = configFingerprint(m_infomap.getConfig());
     {
       auto timer = m_timing.scope("post_flow_output_s");
       writeOutputArtifacts(m_infomap, m_network, OutputPhase::AfterFlow);
@@ -458,6 +476,15 @@ private:
 
       InfomapBase worker(workerConfig);
       worker.m_initialPartition = m_infomap.m_initialPartition;
+      // A worker writes its own --print-all-trials artifacts, so it needs the
+      // run's captured provenance; built from a Config, it would otherwise
+      // publish headers with no input identity at all (#1026).
+      worker.m_inputIdentity = m_infomap.m_inputIdentity;
+      worker.m_clusterDataIdentity = m_infomap.m_clusterDataIdentity;
+      worker.m_metaDataIdentity = m_infomap.m_metaDataIdentity;
+      worker.m_configFingerprint = m_infomap.m_configFingerprint;
+      worker.m_baseSeed = m_infomap.baseSeed();
+      worker.m_haveBaseSeed = true;
       // Share the cancel flag so workers observe a cancel; they only read it and
       // unwind, caught by the per-trial handler below (issue #412).
       worker.inheritRuntimeContext(m_infomap);
@@ -1225,13 +1252,22 @@ public:
     }
 
     if (!m_infomap.runManifestPath.empty()) {
-      writeJsonReport(m_infomap.runManifestPath, runManifestJson(m_infomap), m_infomap.overwriteOutput());
+      RunIdentities identities;
+      identities.input = m_infomap.inputIdentity();
+      identities.clusterData = m_infomap.clusterDataIdentity();
+      identities.metaData = m_infomap.metaDataIdentity();
+      identities.configFingerprint = m_infomap.runConfigFingerprint();
+      writeJsonReport(m_infomap.runManifestPath, runManifestJson(m_infomap, identities), m_infomap.overwriteOutput());
     }
 
     if (!m_infomap.trialResultsPath.empty()) {
       TrialResultsFile trialResultsFile;
-      trialResultsFile.networkFingerprint = networkFingerprint(m_infomap.networkFile);
-      trialResultsFile.configFingerprint = configFingerprint(m_infomap.getConfig());
+      // The identity this run captured, not a re-read: a binding run has no
+      // networkFile to re-hash and emitted an empty fingerprint, which
+      // infomap.merge rejects, and a CLI re-read could disagree with the
+      // headers if the file changed during the run (#1026).
+      trialResultsFile.networkFingerprint = m_infomap.inputIdentity().hash;
+      trialResultsFile.configFingerprint = m_infomap.runConfigFingerprint();
       trialResultsFile.infomapVersion = INFOMAP_VERSION;
       trialResultsFile.baseSeed = m_baseSeed;
       trialResultsFile.trialOffset = m_infomap.trialOffset;

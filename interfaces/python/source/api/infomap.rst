@@ -91,6 +91,7 @@ Running Infomap
 .. autosummary::
 
    ~Infomap.run
+   ~Infomap.options
    ~Infomap.run_with_options
    ~Infomap.from_options
 

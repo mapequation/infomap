@@ -57007,6 +57007,65 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_InfomapWrapper_provenanceJson(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapWrapper *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::string result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_provenanceJson" "', argument " "1"" of type '" "infomap::InfomapWrapper const *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+  {
+    try {
+      result = ((infomap::InfomapWrapper const *)arg1)->provenanceJson();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapWrapper_noteInMemoryMutation(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapWrapper *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_noteInMemoryMutation" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+  {
+    try {
+      (arg1)->noteInMemoryMutation();
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_InfomapWrapper_addNode__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   infomap::InfomapWrapper *arg1 = 0 ;
@@ -61137,6 +61196,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "new_InfomapWrapper", _wrap_new_InfomapWrapper, METH_VARARGS, NULL},
 	 { "delete_InfomapWrapper", _wrap_delete_InfomapWrapper, METH_O, NULL},
 	 { "InfomapWrapper_readInputData", _wrap_InfomapWrapper_readInputData, METH_VARARGS, NULL},
+	 { "InfomapWrapper_provenanceJson", _wrap_InfomapWrapper_provenanceJson, METH_O, NULL},
+	 { "InfomapWrapper_noteInMemoryMutation", _wrap_InfomapWrapper_noteInMemoryMutation, METH_O, NULL},
 	 { "InfomapWrapper_addNode", _wrap_InfomapWrapper_addNode, METH_VARARGS, NULL},
 	 { "InfomapWrapper_addName", _wrap_InfomapWrapper_addName, METH_VARARGS, NULL},
 	 { "InfomapWrapper_getName", _wrap_InfomapWrapper_getName, METH_VARARGS, NULL},
