@@ -212,6 +212,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         # The stale-silent advisory in _run_from_options fires at most once.
         self._warned_stale_silent = False
         self._core = Core(_package_construct_args()(args, **kwargs))
+        # The configuration this instance was built with, kept so a program can
+        # log it without a manifest-file round trip (#1026); see `options`.
+        self._options = options
         self._network = Network(core=self._core)
         self.node_id_to_label = {}
         # Run-generation token: incremented on every run(). A Result stamps the
@@ -2367,6 +2370,21 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             initial_partition=initial_partition,
             options=options,
         )
+
+    @property
+    def options(self) -> Options:
+        """The :class:`Options` this instance was constructed with.
+
+        The merged result of the ``options=`` carrier and the keyword
+        arguments given to :class:`Infomap`, resolved once at construction and
+        kept so a program can record what it ran without a manifest-file round
+        trip. Per-run keywords passed to :meth:`run` are not folded in; the
+        engine's own view of the configuration a run actually used, including
+        those, is :meth:`Result.provenance` (its ``"config"`` entry).
+
+        .. versionadded:: 2.16
+        """
+        return self._options
 
     @property
     def network(self):

@@ -485,6 +485,91 @@ def test_run_manifest_contains_fingerprints_and_outputs(infomap_bin, work):
     assert data["input"]["path"] == "network.net"
     assert data["input"]["size"] == (work / "network.net").stat().st_size
     assert any(output["path"].endswith("network.tree") for output in data["outputs"])
+    # Files this run did not read are recorded as unknown, not omitted.
+    assert data["cluster_data"] is None
+    assert data["meta_data"] is None
+
+
+def test_artifact_headers_carry_the_manifest_input_identity(infomap_bin, work):
+    # #1026: the header had the seed but nothing identifying the input, and the
+    # cluster-data seed was recorded by path alone.
+    make_workdir(work)
+    (work / "seed.clu").write_text("# node module\n1 1\n2 1\n", encoding="utf-8")
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "--seed",
+        "123",
+        "-c",
+        "seed.clu",
+        "-o",
+        "tree,clu,json",
+        "--manifest-json",
+        "manifest.json",
+        cwd=work,
+    )
+    assert result.returncode == 0, result.stderr
+
+    data = json.loads((work / "manifest.json").read_text(encoding="utf-8"))
+    validate_json_schema(data, "run-manifest.schema.json")
+    assert data["cluster_data"]["path"] == "seed.clu"
+    assert len(data["cluster_data"]["hash"]) == 16
+    assert data["meta_data"] is None
+
+    tree = (work / "out" / "network.tree").read_text(encoding="utf-8")
+    clu = (work / "out" / "network.clu").read_text(encoding="utf-8")
+    size = (work / "network.net").stat().st_size
+    input_line = f"# input fingerprint {data['input']['hash']} ({size} bytes)"
+    for text in (tree, clu):
+        assert input_line in text, text
+        assert f"# cluster data fingerprint {data['cluster_data']['hash']}" in text, (
+            text
+        )
+        assert f"# config fingerprint {data['config_fingerprint']}" in text, text
+        assert "# meta data fingerprint" not in text
+
+    tree_json = json.loads((work / "out" / "network.json").read_text(encoding="utf-8"))
+    validate_json_schema(tree_json, "partition-output.schema.json")
+    assert tree_json["input"] == data["input"]
+    assert tree_json["clusterData"] == data["cluster_data"]
+    assert tree_json["configFingerprint"] == data["config_fingerprint"]
+    assert "metaData" not in tree_json
+
+
+def test_input_fingerprint_sees_an_interior_edit(infomap_bin, work):
+    # The fingerprint used to be the size plus the first and last 64 KiB, so a
+    # same-size edit in the middle of a file over 128 KiB went unnoticed (#1026).
+    work.mkdir(parents=True, exist_ok=True)
+    lines = ["*Edges"] + [f"{i} {i + 1} 1.0" for i in range(1, 20001)]
+    text = "\n".join(lines) + "\n"
+    assert len(text) > 3 * 65536
+    (work / "a.net").write_text(text, encoding="utf-8")
+    middle = len(text) // 2
+    edit = text.find(" 1.0\n", middle)
+    edited = text[:edit] + " 3.0\n" + text[edit + 5 :]
+    assert len(edited) == len(text)
+    (work / "b.net").write_text(edited, encoding="utf-8")
+
+    hashes = {}
+    for name in ("a", "b"):
+        result = run(
+            infomap_bin,
+            f"{name}.net",
+            "out",
+            "--silent",
+            "--no-infomap",
+            "--manifest-json",
+            f"{name}.json",
+            cwd=work,
+        )
+        assert result.returncode == 0, result.stderr
+        hashes[name] = json.loads((work / f"{name}.json").read_text(encoding="utf-8"))[
+            "input"
+        ]["hash"]
+    assert hashes["a"] != hashes["b"], hashes
 
 
 def main(argv):
@@ -511,6 +596,8 @@ def main(argv):
             test_parallel_trials_artifacts_record_the_base_seed,
             test_overwrite_flag_is_removed,
             test_run_manifest_contains_fingerprints_and_outputs,
+            test_artifact_headers_carry_the_manifest_input_identity,
+            test_input_fingerprint_sees_an_interior_edit,
         ]:
             try:
                 test(infomap_bin, tmp_path / test.__name__)

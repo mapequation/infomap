@@ -19,6 +19,7 @@
 #include "../io/ClusterMap.h"
 #include "../io/Network.h"
 #include "../io/Output.h"
+#include "../io/RunMetadata.h"
 #include "../utils/Log.h"
 #include "../utils/Date.h"
 #include "../utils/Stopwatch.h"
@@ -161,6 +162,17 @@ public:
   // Guarded from SWIG so it is not exposed as a new binding, the same way
   // getReferenceOneLevelCodelength above is: the output writer is its only caller.
   unsigned long baseSeed() const { return m_haveBaseSeed ? m_baseSeed : seedToRandomNumberGenerator; }
+
+  // Identity of every result-affecting input file and of the effective config,
+  // captured once when a run starts so every artifact the run writes -- the
+  // .tree/.ftree/.clu headers, the JSON tree, the manifest -- carries the same
+  // values (#1026). Unknown (empty hash) when the network was built in memory
+  // or the file was not used. Guarded from SWIG like baseSeed(); the bindings
+  // read all of it through provenanceJson().
+  const InputIdentity& inputIdentity() const { return m_inputIdentity; }
+  const InputIdentity& clusterDataIdentity() const { return m_clusterDataIdentity; }
+  const InputIdentity& metaDataIdentity() const { return m_metaDataIdentity; }
+  const std::string& runConfigFingerprint() const { return m_configFingerprint; }
 #endif
 
 #ifndef SWIG
@@ -733,6 +745,13 @@ protected:
   double m_oneLevelCodelength = 0.0;
   unsigned long m_baseSeed = 0;
   bool m_haveBaseSeed = false;
+  // See inputIdentity(). The wrapper's readInputData records the path it read
+  // in m_lastReadInputPath, since the bindings never set networkFile.
+  InputIdentity m_inputIdentity;
+  InputIdentity m_clusterDataIdentity;
+  InputIdentity m_metaDataIdentity;
+  std::string m_configFingerprint;
+  std::string m_lastReadInputPath;
   unsigned int m_numNonTrivialTopModules = 0;
   unsigned int m_tuneIterationIndex = 0;
   bool m_isCoarseTune = false;

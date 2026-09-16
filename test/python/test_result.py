@@ -557,3 +557,41 @@ def test_stale_result_html_declines():
     first = im.run()
     im.run()  # re-run makes `first` stale
     assert first._repr_html_() is None
+
+
+def test_result_provenance_records_seed_config_and_input(example_network_path):
+    # #1026: a program could not log what it ran without a manifest-file round
+    # trip. The record is the engine's own, so it matches the headers.
+    import infomap as infomap_module
+
+    im = Infomap(seed=7, num_trials=2)
+    im.read_file(str(example_network_path("twotriangles.net")))
+    result = im.run()
+    record = result.provenance()
+
+    assert record["version"] == f"v{infomap_module.__version__}"
+    assert record["seed"] == 7
+    assert record["trials"] == 2 and record["numTrials"] == 2
+    assert record["config"]["seed"] == 7
+    assert len(record["configFingerprint"]) == 16
+    assert record["input"]["path"].endswith("twotriangles.net")
+    assert record["input"]["size"] > 0 and len(record["input"]["hash"]) == 16
+    assert record["clusterData"] is None and record["metaData"] is None
+    # A copy: mutating it does not touch the Result.
+    record["seed"] = 0
+    assert result.provenance()["seed"] == 7
+
+    # In memory: no input identity, but the configuration and seed are there.
+    in_memory = run([(0, 1), (1, 2), (2, 0)], seed=7)
+    assert in_memory.provenance()["input"] is None
+    assert in_memory.provenance()["seed"] == 7
+
+
+def test_infomap_keeps_the_options_it_was_built_with():
+    from infomap import Options
+
+    im = Infomap(seed=7, options=Options(num_trials=3, regularized=True))
+    assert im.options.seed == 7
+    assert im.options.num_trials == 3
+    assert im.options.regularized is True
+    assert isinstance(im.options, Options)

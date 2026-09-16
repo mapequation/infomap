@@ -256,6 +256,15 @@ public:
     // Before the first seedTrial, so this is the seed the run was asked for.
     m_infomap.m_baseSeed = m_infomap.seedToRandomNumberGenerator;
     m_infomap.m_haveBaseSeed = true;
+    // The identity of what this run reads, captured before anything is written
+    // so the headers, the JSON tree and the manifest agree (#1026). The network
+    // path is the CLI's networkFile, or the file the bindings' readInputData
+    // last read; an in-memory network has none.
+    // Qualified: the unqualified name is InfomapBase::inputIdentity(), the accessor.
+    m_infomap.m_inputIdentity = infomap::inputIdentity(!m_infomap.networkFile.empty() ? m_infomap.networkFile : m_infomap.m_lastReadInputPath);
+    m_infomap.m_clusterDataIdentity = infomap::inputIdentity(m_infomap.clusterDataFile);
+    m_infomap.m_metaDataIdentity = infomap::inputIdentity(m_infomap.metaDataFile);
+    m_infomap.m_configFingerprint = configFingerprint(m_infomap.getConfig());
     {
       auto timer = m_timing.scope("configure_network_s");
       configureNetworkMode();

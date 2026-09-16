@@ -3132,6 +3132,9 @@ class InfomapWrapper(InfomapBase):
     def readInputData(self, *args):
         return _infomap.InfomapWrapper_readInputData(self, *args)
 
+    def provenanceJson(self):
+        return _infomap.InfomapWrapper_provenanceJson(self)
+
     def addNode(self, *args):
         return _infomap.InfomapWrapper_addNode(self, *args)
 

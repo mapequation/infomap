@@ -71,7 +71,19 @@ public:
   // Wrapper methods
   // ===================================================
 
-  void readInputData(std::string filename = "", bool accumulate = true) { m_network.readInputData(std::move(filename), accumulate); }
+  void readInputData(std::string filename = "", bool accumulate = true)
+  {
+    // Remembered for the run's input identity: the bindings never set
+    // networkFile, so this is the only record of which file was read (#1026).
+    // The last file read wins when several are accumulated.
+    if (!filename.empty())
+      m_lastReadInputPath = filename;
+    m_network.readInputData(std::move(filename), accumulate);
+  }
+
+  // See provenanceJson() in io/Output.h: everything a caller needs to log or
+  // reproduce this run, as one JSON string the bindings parse (#1026).
+  std::string provenanceJson() const { return infomap::provenanceJson(*this); }
 
   void addNode(unsigned int id) { m_network.addNode(id); }
   void addNode(unsigned int id, std::string name) { m_network.addNode(id, std::move(name)); }

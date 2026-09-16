@@ -38,6 +38,8 @@ legacy ``Infomap`` accessors (parity is a gate).
 
 from __future__ import annotations
 
+import copy
+import json
 import warnings
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
@@ -326,6 +328,7 @@ class Result(_ResultWritersMixin):
         "_num_physical_nodes",
         "_num_top_modules",
         "_one_level_codelength",
+        "_provenance",
         "_relative_codelength_savings",
         "_snapshots",
         "_state_names",
@@ -355,6 +358,11 @@ class Result(_ResultWritersMixin):
             self, "_num_non_trivial_top_modules", core.numNonTrivialTopModules()
         )
         object.__setattr__(self, "_num_levels", core.numLevels())
+        # Captured eagerly, like the other scalars: the engine's own record of
+        # the run -- version, seed, trials, canonical config and fingerprint,
+        # input identities -- so the Result stays a self-contained artifact
+        # after the engine re-runs (#1026).
+        object.__setattr__(self, "_provenance", json.loads(core.provenanceJson()))
         object.__setattr__(self, "_num_nodes", core.network().numNodes())
         object.__setattr__(
             self, "_num_physical_nodes", core.network().numPhysicalNodes()
@@ -1019,6 +1027,42 @@ class Result(_ResultWritersMixin):
         return self._effective_num_modules_cached(
             resolve_level("effective_num_modules", level, depth, depth_level)
         )
+
+    def provenance(self) -> dict[str, Any]:
+        """What a reader needs to reproduce this run, as a plain ``dict``.
+
+        The same record the engine writes into the ``.tree`` / ``.clu`` headers,
+        the JSON tree and ``--manifest-json``, read programmatically -- so a run
+        can be logged from a running program without a manifest-file round trip
+        (#1026). Keys:
+
+        - ``version``: the engine version, e.g. ``"v2.16.0"``.
+        - ``args``: the raw argument string the engine was configured with.
+        - ``seed``: the effective base seed (the default when none was given),
+          ``trialOffset``, and ``trials`` of ``numTrials``.
+        - ``config``: the canonical configuration the run used, one entry per
+          algorithm-affecting option, and ``configFingerprint``, its hash --
+          the same fingerprint ``--print-config-fingerprint`` prints.
+        - ``input``, ``clusterData``, ``metaData``: ``{path, size, mtime,
+          hash}`` for each file the run read, where ``hash`` covers the whole
+          content, or ``None`` when no file is known -- a network built in
+          memory has no input identity, and an option not used has none.
+
+        Returns a copy; mutating it does not affect the :class:`Result`.
+
+        .. versionadded:: 2.16
+
+        Examples
+        --------
+        >>> from infomap import Infomap
+        >>> im = Infomap(seed=7)
+        >>> im.add_link(1, 2)
+        >>> result = im.run()
+        >>> record = result.provenance()
+        >>> record["seed"], record["input"], len(record["configFingerprint"])
+        (7, None, 16)
+        """
+        return copy.deepcopy(self._provenance)
 
     def summary(self) -> dict[str, Any]:
         """Return the result's scalar metrics as a plain ``dict``.
