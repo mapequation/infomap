@@ -102,9 +102,14 @@ public:
   // reproduce this run, as one JSON string the bindings parse (#1026).
   std::string provenanceJson() const { return infomap::provenanceJson(*this); }
 
+#ifndef SWIG
   // Every in-memory build call below goes through this first: a network the
   // caller extended after reading a file is a mixture that file alone does not
   // describe, so the file stops identifying the run (#1026).
+  //
+  // Guarded from SWIG like baseSeed() above: it is bookkeeping the mutators do
+  // for themselves, not an operation to offer the bindings. The generated
+  // wrapper still compiles against the real header, where it is visible.
   void noteInMemoryMutation()
   {
     m_readInputPaths.clear();
@@ -114,6 +119,7 @@ public:
     // so the file does not describe the network then either.
     m_networkHasInMemoryContent = true;
   }
+#endif
 
   // Reached from Python's remove_link() and set_meta_data(), which used to call
   // straight through to the network and so left a file identity standing over a
