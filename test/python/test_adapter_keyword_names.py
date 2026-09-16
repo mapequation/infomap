@@ -89,7 +89,7 @@ def test_from_igraph_attribute_names_match_the_networkx_constructor():
         )
     with pytest.warns(
         LEGACY_SURFACE_WARNING,
-        match="'node_id' is deprecated on infomap.Network.from_igraph",
+        match="'node_id' is deprecated on Network.from_igraph",
     ):
         legacy = infomap.Network.from_igraph(graph, node_id="phys", layer_id="layer")
     assert (
@@ -109,7 +109,7 @@ def test_matrix_constructors_take_node_labels_and_announce_node_ids():
     assert canonical.node_id_to_label == dict(enumerate(labels))
     with pytest.warns(
         LEGACY_SURFACE_WARNING,
-        match="'node_ids' is deprecated on infomap.Network.from_scipy_sparse_matrix",
+        match="'node_ids' is deprecated on Network.from_scipy_sparse_matrix",
     ) as records:
         legacy = infomap.Network.from_scipy_sparse_matrix(matrix, node_ids=labels)
     assert legacy.node_id_to_label == canonical.node_id_to_label
@@ -126,7 +126,7 @@ def test_matrix_constructors_take_node_labels_and_announce_node_ids():
         )
     with pytest.warns(
         LEGACY_SURFACE_WARNING,
-        match="'node_ids' is deprecated on infomap.Network.from_edge_index",
+        match="'node_ids' is deprecated on Network.from_edge_index",
     ):
         legacy_ei = infomap.Network.from_edge_index([[0, 1], [1, 2]], node_ids=labels)
     assert (
@@ -174,12 +174,10 @@ def test_functional_run_steers_the_new_names_to_the_constructor():
     # The adapter-kwarg guard knows the new spellings, so infomap.run() names
     # the right constructor instead of a generic unknown-option error.
     graph = _state_graph()
-    with pytest.raises(
-        TypeError, match="node_id_attribute.*infomap.Network.from_networkx"
-    ):
+    with pytest.raises(TypeError, match="node_id_attribute.*Network.from_networkx"):
         infomap.run(graph, node_id_attribute="phys")
     sp = pytest.importorskip("scipy.sparse")
     with pytest.raises(
-        TypeError, match="node_labels.*infomap.Network.from_scipy_sparse_matrix"
+        TypeError, match="node_labels.*Network.from_scipy_sparse_matrix"
     ):
         infomap.run(sp.csr_matrix([[0, 1], [1, 0]]), node_labels=["a", "b"])
