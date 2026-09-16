@@ -752,6 +752,10 @@ protected:
   InputIdentity m_metaDataIdentity;
   std::string m_configFingerprint;
   std::vector<std::string> m_readInputPaths;
+  // Hashed when the file was read, not when the run starts: a file edited in
+  // between must not be hashed in the name of a partition built from the old
+  // content. Dropped by any in-memory build call (InfomapWrapper).
+  InputIdentity m_inputIdentityFromRead;
   unsigned int m_numNonTrivialTopModules = 0;
   unsigned int m_tuneIterationIndex = 0;
   bool m_isCoarseTune = false;

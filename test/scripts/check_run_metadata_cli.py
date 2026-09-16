@@ -572,6 +572,85 @@ def test_input_fingerprint_sees_an_interior_edit(infomap_bin, work):
     assert hashes["a"] != hashes["b"], hashes
 
 
+def test_parallel_trial_artifacts_carry_the_runs_provenance(infomap_bin, work):
+    # #1026: a parallel-trial worker is built from a Config and writes its own
+    # --print-all-trials artifacts, so without the run's captured identities its
+    # headers named no input at all.
+    make_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "--seed",
+        "42",
+        "-N2",
+        "--parallel-trials",
+        "--print-all-trials",
+        "-o",
+        "tree",
+        "--manifest-json",
+        "manifest.json",
+        cwd=work,
+    )
+    assert result.returncode == 0, result.stderr
+
+    data = json.loads((work / "manifest.json").read_text(encoding="utf-8"))
+    expected = (
+        f"# input fingerprint {data['input']['hash']} ({data['input']['size']} bytes)"
+    )
+    trees = sorted((work / "out").glob("*.tree"))
+    assert len(trees) >= 2, [tree.name for tree in trees]
+    for tree in trees:
+        text = tree.read_text(encoding="utf-8")
+        assert expected in text, (tree.name, text)
+        assert f"# config fingerprint {data['config_fingerprint']}" in text, tree.name
+
+
+def test_config_fingerprint_hashes_the_config_published_beside_it(infomap_bin, work):
+    # The fingerprint used to be taken before the flow model and the bipartite
+    # flag were settled, so a directed run published a hash of a config that was
+    # not the one in the same file (#1026).
+    make_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "--directed",
+        "-o",
+        "tree",
+        "--manifest-json",
+        "manifest.json",
+        "--trial-results",
+        "trials.json",
+        cwd=work,
+    )
+    assert result.returncode == 0, result.stderr
+
+    data = json.loads((work / "manifest.json").read_text(encoding="utf-8"))
+    assert data["config"]["flow_model"] == "directed"
+    # --print-config-fingerprint hashes the config as the CLI resolved it, so it
+    # is the independent check that the published pair belongs together.
+    printed = run(
+        infomap_bin,
+        "network.net",
+        "--silent",
+        "--directed",
+        "--print-config-fingerprint",
+        cwd=work,
+    )
+    assert printed.returncode == 0, printed.stderr
+    assert data["config_fingerprint"] == printed.stdout.strip()
+
+    trials = json.loads((work / "trials.json").read_text(encoding="utf-8"))
+    assert trials["config_fingerprint"] == data["config_fingerprint"]
+    # The network fingerprint is the identity the run captured, not a re-read.
+    assert trials["network_fingerprint"] == data["input"]["hash"]
+
+
 def main(argv):
     infomap_bin = argv[1]
     import tempfile
@@ -598,6 +677,8 @@ def main(argv):
             test_run_manifest_contains_fingerprints_and_outputs,
             test_artifact_headers_carry_the_manifest_input_identity,
             test_input_fingerprint_sees_an_interior_edit,
+            test_parallel_trial_artifacts_carry_the_runs_provenance,
+            test_config_fingerprint_hashes_the_config_published_beside_it,
         ]:
             try:
                 test(infomap_bin, tmp_path / test.__name__)

@@ -629,3 +629,29 @@ def test_provenance_input_identity_follows_what_was_actually_read(
         after_failure.read_file(str(tmp_path / "missing.net"))
     after_failure.read_file(str(first))
     assert after_failure.run().provenance()["input"]["path"] == str(first)
+
+    # Building on top of a file makes the network a mixture the file alone does
+    # not describe, so it stops identifying the run.
+    extended = Infomap(num_trials=1, seed=1)
+    extended.read_file(str(first))
+    extended.add_link(90, 91)
+    assert extended.run().provenance()["input"] is None
+
+
+def test_provenance_hashes_the_content_that_was_read(tmp_path):
+    """The identity is captured at the read, not at the run.
+
+    A file edited in between would otherwise be hashed in the name of a
+    partition computed from the content that was actually parsed.
+    """
+    path = tmp_path / "net.net"
+    path.write_text("*Edges\n1 2 1.0\n2 3 1.0\n3 1 1.0\n", encoding="utf-8")
+
+    im = Infomap(num_trials=1, seed=1)
+    im.read_file(str(path))
+    at_read = run(str(path), seed=1).provenance()["input"]["hash"]
+
+    # Same length, different content: the run must report what it parsed.
+    path.write_text("*Edges\n1 2 9.0\n2 3 1.0\n3 1 1.0\n", encoding="utf-8")
+    assert im.run().provenance()["input"]["hash"] == at_read
+    assert run(str(path), seed=1).provenance()["input"]["hash"] != at_read

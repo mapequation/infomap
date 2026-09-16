@@ -286,6 +286,12 @@ print("Temp directory removed.")
   path, flow, name, and node id for every node.
 - {meth}`infomap.Result.write_clu` writes a `.clu` flat table; pass
   `level` to choose the level.
+- `.tree`, `.ftree`, `.clu` and the JSON tree head their content with the run's
+  provenance: version, seed, codelength, and the fingerprint of every input file
+  (see {meth}`infomap.Result.provenance`). **CSV and Newick carry none** -- a
+  comment row breaks readers that take the first line as the header, and Newick
+  has no comment syntax -- so pair them with a `.tree` or a `--manifest-json`
+  file when the result is published.
 - {meth}`infomap.Result.write_flow_tree` writes a `.ftree` file that adds
   intra-module link flows.
 - {meth}`infomap.Result.write_csv`, {meth}`infomap.Result.write_json`, and

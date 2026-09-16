@@ -261,15 +261,14 @@ public:
     // path is the CLI's networkFile, or the file the bindings' readInputData
     // last read; an in-memory network has none.
     // Qualified: the unqualified name is InfomapBase::inputIdentity(), the accessor.
-    // A network the bindings accumulated from several files is a union that no
-    // single path identifies, so it gets no identity rather than a wrong one.
-    const std::string networkPath = !m_infomap.networkFile.empty()
-        ? m_infomap.networkFile
-        : (m_infomap.m_readInputPaths.size() == 1 ? m_infomap.m_readInputPaths.front() : std::string());
-    m_infomap.m_inputIdentity = infomap::inputIdentity(networkPath);
+    // The CLI names its file in the config; the bindings hashed theirs when they
+    // read it, which is also where a multi-file union was already resolved to
+    // "unknown" (InfomapWrapper::readInputData).
+    m_infomap.m_inputIdentity = !m_infomap.networkFile.empty()
+        ? infomap::inputIdentity(m_infomap.networkFile)
+        : m_infomap.m_inputIdentityFromRead;
     m_infomap.m_clusterDataIdentity = infomap::inputIdentity(m_infomap.clusterDataFile);
     m_infomap.m_metaDataIdentity = infomap::inputIdentity(m_infomap.metaDataFile);
-    m_infomap.m_configFingerprint = configFingerprint(m_infomap.getConfig());
     {
       auto timer = m_timing.scope("configure_network_s");
       configureNetworkMode();
@@ -287,6 +286,11 @@ public:
       writeOutputArtifacts(m_infomap, m_network, OutputPhase::BeforeFlow);
     }
     calculateFlowAndInitNetwork();
+    // Only now: configureNetworkMode() and the flow calculation settle flowModel
+    // and bipartite, both of which the canonical config hashes. Taken earlier,
+    // the fingerprint would not hash the config the manifest publishes beside
+    // it, and would disagree with the trial-results fingerprint.
+    m_infomap.m_configFingerprint = configFingerprint(m_infomap.getConfig());
     {
       auto timer = m_timing.scope("post_flow_output_s");
       writeOutputArtifacts(m_infomap, m_network, OutputPhase::AfterFlow);
@@ -472,6 +476,15 @@ private:
 
       InfomapBase worker(workerConfig);
       worker.m_initialPartition = m_infomap.m_initialPartition;
+      // A worker writes its own --print-all-trials artifacts, so it needs the
+      // run's captured provenance; built from a Config, it would otherwise
+      // publish headers with no input identity at all (#1026).
+      worker.m_inputIdentity = m_infomap.m_inputIdentity;
+      worker.m_clusterDataIdentity = m_infomap.m_clusterDataIdentity;
+      worker.m_metaDataIdentity = m_infomap.m_metaDataIdentity;
+      worker.m_configFingerprint = m_infomap.m_configFingerprint;
+      worker.m_baseSeed = m_infomap.baseSeed();
+      worker.m_haveBaseSeed = true;
       // Share the cancel flag so workers observe a cancel; they only read it and
       // unwind, caught by the per-trial handler below (issue #412).
       worker.inheritRuntimeContext(m_infomap);
@@ -1249,8 +1262,12 @@ public:
 
     if (!m_infomap.trialResultsPath.empty()) {
       TrialResultsFile trialResultsFile;
-      trialResultsFile.networkFingerprint = networkFingerprint(m_infomap.networkFile);
-      trialResultsFile.configFingerprint = configFingerprint(m_infomap.getConfig());
+      // The identity this run captured, not a re-read: a binding run has no
+      // networkFile to re-hash and emitted an empty fingerprint, which
+      // infomap.merge rejects, and a CLI re-read could disagree with the
+      // headers if the file changed during the run (#1026).
+      trialResultsFile.networkFingerprint = m_infomap.inputIdentity().hash;
+      trialResultsFile.configFingerprint = m_infomap.runConfigFingerprint();
       trialResultsFile.infomapVersion = INFOMAP_VERSION;
       trialResultsFile.baseSeed = m_baseSeed;
       trialResultsFile.trialOffset = m_infomap.trialOffset;

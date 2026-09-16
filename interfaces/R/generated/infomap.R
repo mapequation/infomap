@@ -23669,6 +23669,19 @@ attr(`InfomapWrapper_provenanceJson`, 'returnType') = 'character'
 attr(`InfomapWrapper_provenanceJson`, "inputTypes") = c('_p_infomap__InfomapWrapper')
 class(`InfomapWrapper_provenanceJson`) = c("SWIGFunction", class('InfomapWrapper_provenanceJson'))
 
+# Start of InfomapWrapper_noteInMemoryMutation
+
+`InfomapWrapper_noteInMemoryMutation` = function(self)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapWrapper_noteInMemoryMutation', self, PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_noteInMemoryMutation`, 'returnType') = 'void'
+attr(`InfomapWrapper_noteInMemoryMutation`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_noteInMemoryMutation`) = c("SWIGFunction", class('InfomapWrapper_noteInMemoryMutation'))
+
 # Start of InfomapWrapper_addNode
 
 `InfomapWrapper_addNode__SWIG_0` = function(self, id)
@@ -24786,7 +24799,7 @@ class(`InfomapWrapper_run__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_ru
 setMethod('$', '_p_infomap__InfomapWrapper', function(x, name)
 
 {
-  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'provenanceJson' = InfomapWrapper_provenanceJson, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'getStateNames' = InfomapWrapper_getStateNames, 'getStateName' = InfomapWrapper_getStateName, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'getMultilayerStateId' = InfomapWrapper_getMultilayerStateId, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
+  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'provenanceJson' = InfomapWrapper_provenanceJson, 'noteInMemoryMutation' = InfomapWrapper_noteInMemoryMutation, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'getStateNames' = InfomapWrapper_getStateNames, 'getStateName' = InfomapWrapper_getStateName, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'getMultilayerStateId' = InfomapWrapper_getMultilayerStateId, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));

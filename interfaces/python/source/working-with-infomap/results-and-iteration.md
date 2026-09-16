@@ -157,6 +157,12 @@ print(f"input:       {record['input']}")
 Log it next to `result.summary()` and a published number can be re-run months
 later.
 
+`.tree`, `.ftree`, `.clu` and the JSON tree carry this record in the file
+itself. **CSV and Newick deliberately do not**: a comment row breaks readers
+that take the first line as the header, and Newick has no comment syntax. Ship
+them next to a `.tree` or a `--manifest-json` file, or record
+`result.provenance()` yourself.
+
 ### Getting assignments: `modules()`
 
 ```{code-cell} python
