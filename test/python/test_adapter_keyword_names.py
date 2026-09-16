@@ -15,7 +15,6 @@ import warnings
 import infomap
 import networkx as nx
 import pytest
-from infomap import Network
 from infomap._options import LEGACY_SURFACE_WARNING
 
 pytestmark = pytest.mark.fast
@@ -39,14 +38,14 @@ def test_from_networkx_attribute_names_are_canonical_and_old_spellings_announce(
     graph = _state_graph()
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
-        canonical = Network.from_networkx(
+        canonical = infomap.Network.from_networkx(
             graph, node_id_attribute="phys", layer_id_attribute="layer"
         )
     assert canonical.node_id_to_label == {0: "a1", 1: "b1", 2: "a2"}
 
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter("always")
-        legacy = Network.from_networkx(graph, node_id="phys", layer_id="layer")
+        legacy = infomap.Network.from_networkx(graph, node_id="phys", layer_id="layer")
     messages = [str(r.message) for r in _legacy_only(records)]
     assert len(messages) == 2
     assert any(
@@ -71,11 +70,11 @@ def test_from_networkx_rejects_both_spellings_when_they_disagree():
         ValueError,
         match="both node_id_attribute='phys' and the deprecated node_id='other'",
     ):
-        Network.from_networkx(graph, node_id_attribute="phys", node_id="other")
+        infomap.Network.from_networkx(graph, node_id_attribute="phys", node_id="other")
     # The old spelling next to the new one left at its default is accepted
     # (it is what an old call site looks like), with the warning.
     with pytest.warns(LEGACY_SURFACE_WARNING):
-        Network.from_networkx(graph, node_id="phys", layer_id="layer")
+        infomap.Network.from_networkx(graph, node_id="phys", layer_id="layer")
 
 
 def test_from_igraph_attribute_names_match_the_networkx_constructor():
@@ -85,13 +84,14 @@ def test_from_igraph_attribute_names_match_the_networkx_constructor():
     graph.vs["layer"] = [1, 1, 2]
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
-        canonical = Network.from_igraph(
+        canonical = infomap.Network.from_igraph(
             graph, node_id_attribute="phys", layer_id_attribute="layer"
         )
     with pytest.warns(
-        LEGACY_SURFACE_WARNING, match="'node_id' is deprecated on Network.from_igraph"
+        LEGACY_SURFACE_WARNING,
+        match="'node_id' is deprecated on infomap.Network.from_igraph",
     ):
-        legacy = Network.from_igraph(graph, node_id="phys", layer_id="layer")
+        legacy = infomap.Network.from_igraph(graph, node_id="phys", layer_id="layer")
     assert (
         infomap.run(legacy, seed=1).codelength
         == infomap.run(canonical, seed=1).codelength
@@ -105,26 +105,30 @@ def test_matrix_constructors_take_node_labels_and_announce_node_ids():
 
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
-        canonical = Network.from_scipy_sparse_matrix(matrix, node_labels=labels)
+        canonical = infomap.Network.from_scipy_sparse_matrix(matrix, node_labels=labels)
     assert canonical.node_id_to_label == dict(enumerate(labels))
     with pytest.warns(
         LEGACY_SURFACE_WARNING,
-        match="'node_ids' is deprecated on Network.from_scipy_sparse_matrix",
+        match="'node_ids' is deprecated on infomap.Network.from_scipy_sparse_matrix",
     ) as records:
-        legacy = Network.from_scipy_sparse_matrix(matrix, node_ids=labels)
+        legacy = infomap.Network.from_scipy_sparse_matrix(matrix, node_ids=labels)
     assert legacy.node_id_to_label == canonical.node_id_to_label
     assert records[0].filename == __file__
     with pytest.raises(ValueError, match="pass only node_labels"):
-        Network.from_scipy_sparse_matrix(matrix, node_labels=labels, node_ids=labels)
+        infomap.Network.from_scipy_sparse_matrix(
+            matrix, node_labels=labels, node_ids=labels
+        )
 
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
-        canonical_ei = Network.from_edge_index([[0, 1], [1, 2]], node_labels=labels)
+        canonical_ei = infomap.Network.from_edge_index(
+            [[0, 1], [1, 2]], node_labels=labels
+        )
     with pytest.warns(
         LEGACY_SURFACE_WARNING,
-        match="'node_ids' is deprecated on Network.from_edge_index",
+        match="'node_ids' is deprecated on infomap.Network.from_edge_index",
     ):
-        legacy_ei = Network.from_edge_index([[0, 1], [1, 2]], node_ids=labels)
+        legacy_ei = infomap.Network.from_edge_index([[0, 1], [1, 2]], node_ids=labels)
     assert (
         legacy_ei.node_id_to_label
         == canonical_ei.node_id_to_label
@@ -170,10 +174,12 @@ def test_functional_run_steers_the_new_names_to_the_constructor():
     # The adapter-kwarg guard knows the new spellings, so infomap.run() names
     # the right constructor instead of a generic unknown-option error.
     graph = _state_graph()
-    with pytest.raises(TypeError, match="node_id_attribute.*Network.from_networkx"):
+    with pytest.raises(
+        TypeError, match="node_id_attribute.*infomap.Network.from_networkx"
+    ):
         infomap.run(graph, node_id_attribute="phys")
     sp = pytest.importorskip("scipy.sparse")
     with pytest.raises(
-        TypeError, match="node_labels.*Network.from_scipy_sparse_matrix"
+        TypeError, match="node_labels.*infomap.Network.from_scipy_sparse_matrix"
     ):
         infomap.run(sp.csr_matrix([[0, 1], [1, 0]]), node_labels=["a", "b"])
