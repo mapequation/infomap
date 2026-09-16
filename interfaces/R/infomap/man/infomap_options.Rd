@@ -61,8 +61,8 @@ Output
 \item{\code{trial_offset}}{Global index of the first trial this process runs; trial i uses seed = base_seed + (trial_offset + i). Default 0 (single-process behavior).}
 \item{\code{trial_results}}{Write this shard's per-trial results (codelengths, seeds, best-tree reference, fingerprints) as JSON to this path, for deterministic merging of distributed shard runs into a final solution.}
 \item{\code{no_final_output}}{Skip writing this process's aggregate best result. Per-trial outputs and --trial-results are still written.}
-\item{\code{verbosity_level}}{Increase console verbosity. Add more v flags to increase verbosity up to -vvv. Deprecated in 2.x. Pending the R option-surface decision.}
-\item{\code{silent}}{Suppress console output. Deprecated in 2.x. Pending the R option-surface decision; the library default is expected to stay quiet.}
+\item{\code{verbosity_level}}{Increase console verbosity. Add more v flags to increase verbosity up to -vvv.}
+\item{\code{silent}}{Suppress console output.}
 }
 
 Algorithm

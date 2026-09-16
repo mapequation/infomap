@@ -294,20 +294,12 @@
         "python": {
           "action": "remove",
           "replacement": "The Python API is quiet by default; logging is the control. Attach handlers to logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log."
-        },
-        "r": {
-          "action": "deprecate",
-          "replacement": "Pending the R option-surface decision; the library default is expected to stay quiet."
         }
       },
       "--verbose": {
         "python": {
           "action": "remove",
           "replacement": "A DEBUG-enabled 'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity; logger levels filter the records."
-        },
-        "r": {
-          "action": "deprecate",
-          "replacement": "Pending the R option-surface decision."
         }
       },
       "--print-config-fingerprint": {

@@ -24,10 +24,11 @@ test_that("options the 3.0 policy removes from R warn when set away from their d
   )
 })
 
-test_that("defaults and deprecate-classified options stay quiet", {
-  # silent and verbosity_level are `deprecate`, not `remove`, for R: their fate
-  # waits on the R option-surface decision (#757), so they carry a note in
-  # ?infomap_options but no runtime warning yet.
+test_that("defaults and kept options stay quiet", {
+  # silent and verbosity_level are `keep` for R. The R option-surface decision
+  # (#757) settled that 3.0 changes the R option surface only and that these two
+  # stay: the R default is silent = FALSE, and making the library quiet by
+  # default is a behaviour change, not an API cleanup.
   expect_silent(construct_args(NULL, infomap_options(num_trials = 3)))
   expect_silent(construct_args(
     NULL,
