@@ -227,7 +227,10 @@ also hide the warnings a test is there to catch.
   selector on the `Result` readers and `write_clu` together with the
   `Result.max_depth` alias of `num_levels` (#789, 2.16), the
   `annotate_networkx_graph` / `annotate_igraph_graph` spellings of
-  `annotate_networkx` / `annotate_igraph` (#791, 2.16), and the
+  `annotate_networkx` / `annotate_igraph` (#791, 2.16), the `node_id` /
+  `layer_id` / `node_ids` spellings of `node_id_attribute` /
+  `layer_id_attribute` / `node_labels` on the graph constructors and finders
+  (#791 §2, 2.16), and the
   `Options` fields the parameter policy classifies
   `remove` for Python (`threads`, `silent`, `verbosity_level`,
   `print_config_fingerprint`) when one is set on `Options` itself — those leave

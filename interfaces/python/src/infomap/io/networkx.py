@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
+from .._options import _UNSET
 from ._arrays import apply_node_meta_data, community_node_data
 
 if TYPE_CHECKING:
@@ -138,8 +139,8 @@ def find_communities(
     g: networkx.Graph,
     *,
     weight: str | None = "weight",
-    node_id: str = "node_id",
-    layer_id: str = "layer_id",
+    node_id_attribute: str = "node_id",
+    layer_id_attribute: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
     options: Options | Mapping[str, Any] | None = None,
     trials: int | None = None,
@@ -147,6 +148,8 @@ def find_communities(
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
     meta_attribute: str | None = None,
+    node_id: str | None = _UNSET,
+    layer_id: str | None = _UNSET,
     **infomap_options: Any,
 ) -> list[set[Any]]:
     """Find communities in a NetworkX-style graph.
@@ -169,10 +172,12 @@ def find_communities(
         matches networkx; the igraph counterpart
         :func:`~infomap.find_igraph_communities` uses ``edge_weights`` /
         ``vertex_weights`` (python-igraph's own ``community_infomap`` names).
-    node_id : str, optional
+    node_id_attribute : str, optional
         Node attribute for physical node ids, implying a state network.
-    layer_id : str, optional
-        Node attribute for layer ids, implying a multilayer network.
+        Default ``"node_id"``.
+    layer_id_attribute : str, optional
+        Node attribute for layer ids, implying a multilayer network. Default
+        ``"layer_id"``.
     multilayer_inter_intra_format : bool, optional
         Use intra/inter format to simulate inter-layer links. Default
         ``True``.
@@ -186,6 +191,11 @@ def find_communities(
         :func:`~infomap.find_igraph_communities`). Pass ``trials`` or
         ``num_trials``, not both; if neither is given the engine default
         ``num_trials=1`` applies -- raise it for research runs.
+    node_id, layer_id : str, optional
+        .. deprecated:: 2.16
+            The pre-2.16 spellings of ``node_id_attribute`` and
+            ``layer_id_attribute``; they emit a :class:`DeprecationWarning`
+            and leave in 3.0.
     module_attribute : str, optional
         If set, write each node's module id back to this node attribute on
         ``g``.
@@ -237,6 +247,24 @@ def find_communities(
             "find_communities expects a networkx graph (with a `.nodes` view)." + hint
         )
 
+    from .._renamed import renamed_keyword
+
+    node_id_attribute = renamed_keyword(
+        "find_communities",
+        new_name="node_id_attribute",
+        new_value=node_id_attribute,
+        old_name="node_id",
+        old_value=node_id,
+        default="node_id",
+    )
+    layer_id_attribute = renamed_keyword(
+        "find_communities",
+        new_name="layer_id_attribute",
+        new_value=layer_id_attribute,
+        old_name="layer_id",
+        old_value=layer_id,
+        default="layer_id",
+    )
     if len(g.nodes) == 0:
         # No engine is built for an empty graph, so the constructor's merge --
         # which is where a removed field typed here is normally announced --
@@ -256,8 +284,8 @@ def find_communities(
     infomap, _, node_mapping = _run_networkx(
         g,
         weight=weight,
-        node_id=node_id,
-        layer_id=layer_id,
+        node_id=node_id_attribute,
+        layer_id=layer_id_attribute,
         multilayer_inter_intra_format=multilayer_inter_intra_format,
         initial_partition=initial_partition,
         meta_attribute=meta_attribute,
