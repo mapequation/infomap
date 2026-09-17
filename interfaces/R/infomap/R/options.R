@@ -192,7 +192,8 @@ OPTION_DEFAULTS <- list(
 # Options the 3.0 parameter policy removes from the R surface
 # (interfaces/parameters/overrides.json, action `remove`). construct_args()
 # announces one that is set away from its default; options classified
-# `deprecate` carry a note in ?infomap_options only, pending #757.
+# `deprecate` carry a note in ?infomap_options only, with no runtime
+# warning.
 REMOVED_OPTIONS <- list(
   list(name = "print_config_fingerprint", msg = "print_config_fingerprint leaves the infomap R surface in 3.0. A print-and-exit CLI diagnostic; run the infomap binary."),
   list(name = "threads", msg = "threads leaves the infomap R surface in 3.0. Use num_threads; threads is a redundant alias of the same engine option.")
