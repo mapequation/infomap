@@ -765,19 +765,32 @@ TEST_CASE("A zero intra-layer prior records no teleport flow at all [fast][core]
   auto dangling = connected;
   dangling.push_back({ 1, 1, 3, 1.0 });
 
-  auto sumLayerTeleportFlow = [](const std::vector<MultilayerIntraLink>& links, const std::string& extraFlags) {
+  struct LayerTeleportUse {
+    double sumFlow = 0.0;
+    unsigned int nodesCarryingData = 0;
+  };
+
+  auto layerTeleportUse = [](const std::vector<MultilayerIntraLink>& links, const std::string& extraFlags) {
     InfomapWrapper im(infomap::test::defaultFlags(
         "--directed --regularized --multilayer-skip-absent-nodes --no-infomap --two-level " + extraFlags));
     addMultilayerIntraLinks(im, links);
     im.run();
 
-    double sum = 0.0;
+    LayerTeleportUse use;
     for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
-      for (const auto& layerFlow : (*it).layerTeleFlowData()) {
-        sum += layerFlow.teleportFlow;
+      const auto& layerFlows = (*it).layerTeleFlowData();
+      if (!layerFlows.empty()) {
+        ++use.nodesCarryingData;
+      }
+      for (const auto& layerFlow : layerFlows) {
+        use.sumFlow += layerFlow.teleportFlow;
       }
     }
-    return sum;
+    return use;
+  };
+
+  auto sumLayerTeleportFlow = [&layerTeleportUse](const std::vector<MultilayerIntraLink>& links, const std::string& extraFlags) {
+    return layerTeleportUse(links, extraFlags).sumFlow;
   };
 
   // With the prior on, every state node teleports a little.
@@ -791,6 +804,37 @@ TEST_CASE("A zero intra-layer prior records no teleport flow at all [fast][core]
   // teleport bookkeeping is all zeros and could be skipped.
   CHECK(sumLayerTeleportFlow(connected, "--intra-regularization-strength 0") == doctest::Approx(0.0).epsilon(1e-12));
   CHECK(sumLayerTeleportFlow(dangling, "--intra-regularization-strength 0") == doctest::Approx(0.0).epsilon(1e-12));
+
+  // Nothing teleports, so the per-layer bookkeeping is not built at all: no node carries
+  // layer teleport data, which is what saves the allocation and the per-move lookup.
+  CHECK(layerTeleportUse(connected, "").nodesCarryingData > 0);
+  CHECK(layerTeleportUse(connected, "--intra-regularization-strength 0").nodesCarryingData == 0);
+  CHECK(layerTeleportUse(dangling, "--intra-regularization-strength 0").nodesCarryingData == 0);
+}
+
+TEST_CASE("Skipping the per-layer teleport bookkeeping leaves the partition unchanged [fast][core][flow]")
+{
+  // Two triangles joined by a weak link, in two layers, so the optimizer has a real
+  // choice of modules to make while the bookkeeping is skipped.
+  std::vector<MultilayerIntraLink> intraLinks;
+  for (unsigned int layer = 1; layer <= 2; ++layer) {
+    for (const auto& pair : std::vector<std::pair<unsigned int, unsigned int>> {
+             { 1, 2 }, { 2, 3 }, { 3, 1 }, { 4, 5 }, { 5, 6 }, { 6, 4 } }) {
+      intraLinks.push_back({ layer, pair.first, pair.second, 1.0 });
+      intraLinks.push_back({ layer, pair.second, pair.first, 1.0 });
+    }
+    intraLinks.push_back({ layer, 3, 4, 0.01 });
+    intraLinks.push_back({ layer, 4, 3, 0.01 });
+  }
+
+  InfomapWrapper im(infomap::test::defaultFlags(
+      "--directed --regularized --intra-regularization-strength 0 --two-level"));
+  addMultilayerIntraLinks(im, intraLinks);
+
+  CHECK_NOTHROW(im.run());
+  infomap::test::checkRunSanity(im);
+  // The optimizer still separates the two triangles without the teleport terms.
+  CHECK(im.numTopModules() == 2);
 }
 
 TEST_CASE("Inner parallelization with regularized multilayer input falls back to stable serial optimization [fast][core][flow][openmp]")
