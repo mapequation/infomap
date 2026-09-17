@@ -2388,7 +2388,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
     @property
     def network(self):
-        """Get the internal network."""
+        """Get the internal network.
+
+        An escape hatch, not the supported build surface. Mutating through it
+        bypasses this class, so the run's input file identity is not dropped
+        and the published artifacts keep naming a file that no longer
+        describes the network (#1026). Build with the ``add_*`` and
+        ``remove_*`` methods instead.
+        """
         return _with_owner(self._core.network(), self._core)
 
     @property
