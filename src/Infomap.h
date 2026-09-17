@@ -84,12 +84,29 @@ public:
     // otherwise be hashed in the name of a partition computed from the old
     // content.
     const std::string path = filename;
-    m_network.readInputData(std::move(filename), accumulate);
     if (!accumulate) {
-      // The network is replaced, so whatever was built or read before it is
-      // gone -- including any in-memory content.
+      // Before the call, not after: readInputData() clears the network first
+      // (Network.cpp), so the previous sources stop describing it the moment
+      // the read begins, whether or not the parse then succeeds.
       m_readInputPaths.clear();
       m_networkHasInMemoryContent = false;
+      m_inputIdentityFromRead = InputIdentity();
+    }
+    try {
+      m_network.readInputData(std::move(filename), accumulate);
+    } catch (...) {
+      // The parser writes straight into the network, so a malformed file can
+      // leave part of itself behind before it throws -- and nothing tells us
+      // how far it got. Node and link counts do not: a bad file whose ids
+      // overlap what is already there moves neither. So a failed read makes the
+      // network unidentifiable, and stays that way until accumulate=false
+      // replaces it. That costs a false negative on a read that failed before
+      // touching anything, such as a mistyped path, which is the safe
+      // direction: an artifact naming no file beats one naming the wrong file.
+      m_readInputPaths.clear();
+      m_networkHasInMemoryContent = true;
+      m_inputIdentityFromRead = InputIdentity();
+      throw;
     }
     if (!path.empty())
       m_readInputPaths.push_back(path);
