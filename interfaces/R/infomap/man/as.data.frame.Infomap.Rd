@@ -9,9 +9,10 @@
   row.names = NULL,
   optional = FALSE,
   states = TRUE,
-  depth_level = 1L,
+  level = 1L,
   tibble = FALSE,
-  ...
+  ...,
+  depth_level = NULL
 )
 }
 \arguments{
@@ -25,7 +26,7 @@
 higher-order networks); otherwise merge state nodes with the same
 physical id within a module. Default \code{TRUE}.}
 
-\item{depth_level}{Tree depth used for the \code{module_id} column. \code{1}
+\item{level}{Level of the hierarchy used for the \code{module_id} column. \code{1}
 gives top-level modules, \code{-1} the bottom level. Default \code{1}.}
 
 \item{tibble}{If \code{TRUE}, return a \code{tibble} (requires the \code{tibble}
@@ -33,6 +34,9 @@ package). Default \code{FALSE} returns a plain \code{data.frame} so the
 return type is independent of installed packages.}
 
 \item{...}{Unused.}
+
+\item{depth_level}{Deprecated spelling of \code{level}; leaves the infomap R
+surface in 3.0.}
 }
 \value{
 A \code{data.frame} (or a \code{tibble} when \code{tibble = TRUE}) with

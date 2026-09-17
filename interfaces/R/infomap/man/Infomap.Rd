@@ -75,10 +75,10 @@ wrong values (numNodes 11 for a three-node network) or aborting R (#900).}
 
 \item{\code{num_non_trivial_top_modules}}{Number of non-trivial top modules.}
 
-\item{\code{num_levels}}{Depth of the hierarchical tree. Alias of
-\code{max_tree_depth}.}
+\item{\code{num_levels}}{Depth of the hierarchical tree.}
 
-\item{\code{max_tree_depth}}{Maximum depth of the tree.}
+\item{\code{max_tree_depth}}{Deprecated alias of \code{num_levels}; leaves the
+infomap R surface in 3.0.}
 
 \item{\code{num_leaf_nodes}}{Number of leaf nodes in the tree.}
 
@@ -724,17 +724,20 @@ compatible with \code{modularity()}, \code{membership()}, \code{plot()}.
 \subsection{Method \code{get_modules()}}{
 Get module assignment per leaf node.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_modules(depth_level = 1L, states = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_modules(level = 1L, states = FALSE, depth_level = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{depth_level}}{Tree depth used for the module id. \code{1} gives
+\item{\code{level}}{Level of the hierarchy used for the module id. \code{1} gives
 top-level modules, \code{-1} the bottom level.}
 
 \item{\code{states}}{If \code{TRUE}, return one entry per state node (for
 higher-order networks); otherwise one per physical node.}
+
+\item{\code{depth_level}}{Deprecated spelling of \code{level}; leaves the infomap
+R surface in 3.0.}
 }
 \if{html}{\out{</div>}}
 }
@@ -771,15 +774,18 @@ vector of module ids per level.
 Get per-leaf-node attributes (state id, physical id,
 module id, flow, optional layer id).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_nodes(depth_level = 1L, states = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_nodes(level = 1L, states = FALSE, depth_level = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{depth_level}}{Tree depth used for the module id.}
+\item{\code{level}}{Level of the hierarchy used for the module id.}
 
 \item{\code{states}}{If \code{TRUE}, return one row per state node.}
+
+\item{\code{depth_level}}{Deprecated spelling of \code{level}; leaves the infomap
+R surface in 3.0.}
 }
 \if{html}{\out{</div>}}
 }
@@ -891,7 +897,12 @@ A named character vector mapping state id to name.
 \subsection{Method \code{write_clu()}}{
 Write the partition as a \code{.clu} file.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$write_clu(filename, states = FALSE, depth_level = 1L)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$write_clu(
+  filename,
+  states = FALSE,
+  level = 1L,
+  depth_level = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -901,7 +912,10 @@ Write the partition as a \code{.clu} file.
 
 \item{\code{states}}{Whether to write state ids (default \code{FALSE}).}
 
-\item{\code{depth_level}}{Tree depth used for the module id.}
+\item{\code{level}}{Level of the hierarchy used for the module id.}
+
+\item{\code{depth_level}}{Deprecated spelling of \code{level}; leaves the infomap
+R surface in 3.0.}
 }
 \if{html}{\out{</div>}}
 }

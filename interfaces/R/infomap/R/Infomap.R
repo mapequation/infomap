@@ -1111,17 +1111,20 @@ InfomapClass <- R6::R6Class(
     # into R vectors.
 
     #' @description Get module assignment per leaf node.
-    #' @param depth_level Tree depth used for the module id. `1` gives
+    #' @param level Level of the hierarchy used for the module id. `1` gives
     #'   top-level modules, `-1` the bottom level.
     #' @param states If `TRUE`, return one entry per state node (for
     #'   higher-order networks); otherwise one per physical node.
+    #' @param depth_level Deprecated spelling of `level`; leaves the infomap
+    #'   R surface in 3.0.
     #' @return A named integer vector mapping node id (or state id) to
     #'   module id.
-    get_modules = function(depth_level = 1L, states = FALSE) {
+    get_modules = function(level = 1L, states = FALSE, depth_level = NULL) {
+      level <- .resolve_level(level, depth_level, "get_modules")
       it <- if (self$have_memory && !isTRUE(states)) {
-        private$.swig$iterTreePhysical(as.integer(depth_level))
+        private$.swig$iterTreePhysical(level)
       } else {
-        private$.swig$iterLeafNodes(as.integer(depth_level))
+        private$.swig$iterLeafNodes(level)
       }
 
       n_max <- self$num_leaf_nodes
@@ -1166,14 +1169,17 @@ InfomapClass <- R6::R6Class(
 
     #' @description Get per-leaf-node attributes (state id, physical id,
     #'   module id, flow, optional layer id).
-    #' @param depth_level Tree depth used for the module id.
+    #' @param level Level of the hierarchy used for the module id.
     #' @param states If `TRUE`, return one row per state node.
+    #' @param depth_level Deprecated spelling of `level`; leaves the infomap
+    #'   R surface in 3.0.
     #' @return A list of integer/numeric vectors.
-    get_nodes = function(depth_level = 1L, states = FALSE) {
+    get_nodes = function(level = 1L, states = FALSE, depth_level = NULL) {
+      level <- .resolve_level(level, depth_level, "get_nodes")
       it <- if (self$have_memory && !isTRUE(states)) {
-        private$.swig$iterTreePhysical(as.integer(depth_level))
+        private$.swig$iterTreePhysical(level)
       } else {
-        private$.swig$iterLeafNodes(as.integer(depth_level))
+        private$.swig$iterLeafNodes(level)
       }
 
       n_max <- self$num_leaf_nodes
@@ -1258,7 +1264,7 @@ InfomapClass <- R6::R6Class(
     get_names = function() {
       # SWIG R returns std::map as an opaque pointer, so walk leaf nodes
       # and ask for each name individually.
-      ids <- self$get_nodes(depth_level = 1L, states = TRUE)$node_id
+      ids <- self$get_nodes(level = 1L, states = TRUE)$node_id
       ids <- unique(ids)
       out <- vapply(
         ids,
@@ -1293,7 +1299,7 @@ InfomapClass <- R6::R6Class(
     get_state_names = function() {
       # SWIG R returns std::map as an opaque pointer, so walk state nodes
       # and ask for each name individually.
-      ids <- self$get_nodes(depth_level = 1L, states = TRUE)$state_id
+      ids <- self$get_nodes(level = 1L, states = TRUE)$state_id
       ids <- unique(ids)
       out <- vapply(
         ids,
@@ -1314,12 +1320,20 @@ InfomapClass <- R6::R6Class(
     #' @description Write the partition as a `.clu` file.
     #' @param filename Output path.
     #' @param states Whether to write state ids (default `FALSE`).
-    #' @param depth_level Tree depth used for the module id.
-    write_clu = function(filename, states = FALSE, depth_level = 1L) {
+    #' @param level Level of the hierarchy used for the module id.
+    #' @param depth_level Deprecated spelling of `level`; leaves the infomap
+    #'   R surface in 3.0.
+    write_clu = function(
+      filename,
+      states = FALSE,
+      level = 1L,
+      depth_level = NULL
+    ) {
+      level <- .resolve_level(level, depth_level, "write_clu")
       private$.swig$writeClu(
         as.character(filename),
         as.logical(states),
-        as.integer(depth_level)
+        level
       )
       invisible(filename)
     },
@@ -1439,11 +1453,22 @@ InfomapClass <- R6::R6Class(
     num_non_trivial_top_modules = function() {
       private$.swig$numNonTrivialTopModules()
     },
-    #' @field num_levels Depth of the hierarchical tree. Alias of
-    #'   `max_tree_depth`.
+    #' @field num_levels Depth of the hierarchical tree.
     num_levels = function() private$.swig$numLevels(),
-    #' @field max_tree_depth Maximum depth of the tree.
-    max_tree_depth = function() private$.swig$maxTreeDepth(),
+    #' @field max_tree_depth Deprecated alias of `num_levels`; leaves the
+    #'   infomap R surface in 3.0.
+    max_tree_depth = function() {
+      .Deprecated(
+        new = "num_levels",
+        package = "infomap",
+        old = "max_tree_depth",
+        msg = paste(
+          "max_tree_depth is a deprecated alias of num_levels and leaves the",
+          "infomap R surface in 3.0; read num_levels instead."
+        )
+      )
+      private$.swig$maxTreeDepth()
+    },
     #' @field num_leaf_nodes Number of leaf nodes in the tree.
     num_leaf_nodes = function() private$.swig$numLeafNodes(),
     #' @field num_nodes Number of nodes (state nodes for higher-order networks).
@@ -1482,7 +1507,7 @@ InfomapClass <- R6::R6Class(
     },
     #' @field modules Top-level module assignment per node (named integer vector).
     modules = function() {
-      self$get_modules(depth_level = 1L, states = FALSE)
+      self$get_modules(level = 1L, states = FALSE)
     },
     #' @field multilevel_modules List of integer paths for each node
     #'   through the module hierarchy.
@@ -1492,12 +1517,12 @@ InfomapClass <- R6::R6Class(
     #' @field nodes Per-state-node attributes (state id, physical id,
     #'   module, flow, optional layer id).
     nodes = function() {
-      self$get_nodes(depth_level = 1L, states = TRUE)
+      self$get_nodes(level = 1L, states = TRUE)
     },
     #' @field physical_nodes Per-physical-node attributes (state nodes
     #'   merged within a module).
     physical_nodes = function() {
-      self$get_nodes(depth_level = 1L, states = FALSE)
+      self$get_nodes(level = 1L, states = FALSE)
     },
     #' @field links Per-link source, target, weight and flow as a
     #'   `data.frame`.
