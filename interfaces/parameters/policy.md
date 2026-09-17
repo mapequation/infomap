@@ -50,6 +50,9 @@ Actions: **keep** = First-class option on the surface in 3.0 (the default for ev
 | `--flow-tolerance` | Algorithm | keep | keep | keep | keep |
 | `--regularized` | Algorithm | keep | keep | keep | keep |
 | `--regularization-strength` | Algorithm | keep | keep | keep | keep |
+| `--intra-regularization-strength` | Algorithm | keep | keep | keep | keep |
+| `--inter-regularization-strength` | Algorithm | keep | keep | keep | keep |
+| `--multilayer-skip-absent-nodes` | Algorithm | keep | keep | keep | keep |
 | `--entropy-corrected` | Algorithm | keep | keep | keep | keep |
 | `--entropy-correction-strength` | Algorithm | keep | keep | keep | keep |
 | `--markov-time` | Algorithm | keep | keep (common tier) | keep | keep |

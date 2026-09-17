@@ -18,6 +18,7 @@
 #include <cmath>
 #include <algorithm>
 #include <limits>
+#include <set>
 #include <stdexcept>
 
 namespace infomap {
@@ -613,9 +614,9 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
 
   // double interLinkStrength = std::log(L);
   // double interLinkWeight = std::log(L) / L;
-  double interLinkWeight = m_config.regularizationStrength * std::log(L) / (m_config.noSelfLinks ? L - 1 : L);
+  // The inter-layer prior spreads ln(L_i) over the L_i layers that hold physical node i,
+  // so its per-link weight is only a constant while every node is in every layer.
   // double intraLinkStrength = std::log(N) / L;
-  // double totalInterWeightIfNoLimit = interLinkWeight * L;
   if (haveUpOrDownLimit) {
     // TODO: create a map with aggregated inter-flow for each layer with limits.
   }
@@ -636,13 +637,47 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
     return layer1 >= layer2 ? diff <= relaxLimitDown : -diff <= relaxLimitUp;
   };
 
+  // Which physical nodes each layer holds, and which layers hold each physical node.
+  // With --multilayer-skip-absent-nodes a node belongs to a layer only if that layer's
+  // links mention it, so the prior spans what the data shows; by default a node is
+  // assumed to exist in every layer, unobserved where its links are missing. Both maps
+  // stay proportional to the input: the rosters together hold one entry per (node,
+  // layer) pair that the prior covers.
+  std::map<unsigned int, std::vector<unsigned int>> nodesInLayer;
+  std::map<unsigned int, std::vector<unsigned int>> layersOfNode;
+
+  for (auto& it : m_networks) {
+    auto layer = it.first;
+    auto& roster = nodesInLayer[layer];
+
+    if (m_config.multilayerSkipAbsentNodes) {
+      std::set<unsigned int> present;
+      for (const auto& outLinks : it.second.nodeLinkMap()) {
+        present.insert(outLinks.first);
+        for (const auto& outLink : outLinks.second) {
+          present.insert(outLink.first);
+        }
+      }
+      roster.assign(present.begin(), present.end());
+    } else {
+      roster.reserve(m_physNodes.size());
+      for (const auto& physNodeIt : m_physNodes) {
+        roster.push_back(physNodeIt.first);
+      }
+    }
+
+    for (auto n : roster) {
+      layersOfNode[n].push_back(layer);
+    }
+  }
+
   for (auto& it1 : m_networks) {
     auto layer1 = it1.first;
     auto& network1 = it1.second;
 
-    // Loop over all physical nodes, even if they lack intra links, to add inter links
-    for (auto& physNodeIt : m_physNodes) {
-      auto& n1 = physNodeIt.first;
+    // Loop over the physical nodes this layer holds, even if they lack intra links, to
+    // add inter links
+    for (auto n1 : nodesInLayer[layer1]) {
       unsigned int stateId1 = addMultilayerNode(layer1, n1);
 
       // double sumOutLinkWeightLayer1 = network1.outWeights()[n1];
@@ -669,8 +704,17 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
         }
       }
 
-      for (auto& it2 : m_networks) {
-        auto layer2 = it2.first;
+      // Add inter links. The prior couples node n1 across the L_i layers that hold it
+      // with total strength ln(L_i), which is zero for a node confined to one layer:
+      // nothing to spread, and the per-link weight below would divide by zero.
+      const auto& layers = layersOfNode[n1];
+      if (layers.size() < 2) {
+        continue;
+      }
+      const auto numInterTargets = m_config.noSelfLinks ? layers.size() - 1 : layers.size();
+      const double interLinkWeight = m_config.regularizationStrength * m_config.interRegularizationStrength * std::log(static_cast<double>(layers.size())) / numInterTargets;
+
+      for (auto layer2 : layers) {
         if (!withinRelaxLimit(layer1, layer2) || (m_config.noSelfLinks && layer1 == layer2)) {
           continue;
         }

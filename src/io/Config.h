@@ -104,6 +104,9 @@ struct Config {
   bool recordedTeleportation = false;
   bool regularized = false; // Add a Bayesian prior network with recorded teleportation (sets recordedTeleportation and teleportToNodes to true)
   double regularizationStrength = 1.0; // Scale Bayesian prior constant ln(N)/N with this factor
+  bool multilayerSkipAbsentNodes = false; // Treat absence from a layer as real, so the Bayesian prior of --regularized spans only the physical nodes each layer actually holds
+  double intraRegularizationStrength = 1.0; // Scale the intra-layer part of the multilayer prior, relative to regularizationStrength
+  double interRegularizationStrength = 1.0; // Scale the inter-layer part of the multilayer prior, relative to regularizationStrength
   double teleportationProbability = 0.15;
   unsigned int preferredNumberOfModules = 0;
   unsigned int preferredNumberOfLevels = 0; // 0 = off. Soft, asymmetric depth preference (issue #308)
@@ -251,6 +254,9 @@ struct Config {
     recordedTeleportation = other.recordedTeleportation;
     regularized = other.regularized;
     regularizationStrength = other.regularizationStrength;
+    multilayerSkipAbsentNodes = other.multilayerSkipAbsentNodes;
+    intraRegularizationStrength = other.intraRegularizationStrength;
+    interRegularizationStrength = other.interRegularizationStrength;
     teleportationProbability = other.teleportationProbability;
     entropyBiasCorrection = other.entropyBiasCorrection;
     entropyBiasCorrectionMultiplier = other.entropyBiasCorrectionMultiplier;

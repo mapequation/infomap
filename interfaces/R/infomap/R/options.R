@@ -53,6 +53,9 @@ ALGORITHM_OPTIONS <- list(
   list(type = "value", name = "flow_tolerance", flag = "--flow-tolerance", default = 1e-15, include = .skip_when_not_equal(1e-15)),
   list(type = "flag", name = "regularized", flag = "--regularized", default = FALSE),
   list(type = "value", name = "regularization_strength", flag = "--regularization-strength", default = 1.0, include = .skip_when_not_equal(1.0)),
+  list(type = "value", name = "intra_regularization_strength", flag = "--intra-regularization-strength", default = 1.0, include = .skip_when_not_equal(1.0)),
+  list(type = "value", name = "inter_regularization_strength", flag = "--inter-regularization-strength", default = 1.0, include = .skip_when_not_equal(1.0)),
+  list(type = "flag", name = "multilayer_skip_absent_nodes", flag = "--multilayer-skip-absent-nodes", default = FALSE),
   list(type = "flag", name = "entropy_corrected", flag = "--entropy-corrected", default = FALSE),
   list(type = "value", name = "entropy_correction_strength", flag = "--entropy-correction-strength", default = 1.0, include = .skip_when_not_equal(1.0)),
   list(type = "value", name = "markov_time", flag = "--markov-time", default = 1.0, include = .skip_when_not_equal(1.0)),
@@ -100,14 +103,15 @@ OPTION_FIELD_NAMES <- c(
   "silent", "two_level", "flow_model", "directed",
   "recorded_teleportation", "use_node_weights_as_flow", "to_nodes", "teleportation_probability",
   "max_flow_iterations", "min_flow_iterations", "flow_tolerance", "regularized",
-  "regularization_strength", "entropy_corrected", "entropy_correction_strength", "markov_time",
-  "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules",
-  "preferred_number_of_levels", "preferred_number_of_levels_strength", "multilayer_relax_rate", "multilayer_relax_limit",
-  "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd", "multilayer_relax_to_self",
-  "seed", "num_trials", "core_loop_limit", "core_level_limit",
-  "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution",
-  "inner_parallelization", "parallel_trials", "converge", "num_threads",
-  "threads", "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
+  "regularization_strength", "intra_regularization_strength", "inter_regularization_strength", "multilayer_skip_absent_nodes",
+  "entropy_corrected", "entropy_correction_strength", "markov_time", "variable_markov_time",
+  "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules", "preferred_number_of_levels",
+  "preferred_number_of_levels_strength", "multilayer_relax_rate", "multilayer_relax_limit", "multilayer_relax_limit_up",
+  "multilayer_relax_limit_down", "multilayer_relax_by_jsd", "multilayer_relax_to_self", "seed",
+  "num_trials", "core_loop_limit", "core_level_limit", "tune_iteration_limit",
+  "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution", "inner_parallelization",
+  "parallel_trials", "converge", "num_threads", "threads",
+  "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
 )
 
 OPTION_DEFAULTS <- list(
@@ -156,6 +160,9 @@ OPTION_DEFAULTS <- list(
   flow_tolerance = 1e-15,
   regularized = FALSE,
   regularization_strength = 1.0,
+  intra_regularization_strength = 1.0,
+  inter_regularization_strength = 1.0,
+  multilayer_skip_absent_nodes = FALSE,
   entropy_corrected = FALSE,
   entropy_correction_strength = 1.0,
   markov_time = 1.0,
@@ -266,6 +273,9 @@ REMOVED_OPTIONS <- list(
 #'   \item{`flow_tolerance`}{Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run.}
 #'   \item{`regularized`}{Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.}
 #'   \item{`regularization_strength`}{Scale the relative strength of the Bayesian prior network used by --regularized.}
+#'   \item{`intra_regularization_strength`}{Scale the intra-layer part of the multilayer prior used by --regularized, relative to --regularization-strength. Set to 0 to regularize only between layers.}
+#'   \item{`inter_regularization_strength`}{Scale the inter-layer part of the multilayer prior used by --regularized, relative to --regularization-strength. Set to 0 to leave the layers uncoupled.}
+#'   \item{`multilayer_skip_absent_nodes`}{Treat a physical node's absence from a layer as real rather than unobserved, so the prior network of --regularized spans only the nodes each layer holds.}
 #'   \item{`entropy_corrected`}{Correct for negative entropy bias in small samples, especially solutions with many modules.}
 #'   \item{`entropy_correction_strength`}{Scale the default correction used by --entropy-corrected.}
 #'   \item{`markov_time`}{Scale link flow to change the cost of moving between modules. Higher values result in fewer modules.}
