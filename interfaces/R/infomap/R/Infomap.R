@@ -534,7 +534,10 @@ InfomapClass <- R6::R6Class(
     #' @param source_id Source node id.
     #' @param target_id Target node id.
     remove_link = function(source_id, target_id) {
-      private$.swig$network()$removeLink(
+      # Through the wrapper, not the network handle: the wrapper drops the
+      # input file identity when the network is changed, and reaching past it
+      # left a published artifact naming a file it no longer described (#1026).
+      private$.swig$removeLink(
         .as_ids(source_id, "node id"),
         .as_ids(target_id, "node id")
       )
@@ -797,7 +800,8 @@ InfomapClass <- R6::R6Class(
     #' @param node_id Integer node id.
     #' @param meta_category Integer meta category.
     set_meta_data = function(node_id, meta_category) {
-      private$.swig$network()$addMetaData(
+      # Through the wrapper, for the reason in remove_link() above (#1026).
+      private$.swig$addMetaData(
         .as_ids(node_id, "node id"),
         .as_ids(meta_category, "meta category")
       )
@@ -1421,6 +1425,11 @@ InfomapClass <- R6::R6Class(
     #' @field swig The underlying SWIG-generated InfomapWrapper handle.
     swig = function() private$.swig,
     #' @field network The underlying Network reference.
+    #'
+    #' An escape hatch, not the supported build surface. Mutating through it
+    #' bypasses the wrapper, so the run's input file identity is not dropped and
+    #' the published artifacts keep naming a file that no longer describes the
+    #' network (#1026). Use the `add_*` and `remove_*` methods on this object.
     #'
     #' The handle carries a reference to its owner, so it stays valid for as long as it
     #' is reachable. Without it the handle was a non-owning pointer into the C++ Network

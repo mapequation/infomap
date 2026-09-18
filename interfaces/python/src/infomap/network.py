@@ -987,6 +987,14 @@ class Network(_NetworkWritersMixin):
         ``infomap.network.add_multilayer_node`` / ``add_multilayer_state_link``)
         work identically when building onto a :class:`Network` or an
         :class:`Infomap`.
+
+        An escape hatch, not the supported build surface. Mutating through it
+        bypasses this class, so the run's input file identity is not dropped
+        and the published artifacts keep naming a file that no longer
+        describes the network (#1026). Build with the ``add_*`` and
+        ``remove_*`` methods instead. The multilayer adapter path noted above
+        is the one place the package itself still goes through the handle;
+        #1026 records it.
         """
         return _with_owner(self._core.network(), self._core)
 

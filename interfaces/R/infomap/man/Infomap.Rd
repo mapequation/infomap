@@ -61,6 +61,11 @@ im$modules
 
 \item{\code{network}}{The underlying Network reference.
 
+An escape hatch, not the supported build surface. Mutating through it
+bypasses the wrapper, so the run's input file identity is not dropped and
+the published artifacts keep naming a file that no longer describes the
+network (#1026). Use the \verb{add_*} and \verb{remove_*} methods on this object.
+
 The handle carries a reference to its owner, so it stays valid for as long as it
 is reachable. Without it the handle was a non-owning pointer into the C++ Network
 held by the SWIG wrapper: once this object became unreachable the wrapper was
