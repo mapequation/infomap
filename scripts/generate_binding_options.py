@@ -1396,8 +1396,10 @@ def generate_r(catalog: ParameterCatalog) -> str:
     # The R side of the 3.0 parameter policy (#915, item 4). `remove` options
     # are announced at construct_args() with .Deprecated() when set away from
     # their default; `deprecate` options get a note in ?infomap_options only,
-    # since their removal waits on the R option-surface decision (#757) and a
-    # runtime warning on, say, silent = TRUE would nag every current script.
+    # because a runtime warning on an option that is merely marked, not going
+    # anywhere yet, would nag every current script. The R policy carries no
+    # `deprecate` decisions today -- #757 settled the last two as `keep` -- but
+    # the branch stays, since the vocabulary allows them.
     # include_self_links is binding-only and keeps its hand-written stamp above.
     removed = []
     for group in GROUPS:
@@ -1411,7 +1413,8 @@ def generate_r(catalog: ParameterCatalog) -> str:
             "# Options the 3.0 parameter policy removes from the R surface",
             "# (interfaces/parameters/overrides.json, action `remove`). construct_args()",
             "# announces one that is set away from its default; options classified",
-            "# `deprecate` carry a note in ?infomap_options only, pending #757.",
+            "# `deprecate` carry a note in ?infomap_options only, with no runtime",
+            "# warning.",
             "REMOVED_OPTIONS <- list(",
         ]
     )
