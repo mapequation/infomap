@@ -84,12 +84,33 @@ public:
     // otherwise be hashed in the name of a partition computed from the old
     // content.
     const std::string path = filename;
-    m_network.readInputData(std::move(filename), accumulate);
-    if (!accumulate)
+    if (!accumulate) {
+      // Before the call, not after: readInputData() clears the network first
+      // (Network.cpp), so the previous sources stop describing it the moment
+      // the read begins, whether or not the parse then succeeds.
       m_readInputPaths.clear();
+      m_networkHasInMemoryContent = false;
+      m_inputIdentityFromRead = InputIdentity();
+    }
+    try {
+      m_network.readInputData(std::move(filename), accumulate);
+    } catch (...) {
+      // The parser writes straight into the network, so a malformed file can
+      // leave part of itself behind before it throws -- and nothing tells us
+      // how far it got. Node and link counts do not: a bad file whose ids
+      // overlap what is already there moves neither. So a failed read makes the
+      // network unidentifiable, and stays that way until accumulate=false
+      // replaces it. That costs a false negative on a read that failed before
+      // touching anything, such as a mistyped path, which is the safe
+      // direction: an artifact naming no file beats one naming the wrong file.
+      m_readInputPaths.clear();
+      m_networkHasInMemoryContent = true;
+      m_inputIdentityFromRead = InputIdentity();
+      throw;
+    }
     if (!path.empty())
       m_readInputPaths.push_back(path);
-    m_inputIdentityFromRead = m_readInputPaths.size() == 1
+    m_inputIdentityFromRead = (m_readInputPaths.size() == 1 && !m_networkHasInMemoryContent)
         ? infomap::inputIdentity(m_readInputPaths.front())
         : InputIdentity();
   }
@@ -98,13 +119,38 @@ public:
   // reproduce this run, as one JSON string the bindings parse (#1026).
   std::string provenanceJson() const { return infomap::provenanceJson(*this); }
 
+#ifndef SWIG
   // Every in-memory build call below goes through this first: a network the
   // caller extended after reading a file is a mixture that file alone does not
   // describe, so the file stops identifying the run (#1026).
+  //
+  // Guarded from SWIG like baseSeed() above: it is bookkeeping the mutators do
+  // for themselves, not an operation to offer the bindings. The generated
+  // wrapper still compiles against the real header, where it is visible.
   void noteInMemoryMutation()
   {
     m_readInputPaths.clear();
     m_inputIdentityFromRead = InputIdentity();
+    // Sticky until accumulate=false replaces the network: a read that follows
+    // an in-memory build with the default accumulate=true keeps both sources,
+    // so the file does not describe the network then either.
+    m_networkHasInMemoryContent = true;
+  }
+#endif
+
+  // Reached from Python's remove_link() and set_meta_data(), which used to call
+  // straight through to the network and so left a file identity standing over a
+  // network the call had changed (#1026).
+  bool removeLink(unsigned int sourceId, unsigned int targetId)
+  {
+    noteInMemoryMutation();
+    return m_network.removeLink(sourceId, targetId);
+  }
+
+  void addMetaData(unsigned int nodeId, int meta)
+  {
+    noteInMemoryMutation();
+    m_network.addMetaData(nodeId, meta);
   }
 
   void addNode(unsigned int id)

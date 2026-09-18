@@ -23669,18 +23669,55 @@ attr(`InfomapWrapper_provenanceJson`, 'returnType') = 'character'
 attr(`InfomapWrapper_provenanceJson`, "inputTypes") = c('_p_infomap__InfomapWrapper')
 class(`InfomapWrapper_provenanceJson`) = c("SWIGFunction", class('InfomapWrapper_provenanceJson'))
 
-# Start of InfomapWrapper_noteInMemoryMutation
+# Start of InfomapWrapper_removeLink
 
-`InfomapWrapper_noteInMemoryMutation` = function(self)
+`InfomapWrapper_removeLink` = function(self, sourceId, targetId, .copy = FALSE)
 {
   if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
-  ;.Call('R_swig_InfomapWrapper_noteInMemoryMutation', self, PACKAGE='infomap');
+  sourceId = as.integer(sourceId);
+  
+  if(length(sourceId) > 1) {
+    warning("using only the first element of sourceId");
+  };
+  
+  targetId = as.integer(targetId);
+  
+  if(length(targetId) > 1) {
+    warning("using only the first element of targetId");
+  };
+  
+  ;.Call('R_swig_InfomapWrapper_removeLink', self, sourceId, targetId, as.logical(.copy), PACKAGE='infomap');
   
 }
 
-attr(`InfomapWrapper_noteInMemoryMutation`, 'returnType') = 'void'
-attr(`InfomapWrapper_noteInMemoryMutation`, "inputTypes") = c('_p_infomap__InfomapWrapper')
-class(`InfomapWrapper_noteInMemoryMutation`) = c("SWIGFunction", class('InfomapWrapper_noteInMemoryMutation'))
+attr(`InfomapWrapper_removeLink`, 'returnType') = 'logical'
+attr(`InfomapWrapper_removeLink`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer')
+class(`InfomapWrapper_removeLink`) = c("SWIGFunction", class('InfomapWrapper_removeLink'))
+
+# Start of InfomapWrapper_addMetaData
+
+`InfomapWrapper_addMetaData` = function(self, nodeId, meta)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  nodeId = as.integer(nodeId);
+  
+  if(length(nodeId) > 1) {
+    warning("using only the first element of nodeId");
+  };
+  
+  meta = as.integer(meta);
+  
+  if(length(meta) > 1) {
+    warning("using only the first element of meta");
+  };
+  
+  ;.Call('R_swig_InfomapWrapper_addMetaData', self, nodeId, meta, PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_addMetaData`, 'returnType') = 'void'
+attr(`InfomapWrapper_addMetaData`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer')
+class(`InfomapWrapper_addMetaData`) = c("SWIGFunction", class('InfomapWrapper_addMetaData'))
 
 # Start of InfomapWrapper_addNode
 
@@ -24799,7 +24836,7 @@ class(`InfomapWrapper_run__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_ru
 setMethod('$', '_p_infomap__InfomapWrapper', function(x, name)
 
 {
-  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'provenanceJson' = InfomapWrapper_provenanceJson, 'noteInMemoryMutation' = InfomapWrapper_noteInMemoryMutation, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'getStateNames' = InfomapWrapper_getStateNames, 'getStateName' = InfomapWrapper_getStateName, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'getMultilayerStateId' = InfomapWrapper_getMultilayerStateId, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
+  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'provenanceJson' = InfomapWrapper_provenanceJson, 'removeLink' = InfomapWrapper_removeLink, 'addMetaData' = InfomapWrapper_addMetaData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'getStateNames' = InfomapWrapper_getStateNames, 'getStateName' = InfomapWrapper_getStateName, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'getMultilayerStateId' = InfomapWrapper_getMultilayerStateId, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));

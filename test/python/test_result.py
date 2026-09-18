@@ -623,19 +623,65 @@ def test_provenance_input_identity_follows_what_was_actually_read(
     replaced.read_file(str(second), accumulate=False)
     assert replaced.run().provenance()["input"]["path"] == str(second)
 
-    # A read that failed never becomes the identity of what did get read.
+    # A read that failed never becomes the identity of what did get read, and
+    # it leaves the network unidentifiable: the parser writes straight into it,
+    # so a malformed file can leave part of itself behind and nothing says how
+    # far it got. Replacing the network is what restores an identity.
     after_failure = Infomap(num_trials=1, seed=1)
     with pytest.raises(NetworkParseError):
         after_failure.read_file(str(tmp_path / "missing.net"))
     after_failure.read_file(str(first))
-    assert after_failure.run().provenance()["input"]["path"] == str(first)
+    assert after_failure.run().provenance()["input"] is None
+
+    recovered = Infomap(num_trials=1, seed=1)
+    with pytest.raises(NetworkParseError):
+        recovered.read_file(str(tmp_path / "missing.net"))
+    recovered.read_file(str(first), accumulate=False)
+    assert recovered.run().provenance()["input"]["path"] == str(first)
+
+    # The case the rule exists for: a partial parse over a network read from a
+    # file. Node and link counts cannot detect it, because the malformed file's
+    # ids overlap what is already there.
+    partial = tmp_path / "partial.net"
+    partial.write_text('*Vertices 3\n1 "a"\n2 "b"\n3 "c"\n*Edges\n1 2\nnot-an-id 3\n')
+
+    for accumulate in (True, False):
+        broken = Infomap(num_trials=1, seed=1)
+        broken.read_file(str(first))
+        with pytest.raises(NetworkParseError):
+            broken.read_file(str(partial), accumulate=accumulate)
+        assert broken.run().provenance()["input"] is None
 
     # Building on top of a file makes the network a mixture the file alone does
-    # not describe, so it stops identifying the run.
+    # not describe, so it stops identifying the run -- in either order, since
+    # a read with the default accumulate=True keeps what was there.
     extended = Infomap(num_trials=1, seed=1)
     extended.read_file(str(first))
     extended.add_link(90, 91)
     assert extended.run().provenance()["input"] is None
+
+    built_first = Infomap(num_trials=1, seed=1)
+    built_first.add_link(90, 91)
+    built_first.read_file(str(first))
+    assert built_first.run().provenance()["input"] is None
+
+    # accumulate=False replaces the network, so the in-memory content is gone
+    # and the file is the sole source again.
+    built_then_replaced = Infomap(num_trials=1, seed=1)
+    built_then_replaced.add_link(90, 91)
+    built_then_replaced.read_file(str(first), accumulate=False)
+    assert built_then_replaced.run().provenance()["input"]["path"] == str(first)
+
+    # The mutators Python reaches through the network proxy invalidate too.
+    removed = Infomap(num_trials=1, seed=1)
+    removed.read_file(str(first))
+    removed.remove_link(1, 2)
+    assert removed.run().provenance()["input"] is None
+
+    with_meta = Infomap(num_trials=1, seed=1)
+    with_meta.read_file(str(first))
+    with_meta.set_meta_data(1, 7)
+    assert with_meta.run().provenance()["input"] is None
 
 
 def test_provenance_hashes_the_content_that_was_read(tmp_path):

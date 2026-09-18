@@ -267,7 +267,6 @@ public:
     m_infomap.m_inputIdentity = !m_infomap.networkFile.empty()
         ? infomap::inputIdentity(m_infomap.networkFile)
         : m_infomap.m_inputIdentityFromRead;
-    m_infomap.m_clusterDataIdentity = infomap::inputIdentity(m_infomap.clusterDataFile);
     m_infomap.m_metaDataIdentity = infomap::inputIdentity(m_infomap.metaDataFile);
     {
       auto timer = m_timing.scope("configure_network_s");
@@ -302,6 +301,11 @@ public:
     m_threadsUsed = m_runParallelTrials ? parallelTrialWorkers() : 1;
     releaseInputLinksIfCli();
     readClusterData();
+    // After the parse, not before it: the other two files are already parsed
+    // when a run starts, and hashing this one first would have published the
+    // old content's hash for a seed the run then read fresh. (Hash and parse
+    // are still two reads of the file; a rewrite between them is not detected.)
+    m_infomap.m_clusterDataIdentity = infomap::inputIdentity(m_infomap.clusterDataFile);
     logRunPartitionStart();
     Result result;
     {

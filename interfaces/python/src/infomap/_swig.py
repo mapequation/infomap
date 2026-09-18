@@ -3135,8 +3135,11 @@ class InfomapWrapper(InfomapBase):
     def provenanceJson(self):
         return _infomap.InfomapWrapper_provenanceJson(self)
 
-    def noteInMemoryMutation(self):
-        return _infomap.InfomapWrapper_noteInMemoryMutation(self)
+    def removeLink(self, sourceId, targetId):
+        return _infomap.InfomapWrapper_removeLink(self, sourceId, targetId)
+
+    def addMetaData(self, nodeId, meta):
+        return _infomap.InfomapWrapper_addMetaData(self, nodeId, meta)
 
     def addNode(self, *args):
         return _infomap.InfomapWrapper_addNode(self, *args)

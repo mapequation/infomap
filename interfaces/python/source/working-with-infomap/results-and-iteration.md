@@ -157,11 +157,16 @@ print(f"input:       {record['input']}")
 Log it next to `result.summary()` and a published number can be re-run months
 later.
 
-`.tree`, `.ftree`, `.clu` and the JSON tree carry this record in the file
-itself. **CSV and Newick deliberately do not**: a comment row breaks readers
-that take the first line as the header, and Newick has no comment syntax. Ship
-them next to a `.tree` or a `--manifest-json` file, or record
-`result.provenance()` yourself.
+`.tree`, `.ftree`, `.clu` and the JSON tree stamp *part* of this record into
+the file: the version, seed, trial counts and the fingerprints, plus the input
+size. The canonical configuration and the input paths live only in
+`result.provenance()` and in `--manifest-json`, so a standalone tree tells you
+*which* configuration and input produced it, not what they were -- keep the
+manifest, or the record above, if you want to re-run from the artifact alone.
+
+**CSV and Newick carry none of it**: a comment row breaks readers that take the
+first line as the header, and Newick has no comment syntax. Ship them next to a
+`.tree` or a `--manifest-json` file, or record `result.provenance()` yourself.
 
 ### Getting assignments: `modules()`
 
