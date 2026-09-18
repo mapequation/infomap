@@ -64,6 +64,9 @@ export type Arguments = Partial<{
   flowTolerance: number;
   regularized: boolean;
   regularizationStrength: number;
+  intraRegularizationStrength: number;
+  interRegularizationStrength: number;
+  multilayerSkipAbsentNodes: boolean;
   entropyCorrected: boolean;
   entropyCorrectionStrength: number;
   markovTime: number;
@@ -227,6 +230,17 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.regularizationStrength != null)
     result += " --regularization-strength " + args.regularizationStrength;
+
+  if (args.intraRegularizationStrength != null)
+    result +=
+      " --intra-regularization-strength " + args.intraRegularizationStrength;
+
+  if (args.interRegularizationStrength != null)
+    result +=
+      " --inter-regularization-strength " + args.interRegularizationStrength;
+
+  if (args.multilayerSkipAbsentNodes)
+    result += " --multilayer-skip-absent-nodes";
 
   if (args.entropyCorrected) result += " --entropy-corrected";
 
