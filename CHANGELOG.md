@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.16.0](https://github.com/mapequation/infomap/compare/v2.15.1...v2.16.0) (2026-09-18)
+
+
+### Features
+
+* dissolve intermediate modules that no longer pay for their codebook ([#1075](https://github.com/mapequation/infomap/issues/1075)) ([cacf8ff](https://github.com/mapequation/infomap/commit/cacf8ff870093908e8baf1688381ab20b690bb96)), closes [#1074](https://github.com/mapequation/infomap/issues/1074)
+* **python:** make the 3.0 removal window visible at runtime ([#1060](https://github.com/mapequation/infomap/issues/1060)) ([290dd41](https://github.com/mapequation/infomap/commit/290dd41d1e5f20ea0ea62ff7d4db14c979bc5bdc))
+* **python:** node_id_attribute / layer_id_attribute / node_labels on the graph constructors and finders ([#1095](https://github.com/mapequation/infomap/issues/1095)) ([7322aa0](https://github.com/mapequation/infomap/commit/7322aa04fd63e2fcbe689a9c49d0cec4d20912b9))
+* record the effective seed in the default output artifacts ([#1055](https://github.com/mapequation/infomap/issues/1055)) ([2a59e06](https://github.com/mapequation/infomap/commit/2a59e06eefbad216ee97ef46a17fa0756ae7a1da))
+* stamp input identity into the artifacts a run publishes ([#1096](https://github.com/mapequation/infomap/issues/1096)) ([69a9701](https://github.com/mapequation/infomap/commit/69a970142c88f3abc645b18200c788ce1dd090e3))
+
+
+### Bug Fixes
+
+* charge the entropy correction in bits, not nats ([#1033](https://github.com/mapequation/infomap/issues/1033)) ([b5459c7](https://github.com/mapequation/infomap/commit/b5459c77e217de3577d53b2c9b61d0108b8df432))
+* charge the module-count preference on a scored partition ([#1052](https://github.com/mapequation/infomap/issues/1052)) ([2f28f14](https://github.com/mapequation/infomap/commit/2f28f14978b9a94ba6813137643994cf544d4f64))
+* close the remaining paths where a file identity could outlive its truth ([#1099](https://github.com/mapequation/infomap/issues/1099)) ([e75cfaa](https://github.com/mapequation/infomap/commit/e75cfaa04e26deea787e325d80e59791ae148edf))
+* guard the _states output artifacts against overwriting the input ([#1049](https://github.com/mapequation/infomap/issues/1049)) ([08aa5aa](https://github.com/mapequation/infomap/commit/08aa5aa3385267dc396355c9cf7c1122c16e8162))
+* keep the linlog damping interpolation smooth at q = 1 ([#1044](https://github.com/mapequation/infomap/issues/1044)) ([396eec9](https://github.com/mapequation/infomap/commit/396eec9fc823cb0ab850d89a05f92f943a52cd65))
+* make numLevels the tree's depth so every channel reports the same number ([#1040](https://github.com/mapequation/infomap/issues/1040)) ([d82d814](https://github.com/mapequation/infomap/commit/d82d8147959def22235daa69ded62899a1094d26))
+* make the one-level reference the one-module partition's codelength ([#1054](https://github.com/mapequation/infomap/issues/1054)) ([cecfe87](https://github.com/mapequation/infomap/commit/cecfe873baf58ef5ea34884b65c2032cd90320ae))
+* plan a shard's per-trial output paths with the writer's trial numbers ([#1062](https://github.com/mapequation/infomap/issues/1062)) ([09e4e8a](https://github.com/mapequation/infomap/commit/09e4e8a305a6c92534f6df335c4ace51998b9ae6))
+* **python:** announce the four removed Options fields on Options itself ([#1090](https://github.com/mapequation/infomap/issues/1090)) ([64ee6fb](https://github.com/mapequation/infomap/commit/64ee6fb019ded5504a3b1794e2dc7371e7059fa0))
+* **python:** keep state node names when importing multilayer networks ([#1091](https://github.com/mapequation/infomap/issues/1091)) ([d9d02fc](https://github.com/mapequation/infomap/commit/d9d02fc3442cd080f57d8a5ba01c0301cd3bf6aa))
+* **python:** make `level` the tree-level selector on Result, with `depth` as a deprecated alias ([#1093](https://github.com/mapequation/infomap/issues/1093)) ([ec60604](https://github.com/mapequation/infomap/commit/ec606042dfbc6e8c5d78387fb3dd9e490c9fbba1))
+* **python:** MergeError under InfomapError; annotate_networkx / annotate_igraph as the canonical names ([#1094](https://github.com/mapequation/infomap/issues/1094)) ([9a30a1b](https://github.com/mapequation/infomap/commit/9a30a1be268ee28266f3ee63176abba3afc7ab3e))
+* report a clu file whose node ids repeat ([#1051](https://github.com/mapequation/infomap/issues/1051)) ([cf5194d](https://github.com/mapequation/infomap/commit/cf5194d8475044fa7523b2a81d6763645a16a073))
+* report a regularized multilayer flow imbalance instead of aborting ([#1053](https://github.com/mapequation/infomap/issues/1053)) ([007c827](https://github.com/mapequation/infomap/commit/007c8277a21a02b06f15b02ac79e955c5babe4c5))
+* report an index codelength in the super consolidation log ([#1056](https://github.com/mapequation/infomap/issues/1056)) ([0a1adb1](https://github.com/mapequation/infomap/commit/0a1adb1f9bae02e8bee96e1b3e44358ab968fe4c))
+* **R:** keep silent and verbosity_level on the 3.0 option surface ([#1098](https://github.com/mapequation/infomap/issues/1098)) ([ea0ef0b](https://github.com/mapequation/infomap/commit/ea0ef0be413e4a09b5c7b7fdb6df51c46bab47f2))
+* **R:** make level the tree-level selector, with depth_level as a deprecated alias ([#1102](https://github.com/mapequation/infomap/issues/1102)) ([1622bdb](https://github.com/mapequation/infomap/commit/1622bdb3a1a753a6d3a140b61e9ccb7b8de7c1f1))
+* **R:** route remove_link and set_meta_data through the wrapper ([#1100](https://github.com/mapequation/infomap/issues/1100)) ([25a17d2](https://github.com/mapequation/infomap/commit/25a17d28cd902ee170dc5ad4b7d94ffd53ceadde))
+* score a re-initialised leaf partition with the leaf network's terms ([#998](https://github.com/mapequation/infomap/issues/998)) ([f3ac046](https://github.com/mapequation/infomap/commit/f3ac046626f3e6c21af0b3da7ac8ac57f96c4d98))
+* score the flat-shortcut tree, and drop the dead --lossy input guard ([#1014](https://github.com/mapequation/infomap/issues/1014)) ([c442701](https://github.com/mapequation/infomap/commit/c4427013f6586f7d8fe28e1a7b29a997c218332d))
+* stamp the R surface and warn on --pretty before the 3.0 removals ([#1092](https://github.com/mapequation/infomap/issues/1092)) ([8c62361](https://github.com/mapequation/infomap/commit/8c62361717ffdaa2fc6e5be3378205693b060a23))
+* write the pre-flow artifacts after the network is classified ([#1050](https://github.com/mapequation/infomap/issues/1050)) ([af74a54](https://github.com/mapequation/infomap/commit/af74a5431a1c5642cc87b57b994d6c5b415839be))
+
+
+### Performance Improvements
+
+* parse --cluster-data once per run instead of once per trial plus once to warn ([#1076](https://github.com/mapequation/infomap/issues/1076)) ([ab6ddde](https://github.com/mapequation/infomap/commit/ab6dddef60a29ed7dd94571700432b2d4111d8aa)), closes [#1072](https://github.com/mapequation/infomap/issues/1072)
+* validate cluster-data tree shape where input enters, not on every materialization ([#991](https://github.com/mapequation/infomap/issues/991)) ([75ad621](https://github.com/mapequation/infomap/commit/75ad621e43717608a11a637d54dd6650e5ef3911))
+
 ## [2.15.1](https://github.com/mapequation/infomap/compare/v2.15.0...v2.15.1) (2026-08-04)
 
 
