@@ -274,6 +274,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         flow_tolerance: float = 1e-15,
         regularized: bool = False,
         regularization_strength: float = 1.0,
+        intra_regularization_strength: float = 1.0,
+        inter_regularization_strength: float = 1.0,
+        multilayer_skip_absent_nodes: bool = False,
         entropy_corrected: bool = False,
         entropy_correction_strength: float = 1.0,
         markov_time: float = _UNSET,
@@ -649,6 +652,26 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
+        intra_regularization_strength : float, optional
+            Scale the intra-layer part of the multilayer prior used by --regularized,
+            relative to --regularization-strength. Set to 0 to regularize only between
+            layers.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
+        inter_regularization_strength : float, optional
+            Scale the inter-layer part of the multilayer prior used by --regularized,
+            relative to --regularization-strength. Set to 0 to leave the layers
+            uncoupled.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
+        multilayer_skip_absent_nodes : bool, optional
+            Treat a physical node's absence from a layer as real rather than unobserved,
+            so the prior network of --regularized spans only the nodes each layer holds.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
         entropy_corrected : bool, optional
             Correct for negative entropy bias in small samples, especially solutions
             with many modules.
@@ -893,6 +916,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         flow_tolerance: float = 1e-15,
         regularized: bool = False,
         regularization_strength: float = 1.0,
+        intra_regularization_strength: float = 1.0,
+        inter_regularization_strength: float = 1.0,
+        multilayer_skip_absent_nodes: bool = False,
         entropy_corrected: bool = False,
         entropy_correction_strength: float = 1.0,
         markov_time: float = _UNSET,

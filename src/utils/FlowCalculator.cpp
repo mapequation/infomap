@@ -816,7 +816,6 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   unsigned int L = network.numLayers();
   // unsigned int N_states = network.numNodes();
   // double nodeWeight = 1.0 / N;
-  double intraOutWeight = config.regularizationStrength * std::log(N_phys) / L;
   // double interOutWeight = config.regularizationStrength * std::log(L);
 
   // Log(1) << "\n N: " << N_phys << ", N_states: " << N << ", L: " << L << "\n";
@@ -837,11 +836,21 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   std::vector<bool> isInterLink(flowLinks.size(), false);
   std::vector<unsigned int> layerIndices(N);
 
+  // The prior a state node carries depends on the shape of the state network around it:
+  // how many nodes its own layer holds (its prior targets) and how many layers hold its
+  // physical node. Both are read off the network rather than assumed, so this covers a
+  // state network built with --multilayer-skip-absent-nodes as well as the default full
+  // one, where they are N_phys and L for every node.
+  std::vector<unsigned int> numNodesInLayer(L, 0);
+  std::unordered_map<unsigned int, unsigned int> numLayersOfPhysNode;
+
   for (const auto& node : network.nodes()) {
     const auto nodeIndex = nodeIndexMap[node.second.id];
     layerIds[nodeIndex] = node.second.layerId;
     physicalIds[nodeIndex] = node.second.physicalId;
     layerIndices[nodeIndex] = layerIdToIndex[node.second.layerId];
+    ++numNodesInLayer[layerIndices[nodeIndex]];
+    ++numLayersOfPhysNode[node.second.physicalId];
     // nodeTeleportWeights[nodeIndexMap[nodeId]] = node.weight;
     // if (layerIdToIndex.count(node.second.layerId) == 0) {
     //   layerIdToIndex[node.second.layerId] = layerIndex++;
@@ -908,20 +917,94 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   //   sum_u_in += u_in(i);
   // }
 
-  // Log(1) << "\nNodes:\n";
+  // The intra-layer prior uses the continuous configuration model of the single-layer
+  // regularized flow: the prior weight from state node i to state node j in the same
+  // layer is c_ij = (sum_kappa / sum_sigma) * u_out(i) * u_in(j), where u is a node's
+  // mean link weight per distinct neighbour. Every quantity is measured inside the
+  // layer, over the nodes that layer holds, so a layer's own weight scale sets its prior.
+  std::vector<double> u_out(N, 0.0);
+  std::vector<double> u_in(N, 0.0);
+  std::vector<double> minUOut(L, std::numeric_limits<double>::max());
+  std::vector<double> minUIn(L, std::numeric_limits<double>::max());
+
   for (unsigned int i = 0; i < N; ++i) {
-    // nodeTeleportWeights[i] = u_in(i) / sum_u_in;
-    // nodeTeleportWeights[i] = 1 / N;
-    nodeTeleportWeights[i] = 1.0 / N_phys;
-    // nodeTeleportWeights[i] = 1.0 / (config.noSelfLinks ? N_phys - 1 : N_phys);
-    // Log(1) << i << ") k_out: " << k_out[i] << ", s_out: " << s_out[i] << ", inter_out: " << inter_out[i] << "\n";
+    const auto layer = layerIndices[i];
+    if (k_out[i] > 0) {
+      minUOut[layer] = std::min(minUOut[layer], s_out[i] / k_out[i]);
+    }
+    if (k_in[i] > 0) {
+      minUIn[layer] = std::min(minUIn[layer], s_in[i] / k_in[i]);
+    }
+  }
+
+  for (unsigned int a = 0; a < L; ++a) {
+    // A layer with no intra links has no weight scale of its own to borrow from.
+    if (minUOut[a] == std::numeric_limits<double>::max()) {
+      minUOut[a] = 1.0;
+    }
+    if (minUIn[a] == std::numeric_limits<double>::max()) {
+      minUIn[a] = 1.0;
+    }
+  }
+
+  std::vector<double> sumUIn(L, 0.0);
+  std::vector<double> sumDegree(L, 0.0);
+  std::vector<double> sumStrength(L, 0.0);
+  std::vector<double> sumSOut(L, 0.0);
+
+  for (unsigned int i = 0; i < N; ++i) {
+    const auto layer = layerIndices[i];
+    u_out[i] = k_out[i] == 0 ? minUOut[layer] : s_out[i] / k_out[i];
+    u_in[i] = k_in[i] == 0 ? minUIn[layer] : s_in[i] / k_in[i];
+    sumUIn[layer] += u_in[i];
+    sumDegree[layer] += k_in[i] + k_out[i];
+    sumStrength[layer] += s_in[i] + s_out[i];
+    sumSOut[layer] += s_out[i];
+  }
+
+  // A zero intra-layer prior is not a weak prior: there is nothing to regularize inside a
+  // layer, so the intra-layer step falls back to the unregularized flow model. There,
+  // teleportation is left to nodes with no out-link to follow, it goes to links rather
+  // than uniformly over nodes, and it is not recorded in the codelength.
+  const bool intraPriorIsZero = config.regularizationStrength * config.intraRegularizationStrength == 0.0;
+
+  // What a state node spreads over its layer is lambda_intra times the sum of the c_ij
+  // above, with lambda_intra = ln(N)/(L_i N): the per-target rate that keeps the
+  // connectivity the prior induces between physical nodes at the ln(N)/N threshold. A
+  // node in fewer layers gets a higher rate per layer, because the pair has fewer layers
+  // in which to meet.
+  //
+  // --intra-regularization-strength 0 drops this term, so a state node with observed
+  // out-links follows them alone. One without any still has to pass on the flow that
+  // reaches it from its own counterparts in other layers, so alpha stays 1 there.
+  std::vector<double> intraOutWeight(N, 0.0);
+  std::vector<bool> avoidSelfTeleportation(N, false);
+
+  for (unsigned int i = 0; i < N; ++i) {
+    const auto layer = layerIndices[i];
+    const auto numLayersForNode = numLayersOfPhysNode[physicalIds[i]];
+    const double lambdaIntra = config.regularizationStrength * config.intraRegularizationStrength * std::log(N_phys) / (static_cast<double>(numLayersForNode) * N_phys);
+    // sum_kappa / sum_sigma is the inverse mean link weight of the layer.
+    const double invMeanWeight = sumStrength[layer] > 0 ? sumDegree[layer] / sumStrength[layer] : 1.0;
+    const double sumTargets = config.noSelfLinks ? sumUIn[layer] - u_in[i] : sumUIn[layer];
+
+    intraOutWeight[i] = lambdaIntra * invMeanWeight * u_out[i] * sumTargets;
+    if (intraPriorIsZero) {
+      nodeTeleportWeights[i] = sumSOut[layer] > 0 ? s_out[i] / sumSOut[layer] : 1.0 / numNodesInLayer[layer];
+    } else {
+      nodeTeleportWeights[i] = sumUIn[layer] > 0 ? u_in[i] / sumUIn[layer] : 1.0 / numNodesInLayer[layer];
+    }
+    // A node that is its layer's only teleport target has nowhere else to go, so the
+    // correction for forbidden self-teleportation cannot apply to it: it would divide by
+    // zero here and then cancel the layer's whole teleport flow.
+    avoidSelfTeleportation[i] = config.noSelfLinks && nodeTeleportWeights[i] < 1.0;
   }
 
   // std::function<double(unsigned int)> t_out_withoutSelfLinks = [lambda, u_t, u_out, u_in, sum_u_in](unsigned int i) { return lambda / u_t * u_out(i) * (sum_u_in - u_in(i)); };
   // std::function<double(unsigned int)> t_out_withSelfLinks = [lambda, u_t, u_out, sum_u_in](unsigned int i) { return lambda / u_t * u_out(i) * sum_u_in; };
   // auto t_out = config.noSelfLinks ? t_out_withoutSelfLinks : t_out_withSelfLinks;
 
-  auto intraLayerTeleRate = [s_out, k_out, intraOutWeight](auto i) { return k_out[i] == 0 ? 1 : intraOutWeight / (intraOutWeight + s_out[i]); };
+  auto intraLayerTeleRate = [&s_out, &k_out, &intraOutWeight](auto i) { return k_out[i] == 0 ? 1 : intraOutWeight[i] / (intraOutWeight[i] + s_out[i]); };
 
   std::vector<double> alpha(N, 0);
   std::vector<double> alphaInter(N, 0);
@@ -929,15 +1012,32 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   for (unsigned int i = 0; i < N; ++i) {
     // auto t_i = t_out(i);
     alpha[i] = intraLayerTeleRate(i); // = 1 for dangling nodes
-    alphaInter[i] = inter_out[i] / (inter_out[i] + s_out[i] + intraOutWeight);
-    if (config.noSelfLinks) {
+    double intraOutTotal = s_out[i] + intraOutWeight[i];
+    if (intraPriorIsZero && k_out[i] == 0) {
+      // Nothing observed here and no prior to stand in for it, so the unrecorded
+      // teleportation takes the place of the missing out-links and has to carry their
+      // weight against the inter-layer step: the flow a typical node of the layer sends
+      // out. Without this the vertical step would take all of the node's flow simply
+      // because nothing was observed at it, which is the sparsity artifact the
+      // regularization exists to remove, and the relax-rate model does not have it
+      // either -- there the split between layers is set by r, not by what was observed.
+      intraOutTotal = numNodesInLayer[layerIndices[i]] > 0
+          ? sumSOut[layerIndices[i]] / numNodesInLayer[layerIndices[i]]
+          : 0.0;
+    }
+    const double sumOutWeight = inter_out[i] + intraOutTotal;
+    // A node with no prior, no observed links and no inter-layer coupling has nothing to
+    // divide by. It takes a prior turned off through --regularization-strength 0 or both
+    // of its two parts, leaving an isolated node with no flow to distribute.
+    alphaInter[i] = sumOutWeight == 0 ? 0 : inter_out[i] / sumOutWeight;
+    if (avoidSelfTeleportation[i]) {
       // Inflate to adjust for no self-teleportation
       // TODO: Check possible side-effects
       alpha[i] /= 1 - nodeTeleportWeights[i];
       // alphaInter[i] /= 1 - nodeTeleportWeights[i];
     }
     // Log(1) << i << ": intra: " << alpha[i] << ", inter: " << alphaInter[i] << "\n";
-    // Log(1) << i << ": intra: " << alpha[i] << ", inter: " << alphaInter[i] << " (inter_out: " << inter_out[i] << ", s_out: " << s_out[i] << ", intra_prior_out: " << intraOutWeight << ")\n";
+    // Log(1) << i << ": intra: " << alpha[i] << ", inter: " << alphaInter[i] << " (inter_out: " << inter_out[i] << ", s_out: " << s_out[i] << ", intra_prior_out: " << intraOutWeight[i] << ")\n";
   }
 
   // Log(1) << "\nLink probabilities:\n";
@@ -1002,7 +1102,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     // }
 
     for (unsigned int i = 0; i < N; ++i) {
-      nodeFlowTmp[i] = nodeTeleportWeights[i] * (layerTeleFlow[layerIndices[i]] - (config.noSelfLinks ? (alpha[i] * nodeFlow[i]) : 0));
+      nodeFlowTmp[i] = nodeTeleportWeights[i] * (layerTeleFlow[layerIndices[i]] - (avoidSelfTeleportation[i] ? (alpha[i] * nodeFlow[i]) : 0));
       // nodeFlowTmp[i] = nodeTeleportWeights[i] * layerTeleFlow[layerIndices[i]];
       // Log(1) << i << ": tele flow: " << nodeFlowTmp[i] << "\n";
     }
@@ -1013,7 +1113,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
       if (isInterLink[linkIndex++]) {
         continue;
       }
-      double beta = 1 - alpha[link.source] * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
+      double beta = 1 - alpha[link.source] * (avoidSelfTeleportation[link.source] ? 1 - nodeTeleportWeights[link.source] : 1);
       // double beta = 1 - alpha[link.source];
       nodeFlowTmp[link.target] += beta * link.flow * ((1 - alphaInter[link.source]) * nodeFlow[link.source] + unrecordedInterFlow[link.source]);
     }
@@ -1061,6 +1161,27 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     sumTeleFlow += layerTeleFlow[i];
   }
 
+  // What each state node passes on to the intra-layer step, once the unrecorded
+  // inter-layer step has moved flow between its own counterparts in other layers.
+  std::vector<double> intraStepFlow(N, 0.0);
+  for (unsigned int i = 0; i < N; ++i) {
+    intraStepFlow[i] = (1 - alphaInter[i]) * nodeFlow[i] + unrecordedInterFlow[i];
+  }
+
+  // Without an intra-layer prior, teleportation only passes on the flow of state nodes
+  // that have no observed out-link in their layer, and it stays out of the codelength.
+  // As in the unregularized flow model, take one last step without it and renormalize to
+  // the flow that moves along observed links. With no such node this changes nothing:
+  // every alpha is then zero, so no flow teleports and the normalization is one.
+  double movingFlow = 0.0;
+  for (unsigned int i = 0; i < N; ++i) {
+    if (k_out[i] > 0) {
+      movingFlow += intraStepFlow[i];
+    }
+  }
+  const bool unrecordedIntraTeleportation = intraPriorIsZero && movingFlow > 0;
+  const double intraStepNorm = unrecordedIntraTeleportation ? movingFlow : 1.0;
+
   linkIndex = 0;
   enterFlow.assign(numNodes, 0.0);
   exitFlow.assign(numNodes, 0.0);
@@ -1072,15 +1193,32 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
       enterFlow[link.target] += link.flow;
     } else {
       double beta = 1 - alpha[link.source];
-      link.flow = beta * link.flow * ((1 - alphaInter[link.source]) * nodeFlow[link.source] + unrecordedInterFlow[link.source]);
+      link.flow = beta * link.flow * intraStepFlow[link.source] / intraStepNorm;
       exitFlow[link.source] += link.flow;
       enterFlow[link.target] += link.flow;
     }
   }
 
   nodeTeleportFlow.assign(numNodes, 0.0);
+
+  if (unrecordedIntraTeleportation) {
+    // A visit is an intra-layer link step, so that is all the reported flow counts. The
+    // inter-layer step is unrecorded by construction and teleportation is now too, which
+    // leaves every teleport flow zero and nothing for the codelength to charge for.
+    sumTeleFlow = 0.0;
+    nodeFlow.assign(numNodes, 0.0);
+    linkIndex = 0;
+    for (const auto& link : flowLinks) {
+      if (isInterLink[linkIndex++]) {
+        continue;
+      }
+      nodeFlow[link.target] += link.flow;
+    }
+    return;
+  }
+
   for (unsigned int i = 0; i < N; ++i) {
-    nodeTeleportFlow[i] = alpha[i] * ((1 - alphaInter[i]) * nodeFlow[i] + unrecordedInterFlow[i]);
+    nodeTeleportFlow[i] = alpha[i] * intraStepFlow[i];
 
     exitFlow[i] += nodeTeleportFlow[i] * (1 - nodeTeleportWeights[i]); // + node.intraLayerTeleFlow * (1 - node.intraLayerTeleWeight);
     enterFlow[i] += (layerTeleFlow[layerIndices[i]] - nodeTeleportFlow[i]) * nodeTeleportWeights[i];
