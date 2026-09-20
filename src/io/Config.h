@@ -149,6 +149,40 @@ struct Config {
   double minimumRelativeTuneIterationImprovement = 1e-5;
   bool onlySuperModules = false;
   unsigned int fastHierarchicalSolution = 0;
+  // Experimental (hierarchical-search rethink, phase 1a): depart from the
+  // two-level-greedy path early. Stop aggregation at fine building blocks
+  // (granularity via levelAggregationLimit) and grow the hierarchy upward with
+  // the enter-flow super-search only — no two-level tuning, no recursive
+  // rebuild. Measurement scaffolding; default off leaves production untouched.
+  bool hierFromBlocks = false;
+  // Experimental (hierarchical-search rethink, phase 1a): after a normal run,
+  // rebuild the final partition in the columnar core and log its codelength
+  // against the tree's, as a correctness gate for the new structure.
+  bool columnarCheck = false;
+  // Experimental (phase 1b): run the columnar two-level optimizer on the leaf
+  // network and log its codelength against the OO result (use with --two-level
+  // for an apples-to-apples two-level comparison).
+  bool columnarTwoLevel = false;
+  // Engine selector (hierarchical-search rethink, CLI --columnar / -C): use the
+  // non-recursive columnar search — fine building blocks, enter-flow up-build,
+  // and the up/down convergence sweep (best of a few up-merge settings, sweeps
+  // capped by tuneIterationLimit) — instead of the recursive two-level-then-
+  // refine algorithm. Produces the normal output tree.
+  bool columnarSearch = false;
+  // Non-redundant map equation L* on the columnar engine: the exit codebook of a
+  // module excludes the module just left (no impossible immediate re-entry) and the
+  // first visit after entering uses a separate enter codebook (no impossible
+  // immediate exit). Implemented as a base-objective variant of the columnar core,
+  // so it implies --columnar (the only L* implementation on this branch).
+  // Composes with every objective correction and with higher-order input: L* restricts
+  // which walk steps are possible, not which codebook a step is coded in.
+  bool nonRedundant = false;
+  // Reserved, currently inert: with --non-redundant, drive the leaf move loop with the
+  // exact O(m) leave-one-out exit sweep instead of the O(1) adaptive power-series delta.
+  // The leaf move loop is not yet L*-aware, so neither variant exists and this changes
+  // nothing; it stays in the config fingerprint so a later phase cannot merge runs
+  // across the two.
+  bool nonRedundantExact = false;
   bool preferModularSolution = false;
   bool innerParallelization = false;
   bool parallelTrials = false;
@@ -261,6 +295,12 @@ struct Config {
     minimumRelativeTuneIterationImprovement = other.minimumRelativeTuneIterationImprovement;
     preferModularSolution = other.preferModularSolution;
     innerParallelization = other.innerParallelization;
+    hierFromBlocks = other.hierFromBlocks;
+    columnarCheck = other.columnarCheck;
+    columnarTwoLevel = other.columnarTwoLevel;
+    columnarSearch = other.columnarSearch;
+    nonRedundant = other.nonRedundant;
+    nonRedundantExact = other.nonRedundantExact;
 #if INFOMAP_FEATURE_TEST_FEATURE
     testFeature = other.testFeature;
 #endif

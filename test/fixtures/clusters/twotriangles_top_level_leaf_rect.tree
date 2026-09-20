@@ -1,0 +1,10 @@
+# path flow name node_id
+# The SAME partition again, made rectangular by hand (`2:1:1`): A's module wrapped in a
+# pass-through level so every branch is three deep. L* must not be able to tell the
+# three files apart; the base map equation charges each extra level and does.
+1:1:1 0.3 "C" 3
+1:1:2 0.2 "B" 2
+1:2:1 0.15 "D" 4
+1:2:2 0.1 "E" 5
+1:2:3 0.1 "F" 6
+2:1:1 0.15 "A" 1
