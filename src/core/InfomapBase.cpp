@@ -2231,11 +2231,14 @@ void InfomapBase::generateSubNetwork(Network& network)
       InfoNode& node = *m_leafNodes[i];
       double localScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[i]), -damping) : infomath::linlog(std::max(minLocalScale, node.data.flow * totDegree), damping);
       for (InfoEdge* e : node.outEdges()) {
+        // An undirected link takes the larger local scale of its two endpoints,
+        // so the result is independent of link order and orientation.
+        double edgeScale = localScale;
         if (isUndirectedFlow()) {
           double oppositeLocalScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[nodeIndexMap[e->target->stateId]]), -damping) : infomath::linlog(std::max(minLocalScale, e->target->data.flow * totDegree), damping);
-          localScale = std::max(localScale, oppositeLocalScale);
+          edgeScale = std::max(localScale, oppositeLocalScale);
         }
-        double localMarkovTimeScale = maxScale / std::max(minLocalScale, localScale);
+        double localMarkovTimeScale = maxScale / std::max(minLocalScale, edgeScale);
         e->data.flow *= localMarkovTimeScale;
         // Note: deliberately do NOT write the scaled flow back into the shared StateNetwork
         // (network.nodeLinkMap()). The optimizer and output use only the per-instance InfoEdge
