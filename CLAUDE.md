@@ -146,6 +146,12 @@ to keep the snapshot — say so in it rather than quietly reusing the numbers.
   `src/io/RunMetadata.cpp`, or the python coverage test fails.
 - `make format-native` before pushing; the pre-commit CI gate runs clang-format and will fail on
   hand-written blocks.
+- **Lint Python with the ruff version `.pre-commit-config.yaml` pins** (its `ruff-pre-commit` `rev`),
+  not whatever `ruff` is on PATH: `uvx ruff@<rev> check <files>` and `uvx ruff@<rev> format --check
+  <files>`. Put that command in every subagent brief that writes Python. A subagent that linted
+  `columnar_wip/assemble-hier-gaps.py` with miniforge's ruff 0.15.0 reported it clean, and the pinned
+  0.16.0 then failed #1081's pre-commit gate on five findings (EXE001, SIM115, PLC0206). Commit a
+  script with a shebang executable (`chmod +x`), or EXE001 fails it too.
 
 ### Verification discipline
 - **Run the C++ tests with OpenMP ON as well as OFF.** `make test-native OPENMP=0` is the benchmark
