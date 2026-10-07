@@ -77,7 +77,7 @@ test = [
   "pre-commit",
   # Pinned: pyright gates CI (test-python-typecheck-core), and new pyright
   # releases routinely add diagnostics. Bump deliberately.
-  "pyright==1.1.411",
+  "pyright==1.1.414",
   "pytest",
   "networkx",
   "pyarrow",
