@@ -221,6 +221,9 @@ _OPTION_TABLE = {
     "flow_tolerance": _OptionSpec("--flow-tolerance", "value", 1e-15, domain=(0.0, None)),
     "regularized": _OptionSpec("--regularized", "flag", False),
     "regularization_strength": _OptionSpec("--regularization-strength", "value", 1.0, domain=(0.0, None)),
+    "intra_regularization_strength": _OptionSpec("--intra-regularization-strength", "value", 1.0, domain=(0.0, None)),
+    "inter_regularization_strength": _OptionSpec("--inter-regularization-strength", "value", 1.0, domain=(0.0, None)),
+    "multilayer_skip_absent_nodes": _OptionSpec("--multilayer-skip-absent-nodes", "flag", False),
     "entropy_corrected": _OptionSpec("--entropy-corrected", "flag", False),
     "entropy_correction_strength": _OptionSpec("--entropy-correction-strength", "value", 1.0, domain=(0.0, None)),
     "markov_time": _OptionSpec("--markov-time", "value", 1.0, domain=(0.0, None), common=True),
@@ -746,6 +749,17 @@ class Options(metaclass=_OptionsMeta):
     regularization_strength : float, optional
         Scale the relative strength of the Bayesian prior network used by --regularized.
         Valid range: >= 0.0.
+    intra_regularization_strength : float, optional
+        Scale the intra-layer part of the multilayer prior used by --regularized,
+        relative to --regularization-strength. Set to 0 to regularize only between
+        layers. Valid range: >= 0.0.
+    inter_regularization_strength : float, optional
+        Scale the inter-layer part of the multilayer prior used by --regularized,
+        relative to --regularization-strength. Set to 0 to leave the layers uncoupled.
+        Valid range: >= 0.0.
+    multilayer_skip_absent_nodes : bool, optional
+        Treat a physical node's absence from a layer as real rather than unobserved, so
+        the prior network of --regularized spans only the nodes each layer holds.
     entropy_corrected : bool, optional
         Correct for negative entropy bias in small samples, especially solutions with
         many modules.
@@ -908,6 +922,9 @@ class Options(metaclass=_OptionsMeta):
     flow_tolerance: float = 1e-15
     regularized: bool = False
     regularization_strength: float = 1.0
+    intra_regularization_strength: float = 1.0
+    inter_regularization_strength: float = 1.0
+    multilayer_skip_absent_nodes: bool = False
     entropy_corrected: bool = False
     entropy_correction_strength: float = 1.0
     markov_time: float = 1.0

@@ -149,6 +149,9 @@ std::string canonicalConfigJson(const Config& config)
   json["no_infomap"] = config.noInfomap;
   json["regularized"] = config.regularized;
   addCanonicalNumber(json, "regularization_strength", config.regularizationStrength);
+  addCanonicalNumber(json, "intra_regularization_strength", config.intraRegularizationStrength);
+  addCanonicalNumber(json, "inter_regularization_strength", config.interRegularizationStrength);
+  json["multilayer_skip_absent_nodes"] = config.multilayerSkipAbsentNodes;
   json["recorded_teleportation"] = config.recordedTeleportation;
   addCanonicalNumber(json, "teleportation_probability", config.teleportationProbability);
   addCanonicalNumber(json, "markov_time", config.markovTime);

@@ -83,6 +83,14 @@
       "python": "1.0",
       "r": "1.0"
     },
+    "--intra-regularization-strength": {
+      "python": "1.0",
+      "r": "1.0"
+    },
+    "--inter-regularization-strength": {
+      "python": "1.0",
+      "r": "1.0"
+    },
     "--seed": {
       "python": "123",
       "r": "123L"

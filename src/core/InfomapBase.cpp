@@ -2126,6 +2126,23 @@ void InfomapBase::generateSubNetwork(Network& network)
   double sumTeleFlow = 0.0;
   std::unordered_map<unsigned int, unsigned int> nodeIndexMap;
   nodeIndexMap.reserve(numNodes);
+
+  // Every per-layer teleport term the objective adds is a teleport flow times a teleport
+  // weight, or a difference of two such flows, so a network where nothing teleports
+  // contributes nothing at all. Skipping the data there costs one scan and saves an
+  // InfoNodeExtras per leaf node plus a per-module map lookup on every move. It is all
+  // or nothing: a node that does not teleport still pays the flow its module teleports
+  // away, so its own zero is not enough to leave it out.
+  bool haveLayerTeleportFlow = false;
+  if (isRegularizedMultilayerFlow()) {
+    for (auto& nodeIt : network.nodes()) {
+      if (nodeIt.second.intraLayerTeleFlow > 0) {
+        haveLayerTeleportFlow = true;
+        break;
+      }
+    }
+  }
+
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
     auto* node = &allocNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
@@ -2136,7 +2153,7 @@ void InfomapBase::generateSubNetwork(Network& network)
     // Only regularized-multilayer flow consumes layerTeleFlowData; populating it
     // unconditionally would allocate an InfoNodeExtras for every node and defeat
     // the out-of-line shrink (extras must stay null in the common case).
-    if (isRegularizedMultilayerFlow())
+    if (haveLayerTeleportFlow)
       node->ensureExtras().layerTeleFlowData.emplace_back(networkNode.layerId, networkNode.intraLayerTeleFlow, networkNode.intraLayerTeleWeight);
     // Log(1) << "Node " << node->stateId << " (" << node->layerId << "," << node->physicalId << ") data: " << node->data << ", tele-flow: " << networkNode.teleFlow << ", intra-tele: " << networkNode.intraLayerTeleFlow << "\n";
     if (haveMetaData()) {
