@@ -9,6 +9,7 @@
 
 #include "StateNetwork.h"
 #include "../utils/FlowCalculator.h"
+#include "../utils/Console.h"
 #include "../utils/Log.h"
 #include "../utils/format.h"
 #include "../io/SafeFile.h"
@@ -160,6 +161,11 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
     definalize(); // re-entered build (e.g. accumulate=true read, addLink after run)
   }
   ++m_rawLinkCount;
+  // Apply a reserveLinks hint here, on the first append, so that a mode-B
+  // (multilayer) input never reserves a buffer it will not use.
+  if (m_linkCountHint > 0 && m_linkBuffer.capacity() < m_linkCountHint) {
+    m_linkBuffer.reserve(m_linkCountHint);
+  }
   m_linkBuffer.push_back({ sourceId, targetId, weight });
   return true;
 }
@@ -205,11 +211,24 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, unsigne
   return addLink(sourceId, targetId, static_cast<double>(weight));
 }
 
+void StateNetwork::reserveLinks(std::size_t numAdditionalLinks)
+{
+  // Room for this many *more* links, so repeated calls from successive batches
+  // compose. Largest hint wins; never shrink what is already reserved.
+  const std::size_t target = m_linkBuffer.size() + numAdditionalLinks;
+  if (target > m_linkCountHint) {
+    m_linkCountHint = target;
+  }
+}
+
 void StateNetwork::addLinks(const std::vector<unsigned int>& sourceIds, const std::vector<unsigned int>& targetIds, const std::vector<double>& weights)
 {
   if (sourceIds.size() != targetIds.size() || sourceIds.size() != weights.size()) {
     throw std::invalid_argument("sourceIds, targetIds, and weights must have the same length");
   }
+
+  // The batch knows exactly how many links it is about to add.
+  reserveLinks(sourceIds.size());
 
   for (std::size_t i = 0; i < sourceIds.size(); ++i) {
     addLink(sourceIds[i], targetIds[i], weights[i]);
@@ -291,6 +310,7 @@ bool StateNetwork::undirectedToDirected()
 
 void StateNetwork::clearLinks()
 {
+  m_linkCountHint = 0;
   // Release ALL link storage so none of it survives into the optimize phase.
   // releaseInputLinksIfCli() calls this before runTrials(); the pre-CSR build
   // freed its nested map here, so the CSR (and outWeights) must be freed too
@@ -317,6 +337,7 @@ void StateNetwork::clear()
   m_nodes.clear();
   NodeLinkMap().swap(m_nodeLinkMap);
   std::vector<LinkTriple>().swap(m_linkBuffer);
+  m_linkCountHint = 0;
   std::vector<unsigned int>().swap(m_nodeIds);
   std::vector<unsigned int>().swap(m_linkOffsets);
   std::vector<unsigned int>().swap(m_linkTargets);
@@ -540,11 +561,19 @@ void StateNetwork::buildCsrFromBuffer()
 
   // Free the build buffer + permutation before sizing the flow array, to keep
   // the transient peak down.
+  const std::size_t bufferCapacity = m_linkBuffer.capacity();
   std::vector<LinkTriple>().swap(m_linkBuffer);
   std::vector<unsigned int>().swap(order);
 
   m_numLinks = static_cast<unsigned int>(m_linkTargets.size());
   m_numAggregatedLinks = m_rawLinkCount - m_numLinks;
+  // The build buffer is the largest allocation on a big network, so report how
+  // well it was sized: slack means the reserve hint over-estimated, and a
+  // capacity above the next power of two below it means it doubled instead.
+  Console::detail(2, "link build buffer: {} links in a capacity of {} ({:.0f} MB, {:.1f}% slack)",
+                  m_rawLinkCount, bufferCapacity,
+                  static_cast<double>(bufferCapacity * sizeof(LinkTriple)) / (1024.0 * 1024.0),
+                  m_rawLinkCount > 0 ? 100.0 * (static_cast<double>(bufferCapacity) / m_rawLinkCount - 1.0) : 0.0);
   m_linkFlows.assign(m_linkTargets.size(), 0.0);
 
   // m_outWeights is deliberately NOT derived in mode A: first-order consumers

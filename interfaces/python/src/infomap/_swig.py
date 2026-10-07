@@ -2116,6 +2116,9 @@ class StateNetwork(object):
     def addLinks(self, sourceIds, targetIds, weights):
         return _infomap.StateNetwork_addLinks(self, sourceIds, targetIds, weights)
 
+    def reserveLinks(self, numAdditionalLinks):
+        return _infomap.StateNetwork_reserveLinks(self, numAdditionalLinks)
+
     def removeLink(self, sourceId, targetId):
         return _infomap.StateNetwork_removeLink(self, sourceId, targetId)
 
