@@ -1,657 +1,655 @@
-C1	ninetriangles	old	1	-C -N1 	3.371875026	0.000815084	67632637	5	3
-C1	ninetriangles	new	1	-C -N1 	3.371875026	0.000374667	62475446	5	3
-C1	jazz	old	1	-C -N1 	6.899367957	0.001026833	71657025	11	2
-C1	jazz	new	1	-C -N1 	6.899367957	0.000961833	70305819	11	2
-C1	netscicoauthor2010	old	1	-C -N1 	4.047459862	0.002689042	89929415	7	4
-C1	netscicoauthor2010	new	1	-C -N1 	4.047459862	0.002693667	89618273	7	4
-C1	powergrid	old	1	-C -N1 	4.730850312	0.026157042	363540923	12	5
-C1	powergrid	new	1	-C -N1 	4.730850312	0.026018583	363131950	12	5
-C1	politicalblogs	old	1	-C -N1 -d	6.758265349	0.009179625	185640733	3	3
-C1	politicalblogs	new	1	-C -N1 -d	6.758265349	0.009290417	185283885	3	3
-C1	science2001	old	1	-C -N1 -d	7.807937174	0.416655875	5693828152	189	3
-C1	science2001	new	1	-C -N1 -d	7.807937174	0.39871175	5690038212	189	3
-C1	web-NotreDame	old	1	-C -N1 -d	5.556421705	2.4547695	24344256796	5	6
-C1	web-NotreDame	new	1	-C -N1 -d	5.556421705	2.420727	24332846033	5	6
-C1	lazega	old	1	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000885625	66653870	6	2
-C1	lazega	new	1	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000747167	65501287	6	2
-C1	multilayer (ex.)	old	1	-C -N1 	2.011405238	0.00035425	58295395	2	2
-C1	multilayer (ex.)	new	1	-C -N1 	2.011405238	0.000159917	57982098	2	2
-C1	malaria	old	1	-C -N1 	7.491980364	0.367416583	5294693636	148	3
-C1	malaria	new	1	-C -N1 	7.491980364	0.366234292	5293793030	148	3
-C1	air30k	old	1	-C -N1 	5.470440768	0.372574958	4538284996	242	3
-C1	air30k	new	1	-C -N1 	5.470440768	0.387706667	4539943611	242	3
-C1	air30k (reg.)	old	1	-C -N1 -d --regularized	5.657913279	0.496507375	5868961235	197	3
-C1	air30k (reg.)	new	1	-C -N1 -d --regularized	5.657913279	0.492154708	5870151896	197	3
-C1	air30k (meta)	old	1	-C -N1 --meta-data networks/states/air2011/air30k_usstate.meta	7.546335898	0.902143334	9235576977	1614	3
-C1	air30k (meta)	new	1	-C -N1 --meta-data networks/states/air2011/air30k_usstate.meta	7.546335898	0.981081208	9242251589	1614	3
-C1	science2001 (pref.)	old	1	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.416280417	5833245902	5	3
-C1	science2001 (pref.)	new	1	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.417289125	5829426994	5	3
-C1	overlapping om2 `-2d`	old	1	-C -2d -N1	6.739358212	1.675728375	17273185538	674	2
-C1	overlapping om2 `-2d`	new	1	-C -2d -N1	6.739358212	1.604607625	17258921221	674	2
-C1	overlapping om2 `-d`	old	1	-C -d -N1	7.29196634	0.39203875	3704319739	321	4
-C1	overlapping om2 `-d`	new	1	-C -d -N1	7.29196634	0.371908625	3701173535	321	4
-C1	overlapping om2 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.744721993	0.623367584	6210458426	476	2
-C1	overlapping om2 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.744721993	0.56973175	6208951238	476	2
-FAM	om2 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.548816177	0.831317708	8196262744	120	2
-FAM	om2 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.548816177	0.822438084	8197548037	120	2
-FAM	om2 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.970508085	0.419002958	4267851639	1	2
-FAM	om2 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.548816177	1.116668167	11469628504	120	2
-FAM	om2 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.789039995	0.054929166	587371225	8	2
-FAM	om2 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.789039995	0.053642583	587221895	8	2
-F1	overlapping om2 `-d`	old	1	-C -F -d -N1	7.321678354	0.284049708	2565617723	436	4
-F1	overlapping om2 `-d`	new	1	-C -F -d -N1	7.321678354	0.272897792	2567282987	436	4
-C1	overlapping om3 `-2d`	old	1	-C -2d -N1	6.823513368	1.311906875	14968352265	72	2
-C1	overlapping om3 `-2d`	new	1	-C -2d -N1	6.823513368	1.356896667	14973776762	72	2
-C1	overlapping om3 `-d`	old	1	-C -d -N1	7.97489927	0.845082792	8261174690	1	2
-C1	overlapping om3 `-d`	new	1	-C -d -N1	6.823513368	2.062785042	22232464303	72	2
-C1	overlapping om3 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.820421208	0.81615275	9116675366	62	2
-C1	overlapping om3 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.820421208	0.799699584	9118775023	62	2
-FAM	om3 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.261268486	0.986480583	9711151653	34	2
-FAM	om3 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.261268486	0.97757625	9714726809	34	2
-FAM	om3 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.97414175	0.59012975	5493966958	1	2
-FAM	om3 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.261268486	1.356368292	13686042518	34	2
-FAM	om3 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.837980937	0.100515667	927636731	12	2
-FAM	om3 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.837980937	0.097850459	927387459	12	2
-F1	overlapping om3 `-d`	old	1	-C -F -d -N1	7.97489927	0.784619708	7807340223	1	2
-F1	overlapping om3 `-d`	new	1	-C -F -d -N1	6.823513368	1.990946459	21765850690	72	2
-C1	overlapping om4 `-2d`	old	1	-C -2d -N1	6.861724654	1.71043125	17514264497	141	2
-C1	overlapping om4 `-2d`	new	1	-C -2d -N1	6.861724654	1.700862709	17507031658	141	2
-C1	overlapping om4 `-d`	old	1	-C -d -N1	7.9829318	0.727006792	7108817314	1	2
-C1	overlapping om4 `-d`	new	1	-C -d -N1	6.861724654	2.223836958	23518205372	141	2
-C1	overlapping om4 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.856239474	0.962468333	10354312512	132	2
-C1	overlapping om4 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.856239474	0.97929825	10355418075	132	2
-FAM	om4 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.556894677	0.997136	9254295254	79	2
-FAM	om4 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.556894677	1.137393875	9266498297	79	2
-FAM	om4 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.9828492	0.807871792	7352607029	1	2
-FAM	om4 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.556894677	1.590931333	14954207890	79	2
-FAM	om4 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.880650147	0.11799675	1010624857	16	2
-FAM	om4 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.880650147	0.118275208	1008108995	16	2
-F1	overlapping om4 `-d`	old	1	-C -F -d -N1	7.9829318	0.51830475	4812854347	1	2
-F1	overlapping om4 `-d`	new	1	-C -F -d -N1	6.861724654	2.032019542	21233279484	141	2
-C1	overlapping om5 `-2d`	old	1	-C -2d -N1	6.868127142	1.933199208	19136800352	293	2
-C1	overlapping om5 `-2d`	new	1	-C -2d -N1	6.868127142	1.886298791	19126156569	293	2
-C1	overlapping om5 `-d`	old	1	-C -d -N1	7.812252898	0.776903958	7224034440	66	4
-C1	overlapping om5 `-d`	new	1	-C -d -N1	7.812252898	0.76261375	7211942590	66	4
-C1	overlapping om5 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.857778113	1.187946084	12548879214	296	2
-C1	overlapping om5 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.857778113	1.236256209	12544583512	296	2
-FAM	om5 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.966995214	2.951544333	26628671101	104	2
-FAM	om5 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.966995214	2.947631542	26631328935	104	2
-FAM	om5 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.989613065	0.769185292	6707270347	1	2
-FAM	om5 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.966995214	3.535743167	31581798693	104	2
-FAM	om5 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.902222527	0.129450042	1081738452	20	2
-FAM	om5 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.902222527	0.126991916	1080859272	20	2
-F1	overlapping om5 `-d`	old	1	-C -F -d -N1	7.798283664	0.674623875	5746138449	96	4
-F1	overlapping om5 `-d`	new	1	-C -F -d -N1	7.798283664	0.696636875	5744177411	96	4
-C1	overlapping om6 `-2d`	old	1	-C -2d -N1	6.884042436	1.82912125	17973600617	455	2
-C1	overlapping om6 `-2d`	new	1	-C -2d -N1	6.884042436	1.846206334	17978326009	455	2
-C1	overlapping om6 `-d`	old	1	-C -d -N1	7.440161581	0.840979958	7466868763	92	4
-C1	overlapping om6 `-d`	new	1	-C -d -N1	7.440161581	0.815844875	7463644880	92	4
-C1	overlapping om6 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.873378755	1.303192292	13205060372	446	2
-C1	overlapping om6 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.873378755	1.333505917	13207261252	446	2
-FAM	om6 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.981574549	1.937992333	15827364864	113	2
-FAM	om6 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.981574549	1.867163667	15827588907	113	2
-FAM	om6 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.993490371	0.860798291	7757583581	1	2
-FAM	om6 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.981574549	2.5600115	21752454687	113	2
-FAM	om6 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.930934993	0.14055325	1117095234	24	2
-FAM	om6 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.930934993	0.141898334	1117607566	24	2
-F1	overlapping om6 `-d`	old	1	-C -F -d -N1	7.507066407	0.680043375	5817534992	87	4
-F1	overlapping om6 `-d`	new	1	-C -F -d -N1	7.507066407	0.699182625	5812293712	87	4
-C1	overlapping om7 `-2d`	old	1	-C -2d -N1	6.889332374	3.136881083	20145733169	651	2
-C1	overlapping om7 `-2d`	new	1	-C -2d -N1	6.889332374	2.121326208	20124821736	651	2
-C1	overlapping om7 `-d`	old	1	-C -d -N1	7.192756466	0.81781975	7466346830	149	4
-C1	overlapping om7 `-d`	new	1	-C -d -N1	7.192756466	0.859103625	7463712474	149	4
-C1	overlapping om7 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.878354613	2.000073625	19762881149	650	2
-C1	overlapping om7 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.878354613	2.01122225	19769249074	650	2
-FAM	om7 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.945571863	3.671346625	29765247341	187	2
-FAM	om7 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.945571863	3.711046041	29762185181	187	2
-FAM	om7 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.992395554	0.8838375	7296376577	1	2
-FAM	om7 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.945571863	4.27312725	35172279173	187	2
-FAM	om7 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.957516072	0.163727042	1268236334	28	2
-FAM	om7 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.957516072	0.158806	1265508615	28	2
-F1	overlapping om7 `-d`	old	1	-C -F -d -N1	7.238675817	0.637883209	5172966572	145	4
-F1	overlapping om7 `-d`	new	1	-C -F -d -N1	7.238675817	0.612104542	5174880114	145	4
-C1	overlapping om8 `-2d`	old	1	-C -2d -N1	6.893377041	2.404252125	22009833789	911	2
-C1	overlapping om8 `-2d`	new	1	-C -2d -N1	6.893377041	2.382831458	22008007515	911	2
-C1	overlapping om8 `-d`	old	1	-C -d -N1	6.967535764	0.83298425	7446817613	206	4
-C1	overlapping om8 `-d`	new	1	-C -d -N1	6.967535764	0.829904959	7444624470	206	4
-C1	overlapping om8 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.875237392	1.555762333	14183283702	894	2
-C1	overlapping om8 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.875237392	1.494316459	14179902061	894	2
-FAM	om8 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.978912396	2.803200666	22548883203	234	2
-FAM	om8 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.978912396	2.76743175	22551247336	234	2
-FAM	om8 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.994735672	1.042643125	9410328755	1	2
-FAM	om8 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.978912396	3.634609083	30055841358	234	2
-FAM	om8 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.98103476	0.154239542	1184541114	32	2
-FAM	om8 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.98103476	0.153457583	1182981909	32	2
-F1	overlapping om8 `-d`	old	1	-C -F -d -N1	7.022972054	0.696381042	5181997315	201	4
-F1	overlapping om8 `-d`	new	1	-C -F -d -N1	7.022972054	0.617825333	5183989114	201	4
-C1	overlapping om2 E100000 `-d`	old	1	-C -d -N1	7.144517469	0.459698625	4550780640	3	3
-C1	overlapping om2 E100000 `-d`	new	1	-C -d -N1	7.144517469	0.439911625	4550197356	3	3
-C1	overlapping om3 E50000 `-d`	old	1	-C -d -N1	5.854829799	0.449325667	4344216897	537	4
-C1	overlapping om3 E50000 `-d`	new	1	-C -d -N1	5.854829799	0.448686209	4343863076	537	4
-C1	overlapping om4 E50000 `-d`	old	1	-C -d -N1	4.898784516	0.44995275	4168101713	1867	3
-C1	overlapping om4 E50000 `-d`	new	1	-C -d -N1	4.898784516	0.466507666	4169134582	1867	3
-C1	overlapping om5 E50000 `-d`	old	1	-C -d -N1	4.1554786	0.564011375	5007002355	2156	4
-C1	overlapping om5 E50000 `-d`	new	1	-C -d -N1	4.1554786	0.57979625	5013052514	2156	4
-C1	overlapping om6 E50000 `-d`	old	1	-C -d -N1	3.620157111	0.701393833	5949712960	3056	4
-C1	overlapping om6 E50000 `-d`	new	1	-C -d -N1	3.620157111	0.689560917	5939651598	3056	4
-C1	overlapping om7 E50000 `-d`	old	1	-C -d -N1	3.21639819	0.646752458	5556278459	3417	5
-C1	overlapping om7 E50000 `-d`	new	1	-C -d -N1	3.21639819	0.642668334	5558952836	3417	5
-C1	overlapping om8 E50000 `-d`	old	1	-C -d -N1	2.885785338	1.000780208	8096915227	4371	5
-C1	overlapping om8 E50000 `-d`	new	1	-C -d -N1	2.885785338	0.940748708	8104865674	4371	5
-C1	wikispeedia `-2d`	old	1	-C -2d -N1	5.91901362	0.095772416	997955206	184	2
-C1	wikispeedia `-2d`	new	1	-C -2d -N1	5.91901362	0.093072208	997152269	184	2
-C1	wikispeedia `-d`	old	1	-C -d -N1	6.066305904	0.071697625	819422731	187	3
-C1	wikispeedia `-d`	new	1	-C -d -N1	6.066305904	0.072795875	819010253	187	3
-C10	ninetriangles	old	1	-C -N10 	3.371875026	0.00102875	69777825	5	3
-C10	ninetriangles	new	1	-C -N10 	3.371875026	0.001009542	70164123	5	3
-L10	ninetriangles	new	1	-C --non-redundant -N10 	3.078067323	0.00114225	70641195	3	3
-F10	jazz	new	1	-C -F -N10 	6.862755928	0.006459125	132049418	6	2
-C2_10	netscicoauthor2010	old	1	-C -2 -N10 	4.283072584	0.008565042	157726875	59	2
-C2_10	netscicoauthor2010	new	1	-C -2 -N10 	4.283072584	0.008968916	156983596	59	2
-C10	powergrid	old	1	-C -N10 	4.717760238	0.247607792	2800122271	5	5
-C10	powergrid	new	1	-C -N10 	4.717760238	0.2730175	2806583831	5	5
-L10	powergrid	new	1	-C --non-redundant -N10 	4.509265423	0.271087875	2899189642	3	7
-F10	politicalblogs	new	1	-C -F -N10 -d	6.740943136	0.056118958	674265533	81	2
-C2_10	science2001	old	1	-C -2 -N10 -d	7.949978834	2.316494167	23847359686	506	2
-C2_10	science2001	new	1	-C -2 -N10 -d	7.949978834	2.334774375	23842199767	506	2
-C10	web-NotreDame	old	1	-C -N10 -d	5.556421705	20.182491417	181339018359	5	6
-C10	web-NotreDame	new	1	-C -N10 -d	5.556421705	20.245347416	181774487542	5	6
-L10	web-NotreDame	new	1	-C --non-redundant -N10 -d	5.512433077	20.258511792	182900686524	5	6
-F10	lazega	new	1	-C -F -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.003828333	98960221	7	2
-C2_10	multilayer (ex.)	old	1	-C -2 -N10 	2.011405238	0.000689333	67211866	2	2
-C2_10	multilayer (ex.)	new	1	-C -2 -N10 	2.011405238	0.000627375	61077588	2	2
-C10	malaria	old	1	-C -N10 	7.392442593	3.183460625	37473906283	164	3
-C10	malaria	new	1	-C -N10 	7.392442593	2.651869917	31453949792	164	3
-L10	malaria	new	1	-C --non-redundant -N10 	7.438064454	2.86928925	33899580510	2	3
-F10	air30k	new	1	-C -F -N10 	5.392285003	3.304617375	35882261572	257	3
-C2_10	air30k (reg.)	old	1	-C -2 -N10 -d --regularized	5.571539329	3.973630375	41222387391	304	2
-C2_10	air30k (reg.)	new	1	-C -2 -N10 -d --regularized	5.571539329	5.562622666	41335518221	304	2
-C10	air30k (meta)	old	1	-C -N10 --meta-data networks/states/air2011/air30k_usstate.meta	7.421664324	9.692708875	97829359114	2135	3
-C10	air30k (meta)	new	1	-C -N10 --meta-data networks/states/air2011/air30k_usstate.meta	7.421664324	9.746358417	97902408770	2135	3
-L10	air30k (meta)	new	1	-C --non-redundant -N10 --meta-data networks/states/air2011/air30k_usstate.meta	7.192724425	8.989218833	85931920279	1910	3
-F10	science2001 (pref.)	new	1	-C -F -N10 -d --preferred-number-of-modules 25	8.235585529	3.191538542	34719482435	25	2
-C2_10	overlapping om2 `-2d`	old	1	-C -2d -N10	6.739271968	3.964030833	39812434483	638	2
-C2_10	overlapping om2 `-2d`	new	1	-C -2d -N10	6.739271968	3.878618625	39802631509	638	2
-F10	overlapping om2 `-d`	old	1	-C -F -d -N10	6.731808656	3.940139542	40196226850	690	2
-F10	overlapping om2 `-d`	new	1	-C -F -d -N10	6.731808656	3.924262916	40251527127	690	2
-FAM	om3 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.260835207	4.88922475	47974292360	29	2
-FAM	om3 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.260835207	4.723886166	47960905424	29	2
-C10	overlapping om4 `-d`	old	1	-C -d -N10	6.866901786	7.729603125	80688242592	173	2
-C10	overlapping om4 `-d`	new	1	-C -d -N10	6.866901786	6.217217083	61496220976	173	2
-FAM	om4 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.556653713	6.821053916	67548369519	78	2
-FAM	om4 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.556653713	5.08672075	48678819152	78	2
-C2_10	overlapping om5 `-2d`	old	1	-C -2d -N10	6.866617805	7.155773125	71261925815	308	2
-C2_10	overlapping om5 `-2d`	new	1	-C -2d -N10	6.866617805	7.218356625	71266363788	308	2
-F10	overlapping om5 `-d`	old	1	-C -F -d -N10	6.866617805	7.261732667	70920172237	308	2
-F10	overlapping om5 `-d`	new	1	-C -F -d -N10	6.866617805	5.872465458	57105825044	308	2
-FAM	om6 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.981574549	5.897915625	50960805184	113	2
-FAM	om6 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.981574549	5.905772875	50956131621	113	2
-C10	overlapping om7 `-d`	old	1	-C -d -N10	6.888473273	9.168657916	86371375551	680	2
-C10	overlapping om7 `-d`	new	1	-C -d -N10	6.888473273	9.112426083	86473474465	680	2
-FAM	om7 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.945712536	9.222932708	84380343960	184	2
-FAM	om7 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.945712536	6.974061375	60386116984	184	2
-C2_10	overlapping om8 `-2d`	old	1	-C -2d -N10	6.887234466	8.946093083	75398932169	921	2
-C2_10	overlapping om8 `-2d`	new	1	-C -2d -N10	6.887234466	8.445710833	75367952860	921	2
-F10	overlapping om8 `-d`	old	1	-C -F -d -N10	6.981469446	7.480089708	65909096407	227	4
-F10	overlapping om8 `-d`	new	1	-C -F -d -N10	6.887234466	8.49475475	75648851697	921	2
-C10	overlapping om2 E100000 `-d`	old	1	-C -d -N10	6.773456578	5.60773225	61279479230	60	2
-C10	overlapping om2 E100000 `-d`	new	1	-C -d -N10	6.773456578	3.408361083	33526282757	60	2
-FAM	om3 E50000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.931196935	3.702954542	36399154627	49	2
-FAM	om3 E50000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.931196935	2.989966834	28068774149	49	2
-FAM	om4 E50000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.940858042	3.06777025	27418915761	41	2
-FAM	om4 E50000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.940858042	3.062837084	27418442526	41	2
-C2_10	overlapping om4 E50000 `-2d`	old	1	-C -2d -N10	5.454385527	4.189523583	33743146167	4381	2
-C2_10	overlapping om4 E50000 `-2d`	new	1	-C -2d -N10	5.454385527	4.154892791	33746573632	4381	2
-C10	overlapping om5 E50000 `-d`	old	1	-C -d -N10	4.150346795	6.02012075	51104373446	2171	4
-C10	overlapping om5 E50000 `-d`	new	1	-C -d -N10	4.150346795	5.758686875	51142676278	2171	4
-FAM	om6 E50000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.959010571	3.493619208	26802450488	26	2
-FAM	om6 E50000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.959010571	3.350311834	27418718373	26	2
-FAM	om7 E50000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.974818773	3.567592042	29911552923	23	2
-FAM	om7 E50000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.974818773	3.579918167	29907072020	23	2
-C2_10	overlapping om7 E50000 `-2d`	old	1	-C -2d -N10	4.143277395	4.261196917	31329788941	7097	2
-C2_10	overlapping om7 E50000 `-2d`	new	1	-C -2d -N10	4.143277395	4.137730417	31327385934	7097	2
-C10	overlapping om8 E50000 `-d`	old	1	-C -d -N10	2.883308449	7.94283475	69627609985	4367	5
-C10	overlapping om8 E50000 `-d`	new	1	-C -d -N10	2.883308449	7.938758042	69705094446	4367	5
-C2_10	wikispeedia `-2d`	old	1	-C -2d -N10	5.907904741	0.65602175	6916802833	199	2
-C2_10	wikispeedia `-2d`	new	1	-C -2d -N10	5.907904741	0.658479	6916080201	199	2
-C1	ninetriangles	old	2	-C -N1 	3.371875026	0.000195958	59143418	5	3
-C1	ninetriangles	new	2	-C -N1 	3.371875026	0.000203625	58795483	5	3
-C1	jazz	old	2	-C -N1 	6.899367957	0.000894083	70763553	11	2
-C1	jazz	new	2	-C -N1 	6.899367957	0.00094375	70197671	11	2
-C1	netscicoauthor2010	old	2	-C -N1 	4.047459862	0.002628375	89343517	7	4
-C1	netscicoauthor2010	new	2	-C -N1 	4.047459862	0.002741875	88800211	7	4
-C1	powergrid	old	2	-C -N1 	4.730850312	0.025693583	363384069	12	5
-C1	powergrid	new	2	-C -N1 	4.730850312	0.024942917	362382687	12	5
-C1	politicalblogs	old	2	-C -N1 -d	6.758265349	0.009101583	185414023	3	3
-C1	politicalblogs	new	2	-C -N1 -d	6.758265349	0.009165417	185026880	3	3
-C1	science2001	old	2	-C -N1 -d	7.807937174	0.390170958	5685325842	189	3
-C1	science2001	new	2	-C -N1 -d	7.807937174	0.385354042	5683804172	189	3
-C1	web-NotreDame	old	2	-C -N1 -d	5.556421705	2.366363709	24339598746	5	6
-C1	web-NotreDame	new	2	-C -N1 -d	5.556421705	2.342029917	24308240303	5	6
-C1	lazega	old	2	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000690791	66221366	6	2
-C1	lazega	new	2	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.00069	65195390	6	2
-C1	multilayer (ex.)	old	2	-C -N1 	2.011405238	0.00013825	58161411	2	2
-C1	multilayer (ex.)	new	2	-C -N1 	2.011405238	0.000132834	57975167	2	2
-C1	malaria	old	2	-C -N1 	7.491980364	0.356197416	5291764475	148	3
-C1	malaria	new	2	-C -N1 	7.491980364	0.358407916	5290719605	148	3
-C1	air30k	old	2	-C -N1 	5.470440768	0.367868583	4538491527	242	3
-C1	air30k	new	2	-C -N1 	5.470440768	0.370852042	4537898814	242	3
-C1	air30k (reg.)	old	2	-C -N1 -d --regularized	5.657913279	0.479499417	5864174235	197	3
-C1	air30k (reg.)	new	2	-C -N1 -d --regularized	5.657913279	0.481024541	5863173348	197	3
-C1	air30k (meta)	old	2	-C -N1 --meta-data networks/states/air2011/air30k_usstate.meta	7.546335898	0.865351084	9238410689	1614	3
-C1	air30k (meta)	new	2	-C -N1 --meta-data networks/states/air2011/air30k_usstate.meta	7.546335898	0.856522334	9235434194	1614	3
-C1	science2001 (pref.)	old	2	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.403101916	5823983947	5	3
-C1	science2001 (pref.)	new	2	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.399205667	5821302089	5	3
-C1	overlapping om2 `-2d`	old	2	-C -2d -N1	6.739358212	1.575698166	17272934642	674	2
-C1	overlapping om2 `-2d`	new	2	-C -2d -N1	6.739358212	1.563052792	17257923596	674	2
-C1	overlapping om2 `-d`	old	2	-C -d -N1	7.29196634	0.3655705	3701303970	321	4
-C1	overlapping om2 `-d`	new	2	-C -d -N1	7.29196634	0.362947042	3699013796	321	4
-C1	overlapping om2 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.744721993	0.551850708	6207679089	476	2
-C1	overlapping om2 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.744721993	0.553348333	6205525260	476	2
-FAM	om2 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.548816177	0.804275208	8191346480	120	2
-FAM	om2 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.548816177	0.808275959	8195888403	120	2
-FAM	om2 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.970508085	0.398089417	4266848096	1	2
-FAM	om2 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.548816177	1.1206885	11475084684	120	2
-FAM	om2 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.789039995	0.055912958	589069136	8	2
-FAM	om2 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.789039995	0.052557084	587770381	8	2
-F1	overlapping om2 `-d`	old	2	-C -F -d -N1	7.321678354	0.266100583	2565917785	436	4
-F1	overlapping om2 `-d`	new	2	-C -F -d -N1	7.321678354	0.260862	2565553907	436	4
-C1	overlapping om3 `-2d`	old	2	-C -2d -N1	6.823513368	1.248552417	14966347752	72	2
-C1	overlapping om3 `-2d`	new	2	-C -2d -N1	6.823513368	1.2605745	14964726911	72	2
-C1	overlapping om3 `-d`	old	2	-C -d -N1	7.97489927	0.799644875	8257230557	1	2
-C1	overlapping om3 `-d`	new	2	-C -d -N1	6.823513368	1.964930583	22222187494	72	2
-C1	overlapping om3 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.820421208	0.773179708	9115446816	62	2
-C1	overlapping om3 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.820421208	0.778328209	9113106233	62	2
-FAM	om3 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.261268486	0.917282583	9710548675	34	2
-FAM	om3 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.261268486	0.927196459	9708537623	34	2
-FAM	om3 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.97414175	0.554253958	5492458911	1	2
-FAM	om3 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.261268486	1.324287708	13687613752	34	2
-FAM	om3 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.837980937	0.096394583	926615470	12	2
-FAM	om3 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.837980937	0.098378834	925868006	12	2
-F1	overlapping om3 `-d`	old	2	-C -F -d -N1	7.97489927	0.775598166	7804512533	1	2
-F1	overlapping om3 `-d`	new	2	-C -F -d -N1	6.823513368	1.992982875	21771127239	72	2
-C1	overlapping om4 `-2d`	old	2	-C -2d -N1	6.861724654	1.611527917	17515397583	141	2
-C1	overlapping om4 `-2d`	new	2	-C -2d -N1	6.861724654	1.582815709	17505486107	141	2
-C1	overlapping om4 `-d`	old	2	-C -d -N1	7.9829318	0.6924025	7108952774	1	2
-C1	overlapping om4 `-d`	new	2	-C -d -N1	6.861724654	2.164046791	23519938628	141	2
-C1	overlapping om4 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.856239474	0.927943709	10349861723	132	2
-C1	overlapping om4 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.856239474	0.93503025	10347887693	132	2
-FAM	om4 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.556894677	0.962632042	9256351336	79	2
-FAM	om4 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.556894677	0.952330792	9250866517	79	2
-FAM	om4 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.9828492	0.753658167	7349526089	1	2
-FAM	om4 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.556894677	1.503472625	14954371402	79	2
-FAM	om4 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.880650147	0.114054416	1008437429	16	2
-FAM	om4 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.880650147	0.109974667	1007065797	16	2
-F1	overlapping om4 `-d`	old	2	-C -F -d -N1	7.9829318	0.532973792	4820816547	1	2
-F1	overlapping om4 `-d`	new	2	-C -F -d -N1	6.861724654	1.989184458	21227147866	141	2
-C1	overlapping om5 `-2d`	old	2	-C -2d -N1	6.868127142	1.813285167	19119809675	293	2
-C1	overlapping om5 `-2d`	new	2	-C -2d -N1	6.868127142	1.812016083	19124729082	293	2
-C1	overlapping om5 `-d`	old	2	-C -d -N1	7.812252898	0.752365791	7216568101	66	4
-C1	overlapping om5 `-d`	new	2	-C -d -N1	7.812252898	0.746989791	7211525905	66	4
-C1	overlapping om5 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.857778113	1.164985125	12547259578	296	2
-C1	overlapping om5 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.857778113	1.165992	12548324568	296	2
-FAM	om5 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.966995214	2.889667083	26621716625	104	2
-FAM	om5 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.966995214	2.870896583	26620077618	104	2
-FAM	om5 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.989613065	0.704695375	6704886322	1	2
-FAM	om5 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.966995214	3.455565084	31579524487	104	2
-FAM	om5 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.902222527	0.126223583	1080657651	20	2
-FAM	om5 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.902222527	0.126942334	1078696434	20	2
-F1	overlapping om5 `-d`	old	2	-C -F -d -N1	7.798283664	0.643288625	5740171870	96	4
-F1	overlapping om5 `-d`	new	2	-C -F -d -N1	7.798283664	0.639277875	5743274518	96	4
-C1	overlapping om6 `-2d`	old	2	-C -2d -N1	6.884042436	1.780655875	17966745869	455	2
-C1	overlapping om6 `-2d`	new	2	-C -2d -N1	6.884042436	1.7951885	17973444158	455	2
-C1	overlapping om6 `-d`	old	2	-C -d -N1	7.440161581	0.795827542	7462999355	92	4
-C1	overlapping om6 `-d`	new	2	-C -d -N1	7.440161581	0.792081084	7466451705	92	4
-C1	overlapping om6 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.873378755	1.276990958	13206811536	446	2
-C1	overlapping om6 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.873378755	1.274413875	13206580871	446	2
-FAM	om6 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.981574549	1.823231875	15823053846	113	2
-FAM	om6 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.981574549	1.796977625	15818887353	113	2
-FAM	om6 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.993490371	0.815311042	7756821973	1	2
-FAM	om6 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.981574549	2.377142917	21748592135	113	2
-FAM	om6 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.930934993	0.137142917	1120273016	24	2
-FAM	om6 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.930934993	0.132735625	1117098632	24	2
-F1	overlapping om6 `-d`	old	2	-C -F -d -N1	7.507066407	0.662189209	5808974091	87	4
-F1	overlapping om6 `-d`	new	2	-C -F -d -N1	7.507066407	0.648502416	5809823823	87	4
-C1	overlapping om7 `-2d`	old	2	-C -2d -N1	6.889332374	2.045596542	20121513407	651	2
-C1	overlapping om7 `-2d`	new	2	-C -2d -N1	6.889332374	2.047108083	20123434177	651	2
-C1	overlapping om7 `-d`	old	2	-C -d -N1	7.192756466	0.820427667	7465743341	149	4
-C1	overlapping om7 `-d`	new	2	-C -d -N1	7.192756466	0.824159833	7460893580	149	4
-C1	overlapping om7 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.878354613	1.914307583	19764515896	650	2
-C1	overlapping om7 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.878354613	1.899837958	19759274047	650	2
-FAM	om7 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.945571863	3.412303208	29753072035	187	2
-FAM	om7 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.945571863	3.46187325	29761391172	187	2
-FAM	om7 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.992395554	0.776341458	7284664078	1	2
-FAM	om7 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.945571863	3.97816575	35163014566	187	2
-FAM	om7 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.957516072	0.157595958	1266765679	28	2
-FAM	om7 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.957516072	0.155668958	1264187967	28	2
-F1	overlapping om7 `-d`	old	2	-C -F -d -N1	7.238675817	0.582983209	5163884200	145	4
-F1	overlapping om7 `-d`	new	2	-C -F -d -N1	7.238675817	0.591579125	5166054503	145	4
-C1	overlapping om8 `-2d`	old	2	-C -2d -N1	6.893377041	2.261862709	22005673554	911	2
-C1	overlapping om8 `-2d`	new	2	-C -2d -N1	6.893377041	2.30403325	22000295121	911	2
-C1	overlapping om8 `-d`	old	2	-C -d -N1	6.967535764	0.807906542	7442719647	206	4
-C1	overlapping om8 `-d`	new	2	-C -d -N1	6.967535764	0.801778333	7445824981	206	4
-C1	overlapping om8 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.875237392	1.40582225	14170553084	894	2
-C1	overlapping om8 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.875237392	1.404245083	14167967502	894	2
-FAM	om8 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.978912396	2.663376709	22546976316	234	2
-FAM	om8 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.978912396	2.650202209	22545619774	234	2
-FAM	om8 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.994735672	1.003570334	9409514042	1	2
-FAM	om8 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.978912396	3.41871	30043615408	234	2
-FAM	om8 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.98103476	0.1436245	1183304088	32	2
-FAM	om8 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.98103476	0.142838541	1180576963	32	2
-F1	overlapping om8 `-d`	old	2	-C -F -d -N1	7.022972054	0.614778125	5178422445	201	4
-F1	overlapping om8 `-d`	new	2	-C -F -d -N1	7.022972054	0.589568666	5177584418	201	4
-C1	overlapping om2 E100000 `-d`	old	2	-C -d -N1	7.144517469	0.416332625	4545613772	3	3
-C1	overlapping om2 E100000 `-d`	new	2	-C -d -N1	7.144517469	0.416705083	4543224155	3	3
-C1	overlapping om3 E50000 `-d`	old	2	-C -d -N1	5.854829799	0.426097375	4343374071	537	4
-C1	overlapping om3 E50000 `-d`	new	2	-C -d -N1	5.854829799	0.430203417	4358083060	537	4
-C1	overlapping om4 E50000 `-d`	old	2	-C -d -N1	4.898784516	0.431739542	4166075346	1867	3
-C1	overlapping om4 E50000 `-d`	new	2	-C -d -N1	4.898784516	0.43496475	4166364128	1867	3
-C1	overlapping om5 E50000 `-d`	old	2	-C -d -N1	4.1554786	0.544385709	5019359485	2156	4
-C1	overlapping om5 E50000 `-d`	new	2	-C -d -N1	4.1554786	0.549457667	5006253708	2156	4
-C1	overlapping om6 E50000 `-d`	old	2	-C -d -N1	3.620157111	0.674914167	5947984303	3056	4
-C1	overlapping om6 E50000 `-d`	new	2	-C -d -N1	3.620157111	0.681752334	5941369601	3056	4
-C1	overlapping om7 E50000 `-d`	old	2	-C -d -N1	3.21639819	0.625212666	5553022962	3417	5
-C1	overlapping om7 E50000 `-d`	new	2	-C -d -N1	3.21639819	0.620559583	5559762467	3417	5
-C1	overlapping om8 E50000 `-d`	old	2	-C -d -N1	2.885785338	0.91420175	8104151350	4371	5
-C1	overlapping om8 E50000 `-d`	new	2	-C -d -N1	2.885785338	0.908478291	8083875171	4371	5
-C1	wikispeedia `-2d`	old	2	-C -2d -N1	5.91901362	0.091657541	997914151	184	2
-C1	wikispeedia `-2d`	new	2	-C -2d -N1	5.91901362	0.090802292	996978585	184	2
-C1	wikispeedia `-d`	old	2	-C -d -N1	6.066305904	0.071948083	819119514	187	3
-C1	wikispeedia `-d`	new	2	-C -d -N1	6.066305904	0.069892375	819029521	187	3
-C2_10	ninetriangles	old	1	-C -2 -N10 	3.517754809	0.00052575	62750663	9	2
-C2_10	ninetriangles	new	1	-C -2 -N10 	3.517754809	0.0004765	62571181	9	2
-C10	jazz	old	1	-C -N10 	6.862755928	0.006517458	134831356	6	2
-C10	jazz	new	1	-C -N10 	6.862755928	0.006404542	134863041	6	2
-L10	jazz	new	1	-C --non-redundant -N10 	6.868228367	0.006555916	135049455	7	2
-F10	netscicoauthor2010	new	1	-C -F -N10 	4.03324474	0.014145	216390800	9	4
-C2_10	powergrid	old	1	-C -2 -N10 	5.63729688	0.095635208	1147919263	419	2
-C2_10	powergrid	new	1	-C -2 -N10 	5.63729688	0.096703875	1147984571	419	2
-C10	politicalblogs	old	1	-C -N10 -d	6.740943136	0.057562792	699961516	81	2
-C10	politicalblogs	new	1	-C -N10 -d	6.740943136	0.059377958	702131901	81	2
-L10	politicalblogs	new	1	-C --non-redundant -N10 -d	6.789241502	0.060488792	717169292	2	3
-F10	science2001	new	1	-C -F -N10 -d	7.807937174	2.851215792	33109244466	189	3
-C2_10	web-NotreDame	old	1	-C -2 -N10 -d	6.754216663	18.739063458	117457525929	11991	2
-C2_10	web-NotreDame	new	1	-C -2 -N10 -d	6.754216663	19.348086167	117476705620	11991	2
-C10	lazega	old	1	-C -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.003911958	106724442	7	2
-C10	lazega	new	1	-C -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.003816166	100718286	7	2
-L10	lazega	new	1	-C --non-redundant -N10 --meta-data networks/meta/lazega.meta	5.968624653	0.003560167	99723074	7	2
-F10	multilayer (ex.)	new	1	-C -F -N10 	2.011405238	0.0006455	63221834	2	2
-C2_10	malaria	old	1	-C -2 -N10 	7.400445378	2.694939541	32278443801	168	2
-C2_10	malaria	new	1	-C -2 -N10 	7.400445378	2.691835458	32276962889	168	2
-C10	air30k	old	1	-C -N10 	5.392285003	3.867946375	44472617040	257	3
-C10	air30k	new	1	-C -N10 	5.392285003	3.339280167	38556584107	257	3
-L10	air30k	new	1	-C --non-redundant -N10 	5.378824196	3.348143542	38402621855	257	3
-F10	air30k (reg.)	new	1	-C -F -N10 -d --regularized	5.574537176	3.151801209	35233941641	228	3
-C2_10	air30k (meta)	old	1	-C -2 -N10 --meta-data networks/states/air2011/air30k_usstate.meta	7.424143707	10.377584667	104733977106	2237	2
-C2_10	air30k (meta)	new	1	-C -2 -N10 --meta-data networks/states/air2011/air30k_usstate.meta	7.424143707	10.303443375	104736862597	2237	2
-C10	science2001 (pref.)	old	1	-C -N10 -d --preferred-number-of-modules 25	8.235585529	3.194830875	35509224553	25	2
-C10	science2001 (pref.)	new	1	-C -N10 -d --preferred-number-of-modules 25	8.235585529	3.210649917	35499078217	25	2
-L10	science2001 (pref.)	new	1	-C --non-redundant -N10 -d --preferred-number-of-modules 25	8.447745451	3.188691292	35348393000	25	2
-FAM	om2 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.548721547	2.673037709	25049046887	126	2
-FAM	om2 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.548721547	2.678571333	25054356092	126	2
-C10	overlapping om3 `-d`	old	1	-C -d -N10	6.822826504	7.893599625	88409296968	70	2
-C10	overlapping om3 `-d`	new	1	-C -d -N10	6.822826504	5.445488	61360795383	70	2
-FAM	om3 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.260835207	6.059185292	63332049953	29	2
-FAM	om3 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.260835207	4.444642708	44989063593	29	2
-C2_10	overlapping om4 `-2d`	old	1	-C -2d -N10	6.866901786	7.007392167	71547345696	173	2
-C2_10	overlapping om4 `-2d`	new	1	-C -2d -N10	6.866901786	7.132939541	71545938926	173	2
-F10	overlapping om4 `-d`	old	1	-C -F -d -N10	6.866901786	6.617731375	66615128812	173	2
-F10	overlapping om4 `-d`	new	1	-C -F -d -N10	6.866901786	5.649663458	56853522686	173	2
-FAM	om5 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.967531078	6.123244459	55090489247	98	2
-FAM	om5 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.967531078	6.033156041	55076892043	98	2
-C10	overlapping om6 `-d`	old	1	-C -d -N10	6.884862145	8.581824083	83109537086	451	2
-C10	overlapping om6 `-d`	new	1	-C -d -N10	6.884862145	8.638148042	83182053061	451	2
-FAM	om6 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.981063575	9.335224167	86421559683	119	2
-FAM	om6 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.981063575	8.154072125	67314632116	119	2
-C2_10	overlapping om7 `-2d`	old	1	-C -2d -N10	6.889244164	7.953936833	73366038141	675	2
-C2_10	overlapping om7 `-2d`	new	1	-C -2d -N10	6.889244164	8.006975417	73369492597	675	2
-F10	overlapping om7 `-d`	old	1	-C -F -d -N10	6.888473273	8.02748875	73391907331	680	2
-F10	overlapping om7 `-d`	new	1	-C -F -d -N10	6.888473273	7.982731625	73492824907	680	2
-FAM	om8 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.976140205	8.328835417	69932053590	240	2
-FAM	om8 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.976140205	8.300363	69927293764	240	2
-FAM	om2 E100000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	6.950176925	3.847479375	37801705209	9	2
-FAM	om2 E100000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	6.950176925	3.918047625	37803776829	9	2
-C2_10	overlapping om2 E100000 `-2d`	old	1	-C -2d -N10	6.773456578	3.741877042	38016282416	60	2
-C2_10	overlapping om2 E100000 `-2d`	new	1	-C -2d -N10	6.773456578	3.778992708	38019288941	60	2
-C10	overlapping om3 E50000 `-d`	old	1	-C -d -N10	5.851498646	4.449676625	44493476280	617	4
-C10	overlapping om3 E50000 `-d`	new	1	-C -d -N10	5.851498646	4.481713417	44547478882	617	4
-FAM	om4 E50000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.940858042	4.777741583	45292165066	41	2
-FAM	om4 E50000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.940858042	3.062333958	27233497210	41	2
-FAM	om5 E50000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.969030601	3.26493225	28983790408	26	2
-FAM	om5 E50000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.969030601	3.346958666	29000812386	26	2
-C2_10	overlapping om5 E50000 `-2d`	old	1	-C -2d -N10	4.903270512	4.10991775	31907353349	5443	2
-C2_10	overlapping om5 E50000 `-2d`	new	1	-C -2d -N10	4.903270512	4.0568595	31909469294	5443	2
-C10	overlapping om6 E50000 `-d`	old	1	-C -d -N10	3.617750514	5.869792292	51560170001	3050	4
-C10	overlapping om6 E50000 `-d`	new	1	-C -d -N10	3.617750514	5.875004958	51633884222	3050	4
-FAM	om7 E50000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.974818773	3.57608425	28155253940	23	2
-FAM	om7 E50000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.974818773	3.604096708	28909051133	23	2
-FAM	om8 E50000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.990101633	3.231653166	27018576556	8	2
-FAM	om8 E50000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.990101633	3.296979792	27027847003	8	2
-C2_10	overlapping om8 E50000 `-2d`	old	1	-C -2d -N10	3.859069372	4.249551792	31555638508	7985	2
-C2_10	overlapping om8 E50000 `-2d`	new	1	-C -2d -N10	3.859069372	4.1810205	31549905710	7985	2
-F10	wikispeedia `-d`	new	1	-C -F -d -N10	5.907904741	0.66049	6922791516	199	2
-C1	ninetriangles	old	3	-C -N1 	3.371875026	0.000193084	59655879	5	3
-C1	ninetriangles	new	3	-C -N1 	3.371875026	0.000206333	58852188	5	3
-C1	jazz	old	3	-C -N1 	6.899367957	0.000918916	70731047	11	2
-C1	jazz	new	3	-C -N1 	6.899367957	0.000871834	70276886	11	2
-C1	netscicoauthor2010	old	3	-C -N1 	4.047459862	0.002645041	89448490	7	4
-C1	netscicoauthor2010	new	3	-C -N1 	4.047459862	0.0027265	88988710	7	4
-C1	powergrid	old	3	-C -N1 	4.730850312	0.025489459	362759154	12	5
-C1	powergrid	new	3	-C -N1 	4.730850312	0.025318208	362571122	12	5
-C1	politicalblogs	old	3	-C -N1 -d	6.758265349	0.009140208	185565579	3	3
-C1	politicalblogs	new	3	-C -N1 -d	6.758265349	0.009205417	185139346	3	3
-C1	science2001	old	3	-C -N1 -d	7.807937174	0.389176333	5685343518	189	3
-C1	science2001	new	3	-C -N1 -d	7.807937174	0.388037416	5683491138	189	3
-C1	web-NotreDame	old	3	-C -N1 -d	5.556421705	2.372153208	24337962951	5	6
-C1	web-NotreDame	new	3	-C -N1 -d	5.556421705	2.345386292	24328254840	5	6
-C1	lazega	old	3	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000686417	66616773	6	2
-C1	lazega	new	3	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000693167	65558929	6	2
-C1	multilayer (ex.)	old	3	-C -N1 	2.011405238	0.000140416	58427858	2	2
-C1	multilayer (ex.)	new	3	-C -N1 	2.011405238	0.000137208	57971313	2	2
-C1	malaria	old	3	-C -N1 	7.491980364	0.354061834	5292707597	148	3
-C1	malaria	new	3	-C -N1 	7.491980364	0.35755125	5289994008	148	3
-C1	air30k	old	3	-C -N1 	5.470440768	0.36102525	4537522394	242	3
-C1	air30k	new	3	-C -N1 	5.470440768	0.364771542	4539715158	242	3
-C1	air30k (reg.)	old	3	-C -N1 -d --regularized	5.657913279	0.472565125	5863373820	197	3
-C1	air30k (reg.)	new	3	-C -N1 -d --regularized	5.657913279	0.469993875	5865561817	197	3
-C1	air30k (meta)	old	3	-C -N1 --meta-data networks/states/air2011/air30k_usstate.meta	7.546335898	0.867327916	9237742785	1614	3
-C1	air30k (meta)	new	3	-C -N1 --meta-data networks/states/air2011/air30k_usstate.meta	7.546335898	0.866248291	9234141825	1614	3
-C1	science2001 (pref.)	old	3	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.405199458	5823828270	5	3
-C1	science2001 (pref.)	new	3	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.409713125	5825259607	5	3
-C1	overlapping om2 `-2d`	old	3	-C -2d -N1	6.739358212	1.543092833	17261061166	674	2
-C1	overlapping om2 `-2d`	new	3	-C -2d -N1	6.739358212	1.557339375	17262275301	674	2
-C1	overlapping om2 `-d`	old	3	-C -d -N1	7.29196634	0.363563292	3698781959	321	4
-C1	overlapping om2 `-d`	new	3	-C -d -N1	7.29196634	0.369004458	3699832814	321	4
-C1	overlapping om2 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.744721993	0.555223	6206035133	476	2
-C1	overlapping om2 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.744721993	0.547875417	6203799392	476	2
-FAM	om2 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.548816177	0.799761209	8194127034	120	2
-FAM	om2 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.548816177	0.7956185	8195959731	120	2
-FAM	om2 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.970508085	0.404982083	4264874103	1	2
-FAM	om2 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.548816177	1.087405625	11468997214	120	2
-FAM	om2 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.789039995	0.052354542	586726063	8	2
-FAM	om2 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.789039995	0.056982125	587041030	8	2
-F1	overlapping om2 `-d`	old	3	-C -F -d -N1	7.321678354	0.258633167	2565653276	436	4
-F1	overlapping om2 `-d`	new	3	-C -F -d -N1	7.321678354	0.263274125	2565261804	436	4
-C1	overlapping om3 `-2d`	old	3	-C -2d -N1	6.823513368	1.278375209	14967891000	72	2
-C1	overlapping om3 `-2d`	new	3	-C -2d -N1	6.823513368	1.244525541	14965272950	72	2
-C1	overlapping om3 `-d`	old	3	-C -d -N1	7.97489927	0.807142334	8258829929	1	2
-C1	overlapping om3 `-d`	new	3	-C -d -N1	6.823513368	1.978151166	22223178293	72	2
-C1	overlapping om3 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.820421208	0.776228334	9117929603	62	2
-C1	overlapping om3 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.820421208	0.772387542	9115664168	62	2
-FAM	om3 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.261268486	0.920607	9709011283	34	2
-FAM	om3 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.261268486	0.92340225	9711766200	34	2
-FAM	om3 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.97414175	0.544409667	5492159314	1	2
-FAM	om3 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.261268486	1.320639458	13688935002	34	2
-FAM	om3 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.837980937	0.095544333	926320629	12	2
-FAM	om3 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.837980937	0.093445458	924837134	12	2
-F1	overlapping om3 `-d`	old	3	-C -F -d -N1	7.97489927	0.778002583	7802397611	1	2
-F1	overlapping om3 `-d`	new	3	-C -F -d -N1	6.823513368	1.936032875	21771392675	72	2
-C1	overlapping om4 `-2d`	old	3	-C -2d -N1	6.861724654	1.61606725	17513861861	141	2
-C1	overlapping om4 `-2d`	new	3	-C -2d -N1	6.861724654	1.639074625	17509797347	141	2
-C1	overlapping om4 `-d`	old	3	-C -d -N1	7.9829318	0.707427667	7111518319	1	2
-C1	overlapping om4 `-d`	new	3	-C -d -N1	6.861724654	2.246690125	23526508068	141	2
-C1	overlapping om4 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.856239474	0.928651459	10350932652	132	2
-C1	overlapping om4 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.856239474	0.926192583	10345743600	132	2
-FAM	om4 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.556894677	0.970440375	9254664397	79	2
-FAM	om4 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.556894677	0.9681445	9259568667	79	2
-FAM	om4 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.9828492	0.74865825	7348790026	1	2
-FAM	om4 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.556894677	1.520550334	14957209100	79	2
-FAM	om4 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.880650147	0.113162667	1008892672	16	2
-FAM	om4 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.880650147	0.114836334	1008346461	16	2
-F1	overlapping om4 `-d`	old	3	-C -F -d -N1	7.9829318	0.505048875	4815717710	1	2
-F1	overlapping om4 `-d`	new	3	-C -F -d -N1	6.861724654	2.025242334	21237556723	141	2
-C1	overlapping om5 `-2d`	old	3	-C -2d -N1	6.868127142	1.821130709	19126131446	293	2
-C1	overlapping om5 `-2d`	new	3	-C -2d -N1	6.868127142	1.820973083	19124606390	293	2
-C1	overlapping om5 `-d`	old	3	-C -d -N1	7.812252898	0.745631125	7224380931	66	4
-C1	overlapping om5 `-d`	new	3	-C -d -N1	7.812252898	0.734250958	7210021421	66	4
-C1	overlapping om5 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.857778113	1.161276209	12546485551	296	2
-C1	overlapping om5 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.857778113	1.152118833	12547547928	296	2
-FAM	om5 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.966995214	2.911295417	26624957858	104	2
-FAM	om5 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.966995214	2.886027708	26629964934	104	2
-FAM	om5 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.989613065	0.719828708	6706128162	1	2
-FAM	om5 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.966995214	3.414390542	31582756597	104	2
-FAM	om5 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.902222527	0.125442958	1080840403	20	2
-FAM	om5 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.902222527	0.1243195	1080216272	20	2
-F1	overlapping om5 `-d`	old	3	-C -F -d -N1	7.798283664	0.641367041	5744268366	96	4
-F1	overlapping om5 `-d`	new	3	-C -F -d -N1	7.798283664	0.643689125	5741157666	96	4
-C1	overlapping om6 `-2d`	old	3	-C -2d -N1	6.884042436	1.798390417	17974587443	455	2
-C1	overlapping om6 `-2d`	new	3	-C -2d -N1	6.884042436	1.794182291	17975165792	455	2
-C1	overlapping om6 `-d`	old	3	-C -d -N1	7.440161581	0.79159525	7470780885	92	4
-C1	overlapping om6 `-d`	new	3	-C -d -N1	7.440161581	0.779043625	7463846506	92	4
-C1	overlapping om6 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.873378755	1.289952791	13209050535	446	2
-C1	overlapping om6 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.873378755	1.254415917	13196722343	446	2
-FAM	om6 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.981574549	1.817329791	15823774395	113	2
-FAM	om6 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.981574549	1.824381375	15823003633	113	2
-FAM	om6 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.993490371	0.845316042	7765398894	1	2
-FAM	om6 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.981574549	5.66714725	21862273759	113	2
-FAM	om6 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.930934993	0.1518565	1121325619	24	2
-FAM	om6 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.930934993	0.154794292	1122011715	24	2
-F1	overlapping om6 `-d`	old	3	-C -F -d -N1	7.507066407	0.69959625	5816104461	87	4
-F1	overlapping om6 `-d`	new	3	-C -F -d -N1	7.507066407	0.685405917	5816696366	87	4
-C1	overlapping om7 `-2d`	old	3	-C -2d -N1	6.889332374	2.118366292	20126470269	651	2
-C1	overlapping om7 `-2d`	new	3	-C -2d -N1	6.889332374	2.091481333	20125815135	651	2
-C1	overlapping om7 `-d`	old	3	-C -d -N1	7.192756466	0.812171375	7463966398	149	4
-C1	overlapping om7 `-d`	new	3	-C -d -N1	7.192756466	0.805090084	7459948510	149	4
-C1	overlapping om7 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.878354613	2.039415041	19764143322	650	2
-C1	overlapping om7 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.878354613	2.310175417	19802728177	650	2
-FAM	om7 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.945571863	3.564063458	29757611373	187	2
-FAM	om7 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.945571863	3.900922333	29771746869	187	2
-FAM	om7 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.992395554	0.845992334	7297138871	1	2
-FAM	om7 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.945571863	4.111528417	35173199983	187	2
-FAM	om7 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.957516072	0.1567695	1265541197	28	2
-FAM	om7 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.957516072	0.15905525	1265103092	28	2
-F1	overlapping om7 `-d`	old	3	-C -F -d -N1	7.238675817	0.630609459	5168298048	145	4
-F1	overlapping om7 `-d`	new	3	-C -F -d -N1	7.238675817	0.596040917	5170820423	145	4
-C1	overlapping om8 `-2d`	old	3	-C -2d -N1	6.893377041	2.397593084	22008727354	911	2
-C1	overlapping om8 `-2d`	new	3	-C -2d -N1	6.893377041	2.357749833	22006878397	911	2
-C1	overlapping om8 `-d`	old	3	-C -d -N1	6.967535764	0.8164165	7445072334	206	4
-C1	overlapping om8 `-d`	new	3	-C -d -N1	6.967535764	0.852845583	7448124122	206	4
-C1	overlapping om8 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.875237392	1.440339125	14177527979	894	2
-C1	overlapping om8 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.875237392	1.453553458	14173317619	894	2
-FAM	om8 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.978912396	2.712724875	22543253288	234	2
-FAM	om8 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.978912396	2.73706175	22546743985	234	2
-FAM	om8 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.994735672	1.0419845	9411259731	1	2
-FAM	om8 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.978912396	3.549126292	30061599515	234	2
-FAM	om8 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.98103476	0.14787475	1182761697	32	2
-FAM	om8 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.98103476	0.149829834	1183058994	32	2
-F1	overlapping om8 `-d`	old	3	-C -F -d -N1	7.022972054	0.641688125	5187811061	201	4
-F1	overlapping om8 `-d`	new	3	-C -F -d -N1	7.022972054	0.607331291	5182199127	201	4
-C1	overlapping om2 E100000 `-d`	old	3	-C -d -N1	7.144517469	0.4204295	4545926926	3	3
-C1	overlapping om2 E100000 `-d`	new	3	-C -d -N1	7.144517469	0.474521583	4550711110	3	3
-C1	overlapping om3 E50000 `-d`	old	3	-C -d -N1	5.854829799	0.434060416	4338905356	537	4
-C1	overlapping om3 E50000 `-d`	new	3	-C -d -N1	5.854829799	0.4311975	4344055867	537	4
-C1	overlapping om4 E50000 `-d`	old	3	-C -d -N1	4.898784516	0.445509833	4166261313	1867	3
-C1	overlapping om4 E50000 `-d`	new	3	-C -d -N1	4.898784516	0.445675542	4171418661	1867	3
-C1	overlapping om5 E50000 `-d`	old	3	-C -d -N1	4.1554786	0.552974125	5006309826	2156	4
-C1	overlapping om5 E50000 `-d`	new	3	-C -d -N1	4.1554786	0.555535875	5010432227	2156	4
-C1	overlapping om6 E50000 `-d`	old	3	-C -d -N1	3.620157111	0.692316666	5956149488	3056	4
-C1	overlapping om6 E50000 `-d`	new	3	-C -d -N1	3.620157111	0.693362584	5956055461	3056	4
-C1	overlapping om7 E50000 `-d`	old	3	-C -d -N1	3.21639819	0.633345166	5557963648	3417	5
-C1	overlapping om7 E50000 `-d`	new	3	-C -d -N1	3.21639819	0.64137525	5552429794	3417	5
-C1	overlapping om8 E50000 `-d`	old	3	-C -d -N1	2.885785338	0.949198792	8097455474	4371	5
-C1	overlapping om8 E50000 `-d`	new	3	-C -d -N1	2.885785338	0.942454208	8125581938	4371	5
-C1	wikispeedia `-2d`	old	3	-C -2d -N1	5.91901362	0.092731083	997892197	184	2
-C1	wikispeedia `-2d`	new	3	-C -2d -N1	5.91901362	0.093013	998060292	184	2
-C1	wikispeedia `-d`	old	3	-C -d -N1	6.066305904	0.072539542	818487967	187	3
-C1	wikispeedia `-d`	new	3	-C -d -N1	6.066305904	0.073707917	819168980	187	3
-F10	ninetriangles	new	1	-C -F -N10 	3.371875026	0.000948708	68253240	5	3
-C2_10	jazz	old	1	-C -2 -N10 	6.861229775	0.006520959	133927713	6	2
-C2_10	jazz	new	1	-C -2 -N10 	6.861229775	0.006627625	133731560	6	2
-C10	netscicoauthor2010	old	1	-C -N10 	4.048857953	0.022270958	305225041	15	4
-C10	netscicoauthor2010	new	1	-C -N10 	4.048857953	0.022387041	305575160	15	4
-L10	netscicoauthor2010	new	1	-C --non-redundant -N10 	3.892209764	0.023183042	308909320	2	5
-F10	powergrid	new	1	-C -F -N10 	4.754013143	0.144449583	1747769755	10	5
-C2_10	politicalblogs	old	1	-C -2 -N10 -d	6.739575295	0.042040042	517818227	81	2
-C2_10	politicalblogs	new	1	-C -2 -N10 -d	6.739575295	0.04221275	517730462	81	2
-C10	science2001	old	1	-C -N10 -d	7.807937174	3.097759125	34059060833	189	3
-C10	science2001	new	1	-C -N10 -d	7.807937174	3.072925667	34139269159	189	3
-L10	science2001	new	1	-C --non-redundant -N10 -d	8.009172258	2.772360125	31164644482	22	3
-F10	web-NotreDame	new	1	-C -F -N10 -d	5.620539396	15.740027625	126787822658	135	5
-C2_10	lazega	old	1	-C -2 -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.00385375	103246397	7	2
-C2_10	lazega	new	1	-C -2 -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.003385125	96608807	7	2
-C10	multilayer (ex.)	old	1	-C -N10 	2.011405238	0.000517667	62638729	2	2
-C10	multilayer (ex.)	new	1	-C -N10 	2.011405238	0.000534667	62481425	2	2
-L10	multilayer (ex.)	new	1	-C --non-redundant -N10 	1.928856578	0.000497792	62504650	2	2
-F10	malaria	new	1	-C -F -N10 	7.392442593	2.851085708	30638848353	164	3
-C2_10	air30k	old	1	-C -2 -N10 	5.393055049	4.082353375	41903023104	334	2
-C2_10	air30k	new	1	-C -2 -N10 	5.393055049	3.899088625	41889244733	334	2
-C10	air30k (reg.)	old	1	-C -N10 -d --regularized	5.574537176	4.474182917	46462758457	228	3
-C10	air30k (reg.)	new	1	-C -N10 -d --regularized	5.574537176	4.228075666	40383214438	228	3
-L10	air30k (reg.)	new	1	-C --non-redundant -N10 -d --regularized	5.56659036	3.950983166	40130421795	220	3
-F10	air30k (meta)	new	1	-C -F -N10 --meta-data networks/states/air2011/air30k_usstate.meta	7.421664324	9.925830625	95388579639	2135	3
-C2_10	science2001 (pref.)	old	1	-C -2 -N10 -d --preferred-number-of-modules 25	8.235585529	3.075372292	31563315957	25	2
-C2_10	science2001 (pref.)	new	1	-C -2 -N10 -d --preferred-number-of-modules 25	8.235585529	3.075054542	31557341916	25	2
-C10	overlapping om2 `-d`	old	1	-C -d -N10	6.731808656	4.672121834	47438303034	690	2
-C10	overlapping om2 `-d`	new	1	-C -d -N10	6.731808656	4.75715925	47493237538	690	2
-FAM	om2 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.548721547	3.654672916	36350950011	126	2
-FAM	om2 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.548721547	2.783610917	24082673122	126	2
-C2_10	overlapping om3 `-2d`	old	1	-C -2d -N10	6.822826504	6.924840542	78825433692	70	2
-C2_10	overlapping om3 `-2d`	new	1	-C -2d -N10	6.822826504	6.887542542	78820969369	70	2
-F10	overlapping om3 `-d`	old	1	-C -F -d -N10	6.822826504	7.327098291	78286761826	70	2
-F10	overlapping om3 `-d`	new	1	-C -F -d -N10	6.822826504	5.260042083	57008154435	70	2
-FAM	om4 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.556894677	5.55675	49139839029	79	2
-FAM	om4 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.556894677	5.438168791	49133944094	79	2
-C10	overlapping om5 `-d`	old	1	-C -d -N10	6.866617805	8.374577833	81392947826	308	2
-C10	overlapping om5 `-d`	new	1	-C -d -N10	6.866617805	6.442026709	61817855460	308	2
-FAM	om5 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.965009721	9.703943125	87707472974	106	2
-FAM	om5 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.965009721	7.915851958	69357998334	106	2
-C2_10	overlapping om6 `-2d`	old	1	-C -2d -N10	6.884862145	7.9221665	71049753656	451	2
-C2_10	overlapping om6 `-2d`	new	1	-C -2d -N10	6.884862145	7.962042375	71047706186	451	2
-F10	overlapping om6 `-d`	old	1	-C -F -d -N10	6.884862145	7.932282041	68573899986	451	2
-F10	overlapping om6 `-d`	new	1	-C -F -d -N10	6.884862145	7.745341292	68649711035	451	2
-FAM	om7 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.945712536	7.575327375	60487266601	184	2
-FAM	om7 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.945712536	7.753584083	60493578497	184	2
-C10	overlapping om8 `-d`	old	1	-C -d -N10	6.959413622	9.361907125	85768201775	203	4
-C10	overlapping om8 `-d`	new	1	-C -d -N10	6.887234466	9.763104166	87331973627	921	2
-FAM	om8 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.976681139	9.1710555	80884228087	256	2
-FAM	om8 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.976681139	6.827009708	55280677430	256	2
-FAM	om2 E100000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	6.950176925	6.179823125	64123475090	9	2
-FAM	om2 E100000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	6.950176925	3.642519625	34525161437	9	2
-FAM	om3 E50000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.931196935	3.136954917	27918521579	49	2
-FAM	om3 E50000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.931196935	3.118523666	27920298080	49	2
-C2_10	overlapping om3 E50000 `-2d`	old	1	-C -2d -N10	6.258611497	4.400106375	36813944415	3236	2
-C2_10	overlapping om3 E50000 `-2d`	new	1	-C -2d -N10	6.258611497	4.490792	36820395391	3236	2
-C10	overlapping om4 E50000 `-d`	old	1	-C -d -N10	4.876717868	5.264344875	47357538001	1031	4
-C10	overlapping om4 E50000 `-d`	new	1	-C -d -N10	4.876717868	5.233484417	47407654343	1031	4
-FAM	om5 E50000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.969030601	5.221436417	45249622415	26	2
-FAM	om5 E50000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.969030601	3.551082625	28265460434	26	2
-FAM	om6 E50000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.959010571	3.420153042	27748272701	26	2
-FAM	om6 E50000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.959010571	3.375837291	27748768210	26	2
-C2_10	overlapping om6 E50000 `-2d`	old	1	-C -2d -N10	4.468778176	4.43238425	32369109659	6379	2
-C2_10	overlapping om6 E50000 `-2d`	new	1	-C -2d -N10	4.468778176	4.341284166	32364346315	6379	2
-C10	overlapping om7 E50000 `-d`	old	1	-C -d -N10	3.201872271	7.775597041	65023647466	3424	6
-C10	overlapping om7 E50000 `-d`	new	1	-C -d -N10	3.201872271	7.540370625	65071197401	3424	6
-FAM	om8 E50000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.990101633	3.431195333	25318781755	8	2
-FAM	om8 E50000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.990101633	3.462360417	26146066174	8	2
-C10	wikispeedia `-d`	old	1	-C -d -N10	5.907904741	0.709952458	7200353596	199	2
-C10	wikispeedia `-d`	new	1	-C -d -N10	5.907904741	0.7208285	7214698992	199	2
-L10	wikispeedia `-d`	new	1	-C --non-redundant -d -N10	5.903208727	0.686856583	6897699713	199	2
+C1	ninetriangles	old	1	-C -N1 	3.371875026	0.000398375	62727127	5	3
+C1	ninetriangles	new	1	-C -N1 	3.371875026	0.000379416	61938080	5	3
+C1	jazz	old	1	-C -N1 	6.899367957	0.000921541	70780734	11	2
+C1	jazz	new	1	-C -N1 	6.899367957	0.000955458	70834004	11	2
+C1	netscicoauthor2010	old	1	-C -N1 	4.047459862	0.002808625	89370179	7	4
+C1	netscicoauthor2010	new	1	-C -N1 	4.047459862	0.002736084	89352945	7	4
+C1	powergrid	old	1	-C -N1 	4.730850312	0.025508584	363057954	12	5
+C1	powergrid	new	1	-C -N1 	4.730850312	0.025125833	363362809	12	5
+C1	politicalblogs	old	1	-C -N1 -d	6.758265349	0.009058209	185867910	3	3
+C1	politicalblogs	new	1	-C -N1 -d	6.758265349	0.008982958	185473967	3	3
+C1	science2001	old	1	-C -N1 -d	7.807937174	0.385313209	5684467882	189	3
+C1	science2001	new	1	-C -N1 -d	7.807937174	0.3833465	5688816127	189	3
+C1	web-NotreDame	old	1	-C -N1 -d	5.556421705	2.282513709	24308604615	5	6
+C1	web-NotreDame	new	1	-C -N1 -d	5.556421705	2.274219333	24345276358	5	6
+C1	lazega	old	1	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000681834	66283653	6	2
+C1	lazega	new	1	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000671666	65417414	6	2
+C1	multilayer (ex.)	old	1	-C -N1 	2.011405238	0.000130834	58217078	2	2
+C1	multilayer (ex.)	new	1	-C -N1 	2.011405238	0.00013925	58048361	2	2
+C1	malaria	old	1	-C -N1 	7.491980364	0.345557417	5289066535	148	3
+C1	malaria	new	1	-C -N1 	7.491980364	0.334655291	5295510405	148	3
+C1	air30k	old	1	-C -N1 	5.470440768	0.35442225	4538064322	242	3
+C1	air30k	new	1	-C -N1 	5.470440768	0.327260625	4539074920	242	3
+C1	air30k (reg.)	old	1	-C -N1 -d --regularized	5.657913279	0.45566525	5860680869	197	3
+C1	air30k (reg.)	new	1	-C -N1 -d --regularized	5.657913279	0.443260125	5865356017	197	3
+C1	air30k (meta)	old	1	-C -N1 --meta-data networks/states/air2011/air30k_usstate.meta	7.546335898	0.840265792	9233910404	1614	3
+C1	air30k (meta)	new	1	-C -N1 --meta-data networks/states/air2011/air30k_usstate.meta	7.546335898	0.846653083	9240998171	1614	3
+C1	science2001 (pref.)	old	1	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.414421417	5825175902	5	3
+C1	science2001 (pref.)	new	1	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.38833575	5822121841	5	3
+C1	overlapping om2 `-2d`	old	1	-C -2d -N1	6.739358212	1.511671125	17256941514	674	2
+C1	overlapping om2 `-2d`	new	1	-C -2d -N1	6.739607071	1.234691084	14034938030	669	2
+C1	overlapping om2 `-d`	old	1	-C -d -N1	7.29196634	0.340049625	3697464008	321	4
+C1	overlapping om2 `-d`	new	1	-C -d -N1	7.29196634	0.366861917	3704703547	321	4
+C1	overlapping om2 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.744721993	0.537889833	6202144944	476	2
+C1	overlapping om2 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.744721993	0.539871666	6206187223	476	2
+FAM	om2 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.548816177	0.811073666	8195980065	120	2
+FAM	om2 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.548863183	0.679804792	7208909512	121	2
+FAM	om2 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.970508085	0.382832458	4265275015	1	2
+FAM	om2 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.548863183	0.853973375	8830780411	121	2
+FAM	om2 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.789039995	0.050452584	586065985	8	2
+FAM	om2 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.789039995	0.0480395	586047846	8	2
+F1	overlapping om2 `-d`	old	1	-C -F -d -N1	7.321678354	0.244530209	2566713458	436	4
+F1	overlapping om2 `-d`	new	1	-C -F -d -N1	7.321678354	0.251498875	2569535254	436	4
+C1	overlapping om3 `-2d`	old	1	-C -2d -N1	6.823513368	1.214994875	14964967880	72	2
+C1	overlapping om3 `-2d`	new	1	-C -2d -N1	6.823562921	1.04612725	12926450034	70	2
+C1	overlapping om3 `-d`	old	1	-C -d -N1	7.97489927	0.780278125	8259146057	1	2
+C1	overlapping om3 `-d`	new	1	-C -d -N1	6.823562921	1.443988708	17522616348	70	2
+C1	overlapping om3 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.820421208	0.781400834	9111070429	62	2
+C1	overlapping om3 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.820929855	0.378773917	4267838192	50	2
+FAM	om3 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.261268486	0.877958584	9704308508	34	2
+FAM	om3 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.261268486	0.862137167	9206735364	34	2
+FAM	om3 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.97414175	0.520187916	5489116897	1	2
+FAM	om3 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.261268486	1.147263042	12515668084	34	2
+FAM	om3 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.837980937	0.08819525	926042232	12	2
+FAM	om3 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.837980937	0.08586175	924912551	12	2
+F1	overlapping om3 `-d`	old	1	-C -F -d -N1	7.97489927	0.730370458	7800385723	1	2
+F1	overlapping om3 `-d`	new	1	-C -F -d -N1	6.823562921	1.45422125	17061564881	70	2
+C1	overlapping om4 `-2d`	old	1	-C -2d -N1	6.861724654	1.547064583	17500828119	141	2
+C1	overlapping om4 `-2d`	new	1	-C -2d -N1	6.861732911	1.394432333	15729943983	139	2
+C1	overlapping om4 `-d`	old	1	-C -d -N1	7.9829318	0.665602167	7109616384	1	2
+C1	overlapping om4 `-d`	new	1	-C -d -N1	6.861732911	1.850988125	21239061468	139	2
+C1	overlapping om4 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.856239474	0.889520792	10347004442	132	2
+C1	overlapping om4 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.856285862	0.6832305	7347255187	129	2
+FAM	om4 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.556894677	0.897267792	9249872000	79	2
+FAM	om4 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.556894677	0.906425375	9064474523	79	2
+FAM	om4 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.9828492	0.704493917	7346794076	1	2
+FAM	om4 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.556894677	1.218635291	12296441673	79	2
+FAM	om4 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.880650147	0.09995425	1007579691	16	2
+FAM	om4 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.880650147	0.105255917	1006755530	16	2
+F1	overlapping om4 `-d`	old	1	-C -F -d -N1	7.9829318	0.46765375	4811246136	1	2
+F1	overlapping om4 `-d`	new	1	-C -F -d -N1	6.861732911	1.707078959	18952008786	139	2
+C1	overlapping om5 `-2d`	old	1	-C -2d -N1	6.868127142	1.741677625	19115715491	293	2
+C1	overlapping om5 `-2d`	new	1	-C -2d -N1	6.868180827	1.569278792	17229500859	291	2
+C1	overlapping om5 `-d`	old	1	-C -d -N1	7.812252898	0.687793792	7222512870	66	4
+C1	overlapping om5 `-d`	new	1	-C -d -N1	7.812252898	0.685226625	7224508999	66	4
+C1	overlapping om5 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.857778113	1.148344792	12549531628	296	2
+C1	overlapping om5 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.857876353	0.853870708	9466442784	287	2
+FAM	om5 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.966995214	2.685233292	26614882770	104	2
+FAM	om5 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.968629202	0.783723792	7795098030	79	2
+FAM	om5 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.989613065	0.690436583	6700410442	1	2
+FAM	om5 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.968629202	1.120691792	11035820944	79	2
+FAM	om5 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.902222527	0.111687167	1076711834	20	2
+FAM	om5 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.902222527	0.107711834	1076817854	20	2
+F1	overlapping om5 `-d`	old	1	-C -F -d -N1	7.798283664	0.618359083	5741016339	96	4
+F1	overlapping om5 `-d`	new	1	-C -F -d -N1	7.798283664	0.570236416	5750709801	96	4
+C1	overlapping om6 `-2d`	old	1	-C -2d -N1	6.884042436	1.731836333	17960502859	455	2
+C1	overlapping om6 `-2d`	new	1	-C -2d -N1	6.884236095	1.568036667	16326026884	453	2
+C1	overlapping om6 `-d`	old	1	-C -d -N1	7.440161581	0.719055625	7456586612	92	4
+C1	overlapping om6 `-d`	new	1	-C -d -N1	7.440161581	0.75572625	7470434240	92	4
+C1	overlapping om6 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.873378755	1.212132584	13197254663	446	2
+C1	overlapping om6 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.873464257	1.070137	11249721570	444	2
+FAM	om6 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.981574549	1.684173458	15816850054	113	2
+FAM	om6 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.982650944	0.631050709	6041911676	105	2
+FAM	om6 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.993490371	0.775031375	7753164375	1	2
+FAM	om6 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.982650944	1.006707583	9288135819	105	2
+FAM	om6 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.930934993	0.115689875	1116644107	24	2
+FAM	om6 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.930934993	0.11629475	1115026928	24	2
+F1	overlapping om6 `-d`	old	1	-C -F -d -N1	7.507066407	0.60256875	5807069118	87	4
+F1	overlapping om6 `-d`	new	1	-C -F -d -N1	7.507066407	0.656824917	5815826745	87	4
+C1	overlapping om7 `-2d`	old	1	-C -2d -N1	6.889332374	1.957940917	20111013917	651	2
+C1	overlapping om7 `-2d`	new	1	-C -2d -N1	6.889674586	1.678790583	17212898585	649	2
+C1	overlapping om7 `-d`	old	1	-C -d -N1	7.192756466	0.736784792	7464878467	149	4
+C1	overlapping om7 `-d`	new	1	-C -d -N1	7.192756466	0.732216875	7465191579	149	4
+C1	overlapping om7 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.878354613	1.839702583	19754312883	650	2
+C1	overlapping om7 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.881554086	0.943241791	9565281195	624	2
+FAM	om7 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.945571863	3.085667875	29746978758	187	2
+FAM	om7 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.950842444	0.69687375	6354293825	168	2
+FAM	om7 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.992395554	0.73307375	7286476516	1	2
+FAM	om7 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.950842444	1.057804625	9686333612	168	2
+FAM	om7 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.957516072	0.136110083	1263775462	28	2
+FAM	om7 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.957516072	0.135492917	1263749674	28	2
+F1	overlapping om7 `-d`	old	1	-C -F -d -N1	7.238675817	0.537375	5163173845	145	4
+F1	overlapping om7 `-d`	new	1	-C -F -d -N1	7.238675817	0.5691865	5176291641	145	4
+C1	overlapping om8 `-2d`	old	1	-C -2d -N1	6.893377041	2.170289334	21990201744	911	2
+C1	overlapping om8 `-2d`	new	1	-C -2d -N1	6.894258582	1.776670083	17901505435	907	2
+C1	overlapping om8 `-d`	old	1	-C -d -N1	6.967535764	0.731722042	7441712155	206	4
+C1	overlapping om8 `-d`	new	1	-C -d -N1	6.967535764	0.755055792	7448686679	206	4
+C1	overlapping om8 `-2d -c` planted	old	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.875237392	1.379081125	14178540471	894	2
+C1	overlapping om8 `-2d -c` planted	new	1	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.875540042	1.154024958	11791765281	885	2
+FAM	om8 `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.978912396	2.400325333	22537436527	234	2
+FAM	om8 `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.983599366	0.651570167	6158224644	216	2
+FAM	om8 `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.994735672	0.984536125	9403244967	1	2
+FAM	om8 `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.983599366	1.01762725	9467743576	216	2
+FAM	om8 planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.98103476	0.14629225	1186331843	32	2
+FAM	om8 planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.98103476	0.131365542	1182054697	32	2
+F1	overlapping om8 `-d`	old	1	-C -F -d -N1	7.022972054	0.544489209	5174798884	201	4
+F1	overlapping om8 `-d`	new	1	-C -F -d -N1	7.022972054	0.54012825	5185898856	201	4
+C1	overlapping om2 E100000 `-d`	old	1	-C -d -N1	7.144517469	0.408843084	4544366590	3	3
+C1	overlapping om2 E100000 `-d`	new	1	-C -d -N1	7.144517469	0.393201583	4546624449	3	3
+C1	overlapping om3 E50000 `-d`	old	1	-C -d -N1	5.854829799	0.408483791	4341419160	537	4
+C1	overlapping om3 E50000 `-d`	new	1	-C -d -N1	5.854829799	0.406058542	4347924248	537	4
+C1	overlapping om4 E50000 `-d`	old	1	-C -d -N1	4.898784516	0.406032084	4165613182	1867	3
+C1	overlapping om4 E50000 `-d`	new	1	-C -d -N1	4.898784516	0.441810584	4172585229	1867	3
+C1	overlapping om5 E50000 `-d`	old	1	-C -d -N1	4.1554786	0.5116385	5008625512	2156	4
+C1	overlapping om5 E50000 `-d`	new	1	-C -d -N1	4.1554786	0.508668041	5016942611	2156	4
+C1	overlapping om6 E50000 `-d`	old	1	-C -d -N1	3.620157111	0.6530525	5942520743	3056	4
+C1	overlapping om6 E50000 `-d`	new	1	-C -d -N1	3.620157111	0.62766275	5957533049	3056	4
+C1	overlapping om7 E50000 `-d`	old	1	-C -d -N1	3.21639819	0.582314833	5559150881	3417	5
+C1	overlapping om7 E50000 `-d`	new	1	-C -d -N1	3.21639819	0.615461167	5555288821	3417	5
+C1	overlapping om8 E50000 `-d`	old	1	-C -d -N1	2.885785338	0.869321333	8134974631	4371	5
+C1	overlapping om8 E50000 `-d`	new	1	-C -d -N1	2.885785338	0.852097833	8114719031	4371	5
+C1	wikispeedia `-2d`	old	1	-C -2d -N1	5.91901362	0.1156715	998088737	184	2
+C1	wikispeedia `-2d`	new	1	-C -2d -N1	5.91901362	0.091527208	995986228	184	2
+C1	wikispeedia `-d`	old	1	-C -d -N1	6.066305904	0.070259459	817447338	187	3
+C1	wikispeedia `-d`	new	1	-C -d -N1	6.066305904	0.068120041	818823770	187	3
+C10	ninetriangles	old	1	-C -N10 	3.371875026	0.0010055	69624951	5	3
+C10	ninetriangles	new	1	-C -N10 	3.371875026	0.001074917	69559543	5	3
+L10	ninetriangles	new	1	-C --non-redundant -N10 	3.078067323	0.001011958	70176513	3	3
+F10	jazz	new	1	-C -F -N10 	6.862755928	0.006259209	132023116	6	2
+C2_10	netscicoauthor2010	old	1	-C -2 -N10 	4.283072584	0.008704	157154181	59	2
+C2_10	netscicoauthor2010	new	1	-C -2 -N10 	4.283072584	0.008546125	156762145	59	2
+C10	powergrid	old	1	-C -N10 	4.717760238	0.233073125	2798043688	5	5
+C10	powergrid	new	1	-C -N10 	4.717760238	0.231921958	2803327762	5	5
+L10	powergrid	new	1	-C --non-redundant -N10 	4.509265423	0.233947708	2898119836	3	7
+F10	politicalblogs	new	1	-C -F -N10 -d	6.740943136	0.053779916	673350323	81	2
+C2_10	science2001	old	1	-C -2 -N10 -d	7.949978834	2.207486959	23828135155	506	2
+C2_10	science2001	new	1	-C -2 -N10 -d	7.949978834	2.218097375	23828120024	506	2
+C10	web-NotreDame	old	1	-C -N10 -d	5.556421705	18.683516458	181233042333	5	6
+C10	web-NotreDame	new	1	-C -N10 -d	5.556421705	18.632510041	181652369172	5	6
+L10	web-NotreDame	new	1	-C --non-redundant -N10 -d	5.512433077	18.826216375	182737786712	5	6
+F10	lazega	new	1	-C -F -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.0034315	98846813	7	2
+C2_10	multilayer (ex.)	old	1	-C -2 -N10 	2.011405238	0.000399666	61867953	2	2
+C2_10	multilayer (ex.)	new	1	-C -2 -N10 	2.011405238	0.000399375	61329377	2	2
+C10	malaria	old	1	-C -N10 	7.392442593	2.979047709	37477657334	164	3
+C10	malaria	new	1	-C -N10 	7.392442593	2.482600083	31450511253	164	3
+L10	malaria	new	1	-C --non-redundant -N10 	7.438064454	2.654267375	33884642935	2	3
+F10	air30k	new	1	-C -F -N10 	5.392285003	2.914448208	35866449368	257	3
+C2_10	air30k (reg.)	old	1	-C -2 -N10 -d --regularized	5.571539329	3.576729833	41205336156	304	2
+C2_10	air30k (reg.)	new	1	-C -2 -N10 -d --regularized	5.571539329	3.622149292	41205817309	304	2
+C10	air30k (meta)	old	1	-C -N10 --meta-data networks/states/air2011/air30k_usstate.meta	7.421664324	9.046745583	97815738895	2135	3
+C10	air30k (meta)	new	1	-C -N10 --meta-data networks/states/air2011/air30k_usstate.meta	7.421664324	9.14162925	97871923242	2135	3
+L10	air30k (meta)	new	1	-C --non-redundant -N10 --meta-data networks/states/air2011/air30k_usstate.meta	7.192724425	7.926876334	85900799524	1910	3
+F10	science2001 (pref.)	new	1	-C -F -N10 -d --preferred-number-of-modules 25	8.235585529	3.070425083	34706117461	25	2
+C2_10	overlapping om2 `-2d`	old	1	-C -2d -N10	6.739271968	3.686510167	39797121429	638	2
+C2_10	overlapping om2 `-2d`	new	1	-C -2d -N10	6.740761645	3.327769459	35605519263	625	2
+F10	overlapping om2 `-d`	old	1	-C -F -d -N10	6.731808656	3.710083333	40180004484	690	2
+F10	overlapping om2 `-d`	new	1	-C -F -d -N10	6.731808656	3.686797583	40230230857	690	2
+FAM	om3 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.260835207	4.50102925	47956517552	29	2
+FAM	om3 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.260835207	4.438980125	47957165428	29	2
+C10	overlapping om4 `-d`	old	1	-C -d -N10	6.866901786	7.405143209	80673084388	173	2
+C10	overlapping om4 `-d`	new	1	-C -d -N10	6.866901786	5.551704	60565110438	173	2
+FAM	om4 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.556653713	6.5377195	67536585645	78	2
+FAM	om4 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.556653713	4.727793875	48555675069	78	2
+C2_10	overlapping om5 `-2d`	old	1	-C -2d -N10	6.866617805	6.740315792	71249933972	308	2
+C2_10	overlapping om5 `-2d`	new	1	-C -2d -N10	6.867301407	6.475848333	68364023520	303	2
+F10	overlapping om5 `-d`	old	1	-C -F -d -N10	6.866617805	6.870437375	70900300216	308	2
+F10	overlapping om5 `-d`	new	1	-C -F -d -N10	6.867301407	5.219299209	54207811345	303	2
+FAM	om6 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.981574549	5.324285417	50934533710	113	2
+FAM	om6 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.982650944	4.33453625	41193795978	105	2
+C10	overlapping om7 `-d`	old	1	-C -d -N10	6.888473273	8.591580416	86345973508	680	2
+C10	overlapping om7 `-d`	new	1	-C -d -N10	6.88945591	8.2635085	82604297238	666	2
+FAM	om7 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.945712536	8.804735084	84383892949	184	2
+FAM	om7 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.948827768	4.720991833	41095235165	166	2
+C2_10	overlapping om8 `-2d`	old	1	-C -2d -N10	6.887234466	8.933356541	75391028002	921	2
+C2_10	overlapping om8 `-2d`	new	1	-C -2d -N10	6.88742315	7.732707375	74447884588	919	2
+F10	overlapping om8 `-d`	old	1	-C -F -d -N10	6.981469446	6.931245875	65894440741	227	4
+F10	overlapping om8 `-d`	new	1	-C -F -d -N10	6.88742315	7.818534833	74722346120	919	2
+C10	overlapping om2 E100000 `-d`	old	1	-C -d -N10	6.773456578	5.243312625	61279896056	60	2
+C10	overlapping om2 E100000 `-d`	new	1	-C -d -N10	6.773456578	3.008418	33236533457	60	2
+FAM	om3 E50000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.931196935	3.740880167	36405721630	49	2
+FAM	om3 E50000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.931196935	2.889428666	28065415597	49	2
+FAM	om4 E50000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.940858042	2.87296575	27418365451	41	2
+FAM	om4 E50000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.940858042	2.863806416	27418927657	41	2
+C2_10	overlapping om4 E50000 `-2d`	old	1	-C -2d -N10	5.454385527	3.867814083	33734638457	4381	2
+C2_10	overlapping om4 E50000 `-2d`	new	1	-C -2d -N10	5.454385527	3.878457833	33732152031	4381	2
+C10	overlapping om5 E50000 `-d`	old	1	-C -d -N10	4.150346795	5.40770075	51047294814	2171	4
+C10	overlapping om5 E50000 `-d`	new	1	-C -d -N10	4.150346795	5.410214709	51114938811	2171	4
+FAM	om6 E50000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.959010571	3.207586417	26781773240	26	2
+FAM	om6 E50000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.960481009	2.728677042	24399476425	23	2
+FAM	om7 E50000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.974818773	3.31143325	29908623527	23	2
+FAM	om7 E50000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.977053735	2.821643083	25367782770	21	2
+C2_10	overlapping om7 E50000 `-2d`	old	1	-C -2d -N10	4.143277395	3.840778542	31319851623	7097	2
+C2_10	overlapping om7 E50000 `-2d`	new	1	-C -2d -N10	4.143277395	3.816408334	31161604321	7097	2
+C10	overlapping om8 E50000 `-d`	old	1	-C -d -N10	2.883308449	7.479189125	69593884867	4367	5
+C10	overlapping om8 E50000 `-d`	new	1	-C -d -N10	2.883308449	7.462003	69670213123	4367	5
+C2_10	wikispeedia `-2d`	old	1	-C -2d -N10	5.907904741	0.667444167	6916144540	199	2
+C2_10	wikispeedia `-2d`	new	1	-C -2d -N10	5.907904741	0.632697875	6880725227	199	2
+C1	ninetriangles	old	2	-C -N1 	3.371875026	0.000199375	59187500	5	3
+C1	ninetriangles	new	2	-C -N1 	3.371875026	0.000198416	59141389	5	3
+C1	jazz	old	2	-C -N1 	6.899367957	0.000895959	70670269	11	2
+C1	jazz	new	2	-C -N1 	6.899367957	0.000898625	70567000	11	2
+C1	netscicoauthor2010	old	2	-C -N1 	4.047459862	0.002584334	89398604	7	4
+C1	netscicoauthor2010	new	2	-C -N1 	4.047459862	0.002625416	89257761	7	4
+C1	powergrid	old	2	-C -N1 	4.730850312	0.024889542	363104918	12	5
+C1	powergrid	new	2	-C -N1 	4.730850312	0.024621375	363180589	12	5
+C1	politicalblogs	old	2	-C -N1 -d	6.758265349	0.009181417	185865861	3	3
+C1	politicalblogs	new	2	-C -N1 -d	6.758265349	0.008922917	185536573	3	3
+C1	science2001	old	2	-C -N1 -d	7.807937174	0.378330167	5683770525	189	3
+C1	science2001	new	2	-C -N1 -d	7.807937174	0.387698125	5689977887	189	3
+C1	web-NotreDame	old	2	-C -N1 -d	5.556421705	2.259910958	24315952960	5	6
+C1	web-NotreDame	new	2	-C -N1 -d	5.556421705	2.272768333	24340532026	5	6
+C1	lazega	old	2	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.00070225	66519287	6	2
+C1	lazega	new	2	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000705917	65617005	6	2
+C1	multilayer (ex.)	old	2	-C -N1 	2.011405238	0.000133333	58329659	2	2
+C1	multilayer (ex.)	new	2	-C -N1 	2.011405238	0.000148042	58266178	2	2
+C1	malaria	old	2	-C -N1 	7.491980364	0.352003291	5292664408	148	3
+C1	malaria	new	2	-C -N1 	7.491980364	0.347220875	5297025133	148	3
+C1	air30k	old	2	-C -N1 	5.470440768	0.338868042	4535521271	242	3
+C1	air30k	new	2	-C -N1 	5.470440768	0.338150458	4539234132	242	3
+C1	air30k (reg.)	old	2	-C -N1 -d --regularized	5.657913279	0.487739375	5871964823	197	3
+C1	air30k (reg.)	new	2	-C -N1 -d --regularized	5.657913279	0.471336791	5872686830	197	3
+C1	air30k (meta)	old	2	-C -N1 --meta-data networks/states/air2011/air30k_usstate.meta	7.546335898	0.814657334	9229937276	1614	3
+C1	air30k (meta)	new	2	-C -N1 --meta-data networks/states/air2011/air30k_usstate.meta	7.546335898	0.845807	9239502082	1614	3
+C1	science2001 (pref.)	old	2	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.397412917	5821030539	5	3
+C1	science2001 (pref.)	new	2	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.391439292	5821506490	5	3
+C1	overlapping om2 `-2d`	old	2	-C -2d -N1	6.739358212	1.534355458	17258928266	674	2
+C1	overlapping om2 `-2d`	new	2	-C -2d -N1	6.739607071	1.260336333	14039933088	669	2
+C1	overlapping om2 `-d`	old	2	-C -d -N1	7.29196634	0.343126833	3696851011	321	4
+C1	overlapping om2 `-d`	new	2	-C -d -N1	7.29196634	0.334078166	3700122601	321	4
+C1	overlapping om2 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.744721993	0.534951125	6204684107	476	2
+C1	overlapping om2 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.744721993	0.565482417	6204911007	476	2
+FAM	om2 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.548816177	0.762651917	8188533955	120	2
+FAM	om2 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.548863183	0.684857375	7209271057	121	2
+FAM	om2 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.970508085	0.409395375	4266821608	1	2
+FAM	om2 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.548863183	0.82931175	8824494200	121	2
+FAM	om2 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.789039995	0.047261583	586277690	8	2
+FAM	om2 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.789039995	0.047550416	586201909	8	2
+F1	overlapping om2 `-d`	old	2	-C -F -d -N1	7.321678354	0.246698834	2568151239	436	4
+F1	overlapping om2 `-d`	new	2	-C -F -d -N1	7.321678354	0.245869334	2570789238	436	4
+C1	overlapping om3 `-2d`	old	2	-C -2d -N1	6.823513368	1.238359083	14964015045	72	2
+C1	overlapping om3 `-2d`	new	2	-C -2d -N1	6.823562921	1.072066625	12928728199	70	2
+C1	overlapping om3 `-d`	old	2	-C -d -N1	7.97489927	0.771190291	8257856129	1	2
+C1	overlapping om3 `-d`	new	2	-C -d -N1	6.823562921	1.481492875	17522986096	70	2
+C1	overlapping om3 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.820421208	0.770902208	9119354315	62	2
+C1	overlapping om3 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.820929855	0.380752542	4269365145	50	2
+FAM	om3 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.261268486	0.938427042	9707373500	34	2
+FAM	om3 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.261268486	0.831094667	9208440894	34	2
+FAM	om3 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.97414175	0.552722042	5491179607	1	2
+FAM	om3 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.261268486	1.134048916	12512176175	34	2
+FAM	om3 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.837980937	0.085301541	925988485	12	2
+FAM	om3 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.837980937	0.082934208	925624731	12	2
+F1	overlapping om3 `-d`	old	2	-C -F -d -N1	7.97489927	0.784226875	7803331701	1	2
+F1	overlapping om3 `-d`	new	2	-C -F -d -N1	6.823562921	1.435940625	17057214707	70	2
+C1	overlapping om4 `-2d`	old	2	-C -2d -N1	6.861724654	1.522586334	17501126493	141	2
+C1	overlapping om4 `-2d`	new	2	-C -2d -N1	6.861732911	1.391920833	15731114501	139	2
+C1	overlapping om4 `-d`	old	2	-C -d -N1	7.9829318	0.635675583	7102162431	1	2
+C1	overlapping om4 `-d`	new	2	-C -d -N1	6.861732911	1.866366667	21241100474	139	2
+C1	overlapping om4 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.856239474	0.921497	10347464586	132	2
+C1	overlapping om4 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.856285862	0.643578167	7346147224	129	2
+FAM	om4 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.556894677	0.913656667	9250192425	79	2
+FAM	om4 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.556894677	0.883664875	9061812706	79	2
+FAM	om4 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.9828492	0.739772292	7346464310	1	2
+FAM	om4 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.556894677	1.201326875	12291705822	79	2
+FAM	om4 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.880650147	0.097017625	1007248410	16	2
+FAM	om4 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.880650147	0.10198225	1006998627	16	2
+F1	overlapping om4 `-d`	old	2	-C -F -d -N1	7.9829318	0.503711041	4814129984	1	2
+F1	overlapping om4 `-d`	new	2	-C -F -d -N1	6.861732911	1.650746959	18946296775	139	2
+C1	overlapping om5 `-2d`	old	2	-C -2d -N1	6.868127142	1.772373583	19118437713	293	2
+C1	overlapping om5 `-2d`	new	2	-C -2d -N1	6.868180827	1.5874605	17227225248	291	2
+C1	overlapping om5 `-d`	old	2	-C -d -N1	7.812252898	0.728875625	7225083962	66	4
+C1	overlapping om5 `-d`	new	2	-C -d -N1	7.812252898	0.698096833	7221110530	66	4
+C1	overlapping om5 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.857778113	1.14683875	12546154643	296	2
+C1	overlapping om5 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.857876353	0.859336083	9470320603	287	2
+FAM	om5 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.966995214	2.668854042	26614457097	104	2
+FAM	om5 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.968629202	0.832120625	7800526384	79	2
+FAM	om5 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.989613065	0.665545459	6700019792	1	2
+FAM	om5 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.968629202	1.1671635	11041960496	79	2
+FAM	om5 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.902222527	0.112455417	1079219414	20	2
+FAM	om5 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.902222527	0.11069575	1078535967	20	2
+F1	overlapping om5 `-d`	old	2	-C -F -d -N1	7.798283664	0.577586834	5740897022	96	4
+F1	overlapping om5 `-d`	new	2	-C -F -d -N1	7.798283664	0.623650917	5751724920	96	4
+C1	overlapping om6 `-2d`	old	2	-C -2d -N1	6.884042436	1.67987175	17963130126	455	2
+C1	overlapping om6 `-2d`	new	2	-C -2d -N1	6.884236095	1.569941292	16325270255	453	2
+C1	overlapping om6 `-d`	old	2	-C -d -N1	7.440161581	0.769204458	7461491328	92	4
+C1	overlapping om6 `-d`	new	2	-C -d -N1	7.440161581	0.728234792	7484962117	92	4
+C1	overlapping om6 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.873378755	1.24190375	13195401245	446	2
+C1	overlapping om6 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.873464257	1.025175875	11246511843	444	2
+FAM	om6 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.981574549	1.664312583	15814702376	113	2
+FAM	om6 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.982650944	0.626369125	6043072441	105	2
+FAM	om6 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.993490371	0.787603916	7753111567	1	2
+FAM	om6 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.982650944	0.9675175	9283291992	105	2
+FAM	om6 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.930934993	0.15071975	1117814718	24	2
+FAM	om6 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.930934993	0.120529875	1118826656	24	2
+F1	overlapping om6 `-d`	old	2	-C -F -d -N1	7.507066407	0.598097667	5805168853	87	4
+F1	overlapping om6 `-d`	new	2	-C -F -d -N1	7.507066407	0.613760166	5816203548	87	4
+C1	overlapping om7 `-2d`	old	2	-C -2d -N1	6.889332374	1.944350208	20110239569	651	2
+C1	overlapping om7 `-2d`	new	2	-C -2d -N1	6.889674586	1.671378125	17215844974	649	2
+C1	overlapping om7 `-d`	old	2	-C -d -N1	7.192756466	0.770277042	7459684419	149	4
+C1	overlapping om7 `-d`	new	2	-C -d -N1	7.192756466	0.763363667	7466548367	149	4
+C1	overlapping om7 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.878354613	1.858197458	19759667953	650	2
+C1	overlapping om7 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.881554086	0.908072292	9568405267	624	2
+FAM	om7 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.945571863	3.187351333	29747626502	187	2
+FAM	om7 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.950842444	0.66201375	6351486401	168	2
+FAM	om7 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.992395554	0.774792792	7285993764	1	2
+FAM	om7 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.950842444	1.012383667	9684432417	168	2
+FAM	om7 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.957516072	0.135972125	1263263551	28	2
+FAM	om7 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.957516072	0.175668208	1264995675	28	2
+F1	overlapping om7 `-d`	old	2	-C -F -d -N1	7.238675817	0.540146042	5161560550	145	4
+F1	overlapping om7 `-d`	new	2	-C -F -d -N1	7.238675817	0.5399365	5173360788	145	4
+C1	overlapping om8 `-2d`	old	2	-C -2d -N1	6.893377041	2.177708083	21990191455	911	2
+C1	overlapping om8 `-2d`	new	2	-C -2d -N1	6.894258582	1.767371958	17898151822	907	2
+C1	overlapping om8 `-d`	old	2	-C -d -N1	6.967535764	0.772584542	7445470617	206	4
+C1	overlapping om8 `-d`	new	2	-C -d -N1	6.967535764	0.74891275	7451564490	206	4
+C1	overlapping om8 `-2d -c` planted	old	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.875237392	1.375096541	14170863532	894	2
+C1	overlapping om8 `-2d -c` planted	new	2	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.875540042	1.127832583	11793822849	885	2
+FAM	om8 `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.978912396	2.454310792	22538060509	234	2
+FAM	om8 `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.983599366	0.674315708	6157417926	216	2
+FAM	om8 `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.994735672	0.935464583	9403365483	1	2
+FAM	om8 `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.983599366	1.056923542	9469738444	216	2
+FAM	om8 planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.98103476	0.127324667	1180467285	32	2
+FAM	om8 planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.98103476	0.125228667	1180501881	32	2
+F1	overlapping om8 `-d`	old	2	-C -F -d -N1	7.022972054	0.535135167	5175395338	201	4
+F1	overlapping om8 `-d`	new	2	-C -F -d -N1	7.022972054	0.562323583	5189026566	201	4
+C1	overlapping om2 E100000 `-d`	old	2	-C -d -N1	7.144517469	0.387560666	4540326950	3	3
+C1	overlapping om2 E100000 `-d`	new	2	-C -d -N1	7.144517469	0.385008709	4546442683	3	3
+C1	overlapping om3 E50000 `-d`	old	2	-C -d -N1	5.854829799	0.415229417	4351807212	537	4
+C1	overlapping om3 E50000 `-d`	new	2	-C -d -N1	5.854829799	0.418764708	4341675888	537	4
+C1	overlapping om4 E50000 `-d`	old	2	-C -d -N1	4.898784516	0.408907209	4163695518	1867	3
+C1	overlapping om4 E50000 `-d`	new	2	-C -d -N1	4.898784516	0.407261209	4169877024	1867	3
+C1	overlapping om5 E50000 `-d`	old	2	-C -d -N1	4.1554786	0.51077075	5005711481	2156	4
+C1	overlapping om5 E50000 `-d`	new	2	-C -d -N1	4.1554786	0.5478	5004947828	2156	4
+C1	overlapping om6 E50000 `-d`	old	2	-C -d -N1	3.620157111	0.617906708	5942521476	3056	4
+C1	overlapping om6 E50000 `-d`	new	2	-C -d -N1	3.620157111	0.635463917	5943478444	3056	4
+C1	overlapping om7 E50000 `-d`	old	2	-C -d -N1	3.21639819	0.598291125	5550229364	3417	5
+C1	overlapping om7 E50000 `-d`	new	2	-C -d -N1	3.21639819	0.584332583	5559706117	3417	5
+C1	overlapping om8 E50000 `-d`	old	2	-C -d -N1	2.885785338	0.847879542	8103654137	4371	5
+C1	overlapping om8 E50000 `-d`	new	2	-C -d -N1	2.885785338	0.86272175	8116266360	4371	5
+C1	wikispeedia `-2d`	old	2	-C -2d -N1	5.91901362	0.086611792	997307115	184	2
+C1	wikispeedia `-2d`	new	2	-C -2d -N1	5.91901362	0.08728775	996996630	184	2
+C1	wikispeedia `-d`	old	2	-C -d -N1	6.066305904	0.068686583	818687726	187	3
+C1	wikispeedia `-d`	new	2	-C -d -N1	6.066305904	0.068129583	819900217	187	3
+C2_10	ninetriangles	old	1	-C -2 -N10 	3.517754809	0.000473417	63120476	9	2
+C2_10	ninetriangles	new	1	-C -2 -N10 	3.517754809	0.000478708	62764492	9	2
+C10	jazz	old	1	-C -N10 	6.862755928	0.00637725	134742348	6	2
+C10	jazz	new	1	-C -N10 	6.862755928	0.006449708	135079519	6	2
+L10	jazz	new	1	-C --non-redundant -N10 	6.868228367	0.006436084	135296847	7	2
+F10	netscicoauthor2010	new	1	-C -F -N10 	4.03324474	0.013779	216237218	9	4
+C2_10	powergrid	old	1	-C -2 -N10 	5.63729688	0.093092334	1147783754	419	2
+C2_10	powergrid	new	1	-C -2 -N10 	5.63729688	0.093974333	1147594394	419	2
+C10	politicalblogs	old	1	-C -N10 -d	6.740943136	0.056227209	700012236	81	2
+C10	politicalblogs	new	1	-C -N10 -d	6.740943136	0.057421084	702249524	81	2
+L10	politicalblogs	new	1	-C --non-redundant -N10 -d	6.789241502	0.057316291	716252253	2	3
+F10	science2001	new	1	-C -F -N10 -d	7.807937174	2.829519709	33098433346	189	3
+C2_10	web-NotreDame	old	1	-C -2 -N10 -d	6.754216663	17.054852083	117424620045	11991	2
+C2_10	web-NotreDame	new	1	-C -2 -N10 -d	6.754216663	17.012376917	117417644232	11991	2
+C10	lazega	old	1	-C -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.003721542	106936845	7	2
+C10	lazega	new	1	-C -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.003814166	100804180	7	2
+L10	lazega	new	1	-C --non-redundant -N10 --meta-data networks/meta/lazega.meta	5.968624653	0.003451542	100087874	7	2
+F10	multilayer (ex.)	new	1	-C -F -N10 	2.011405238	0.000566459	62416067	2	2
+C2_10	malaria	old	1	-C -2 -N10 	7.400445378	2.616890083	32271937272	168	2
+C2_10	malaria	new	1	-C -2 -N10 	7.400445378	2.648786	32273999711	168	2
+C10	air30k	old	1	-C -N10 	5.392285003	3.674434917	44462434622	257	3
+C10	air30k	new	1	-C -N10 	5.392285003	3.18820675	38551705531	257	3
+L10	air30k	new	1	-C --non-redundant -N10 	5.378824196	3.195462042	38394278112	257	3
+F10	air30k (reg.)	new	1	-C -F -N10 -d --regularized	5.574537176	3.014093916	35222212520	228	3
+C2_10	air30k (meta)	old	1	-C -2 -N10 --meta-data networks/states/air2011/air30k_usstate.meta	7.424143707	9.859772208	104711456672	2237	2
+C2_10	air30k (meta)	new	1	-C -2 -N10 --meta-data networks/states/air2011/air30k_usstate.meta	7.424143707	9.815898917	104485371124	2237	2
+C10	science2001 (pref.)	old	1	-C -N10 -d --preferred-number-of-modules 25	8.235585529	3.149432833	35490958629	25	2
+C10	science2001 (pref.)	new	1	-C -N10 -d --preferred-number-of-modules 25	8.235585529	3.156443208	35488511098	25	2
+L10	science2001 (pref.)	new	1	-C --non-redundant -N10 -d --preferred-number-of-modules 25	8.447745451	3.13330025	35337130804	25	2
+FAM	om2 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.548721547	2.467674542	25049220058	126	2
+FAM	om2 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.548721547	2.410235208	24766675583	126	2
+C10	overlapping om3 `-d`	old	1	-C -d -N10	6.822826504	7.569432209	88387555234	70	2
+C10	overlapping om3 `-d`	new	1	-C -d -N10	6.822832994	5.03713925	59802271103	69	2
+FAM	om3 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.260835207	5.737467042	63321692348	29	2
+FAM	om3 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.260835207	4.179539333	44975282065	29	2
+C2_10	overlapping om4 `-2d`	old	1	-C -2d -N10	6.866901786	6.640879625	71532430317	173	2
+C2_10	overlapping om4 `-2d`	new	1	-C -2d -N10	6.866901786	6.517107791	70625935655	173	2
+F10	overlapping om4 `-d`	old	1	-C -F -d -N10	6.866901786	6.24954525	66596793789	173	2
+F10	overlapping om4 `-d`	new	1	-C -F -d -N10	6.866901786	5.238553458	55934133597	173	2
+FAM	om5 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.967531078	5.671411541	55076135023	98	2
+FAM	om5 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.968061942	4.530198334	43047221304	79	2
+C10	overlapping om6 `-d`	old	1	-C -d -N10	6.884862145	8.097954791	83095052471	451	2
+C10	overlapping om6 `-d`	new	1	-C -d -N10	6.88496897	7.91864925	81138784852	448	2
+FAM	om6 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.981063575	8.791976458	86410591281	119	2
+FAM	om6 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.984417755	4.315958125	41223412106	102	2
+C2_10	overlapping om7 `-2d`	old	1	-C -2d -N10	6.889244164	7.461393333	73342536641	675	2
+C2_10	overlapping om7 `-2d`	new	1	-C -2d -N10	6.88992089	6.996447458	69134973330	663	2
+F10	overlapping om7 `-d`	old	1	-C -F -d -N10	6.888473273	7.508393458	73366608335	680	2
+F10	overlapping om7 `-d`	new	1	-C -F -d -N10	6.88945591	7.124370583	69640485450	666	2
+FAM	om8 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.976140205	7.609028458	69914163991	240	2
+FAM	om8 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.979831947	4.508232458	40706609632	221	2
+FAM	om2 E100000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	6.950176925	3.427105583	37804857871	9	2
+FAM	om2 E100000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	6.950176925	3.378221416	36743655045	9	2
+C2_10	overlapping om2 E100000 `-2d`	old	1	-C -2d -N10	6.773456578	3.377655375	38018533411	60	2
+C2_10	overlapping om2 E100000 `-2d`	new	1	-C -2d -N10	6.773456578	3.340156	37734919458	60	2
+C10	overlapping om3 E50000 `-d`	old	1	-C -d -N10	5.851498646	4.320909625	44495027646	617	4
+C10	overlapping om3 E50000 `-d`	new	1	-C -d -N10	5.851498646	4.309507209	44535309241	617	4
+FAM	om4 E50000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.940858042	4.533524667	45262105211	41	2
+FAM	om4 E50000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.940858042	2.847667459	27229971768	41	2
+FAM	om5 E50000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.969030601	3.107158166	28989037857	26	2
+FAM	om5 E50000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.969030601	3.055504791	28965835900	26	2
+C2_10	overlapping om5 E50000 `-2d`	old	1	-C -2d -N10	4.903270512	3.821110708	31897616821	5443	2
+C2_10	overlapping om5 E50000 `-2d`	new	1	-C -2d -N10	4.903270512	3.812628542	31900883436	5443	2
+C10	overlapping om6 E50000 `-d`	old	1	-C -d -N10	3.617750514	5.488946458	51578336306	3050	4
+C10	overlapping om6 E50000 `-d`	new	1	-C -d -N10	3.617750514	5.58701675	51657614837	3050	4
+FAM	om7 E50000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.974818773	3.3088435	28149461995	23	2
+FAM	om7 E50000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.977053735	2.825019208	24350097087	21	2
+FAM	om8 E50000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.990101633	3.000307167	27016039958	8	2
+FAM	om8 E50000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.991103173	2.639679334	23938240966	7	2
+C2_10	overlapping om8 E50000 `-2d`	old	1	-C -2d -N10	3.859069372	3.906289292	31533941778	7985	2
+C2_10	overlapping om8 E50000 `-2d`	new	1	-C -2d -N10	3.859069372	3.889245542	31534248477	7985	2
+F10	wikispeedia `-d`	new	1	-C -F -d -N10	5.907904741	0.675486125	6887633605	199	2
+C1	ninetriangles	old	3	-C -N1 	3.371875026	0.000204583	59265179	5	3
+C1	ninetriangles	new	3	-C -N1 	3.371875026	0.000216375	58836251	5	3
+C1	jazz	old	3	-C -N1 	6.899367957	0.000919666	70439306	11	2
+C1	jazz	new	3	-C -N1 	6.899367957	0.000905125	70250983	11	2
+C1	netscicoauthor2010	old	3	-C -N1 	4.047459862	0.002572125	89110282	7	4
+C1	netscicoauthor2010	new	3	-C -N1 	4.047459862	0.002648875	88900457	7	4
+C1	powergrid	old	3	-C -N1 	4.730850312	0.024814333	362571907	12	5
+C1	powergrid	new	3	-C -N1 	4.730850312	0.025753042	362913113	12	5
+C1	politicalblogs	old	3	-C -N1 -d	6.758265349	0.009081792	186058345	3	3
+C1	politicalblogs	new	3	-C -N1 -d	6.758265349	0.00909275	185476587	3	3
+C1	science2001	old	3	-C -N1 -d	7.807937174	0.376113916	5683296092	189	3
+C1	science2001	new	3	-C -N1 -d	7.807937174	0.383298208	5689633750	189	3
+C1	web-NotreDame	old	3	-C -N1 -d	5.556421705	2.290957083	24326185738	5	6
+C1	web-NotreDame	new	3	-C -N1 -d	5.556421705	2.271165625	24350097352	5	6
+C1	lazega	old	3	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.0007035	66458996	6	2
+C1	lazega	new	3	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000673834	65629477	6	2
+C1	multilayer (ex.)	old	3	-C -N1 	2.011405238	0.000130833	58322361	2	2
+C1	multilayer (ex.)	new	3	-C -N1 	2.011405238	0.000141875	58119670	2	2
+C1	malaria	old	3	-C -N1 	7.491980364	0.338473667	5290128276	148	3
+C1	malaria	new	3	-C -N1 	7.491980364	0.342645834	5296266072	148	3
+C1	air30k	old	3	-C -N1 	5.470440768	0.38420625	4539622412	242	3
+C1	air30k	new	3	-C -N1 	5.470440768	0.333152666	4539762324	242	3
+C1	air30k (reg.)	old	3	-C -N1 -d --regularized	5.657913279	0.447402875	5862872686	197	3
+C1	air30k (reg.)	new	3	-C -N1 -d --regularized	5.657913279	0.453512834	5865884694	197	3
+C1	air30k (meta)	old	3	-C -N1 --meta-data networks/states/air2011/air30k_usstate.meta	7.546335898	0.848527625	9235193100	1614	3
+C1	air30k (meta)	new	3	-C -N1 --meta-data networks/states/air2011/air30k_usstate.meta	7.546335898	0.813465625	9238319432	1614	3
+C1	science2001 (pref.)	old	3	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.395949083	5823028082	5	3
+C1	science2001 (pref.)	new	3	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.40119425	5824289558	5	3
+C1	overlapping om2 `-2d`	old	3	-C -2d -N1	6.739358212	1.485646042	17255764938	674	2
+C1	overlapping om2 `-2d`	new	3	-C -2d -N1	6.739607071	1.2422595	14030699833	669	2
+C1	overlapping om2 `-d`	old	3	-C -d -N1	7.29196634	0.338207666	3695779099	321	4
+C1	overlapping om2 `-d`	new	3	-C -d -N1	7.29196634	0.385442083	3701839389	321	4
+C1	overlapping om2 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.744721993	0.542638167	6203238535	476	2
+C1	overlapping om2 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.744721993	0.537968208	6201163086	476	2
+FAM	om2 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.548816177	0.759614667	8191177484	120	2
+FAM	om2 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.548863183	0.687679458	7209115411	121	2
+FAM	om2 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.970508085	0.377541792	4264496174	1	2
+FAM	om2 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.548863183	0.823719875	8827538721	121	2
+FAM	om2 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.789039995	0.053511292	586916896	8	2
+FAM	om2 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om2_nc64_E50000_mu10_sample1.clu	6.789039995	0.049360625	586922569	8	2
+F1	overlapping om2 `-d`	old	3	-C -F -d -N1	7.321678354	0.248440417	2565631416	436	4
+F1	overlapping om2 `-d`	new	3	-C -F -d -N1	7.321678354	0.246237875	2570990609	436	4
+C1	overlapping om3 `-2d`	old	3	-C -2d -N1	6.823513368	1.217430458	14964731714	72	2
+C1	overlapping om3 `-2d`	new	3	-C -2d -N1	6.823562921	1.061361125	12929756600	70	2
+C1	overlapping om3 `-d`	old	3	-C -d -N1	7.97489927	0.764454625	8255801139	1	2
+C1	overlapping om3 `-d`	new	3	-C -d -N1	6.823562921	1.43594225	17516464011	70	2
+C1	overlapping om3 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.820421208	0.780545917	9111459428	62	2
+C1	overlapping om3 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.820929855	0.368705042	4267801652	50	2
+FAM	om3 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.261268486	0.887326916	9706963939	34	2
+FAM	om3 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.261268486	0.8608105	9209571602	34	2
+FAM	om3 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.97414175	0.510957167	5490350077	1	2
+FAM	om3 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.261268486	1.161345709	12516703091	34	2
+FAM	om3 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.837980937	0.087190792	925241530	12	2
+FAM	om3 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om3_nc64_E100000_mu10_sample1.clu	6.837980937	0.0923135	926299579	12	2
+F1	overlapping om3 `-d`	old	3	-C -F -d -N1	7.97489927	0.732180959	7800851017	1	2
+F1	overlapping om3 `-d`	new	3	-C -F -d -N1	6.823562921	1.438875708	17058079871	70	2
+C1	overlapping om4 `-2d`	old	3	-C -2d -N1	6.861724654	1.540755792	17502740212	141	2
+C1	overlapping om4 `-2d`	new	3	-C -2d -N1	6.861732911	1.349212666	15728222801	139	2
+C1	overlapping om4 `-d`	old	3	-C -d -N1	7.9829318	0.690356291	7107989693	1	2
+C1	overlapping om4 `-d`	new	3	-C -d -N1	6.861732911	1.881755041	21237445886	139	2
+C1	overlapping om4 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.856239474	0.88566675	10346297455	132	2
+C1	overlapping om4 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.856285862	0.682119792	7345588023	129	2
+FAM	om4 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.556894677	0.89943975	9249671213	79	2
+FAM	om4 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.556894677	0.903775292	9062530756	79	2
+FAM	om4 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.9828492	0.715002375	7344438750	1	2
+FAM	om4 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.556894677	1.198098625	12294973934	79	2
+FAM	om4 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.880650147	0.10074025	1006630567	16	2
+FAM	om4 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om4_nc64_E100000_mu10_sample1.clu	6.880650147	0.097684417	1006118755	16	2
+F1	overlapping om4 `-d`	old	3	-C -F -d -N1	7.9829318	0.44780425	4809238394	1	2
+F1	overlapping om4 `-d`	new	3	-C -F -d -N1	6.861732911	1.679978542	18949884849	139	2
+C1	overlapping om5 `-2d`	old	3	-C -2d -N1	6.868127142	1.727484292	19116064945	293	2
+C1	overlapping om5 `-2d`	new	3	-C -2d -N1	6.868180827	1.567697375	17229010413	291	2
+C1	overlapping om5 `-d`	old	3	-C -d -N1	7.812252898	0.697603541	7207170711	66	4
+C1	overlapping om5 `-d`	new	3	-C -d -N1	7.812252898	0.698244875	7219074300	66	4
+C1	overlapping om5 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.857778113	1.154410584	12544950631	296	2
+C1	overlapping om5 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.857876353	0.852213167	9467826506	287	2
+FAM	om5 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.966995214	2.729985167	26618803327	104	2
+FAM	om5 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.968629202	0.784445792	7797083450	79	2
+FAM	om5 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.989613065	0.702849583	6702732920	1	2
+FAM	om5 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.968629202	1.098327375	11039060903	79	2
+FAM	om5 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.902222527	0.110520041	1077789817	20	2
+FAM	om5 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om5_nc64_E100000_mu10_sample1.clu	6.902222527	0.109307417	1077983085	20	2
+F1	overlapping om5 `-d`	old	3	-C -F -d -N1	7.798283664	0.6336255	5741426368	96	4
+F1	overlapping om5 `-d`	new	3	-C -F -d -N1	7.798283664	0.592972875	5748228432	96	4
+C1	overlapping om6 `-2d`	old	3	-C -2d -N1	6.884042436	1.712681	17964874827	455	2
+C1	overlapping om6 `-2d`	new	3	-C -2d -N1	6.884236095	1.555444583	16329623719	453	2
+C1	overlapping om6 `-d`	old	3	-C -d -N1	7.440161581	0.719122041	7456876917	92	4
+C1	overlapping om6 `-d`	new	3	-C -d -N1	7.440161581	0.7238625	7469469786	92	4
+C1	overlapping om6 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.873378755	1.2550545	13197057788	446	2
+C1	overlapping om6 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.873464257	1.065303875	11252239861	444	2
+FAM	om6 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.981574549	1.608692208	15808412416	113	2
+FAM	om6 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.982650944	0.656575833	6045147934	105	2
+FAM	om6 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.993490371	0.774685708	7755046547	1	2
+FAM	om6 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.982650944	1.0181945	9286987069	105	2
+FAM	om6 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.930934993	0.116915625	1118045956	24	2
+FAM	om6 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om6_nc64_E100000_mu10_sample1.clu	6.930934993	0.115335291	1116577222	24	2
+F1	overlapping om6 `-d`	old	3	-C -F -d -N1	7.507066407	0.6061265	5807550533	87	4
+F1	overlapping om6 `-d`	new	3	-C -F -d -N1	7.507066407	0.653148542	5816214210	87	4
+C1	overlapping om7 `-2d`	old	3	-C -2d -N1	6.889332374	1.931800792	20107975889	651	2
+C1	overlapping om7 `-2d`	new	3	-C -2d -N1	6.889674586	1.657224333	17211745941	649	2
+C1	overlapping om7 `-d`	old	3	-C -d -N1	7.192756466	0.754341333	7458053121	149	4
+C1	overlapping om7 `-d`	new	3	-C -d -N1	7.192756466	0.737295167	7465964185	149	4
+C1	overlapping om7 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.878354613	1.878874209	19751502470	650	2
+C1	overlapping om7 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.881554086	0.941580208	9570319895	624	2
+FAM	om7 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.945571863	3.1164105	29743203761	187	2
+FAM	om7 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.950842444	0.726897708	6352711675	168	2
+FAM	om7 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.992395554	0.727070375	7282417429	1	2
+FAM	om7 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.950842444	1.0874295	9688865630	168	2
+FAM	om7 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.957516072	0.136101625	1263741918	28	2
+FAM	om7 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om7_nc64_E100000_mu10_sample1.clu	6.957516072	0.136223625	1262600432	28	2
+F1	overlapping om7 `-d`	old	3	-C -F -d -N1	7.238675817	0.542865542	5162139422	145	4
+F1	overlapping om7 `-d`	new	3	-C -F -d -N1	7.238675817	0.569841	5173283959	145	4
+C1	overlapping om8 `-2d`	old	3	-C -2d -N1	6.893377041	2.189131166	21993624322	911	2
+C1	overlapping om8 `-2d`	new	3	-C -2d -N1	6.894258582	1.763309958	17900787330	907	2
+C1	overlapping om8 `-d`	old	3	-C -d -N1	6.967535764	0.749614125	7438948388	206	4
+C1	overlapping om8 `-d`	new	3	-C -d -N1	6.967535764	0.748517375	7449277376	206	4
+C1	overlapping om8 `-2d -c` planted	old	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.875237392	1.383905167	14167954214	894	2
+C1	overlapping om8 `-2d -c` planted	new	3	-C -2d -N1 -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.875540042	1.149947625	11793119657	885	2
+FAM	om8 `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.978912396	2.375341917	22545732875	234	2
+FAM	om8 `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.983599366	0.660455459	6156832360	216	2
+FAM	om8 `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.994735672	0.962835042	9405338406	1	2
+FAM	om8 `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.983599366	0.999121458	9465918456	216	2
+FAM	om8 planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.98103476	0.125416375	1180975456	32	2
+FAM	om8 planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/debug/Jelena/planted_partition_N256_om8_nc64_E100000_mu10_sample1.clu	6.98103476	0.159926084	1182470741	32	2
+F1	overlapping om8 `-d`	old	3	-C -F -d -N1	7.022972054	0.560690459	5175515089	201	4
+F1	overlapping om8 `-d`	new	3	-C -F -d -N1	7.022972054	0.545724666	5186782868	201	4
+C1	overlapping om2 E100000 `-d`	old	3	-C -d -N1	7.144517469	0.380020792	4543453271	3	3
+C1	overlapping om2 E100000 `-d`	new	3	-C -d -N1	7.144517469	0.424492666	4549115479	3	3
+C1	overlapping om3 E50000 `-d`	old	3	-C -d -N1	5.854829799	0.415196125	4344027938	537	4
+C1	overlapping om3 E50000 `-d`	new	3	-C -d -N1	5.854829799	0.4083745	4347478314	537	4
+C1	overlapping om4 E50000 `-d`	old	3	-C -d -N1	4.898784516	0.406866083	4163877168	1867	3
+C1	overlapping om4 E50000 `-d`	new	3	-C -d -N1	4.898784516	0.428661167	4171201151	1867	3
+C1	overlapping om5 E50000 `-d`	old	3	-C -d -N1	4.1554786	0.515882292	5008252650	2156	4
+C1	overlapping om5 E50000 `-d`	new	3	-C -d -N1	4.1554786	0.50560175	5000903903	2156	4
+C1	overlapping om6 E50000 `-d`	old	3	-C -d -N1	3.620157111	0.620541042	5938652839	3056	4
+C1	overlapping om6 E50000 `-d`	new	3	-C -d -N1	3.620157111	0.668117	5949502712	3056	4
+C1	overlapping om7 E50000 `-d`	old	3	-C -d -N1	3.21639819	0.5740005	5544905692	3417	5
+C1	overlapping om7 E50000 `-d`	new	3	-C -d -N1	3.21639819	0.58090275	5568963853	3417	5
+C1	overlapping om8 E50000 `-d`	old	3	-C -d -N1	2.885785338	0.876812833	8125928229	4371	5
+C1	overlapping om8 E50000 `-d`	new	3	-C -d -N1	2.885785338	0.856598083	8135880189	4371	5
+C1	wikispeedia `-2d`	old	3	-C -2d -N1	5.91901362	0.08653575	997529574	184	2
+C1	wikispeedia `-2d`	new	3	-C -2d -N1	5.91901362	0.087645833	996838707	184	2
+C1	wikispeedia `-d`	old	3	-C -d -N1	6.066305904	0.06710175	818137828	187	3
+C1	wikispeedia `-d`	new	3	-C -d -N1	6.066305904	0.067345875	819633950	187	3
+F10	ninetriangles	new	1	-C -F -N10 	3.371875026	0.000848458	68265022	5	3
+C2_10	jazz	old	1	-C -2 -N10 	6.861229775	0.010570791	134184146	6	2
+C2_10	jazz	new	1	-C -2 -N10 	6.861229775	0.006353792	134064674	6	2
+C10	netscicoauthor2010	old	1	-C -N10 	4.048857953	0.023245333	305247425	15	4
+C10	netscicoauthor2010	new	1	-C -N10 	4.048857953	0.022741458	305710129	15	4
+L10	netscicoauthor2010	new	1	-C --non-redundant -N10 	3.892209764	0.022661625	308715976	2	5
+F10	powergrid	new	1	-C -F -N10 	4.754013143	0.142661	1747460483	10	5
+C2_10	politicalblogs	old	1	-C -2 -N10 -d	6.739575295	0.041799	517615897	81	2
+C2_10	politicalblogs	new	1	-C -2 -N10 -d	6.739575295	0.041405875	517306830	81	2
+C10	science2001	old	1	-C -N10 -d	7.807937174	2.884989583	34034172538	189	3
+C10	science2001	new	1	-C -N10 -d	7.807937174	3.36932675	34128978836	189	3
+L10	science2001	new	1	-C --non-redundant -N10 -d	8.009172258	2.685497166	31149453570	22	3
+F10	web-NotreDame	new	1	-C -F -N10 -d	5.620539396	13.854840916	126651375980	135	5
+C2_10	lazega	old	1	-C -2 -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.003615834	103603740	7	2
+C2_10	lazega	new	1	-C -2 -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.003264542	96825158	7	2
+C10	multilayer (ex.)	old	1	-C -N10 	2.011405238	0.000468417	63060643	2	2
+C10	multilayer (ex.)	new	1	-C -N10 	2.011405238	0.000469584	62802993	2	2
+L10	multilayer (ex.)	new	1	-C --non-redundant -N10 	1.928856578	0.000471167	62899320	2	2
+F10	malaria	new	1	-C -F -N10 	7.392442593	2.431782083	30621528767	164	3
+C2_10	air30k	old	1	-C -2 -N10 	5.393055049	3.430686875	41869452441	334	2
+C2_10	air30k	new	1	-C -2 -N10 	5.393055049	3.389905709	41725163259	334	2
+C10	air30k (reg.)	old	1	-C -N10 -d --regularized	5.574537176	3.940541917	46440718095	228	3
+C10	air30k (reg.)	new	1	-C -N10 -d --regularized	5.574537176	3.503152916	40345877361	228	3
+L10	air30k (reg.)	new	1	-C --non-redundant -N10 -d --regularized	5.56659036	3.494801875	40105806715	220	3
+F10	air30k (meta)	new	1	-C -F -N10 --meta-data networks/states/air2011/air30k_usstate.meta	7.421664324	8.8570625	95328928224	2135	3
+C2_10	science2001 (pref.)	old	1	-C -2 -N10 -d --preferred-number-of-modules 25	8.235585529	2.90878625	31539861976	25	2
+C2_10	science2001 (pref.)	new	1	-C -2 -N10 -d --preferred-number-of-modules 25	8.235585529	2.926636209	31540186177	25	2
+C10	overlapping om2 `-d`	old	1	-C -d -N10	6.731808656	4.317970708	47418189358	690	2
+C10	overlapping om2 `-d`	new	1	-C -d -N10	6.731808656	4.287475125	47468644687	690	2
+FAM	om2 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.548721547	3.263586458	36330543463	126	2
+FAM	om2 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.548721547	2.235367917	23803899460	126	2
+C2_10	overlapping om3 `-2d`	old	1	-C -2d -N10	6.822826504	6.403330792	78796700436	70	2
+C2_10	overlapping om3 `-2d`	new	1	-C -2d -N10	6.822832994	6.292012542	77253910790	69	2
+F10	overlapping om3 `-d`	old	1	-C -F -d -N10	6.822826504	6.781637459	78259430657	70	2
+F10	overlapping om3 `-d`	new	1	-C -F -d -N10	6.822832994	4.64758425	55449887446	69	2
+FAM	om4 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.556894677	4.849616792	49116270378	79	2
+FAM	om4 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.556894677	4.881179958	48931302987	79	2
+C10	overlapping om5 `-d`	old	1	-C -d -N10	6.866617805	7.728839292	81395525801	308	2
+C10	overlapping om5 `-d`	new	1	-C -d -N10	6.867301407	5.688602208	58908047755	303	2
+FAM	om5 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.965009721	8.65938175	87676007992	106	2
+FAM	om5 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.968320007	4.345279959	42507202190	81	2
+C2_10	overlapping om6 `-2d`	old	1	-C -2d -N10	6.884862145	7.019681166	71017739499	451	2
+C2_10	overlapping om6 `-2d`	new	1	-C -2d -N10	6.88496897	6.832113125	68964569205	448	2
+F10	overlapping om6 `-d`	old	1	-C -F -d -N10	6.884862145	6.858345125	68529159802	451	2
+F10	overlapping om6 `-d`	new	1	-C -F -d -N10	6.88496897	6.673143333	66557265477	448	2
+FAM	om7 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.945712536	6.501867916	60456946616	184	2
+FAM	om7 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.948827768	4.501689334	41167499679	166	2
+C10	overlapping om8 `-d`	old	1	-C -d -N10	6.959413622	8.516687667	85736195556	203	4
+C10	overlapping om8 `-d`	new	1	-C -d -N10	6.88742315	8.707667084	86384785481	919	2
+FAM	om8 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.976681139	8.325773792	80864102533	256	2
+FAM	om8 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.978630877	4.500228875	41238107633	236	2
+FAM	om2 E100000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	6.950176925	5.486040834	64104554723	9	2
+FAM	om2 E100000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	6.950176925	3.07881175	33465722400	9	2
+FAM	om3 E50000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.931196935	2.691303416	27920142513	49	2
+FAM	om3 E50000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.931196935	2.751977875	27914733642	49	2
+C2_10	overlapping om3 E50000 `-2d`	old	1	-C -2d -N10	6.258611497	3.972050375	36798509687	3236	2
+C2_10	overlapping om3 E50000 `-2d`	new	1	-C -2d -N10	6.258611497	3.976620166	36797560992	3236	2
+C10	overlapping om4 E50000 `-d`	old	1	-C -d -N10	4.876717868	4.830147334	47337455313	1031	4
+C10	overlapping om4 E50000 `-d`	new	1	-C -d -N10	4.876717868	4.810574083	47391741060	1031	4
+FAM	om5 E50000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.969030601	4.714399125	45235644005	26	2
+FAM	om5 E50000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.969030601	3.083300459	28238543004	26	2
+FAM	om6 E50000 `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.959010571	3.054236834	27741936163	26	2
+FAM	om6 E50000 `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.960481009	2.678794458	24717672721	23	2
+C2_10	overlapping om6 E50000 `-2d`	old	1	-C -2d -N10	4.468778176	3.901985542	32339199766	6379	2
+C2_10	overlapping om6 E50000 `-2d`	new	1	-C -2d -N10	4.468778176	3.876814	32349009387	6379	2
+C10	overlapping om7 E50000 `-d`	old	1	-C -d -N10	3.201872271	6.944496958	64932555929	3424	6
+C10	overlapping om7 E50000 `-d`	new	1	-C -d -N10	3.201872271	7.017213583	65014269692	3424	6
+FAM	om8 E50000 `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.990101633	3.008693833	25312223006	8	2
+FAM	om8 E50000 `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.991103173	2.746433208	23049771185	7	2
+C10	wikispeedia `-d`	old	1	-C -d -N10	5.907904741	0.678672625	7197585643	199	2
+C10	wikispeedia `-d`	new	1	-C -d -N10	5.907904741	0.669428417	7174409047	199	2
+L10	wikispeedia `-d`	new	1	-C --non-redundant -d -N10	5.903208727	0.671584209	6857997647	199	2
+C10	science2001	old	2	-C -N10 -d	7.807937174	2.881	34040000000	189	3
+C10	science2001	new	2	-C -N10 -d	7.807937174	2.934	34130000000	189	3
+C10	science2001	old	3	-C -N10 -d	7.807937174	2.865	34030000000	189	3
+C10	science2001	new	3	-C -N10 -d	7.807937174	2.918	34130000000	189	3
+C10	science2001	old	4	-C -N10 -d	7.807937174	2.916	34049999999	189	3
+C10	science2001	new	4	-C -N10 -d	7.807937174	2.888	34119999999	189	3
 BENCH-DONE
-C2_10	air30k (reg.)	old	2	-C -2 -N10 -d --regularized	5.571539329	4.866732583	41459235324	304	2
-C2_10	air30k (reg.)	new	2	-C -2 -N10 -d --regularized	5.571539329	4.676962375	41422568532	304	2
-C10	powergrid	old	2	-C -N10 	4.717760238	0.258993375	2808536639	5	5
-C10	powergrid	new	2	-C -N10 	4.717760238	0.313423917	2818388394	5	5
-C2_10	air30k (reg.)	old	3	-C -2 -N10 -d --regularized	5.571539329	4.645479834	41373281049	304	2
-C2_10	air30k (reg.)	new	3	-C -2 -N10 -d --regularized	5.571539329	5.522966875	41537549734	304	2
-C10	powergrid	old	3	-C -N10 	4.717760238	0.272792583	2814210222	5	5
-C10	powergrid	new	3	-C -N10 	4.717760238	0.378696959	2842779234	5	5

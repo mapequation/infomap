@@ -4717,3 +4717,107 @@ in `-2d -N1` / `-2d -N10`, untouched by this PR, filed as **#1083** with the cos
 discovery when its first round buys less than it costs). Both levers — a repair that earns its cost,
 and a winner chosen after repair — belong to the `-2` pipeline and would lower every `-2 -N1` row, not
 only the rescued ones.
+
+### F57 — the rescued `-N1` rows paid for work the search had already done (2026-10-07)
+
+Daniel rejected om5 `-d --regularized -N1` at 0.705 → 3.41 s for −0.28% in bits (F56 third
+addendum), and with it both options offered there (ship #1081 with that cost, or hold it): the cost had
+to come out, not be traded. Throwaway experiment binary at the PR tip `d8fa511c`, per-round timing
+prints, env-gated arms, never committed. All `--seed 123`, `MODE=release OPENMP=0`, engine
+`timing.total_s`; the sweep and the traces ran on a loaded machine, so read shares, not seconds.
+
+**Where the 3.4 s went.** The deep repair was 2.37 s of it, all in its fresh split discovery: six
+from-singletons derivations, each re-clustering the module that holds 49 663 of the 50 133 states, at
+0.37–0.41 s apiece (about one trial each), for 0.0153%, 0.0003%, 0.0040%, 0.0048%, 0.0016% and 0% of
+the codelength. The sub-cluster cache is keyed on the exact leaf set, and the leaf re-tune between
+rounds moves a few states in or out of every module, so every round misses on every module and
+re-derives ~the whole network. om6–om8 regularized the same (giant module 98.6–99.1% of the states,
+3–7 derivations). The collapsed hierarchical attempt was the other waste: bottom 0.10 + builds 0.11 +
+refinement 0.30 s, the refinement taking the doomed build 9.24 → 8.80 against one-level 7.99 — the
+interior sweeps 9.24 → 9.11, the module coarsen the rest, and the trial collapsed anyway.
+
+**Rejected, measured: re-cluster only modules that changed.** A structural re-draw guard — a module
+whose leaf set is within 5% of the set it was last sub-clustered as keeps its earlier pieces — took the
+om5–om8 regularized repairs to 0.45 s, but cost **malaria `-C -2 -N10` +0.281%, om2 `-d -N10` +0.353%,
+om2 `-2d -N10` +0.213%, om2 `-2d -N1` +0.222% in bits**. On those networks the re-draws of nearly
+unchanged modules are productive: malaria's rounds buy 0.52, 0.26, 0.057, 0.024, 0.14% (re-clustering
+0.58–1.0 of the network each), om2's 0.13, 0.023, 0.056, 0.071%. How much a module changed does not
+predict what re-deriving it buys; what the last derivation bought does.
+
+**Shipped, three cuts, one principle (stop paying for what the search already knows):**
+
+- **(a) When the search converged to a module of ≥ 95% of the states, that module is not
+  sub-clustered** (`kWholeNetworkModuleShare`, decided once on the repair's seed:
+  `m_seedHasWholeNetworkModule`). Re-deriving it repeats the whole-network search the trial already
+  ran. The giant modules sit at 98.6–99.1%; the largest module on every other winner traced is ≤ 31%
+  (om4 `-d -N1`'s 31% module is where its 4.6% repair gain comes from, and it is still re-derived), so
+  the threshold has a wide margin on both sides. **The first version applied the share test to every
+  module in every round and cost om3–om7 E50000 `--regularized -N10` +0.22–0.49% in bits** — the
+  pre-snapshot sweep had run the regularized family at E100000 only, and the full snapshot caught it.
+  Those winners are the one-level fallback: every trial collapsed, the run-level rescue did not beat
+  one module, and the repair's top-down extraction from that single module is the only operator that
+  leaves it (om3 E50000: 7.9697 → 7.9312). No search produced that module, so the premise of (a) does
+  not hold; nor does it for the ~97% remainder the first extraction leaves (exempting only `K == 1`
+  still cost om5 E50000 +0.086%). Deciding on the seed — more than one module, one of them ≥ 95% —
+  makes the E50000 rows bit-identical to the PR tip and leaves the E100000 savings intact.
+- **(b) A fresh derivation is repeated only while the last one bought at least 0.01% of the codelength
+  per whole network of states it re-clustered** (`kFreshYieldPerNetwork`; cache misses only). This
+  replaces the old "any gain > 1e-10" rule. Malaria's rounds sit at 0.04–0.5% per network, om2's
+  productive ones ≥ 0.019%, om4's first 4.6%; the om5 regularized re-draws at 0.0003%. Near the threshold
+  a round buys ≤ 0.01% either way (om2 `-2d -N10` r7/r8 0.007/0.009%), so the threshold's sensitivity is
+  in seconds, not bits.
+- **(c) The lone trial of a `-N1` run refines a doomed build's interior (`-F`: its bottom re-partition)
+  and abandons it if that leaves it above one-level** (`setAbandonUnrecoveredBuild`, the `numTrials == 1`
+  counterpart of F56's `setAbandonDoomedBuild`). The interior sweeps are what separate the regimes F56's
+  second addendum could not separate with the unrefined ratio: malaria 8.49 → 7.52 against 8.22,
+  air30k 6.55 → 5.75 against 6.21, air30k reg 7.07 → 5.99 against 6.33 (all recover, untouched), while
+  om5 reg 9.24 → 9.11 against 7.99, om4 8.57 → 8.35 against 7.98, om2 reg 8.88 → 8.84 against 7.97
+  (abandoned; the coarsen never brought one under). om5 plain `-d -N1` recovers in the interior
+  (8.05 → 7.91 against 7.99) and keeps the old refined build; om2 / om8 plain start below one-level.
+
+**Sweep, cuts off vs on, one env-gated binary, on the first version of (a)** (all memory-objective
+`-N1` / `-N10` / `-2` rows, om2 E50000 and om3–om8 E100000 at both objectives, wikispeedia, `-F -N1`
+om3 / om4, and every base `-N1` row, since (c) reaches any objective at `-N1`; *not* the E50000
+regularized family, see (a)): **every healthy row bit-identical** — malaria,
+air30k, air30k reg, air30k meta, multilayer, lazega, wikispeedia, web-NotreDame, science2001 (pref),
+politicalblogs, netsci, powergrid, ninetriangles, jazz, and om2–om8 plain `-d -N1` (refined builds). The
+rows that move are all repair rows, all within **+0.07% in bits** of the PR tip and all still far below
+the old tip's one-module answer where they were rescued: worst om7 regularized `-N1` +0.0663%
+(3.81 → 1.09 s), om8 regularized `-N1` +0.0587% (3.25 → 1.04 s), om6 / om8 regularized `-N10` +0.042%
+/ +0.024% (−39% / −25% s), om2 `-2d -N10` +0.022% (−9% s), om5 `-d -N10` / `-2d -N10` +0.010% (−5% s);
+om3 / om4 at +0.0001–0.0007%.
+
+**Per-feature attribution** (same binary, arms interleaved, `-N1` min of 3; Δbits / Δs against the PR
+tip):
+
+| row | (a) giant module | (b) yield stop | (c) abandon after interior | all |
+|---|---|---|---|---|
+| om5 reg `-d -N1` | +0.0205% / −61% | +0.0105% / −46% | 0 / −4% | +0.0205% / −65% |
+| om7 reg `-d -N1` | +0.0663% / −68% | +0.0280% / −39% | 0 / −9% | +0.0663% / −73% |
+| om2 reg `-d -N1` | 0 / +1% | +0.0006% / −4% | 0 / −10% | +0.0006% / −17% |
+| om3 `-d -N1` | 0 / 0% | +0.0007% / −8% | 0 / −16% | +0.0007% / −24% |
+| om4 `-F -d -N1` | 0 / 0% | +0.0001% / −8% | 0 / −4% | +0.0001% / −12% |
+| om2 `-2d -N1` | 0 / −1% | +0.0037% / −19% | 0 / −2% | +0.0037% / −19% |
+| om5 reg `-2d -N1` | +0.0205% / −72% | +0.0105% / −52% | 0 / +1% | +0.0205% / −70% |
+| om2 `-2d -N10` | 0 / −3% | +0.0221% / −10% | 0 / −2% | +0.0221% / −10% |
+| om5 reg `-d -N10` | +0.0416% / −39% | +0.0370% / −30% | 0 / +1% | +0.0416% / −37% |
+| om7 `-d -N10` | 0 / +2% | +0.0143% / −3% | 0 / 0% | +0.0143% / −5% |
+
+(c) is zero by construction off `-N1` (the ±2% there is noise); (a) only fires on the giant-module
+winners; (b) carries the rest. On the regularized om5–om8 rows (a) subsumes (b): once the giant module is
+one piece, a fresh derivation re-clusters only the crumbs and costs nothing.
+
+**Snapshot on the final binary** (md5 `10d2ec79`, one session against old `a02dc105`, rows in
+`hier-gaps-ab-results.tsv`): against the PR's previous snapshot 57 rows move in bits, all on the overlapping
+family, all by +0.0001% to +0.066%, every one with a lower new/old instruction ratio (−1% to −79%); no
+unmoved row's ratio rises by more than 1% except the sub-millisecond multilayer example. Tests green in
+all three configurations.
+
+**What is left on a rescued `-N1` row** is the old run's cost plus one `-2d -N1` solve: the collapsed
+attempt (now without its coarsen) and the rescue's two-level search, which is what makes `-d -N1` return
+`-2d -N1`'s answer (#1041). Against old: om5 / om6 / om7 / om8 `-d --regularized -N1` **+65% / +25% / +39%
+/ +6.8% in seconds for −0.26% / −0.14% / −0.52% / −0.14% in bits** (first version: +385% / +192% /
++412% / +241%), om2–om4 regularized +70–122% for −5.3 to −8.9%, om3 / om4 plain +88% / +191% for −14%.
+The om5–om7 ratios are still poor, and the remaining cost is the rescue's own two-level search (~0.4 s
+on om5) — no measured signal says before running it that it will land next to one-level. #1083 keeps its
+selection half (the best-of-N winner is still chosen before the repair); its cost half is this entry.
