@@ -51,6 +51,23 @@ namespace columnar {
   // sits in the middle of the observed gap.
   constexpr double kFlatProbeMargin = 0.005;
 
+  // Deep repair's fresh split discovery (splitTopModules, #1081 / F57). A module
+  // holding at least this share of the leaves, next to other modules, is not
+  // sub-clustered from singletons: the search converged to it, and that
+  // sub-problem is the whole-network search again. Measured: the regularized
+  // om5-om8 E100000 winners hold one module of 98.6-99.1% (each re-derivation
+  // 0.4 s for <= 0.02% in bits); the largest module on every other benchmark
+  // winner holds at most 31%. Decided on the repair's seed, so the one-level
+  // fallback (a single module, which no search produced) is repaired in full.
+  constexpr double kWholeNetworkModuleShare = 0.95;
+  // ...and a fresh derivation is repeated only while the last one bought at least
+  // this fraction of the codelength per whole network of leaves it re-clustered
+  // (the work a derivation pays, cache misses only). The productive rounds sit
+  // far above it (malaria 0.04-0.5%, om2 >= 0.019%, om4 4.6%); the om5 regularized
+  // re-draws of a barely changed module at 0.0003%. Near the threshold a round
+  // buys <= 0.01% either way, so its sensitivity is in seconds, not bits.
+  constexpr double kFreshYieldPerNetwork = 1e-4;
+
   // Exact port of MapEquation::getDeltaCodelengthOnMovingNode for the base
   // objective: change in codelength from moving a unit out of its old module
   // (aggregates old*) into a candidate module (aggregates new*). deltaOld/deltaNew

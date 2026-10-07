@@ -15,6 +15,7 @@
 
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <string>
 #include <vector>
 #include <cstddef>
@@ -433,8 +434,10 @@ public:
   // codelength of the incoming stack (used as the accept/revert baseline);
   // sweepLimit caps the sweeps (0 = until convergence). Returns the refined
   // codelength. Split out of optimizeConverge so optimizeColumnar can screen
-  // several up-build strategies cheaply and refine only the winner.
-  double refineHierarchy(double startL, unsigned int sweepLimit = 0);
+  // several up-build strategies cheaply and refine only the winner. A stack
+  // still above `abandonAboveL` after the interior sweeps is returned without
+  // the coarsening (see setAbandonUnrecoveredBuild).
+  double refineHierarchy(double startL, unsigned int sweepLimit = 0, double abandonAboveL = std::numeric_limits<double>::infinity());
 
   // Top-level columnar engine entry (the `--columnar` search): build the
   // hierarchy at a small set of up-merge strategies, screen them by post-build
@@ -506,6 +509,15 @@ public:
   // trial, where the flat-first sibling supplies the flat answer for free; the
   // lone trial of a -N1 run is refined as before (F56 addendum).
   void setAbandonDoomedBuild(bool on) { m_abandonDoomedBuild = on; }
+  // The lone-trial counterpart (F57): a doomed build is refined, but only its
+  // leaf-near half -- the interior sweeps (-F: the bottom re-partition) -- before
+  // the verdict. That half is what separates the two regimes: on malaria / air30k
+  // / air30k reg `-N1` it takes the build well under one-level (malaria 8.49 ->
+  // 7.52 against 8.22), on the overlapping family it barely moves it (om5
+  // `-d --regularized` 9.24 -> 9.11 against 7.99). A build still above one-level
+  // there is left for the fallback and the run-level rescue instead of paying the
+  // module coarsening, which never brought one under (om5 8.80, om4 8.33).
+  void setAbandonUnrecoveredBuild(bool on) { m_abandonUnrecoveredBuild = on; }
 
   // Materialize the best hierarchy (m_hier*) as one module-path per leaf, in the
   // shape InfomapBase::initTree expects: coarsest-first (path[0] = top module),
@@ -768,6 +780,7 @@ private:
   unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
   bool m_flatFirstBottom = false; // build the bottom with the full two-level pipeline (see setFlatFirstBottom)
   bool m_abandonDoomedBuild = false; // skip refining a build already worse than one-level (see setAbandonDoomedBuild)
+  bool m_abandonUnrecoveredBuild = false; // stop refining a doomed build its interior sweeps left above one-level (see setAbandonUnrecoveredBuild)
   // True while m_hierLevels' bottom (leaf -> level-1) is the converged two-level
   // optimum produced by completeFlatFromAggregation, rather than a fine-blocks
   // or up-built bottom. The leaf partition is then already at the two-level
@@ -905,7 +918,8 @@ private:
   std::vector<int> m_leafTop; // leaf -> current top-unit id
   std::vector<int> m_leafBlocks; // leaf -> pass-1 building block (see splitTopModules)
   std::vector<int> m_lastSinglesPieces; // leaf -> piece of the last fresh from-singletons derivation
-  bool m_freshSinglesProductive = true; // last fresh derivation's recombine improved (gates further fresh derives)
+  bool m_freshSinglesProductive = true; // last fresh derivation paid its cost (gates further fresh derives)
+  bool m_seedHasWholeNetworkModule = false; // deep repair's seed: >1 module, one of kWholeNetworkModuleShare of the leaves
   // Sub-cluster memo for splitTopModules' from-singletons pieces: sorted leaf
   // set -> (K, per-leaf local assignment). A module's sub-clustering depends
   // only on its own leaf set, so results survive across interleave rounds.

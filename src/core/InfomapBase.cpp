@@ -3015,7 +3015,11 @@ void InfomapBase::columnarPartition()
   // sibling, and abandoning it would force the run-level rescue's two-level answer
   // even where refining the build wins (malaria -C -N1: refined 7.4920 against 7.5259
   // flat) or a hierarchy on top of it would (air30k); measured in the F56 addendum.
-  opt.setAbandonDoomedBuild(!twoLevel && !seeded && numTrials > 1 && !preferModularSolution && preferredNumberOfModules == 0);
+  const bool fallbackApplies = !twoLevel && !seeded && !preferModularSolution && preferredNumberOfModules == 0;
+  opt.setAbandonDoomedBuild(fallbackApplies && numTrials > 1);
+  // The lone trial instead refines a doomed build's interior first and gives up
+  // only if that leaves it above one-level (F57): malaria / air30k recover there.
+  opt.setAbandonUnrecoveredBuild(fallbackApplies && numTrials == 1);
 
   // With -2 (--two-level): the two-level search only, no hierarchy build.
   // With -F (--fast-hierarchical-solution, reused here as the columnar fast
