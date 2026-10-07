@@ -2,9 +2,11 @@
 
 #include "Infomap.h"
 #include "io/InfomapError.h"
+#include "utils/infomath.h"
 
 #include "TestUtils.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
@@ -12,6 +14,7 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #ifdef _OPENMP
@@ -972,6 +975,109 @@ TEST_CASE("Ordinary bipartite runs are unaffected by the flow post-condition [fa
   // omitted redistribution was a uniform scale the projection cancelled -- but the
   // link flows were uniformly too small, which is what the codelength reads.
   infomap::test::checkApproxCodelength(directed.codelength(), 1.2649313331);
+}
+
+using UndirectedLink = std::pair<unsigned int, unsigned int>;
+
+// Two cliques joined by a chain, plus a hub. The mixed degrees give several
+// nodes a denser neighbour listed before a sparser one, whichever endpoint is
+// stored as the source.
+const std::vector<UndirectedLink> kVariableMarkovTimeLinks = {
+  { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 3 }, { 2, 4 }, { 2, 5 }, { 3, 4 }, { 3, 5 }, { 4, 5 }, // clique
+  { 6, 7 }, { 6, 8 }, { 6, 9 }, { 7, 8 }, { 7, 9 }, { 8, 9 }, // clique
+  { 5, 10 }, { 10, 11 }, { 6, 11 }, // chain
+  { 1, 12 }, { 3, 12 }, { 7, 12 }, { 8, 12 }, { 10, 12 }, { 11, 12 }, // hub
+};
+
+// Cuts through a clique and the chain so the codelength reads most link flows.
+const std::map<unsigned int, unsigned int> kVariableMarkovTimePartition = {
+  { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 10, 2 }, { 6, 3 }, { 7, 3 }, { 8, 3 }, { 9, 3 }, { 11, 4 }, { 12, 4 },
+};
+
+struct FixedPartitionLinkFlows {
+  std::map<UndirectedLink, double> linkFlows; // keyed by (smaller id, larger id)
+  double codelength = 0.0;
+};
+
+FixedPartitionLinkFlows runFixedPartitionLinkFlows(const std::vector<UndirectedLink>& links, bool variableMarkovTime, double damping)
+{
+  // Set on the config directly: the entropy-based local scale (damping < 0) has no CLI value.
+  infomap::Config conf(infomap::test::defaultFlags("--no-infomap"));
+  conf.variableMarkovTime = variableMarkovTime;
+  conf.variableMarkovTimeDamping = damping;
+  InfomapWrapper im(conf);
+  for (const auto& link : links) {
+    im.addLink(link.first, link.second);
+  }
+  im.setInitialPartition(kVariableMarkovTimePartition);
+  im.run();
+
+  FixedPartitionLinkFlows result;
+  result.codelength = im.codelength();
+  for (auto* node : im.leafNodes()) {
+    for (auto* edge : node->outEdges()) {
+      const auto ids = std::minmax(node->physicalId, edge->target->physicalId);
+      result.linkFlows[{ ids.first, ids.second }] = edge->data.flow;
+    }
+  }
+  return result;
+}
+
+TEST_CASE("Variable Markov time scales each undirected link by its denser endpoint regardless of link order [fast][core][flow]")
+{
+  std::map<unsigned int, unsigned int> degree;
+  for (const auto& link : kVariableMarkovTimeLinks) {
+    ++degree[link.first];
+    ++degree[link.second];
+  }
+  unsigned int maxDegree = 0;
+  for (const auto& node : degree) {
+    maxDegree = std::max(maxDegree, node.second);
+  }
+
+  // The same links with every pair swapped and the list reversed, and in a
+  // scrambled order with every other pair swapped.
+  const auto numLinks = static_cast<unsigned int>(kVariableMarkovTimeLinks.size());
+  std::vector<UndirectedLink> swapped;
+  std::vector<UndirectedLink> scrambled;
+  for (unsigned int i = 0; i < numLinks; ++i) {
+    const auto& reversed = kVariableMarkovTimeLinks[numLinks - 1 - i];
+    swapped.emplace_back(reversed.second, reversed.first);
+    const auto& link = kVariableMarkovTimeLinks[(7 * i) % numLinks];
+    scrambled.push_back(i % 2 == 0 ? link : UndirectedLink(link.second, link.first));
+  }
+  const std::array<const std::vector<UndirectedLink>*, 3> linkOrders = { &kVariableMarkovTimeLinks, &swapped, &scrambled };
+
+  // Unweighted and undirected, so the local scale of a node is linlog of its
+  // degree: directly for damping >= 0, and as 2^entropy with -damping for damping < 0.
+  for (const double damping : { 0.0, 0.5, 1.0, -1.0 }) {
+    CAPTURE(damping);
+    const double q = std::abs(damping);
+    const double maxScale = infomap::infomath::linlog(maxDegree, q);
+    double referenceCodelength = 0.0;
+
+    for (const auto* links : linkOrders) {
+      const auto base = runFixedPartitionLinkFlows(*links, false, damping);
+      const auto scaled = runFixedPartitionLinkFlows(*links, true, damping);
+      REQUIRE(base.linkFlows.size() == numLinks);
+      REQUIRE(scaled.linkFlows.size() == numLinks);
+
+      for (const auto& link : scaled.linkFlows) {
+        const auto& ids = link.first;
+        CAPTURE(ids.first);
+        CAPTURE(ids.second);
+        const double edgeScale = infomap::infomath::linlog(std::max(degree[ids.first], degree[ids.second]), q);
+        const double expectedFactor = maxScale / std::max(1.0, edgeScale);
+        CHECK(link.second / base.linkFlows.at(ids) == doctest::Approx(expectedFactor).epsilon(1e-12));
+      }
+
+      if (links == linkOrders[0]) {
+        referenceCodelength = scaled.codelength;
+      } else {
+        CHECK(scaled.codelength == doctest::Approx(referenceCodelength).epsilon(1e-12));
+      }
+    }
+  }
 }
 
 } // namespace
