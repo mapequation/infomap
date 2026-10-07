@@ -50,7 +50,9 @@ MOVES_TABLE = {  # key -> "table" column of the moves table, in row order
 def load(path):
     reps = {}
     order = []
-    for line in open(path):
+    with open(path) as fh:
+        lines = fh.readlines()
+    for line in lines:
         f = line.rstrip("\n").split("\t")
         if len(f) < 10:
             continue
@@ -173,12 +175,12 @@ def html_rows(spec, data, order, old_lines):
 
 def moves_rows(data, order, old_lines):
     rows = []
-    for key in MOVES_TABLE:
+    for key, table in MOVES_TABLE.items():
         for k, lb in order:
             o, n = data.get((key, lb, "old")), data.get((key, lb, "new"))
             if k != key or not o or not n or o.bits == n.bits:
                 continue
-            tname = MOVES_TABLE[key]
+            tname = table
             if key == "FAM":
                 lb2, tname = lb, "family"
             else:
@@ -244,7 +246,8 @@ def main():
     if len(args) != 2:
         sys.exit(__doc__)
     tsv, md = args
-    old = open(md).read()
+    with open(md) as fh:
+        old = fh.read()
     new = assemble(tsv, old)
     if check:
         sys.stdout.writelines(
@@ -253,7 +256,8 @@ def main():
             )
         )
     else:
-        open(md, "w").write(new)
+        with open(md, "w") as fh:
+            fh.write(new)
 
 
 if __name__ == "__main__":
