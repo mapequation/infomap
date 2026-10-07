@@ -1226,6 +1226,19 @@ double ColumnarTwoLevel::deepRepairTwoLevelStack()
   m_subClusterCache.clear();
   m_lastSinglesPieces.clear();
   m_freshSinglesProductive = true;
+  // Did the search converge to a module of (nearly) the whole network? Decided on
+  // the seed, not per round: the one-level fallback (a single module) is no search
+  // result -- every trial ended worse and was replaced by it -- and extracting
+  // communities from it top-down, then from what remains, is the only operator
+  // that leaves it (om3 E50000 `-d --regularized -N10`: 7.9697 -> 7.9312), F57.
+  {
+    const int K = hierLevel(1).n;
+    std::vector<int> size(K, 0);
+    for (int i = 0; i < m_nLeaves; ++i)
+      ++size[m_hierAssign[0][i]];
+    const int largest = K > 0 ? *std::max_element(size.begin(), size.end()) : 0;
+    m_seedHasWholeNetworkModule = K > 1 && largest >= kWholeNetworkModuleShare * m_nLeaves;
+  }
   double L = hierarchicalCodelengthFromStack();
   double before = L;
   bool allowSingletons = true;
@@ -1360,6 +1373,7 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
   // Fresh derivation is the expensive source: keep paying for it only while
   // it pays (malaria-like nets keep revealing new community splits round
   // after round; air30k-like nets get nothing beyond the first derivation).
+  // "Pays" is measured against its cost below (kFreshYieldPerNetwork).
   if (!m_freshDiscovery || !allowSingletons || (!m_lastSinglesPieces.empty() && !m_freshSinglesProductive))
     return 0;
 
@@ -1375,12 +1389,21 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
   std::vector<int> pieceParent;
   std::vector<int> loc(m_nLeaves, -1);
   std::vector<int> localAssign;
+  // A module holding (nearly) the whole network stays one piece when the search
+  // converged to such a module (m_seedHasWholeNetworkModule): re-deriving it
+  // repeats that whole-network search. On the regularized om5-om8 E100000 winners
+  // (one module of 99% of the states plus crumbs) each re-derivation cost 0.4 s --
+  // as much as the trial -- for <= 0.02% in bits (F57).
+  const double wholeNetworkModule = m_seedHasWholeNetworkModule ? kWholeNetworkModuleShare * m_nLeaves : std::numeric_limits<double>::infinity();
+  std::size_t rederivedLeaves = 0;
   for (int P = 0; P < K; ++P) {
     const std::vector<int>& S = leavesPer[P];
     if (S.empty())
       continue;
-    if (S.size() == 1) {
-      leafToPiece[S[0]] = static_cast<int>(pieceParent.size());
+    if (S.size() == 1 || static_cast<double>(S.size()) >= wholeNetworkModule) {
+      const int piece = static_cast<int>(pieceParent.size());
+      for (int i : S)
+        leafToPiece[i] = piece;
       pieceParent.push_back(P);
       continue;
     }
@@ -1399,6 +1422,7 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
       // the interleaved leaf re-tune do the polishing.
       Ksub = subClusterLeaves(S, hierLevel(1).linkExit[P], loc, localAssign, false);
       m_subClusterCache.emplace(S, std::make_pair(Ksub, localAssign));
+      rederivedLeaves += S.size();
     }
     const int base = static_cast<int>(pieceParent.size());
     for (std::size_t j = 0; j < S.size(); ++j)
@@ -1407,8 +1431,15 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
       pieceParent.push_back(P);
   }
   m_lastSinglesPieces = leafToPiece;
+  const double beforeSingles = L;
   const bool singlesImproved = recombine(leafToPiece, pieceParent);
-  m_freshSinglesProductive = singlesImproved;
+  // Another fresh derivation only while this one bought its cost: a share of the
+  // codelength proportional to the share of the network it re-clustered. After
+  // the leaf re-tune nearly every module differs by a few leaves, so each round
+  // re-clusters ~all of it; on om5 `-d --regularized` the rounds after the first
+  // bought 0.0003-0.005% each at 0.4 s apiece (F57).
+  const double cost = kFreshYieldPerNetwork * beforeSingles * static_cast<double>(rederivedLeaves) / m_nLeaves;
+  m_freshSinglesProductive = singlesImproved && beforeSingles - L >= cost;
   return singlesImproved ? 2 : 0;
 }
 
@@ -2398,6 +2429,7 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
     // only when the probe is competitive — then keep the better build and the
     // flat stack as a gated candidate (below).
     const double flatEst = optimizeTwoLevel(0, false);
+    const bool probeEscalated = m_regroupEscalated; // same verdict as in optimizeColumnar
     std::vector<int> flatAggTop = m_leafTop;
     const int flatAggK = static_cast<int>(m_numTopModules);
     m_leafTop = m_leafBlocks;
@@ -2407,7 +2439,7 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
         fineK = b + 1;
     m_numTopModules = static_cast<unsigned int>(fineK);
     L = buildHierarchyFromBottom(fineK);
-    const bool complete = flatEst < L * (1.0 + kFlatProbeMargin);
+    const bool complete = probeEscalated || flatEst < L * (1.0 + kFlatProbeMargin);
 #ifdef COLUMNAR_DEBUG
     std::fprintf(stderr, "[flat-first -F] est=%.6f build=%.6f ratio=%.4f %s\n", flatEst, L, flatEst / L, complete ? "complete" : "skip");
 #endif
@@ -2432,6 +2464,11 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
   } else {
     L = optimizeHierarchical(bottomBlockLimit);
   }
+  // Same verdict as optimizeColumnar's (see setAbandonDoomedBuild): a build
+  // already worse than one module, with no completed flat candidate to beat it,
+  // is handed back unrefined for the fallback and the run-level rescue.
+  if (m_abandonDoomedBuild && !(flatL < L) && L > oneLevelCodelength())
+    return L;
   // A single bottom re-partition within grandparents. refineBottomWithinParents
   // keeps every leaf inside its level-2 grandparent, so the leaf-set per
   // grandparent is invariant; re-running it re-partitions the same leaf-sets
@@ -2447,6 +2484,8 @@ double ColumnarTwoLevel::optimizeFlexible(unsigned int bottomBlockLimit, unsigne
   // (COL_PARTSEED_FLAT), which is a different pass than the one that converged.
   if ((!m_bottomConverged || (partSeedFlatBottom() && partSeedActive(0))) && refineBottomWithinParents())
     L = std::min(L, hierarchicalCodelengthFromStack());
+  if (m_abandonUnrecoveredBuild && !(flatL < L) && L > oneLevelCodelength())
+    return L;
   // Coarsen (merge leaf modules + regroup the top), exactly as the converge
   // search does. Cheap (module-level, not leaf-level) and a no-op for the base
   // objective, but it is what the memory / metadata / lossy objectives need — a
@@ -2875,7 +2914,7 @@ double ColumnarTwoLevel::optimizeConverge(unsigned int bottomBlockLimit, unsigne
   return refineHierarchy(L, sweepLimit);
 }
 
-double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit)
+double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit, double abandonAboveL)
 {
   double L = startL;
 
@@ -2978,6 +3017,8 @@ double ColumnarTwoLevel::refineHierarchy(double startL, unsigned int sweepLimit)
     dirty = std::move(nextDirty);
   }
   m_refineSweep = 0; // out of the sweep loop: no layer is a re-refine
+  if (L > abandonAboveL)
+    return L;
 
   // Module coarsening: merge leaf modules (mergeLeafModulesWithinParents) and
   // regroup the top level (refineTopLayer), interleaved to convergence. Both
@@ -3063,6 +3104,7 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   static const unsigned int kSuperAggSettings[] = { 0u, 1u };
 
   double flatEst = std::numeric_limits<double>::infinity();
+  bool probeEscalated = false;
   std::vector<int> flatAggTop;
   int flatAggK = 0;
   if (m_flatFirstBottom) {
@@ -3070,8 +3112,10 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
     // full aggregation only (module-level cost, no leaf fine-tune), and keep
     // the fine-blocks bottom from the same pass-1 (m_leafBlocks) for the
     // regular screen below — no second leaf sweep. The expensive leaf-level
-    // flat pipeline runs after the screen, only when the probe is competitive.
+    // flat pipeline runs after the screen, only when the probe is competitive
+    // or the probe's own regroup ladder escalated (below).
     flatEst = optimizeTwoLevel(0, false);
+    probeEscalated = m_regroupEscalated;
     flatAggTop = m_leafTop;
     flatAggK = static_cast<int>(m_numTopModules);
     m_leafTop = m_leafBlocks;
@@ -3116,7 +3160,17 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   std::vector<Level> flatLevels;
   std::vector<std::vector<int>> flatAssign;
   if (m_flatFirstBottom) {
-    const bool complete = flatEst < bestBuildL * (1.0 + kFlatProbeMargin);
+    // The regroup ladder escalating inside the probe is the detector's own
+    // verdict that this trial sits in the group-hysteresis basin (F42): the
+    // greedy fixpoint is not the objective's optimum, and the fine-blocks
+    // up-build is the same greedy machinery. There the probe is the wrong
+    // instrument for the gate -- on om8 E100000 it undersells the completed
+    // flat pipeline by 3.7% (7.257 against 7.000), because the correction-driven
+    // merge/retune that completion runs is where this family's gain is, the
+    // reverse of the asymmetry the 0.5% margin was calibrated on (F21) -- so
+    // complete regardless of the margin. With a quiet detector the margin
+    // decides as before, so healthy rows are bit-identical (#1041, F56).
+    const bool complete = probeEscalated || flatEst < bestBuildL * (1.0 + kFlatProbeMargin);
 #ifdef COLUMNAR_DEBUG
     std::fprintf(stderr, "[flat-first] est=%.6f build=%.6f ratio=%.4f %s\n", flatEst, bestBuildL, flatEst / bestBuildL, complete ? "complete" : "skip");
 #endif
@@ -3148,7 +3202,15 @@ double ColumnarTwoLevel::optimizeColumnar(unsigned int bottomBlockLimit, unsigne
   m_numTopModules = bestTop;
   m_superAggLimit = bestSuperAgg;
   m_bottomConverged = bestBottomConverged;
-  double bestL = refineHierarchy(bestBuildL, sweepLimit);
+  // A build that starts worse than one module is in the wrong basin; see
+  // setAbandonDoomedBuild. A completed flat candidate (flatL finite) beats it
+  // below anyway, so the abandoned build never reaches the caller in that case.
+  const bool doomed = m_abandonDoomedBuild && bestBuildL > oneLevelCodelength();
+#ifdef COLUMNAR_DEBUG
+  std::fprintf(stderr, "[build] best=%.6f one-level=%.6f ratio=%.4f %s\n", bestBuildL, oneLevelCodelength(), bestBuildL / oneLevelCodelength(), doomed ? "abandoned" : "refine");
+#endif
+  const double abandonAboveL = m_abandonUnrecoveredBuild ? oneLevelCodelength() : std::numeric_limits<double>::infinity();
+  double bestL = doomed ? bestBuildL : refineHierarchy(bestBuildL, sweepLimit, abandonAboveL);
   // Flat-first trial: the super-build may not pay for itself — keep the flat
   // two-level stack when it beats the refined hierarchy.
   if (flatL < bestL - kMinImprovement) {

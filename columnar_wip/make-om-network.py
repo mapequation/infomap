@@ -78,7 +78,7 @@ def select_random_trigram_outcommunities_without_creating_more_state_nodes(
     pairs_coms, n_sample
 ):
     node_pairs_map = {}
-    for pair in pairs_coms.keys():
+    for pair in pairs_coms:
         node_pairs_map.setdefault(pair[0], []).append(pair)
     keys = list(
         pairs_coms.keys()
@@ -148,8 +148,7 @@ def build_syn_network(out, N, om, nc, E, mu, r):
 
     with open(out / f"network{suffix}.net", "w") as f:
         f.write(f"*Vertices {N}\n")
-        for node_ID in range(1, N + 1):
-            f.write(f'{node_ID} "{node_ID}"\n')
+        f.writelines(f'{node_ID} "{node_ID}"\n' for node_ID in range(1, N + 1))
         f.write("*States\n")
         for i in range(1, N + 1):
             for j in range(1, N + 1):
