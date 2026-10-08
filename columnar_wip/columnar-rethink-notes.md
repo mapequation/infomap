@@ -4933,3 +4933,30 @@ om6 7.2657, om8 6.8261, om2 E50000 7.1110, om2 `--regularized` 6.9513, at 10–2
 parity target either. Resolution, per Daniel's fallback: `-N1` stays one hierarchical-first trial and the
 flat basin is searched from `-N2` (trial 2 is flat-first); the alternation site in `InfomapBase.cpp` says
 so, and #1121 closes as a property of `-N1`.
+
+### F60 — #1122's one-liner as its own PR: it reaches exactly six rows, and its cost is the price of `-2d -N1` parity at `-N1` (2026-10-08)
+
+Measured on its own, against tip `14379b34` (#1124 merged): old md5 `1b8e5723` (the #1124 session's new
+binary, reproduced bit for bit on 177/177 rows), new md5 `4586def7`. One session, 720 runs plus three
+re-measured rows; driver `columnar_wip/bench-1122.py`, rows `columnar_wip/1122-ab-results.tsv`.
+
+**Reach, from the code and then measured.** `m_columnarRegroupEscalated` has one reader, the repair gate
+`freshDiscovery = m_numTrials > 1 || m_columnarRegroupEscalated`, and the rescue runs only when every
+trial of a hierarchical run collapsed. The line therefore cannot reach `-N10` (fresh discovery is already
+on), `-2` (no rescue), a `-N1` run that did not collapse, or one whose rescue wins (those raised the signal
+before). What is left is a collapsed lone trial whose rescue ties and escalates. In the session that is
+exactly om3–om8 E50000 `-d --regularized -N1`; the other 171 rows are bit-identical, with instructions
+within −0.20% to +0.32% on every row of 10 ms or more. The 51 bit-identical cells that read >1% slower
+in seconds are noise at load 6–13; the three largest re-measured from +9 to +11% down to −2.2% to +1.7%.
+
+**Parity.** On all six rows `-d -N1` now returns `-2d -N1`'s codelength and partition bit for bit, at
+1.06–1.20× its time. The time over `-2d -N1` is the collapsed hierarchical trial, which `-N1` runs by
+design (#1121, F59).
+
+**Cost.** −0.20% to −0.66% in bits for +66% to +102% in seconds (+68% to +98% in instructions; +0.28 to
++0.42 s on 0.4 s runs). F59's third arm read +48% to +83% because it was quoted against the pre-#1124
+tip, whose `-d -N1` still re-swept pass 1; against #1124's binary that same session reads +71% to +107%,
+consistent with this one.
+There is no cheaper route to the same partition at `-N1`: it needs the repair (the gap) after the
+hierarchical trial (skipping that is #1121's probe, +25–34% on healthy rows). Opened as a PR for Daniel's
+decision under the marginal-trade rule, not as a default.
