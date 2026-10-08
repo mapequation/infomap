@@ -4863,3 +4863,73 @@ one-module stack it extracts from.
 
 Open on the family after this entry: #1042 (proposal problem), #1121, #1122, #1120 (rescue cost at
 `-N1`), #1083 (best-of-N chosen before the repair).
+
+### F59 — The `-N1` gaps of F58: the rescue repeated only its pass 1 (#1120), a one-module repair seed is extracted at block granularity (#1122's cost), and `-N1` keeps no flat basin (#1121) (2026-10-08)
+
+Throwaway experiment binaries at `625762de` (= tip `bc31f036` + docs), env-gated arms and phase
+timers, never committed; production commits `df2f13ce` and `740c3dbb`. All `--seed 123`, `MODE=release
+OPENMP=0`, engine `timing.total_s`; load 7–14 throughout, so instructions retired carry the A/Bs.
+
+**#1120 — where the rescue's 0.45 s goes** (om5 / om6 / om7 / om4 E100000 `-d --regularized -N1`,
+phase timers inside `optimizeTwoLevel`): pass 1 0.10–0.13 s, aggregation passes 0.13–0.15, descending
+repair 0.01, detector 0.001, escalated ladder 0.13–0.14, leaf fine-tune 0.04–0.05, coarsen ↔ retune
+0.002–0.02. The escalated ladder buys nothing on om5–om7 regularized, but it carries om2 / om4's 4.9%
+leaf test (F49) and no signal says beforehand which row it is on, so it stays. **Pass 1 is the only
+work the rescue repeats:** it runs on trial 0's seed and leaf network, so its leaf sweep is the
+collapsed trial's own, bit for bit. Cut (`df2f13ce`): the lone trial keeps what its leaf pass left (the
+assignment and the module aggregates the consolidation reads — seven O(n) copies) and the rescue adopts
+it (`adoptPass1State`, seed- and size-checked) and starts at the first aggregation pass. Bit-identical
+on all 24 rows measured (interleaved min of 3): rescued rows −2.5 to −18.6% in seconds, −2.5 to −10.7% in
+instructions (om5–om8 regularized −7 to −12% s); healthy `-N1` rows within ±0.13% in instructions.
+
+**#1122 — the one-liner and what it costs.** Raising the escalation flag from the rescue whether or not
+it is kept makes `-d -N1` return `-2d -N1`'s partition on the six E50000 `--regularized` rows (−0.04 to
+−0.48% in bits) — at +106 to +205% in seconds, the deep repair's top-down extraction from the one-level
+fallback, which `-2d -N1` already paid. Profiled (`sample`: `subClusterUnits` 73% of the repair): every
+fresh derivation was a from-singletons aggregation over 99–100% of the states, 0.17–0.2 s each — as much
+as the trial — and what each extracted were tight groups of 3–23 states (om3: 48 around one module of
+35 001), much finer than the aggregated pieces (~95 / 27 / 12 states on om3 / om5 / om8). The
+aggregation passes, two thirds of a derivation, built pieces that swallowed those groups, and each
+re-draw exposed a few by chance: om3 5 derivations buying 0.334 / 0.011 / 0.015 / 0.020 / 0%, om5 7.
+**Cut (`740c3dbb`): on a one-module seed the fresh derivation stops at its pass-1 building blocks, and
+a round must buy 5e-4 of the codelength per network re-clustered (`kFreshYieldOneModule`) instead of
+1e-4** — block derivations are cheap and the later ones buy 0.005–0.03%, so the old bar ran 4–7 of them.
+Against the tip on the six rows: `-2d -N1` −0.08 to −0.25% in bits **and** −18 to −46% in seconds,
+`-2d -N10` −0.08 to −0.25% and −3 to −20%. With the 1e-4 bar the bits were 0.02–0.07% better but om8
+`-2d -N1` +7% in seconds; the 5e-4 bar wins on both axes on every row. Rejected: pass-1 blocks as an
+extra source beside the aggregated pieces on every seed (om8 repair 0.44 → 0.93 s, and it reaches every
+guard row); blocks only for re-derivations (slower than the cut everywhere); one block derivation and
+stop (om3 +0.11%, om4 +0.16% in bits against the tip — breaches the 0.1% rule). Every repair whose seed
+has more than one module is untouched by construction (guard rows bit-identical, ±0% instructions).
+**The one-liner itself is not committed:** on top of the cut it costs `-d -N1` +61 to +80% in seconds
+for −0.20 to −0.66% in bits, which the trade-off rule does not clear on its own; it is measured as a
+third arm in the snapshot and left as a decision.
+
+**#1121 — no cheap verdict.** Giving the lone `-N1` trial the flat-first probe, completing the flat
+pipeline only when the probe's regroup detector escalates (base networks excluded: without a
+module-move correction there is no detector), closes the gap: om5 `-d -N1` −12.09%, om6 −7.47%, om2
+E50000 −7.58%, om2 `--regularized` −7.19%, om2 −5.19%, om7 −4.21%, om8 −1.05% in bits for +57 to +274% in
+seconds (they now pay what `-2d -N1` pays), `-F` om5 / om8 −11.9 / −1.8%, the rescued rows bit-identical
+and −16 to −24% in seconds, lazega −0.109%. But healthy memory / metadata `-N1` rows pay the probe's
+aggregation for nothing: air30k +30%, air30k reg +25%, air30k meta +34%, wikispeedia +25%, malaria +8% in
+seconds (+24 to +36% / +5.7% in instructions). Six cheaper stand-ins were measured on the trial's own
+state; none separates the om rows from air30k:
+
+| signal | om (#1121 rows) | healthy memory / metadata |
+|---|---|---|
+| unrefined build / one-level | 0.895 – 1.244 | 0.726 – 1.118 (malaria doomed at 1.033, om5 at 1.008) |
+| refined hierarchy / one-level | 0.872 – 0.978 | 0.465 – 0.911 (air30k 0.880, om8 0.872) |
+| pass-1 codelength / one-level | 1.034 – 1.381 | 0.503 – 1.234 (malaria 1.041, om8 1.051) |
+| leaves per pass-1 block | 4.3 – 6.0 | 5.2 – 9.7 (air30k reg 5.9, om2 reg 6.0) |
+| detector rung 0 at module granularity, refined bottom: gain over the bottom | +0.55 to +15.9% (om2, om2 reg: probe finds 1 group) | −2.4 to −5.1%, but air30k meta +2.3% and om E50000 plain +12 / +23% |
+| same, regrouped candidate / refined hierarchy | om5 0.927, om6 1.002, om7 1.023, om8 1.061, om2 E50000 1.067 | 1.034 – 1.052 |
+
+The module-granularity detector also costs ~3% of an air30k `-N1` trial (its aggregation of the leaf
+network), so even the one row it separates (om5) would not come free. One reading looked like a fourth
+mechanism and was not: om2 `--regularized`'s refined bottom flattened scored 0.958 of the hierarchy —
+measured before the deep repair and the dissolve; the shipped tree's flattened bottom scores 7.4888
+against 7.4886. For reference, the object-oriented `-d -N1` on the same rows: om5 7.9892 (one module),
+om6 7.2657, om8 6.8261, om2 E50000 7.1110, om2 `--regularized` 6.9513, at 10–20× the time — it is not a
+parity target either. Resolution, per Daniel's fallback: `-N1` stays one hierarchical-first trial and the
+flat basin is searched from `-N2` (trial 2 is flat-first); the alternation site in `InfomapBase.cpp` says
+so, and #1121 closes as a property of `-N1`.
