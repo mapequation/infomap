@@ -375,13 +375,15 @@ public:
       if (m_infomap.m_columnarTrialStack)
         opt.adoptPass1State(*m_infomap.m_columnarTrialStack);
       const double rescued = opt.optimizeTwoLevelStack();
+      // The repair below gates its fresh split discovery on the escalation signal.
+      // Raise it from this search whether or not it is kept: when it only ties the
+      // collapse, the repair's extraction from the one-module fallback is what
+      // `-2 -N1` runs on the same seed, and `-N1` must reach it too (#1122).
+      m_infomap.m_columnarRegroupEscalated = m_infomap.m_columnarRegroupEscalated || opt.regroupEscalated();
       if (rescued < result.bestHierarchicalCodelength - 1e-10) {
         Console::detail(0, "columnar: every trial collapsed to one module ({}); the two-level search reaches {}", io::toPrecision(result.bestHierarchicalCodelength), io::toPrecision(rescued));
         result.bestTree = opt.toNodePaths(m_infomap.m_leafNodes);
         result.bestHierarchicalCodelength = rescued;
-        // The repair below gates its fresh split discovery on the winner's own
-        // escalation signal; the winner is now this search, not the collapsed trial.
-        m_infomap.m_columnarRegroupEscalated = m_infomap.m_columnarRegroupEscalated || opt.regroupEscalated();
         rescuedFlat = true;
       }
     }
