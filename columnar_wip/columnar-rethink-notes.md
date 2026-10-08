@@ -4821,3 +4821,45 @@ attempt (now without its coarsen) and the rescue's two-level search, which is wh
 The om5–om7 ratios are still poor, and the remaining cost is the rescue's own two-level search (~0.4 s
 on om5) — no measured signal says before running it that it will land next to one-level. #1083 keeps its
 selection half (the best-of-N winner is still chosen before the repair); its cost half is this entry.
+
+### F58 — The om family after #1081: #1042 unchanged, and two `-N1` gaps nobody tracked (2026-10-08)
+
+Asked whether #1042 is still an issue and whether it is the last thing wrong with the om family. Tip
+`bc31f036`, a fresh `MODE=release OPENMP=0` build whose md5 `10d2ec79dcbc307890d4b4e550171c50` is the
+#1081 snapshot's binary (no `src/` change since `d336c7a9`). One pass, 196 runs: all 14 om networks ×
+plain / `--regularized` × free `-2d` / `-d` × `-N1` / `-N10`, plus planted (`-2d --no-infomap -c`) and
+soft-seeded from planted (`-2d -c`, `-N1` and `-N10`), `-C --seed 123`, engine `timing.total_s`, batch
+`om-census-1121` in `columnar-search-runs.tsv`. Load ~9: times are scale, not a comparison instrument.
+"Reference" below is the lowest of planted and the two soft-seeded runs.
+
+**#1042 is unchanged.** om5 E100000 `--regularized`: free `-2d -N10` 7.9681 (5.2 s), `-d -N10` 7.9683,
+`-2d -N1` 7.9686 (0.9 s), against soft-seeded 7.7333 and planted 7.7918 — **+3.04% in bits** (3.0% when
+filed). #1081's repair cut moved the free search +0.02% in bits for −20% / −71% in seconds at `-N10` /
+`-N1`; the soft-seeded reference moved −0.02%.
+
+**#1042's "om6 and om8 are not failures" no longer holds.** F47's soft seeds for them collapsed or sat
+above the search; on this binary the soft-seeded `-2d -N10` beats the free search on five more
+regularized rows, in the om5 direction and much smaller: om6 E100000 +0.27%, om2 E50000 +0.25%, om8
+E100000 +0.18%, om4 E100000 +0.14%, om7 E100000 +0.13% in bits. om3 E100000 +0.07%, om2 E100000 +0.02%,
+E50000 om3–om8 +0.00%. Plain E100000 sits +0.02–0.19% above its soft seed (om4 `-N1` beats `-N10`
+there, #1083); plain E50000 `-d` is 9–26% below every two-level reference, the hierarchy being the
+point of that regime (F55).
+
+**Untracked gap 1 (#1121): `-d -N1` returns the refined wrong-basin build.** Against `-2d -N1` on the
+same seed: om5 E100000 7.8123 / 6.8682 (**+13.75%**), om2 E50000 +8.20%, om6 +8.08%, om2 E100000
+`--regularized` +7.74%, om2 E100000 +5.47%, om7 +4.40%, om8 +1.06% in bits, at 0.39–0.95 s against
+0.62–2.20 s. These are the rows F56's second addendum gave back when the abandonment was gated to
+`numTrials > 1`; the refined build sits under one-level, so neither the fallback nor the run-level
+rescue fires. `-N10` is fine on all of them.
+
+**Untracked gap 2 (#1122): E50000 `-d --regularized -N1` stays at one module** where `-2d -N1` finds
+7–49: om3 +0.49%, om4 +0.48%, om6 +0.36%, om5 +0.25%, om7 +0.19%, om8 +0.04% in bits (0.47–0.60 s
+against 0.88–1.54 s). #1081's contract — `-d -N1` on a collapsed run returns `-2d -N1`'s answer — was
+only measured at E100000. Traced on om3 with `--timing-json`: `-2d -N1` is trial 0.24 s + deep repair
+**1.01 s** (one module → 49, F57's top-down extraction from the one-level fallback); `-d -N1` is trial
+0.26 s + `flat_rescue_s` 0.19 s + deep repair **0.013 s**. The rescue's two-level search only ties the
+collapse, so it is not kept, and the repair is handed the hierarchical one-module tree, not the flat
+one-module stack it extracts from.
+
+Open on the family after this entry: #1042 (proposal problem), #1121, #1122, #1120 (rescue cost at
+`-N1`), #1083 (best-of-N chosen before the repair).
