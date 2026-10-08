@@ -1281,6 +1281,7 @@ double ColumnarTwoLevel::deepRepairTwoLevelStack()
       ++size[m_hierAssign[0][i]];
     const int largest = K > 0 ? *std::max_element(size.begin(), size.end()) : 0;
     m_seedHasWholeNetworkModule = K > 1 && largest >= kWholeNetworkModuleShare * m_nLeaves;
+    m_seedIsOneModule = K == 1;
   }
   double L = hierarchicalCodelengthFromStack();
   double before = L;
@@ -1462,8 +1463,15 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
     } else {
       // Proposal granularity: skip the sub-optimize's fine-tune — the pieces
       // only need to separate communities, and the gated recombination plus
-      // the interleaved leaf re-tune do the polishing.
-      Ksub = subClusterLeaves(S, hierLevel(1).linkExit[P], loc, localAssign, false);
+      // the interleaved leaf re-tune do the polishing. On a one-module seed
+      // stop at its pass-1 building blocks: what the extraction peels off the
+      // one-level fallback are tight groups of a few states (om3 E50000
+      // `--regularized`: 48 groups of 3-23 states around one module of 99% of
+      // them), finer than the aggregated pieces (~95 states there), and the
+      // aggregation passes are about two thirds of a derivation's cost. The
+      // aggregated pieces exposed a few such groups per derivation, by chance, so
+      // the repair re-aggregated the whole remainder round after round (F59).
+      Ksub = subClusterLeaves(S, hierLevel(1).linkExit[P], loc, localAssign, false, nullptr, m_seedIsOneModule ? 1u : 0u);
       m_subClusterCache.emplace(S, std::make_pair(Ksub, localAssign));
       rederivedLeaves += S.size();
     }
@@ -1481,7 +1489,13 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
   // the leaf re-tune nearly every module differs by a few leaves, so each round
   // re-clusters ~all of it; on om5 `-d --regularized` the rounds after the first
   // bought 0.0003-0.005% each at 0.4 s apiece (F57).
-  const double cost = kFreshYieldPerNetwork * beforeSingles * static_cast<double>(rederivedLeaves) / m_nLeaves;
+  // Block-granularity extraction from a one-module seed buys more per round at a
+  // fraction of the cost, so the 1e-4 bar lets it run many rounds that each buy
+  // ~0.01%; there it has to buy kFreshYieldOneModule instead (F59: om3-om8 E50000
+  // `-2d --regularized` faster than before on every row, 0.02-0.07% in bits short
+  // of running on).
+  const double yield = m_seedIsOneModule ? kFreshYieldOneModule : kFreshYieldPerNetwork;
+  const double cost = yield * beforeSingles * static_cast<double>(rederivedLeaves) / m_nLeaves;
   m_freshSinglesProductive = singlesImproved && beforeSingles - L >= cost;
   return singlesImproved ? 2 : 0;
 }
@@ -2239,12 +2253,12 @@ bool ColumnarTwoLevel::buildPartialSeed(const Level& sub, const std::vector<int>
   return true;
 }
 
-int ColumnarTwoLevel::subClusterLeaves(const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune, const std::vector<int>* leafModule)
+int ColumnarTwoLevel::subClusterLeaves(const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune, const std::vector<int>* leafModule, unsigned int maxAggPasses)
 {
-  return subClusterUnits(leaf0(), false, true, S, parentExit, loc, localAssign, fineTune, leafModule);
+  return subClusterUnits(leaf0(), false, true, S, parentExit, loc, localAssign, fineTune, leafModule, maxAggPasses);
 }
 
-int ColumnarTwoLevel::subClusterUnits(const Level& base, bool interior, bool sliceCorrections, const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune, const std::vector<int>* unitModule)
+int ColumnarTwoLevel::subClusterUnits(const Level& base, bool interior, bool sliceCorrections, const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune, const std::vector<int>* unitModule, unsigned int maxAggPasses)
 {
   const int nP = static_cast<int>(S.size());
   for (int j = 0; j < nP; ++j)
@@ -2323,7 +2337,7 @@ int ColumnarTwoLevel::subClusterUnits(const Level& base, bool interior, bool sli
   subOpt.m_rootLeaves = m_rootLeaves;
   if (sliceCorrections)
     addSlicedLeafCorrections(subOpt, S);
-  subOpt.optimizeTwoLevel(0, fineTune, seedPtr);
+  subOpt.optimizeTwoLevel(maxAggPasses, fineTune, seedPtr);
   localAssign.assign(subOpt.leafTopModule().begin(), subOpt.leafTopModule().end());
   const int Ksub = static_cast<int>(subOpt.numTopModules());
 
