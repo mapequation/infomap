@@ -346,6 +346,16 @@ public:
   // hierarchy. Returns the (correction-augmented) two-level codelength.
   double optimizeTwoLevelStack();
 
+  // Pass-1 reuse (#1120). The lone trial of a -N1 hierarchical run keeps what its
+  // leaf pass left (setKeepPass1State); when that trial collapses to one module,
+  // InfomapBase's run-level rescue runs the two-level search on the SAME seed and
+  // leaf network, whose pass 1 is that identical sweep, and adopts the kept state
+  // instead of repeating it (adoptPass1State: only from a search on the same seed
+  // and leaf count; returns whether it adopted). The next optimizeTwoLevel then
+  // starts at the first aggregation pass, bit-identical to a fresh run.
+  void setKeepPass1State(bool on) { m_keepPass1State = on; }
+  bool adoptPass1State(ColumnarTwoLevel& from);
+
   // Seeded leaf fine-tune across the current module level of a two-level
   // stack, gated on the true stack codelength (revert if not improving).
   // Used by optimizeTwoLevelStack to interleave leaf tuning with the
@@ -669,7 +679,9 @@ private:
   // leafModule (optional): the leaf -> current module map. When given and
   // partial seeding is on, the sub-optimize's pass 1 starts from a partial seed
   // of that partition instead of from singletons (see buildPartialSeed).
-  int subClusterLeaves(const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune = true, const std::vector<int>* leafModule = nullptr);
+  // maxAggPasses: the sub-optimize's aggregation depth (0 = to convergence; 1 =
+  // its pass-1 building blocks, splitTopModules on a one-module seed).
+  int subClusterLeaves(const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune = true, const std::vector<int>* leafModule = nullptr, unsigned int maxAggPasses = 0);
 
   // Generalized in-context two-level of one parent's children S at an arbitrary
   // stack level (subClusterLeaves is the level-0 case). `base` is the level the
@@ -681,7 +693,7 @@ private:
   // over base units, restored before returning. `unitModule` is the partial-seed
   // source (see subClusterLeaves' leafModule); interior callers pass nullptr,
   // which is the from-singletons default.
-  int subClusterUnits(const Level& base, bool interior, bool sliceCorrections, const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune, const std::vector<int>* unitModule);
+  int subClusterUnits(const Level& base, bool interior, bool sliceCorrections, const std::vector<int>& S, double parentExit, std::vector<int>& loc, std::vector<int>& localAssign, bool fineTune, const std::vector<int>* unitModule, unsigned int maxAggPasses = 0);
 
   // Partial seed for one sub-optimize over the units S of a single parent /
   // grandparent (partial seeding). The sub-optimize's default is to
@@ -917,9 +929,21 @@ private:
   std::vector<double> m_leafFlow;
   std::vector<int> m_leafTop; // leaf -> current top-unit id
   std::vector<int> m_leafBlocks; // leaf -> pass-1 building block (see splitTopModules)
+  // What the leaf pass of optimizeTwoLevel left, before any aggregation: enough to
+  // consolidate the next level exactly as the pass itself would (see adoptPass1State).
+  struct Pass1State {
+    std::vector<int> module;
+    std::vector<double> mFlow, mEnter, mExit, mTeleFlow, mTeleWeight;
+    std::vector<int> mMembers;
+    double codelength = 0.0;
+  };
+  bool m_keepPass1State = false;
+  std::unique_ptr<Pass1State> m_pass1State; // kept by this search, for a later one to adopt
+  std::unique_ptr<Pass1State> m_adoptedPass1; // adopted from another search; consumed by optimizeTwoLevel
   std::vector<int> m_lastSinglesPieces; // leaf -> piece of the last fresh from-singletons derivation
   bool m_freshSinglesProductive = true; // last fresh derivation paid its cost (gates further fresh derives)
   bool m_seedHasWholeNetworkModule = false; // deep repair's seed: >1 module, one of kWholeNetworkModuleShare of the leaves
+  bool m_seedIsOneModule = false; // deep repair's seed is a single module (the one-level fallback): extract at block granularity
   // Sub-cluster memo for splitTopModules' from-singletons pieces: sorted leaf
   // set -> (K, per-leaf local assignment). A module's sub-clustering depends
   // only on its own leaf set, so results survive across interleave rounds.

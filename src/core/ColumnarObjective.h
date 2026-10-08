@@ -67,6 +67,10 @@ namespace columnar {
   // re-draws of a barely changed module at 0.0003%. Near the threshold a round
   // buys <= 0.01% either way, so its sensitivity is in seconds, not bits.
   constexpr double kFreshYieldPerNetwork = 1e-4;
+  // The same bar when the repair's seed is one module (the one-level fallback), where
+  // the derivations stop at pass-1 blocks: each is cheap and the rounds after the
+  // first buy 0.005-0.03%, so 1e-4 lets them run 4-7 times (F59).
+  constexpr double kFreshYieldOneModule = 5e-4;
 
   // Exact port of MapEquation::getDeltaCodelengthOnMovingNode for the base
   // objective: change in codelength from moving a unit out of its old module
