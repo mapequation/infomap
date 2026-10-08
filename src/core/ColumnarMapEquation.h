@@ -346,6 +346,16 @@ public:
   // hierarchy. Returns the (correction-augmented) two-level codelength.
   double optimizeTwoLevelStack();
 
+  // Pass-1 reuse (#1120). The lone trial of a -N1 hierarchical run keeps what its
+  // leaf pass left (setKeepPass1State); when that trial collapses to one module,
+  // InfomapBase's run-level rescue runs the two-level search on the SAME seed and
+  // leaf network, whose pass 1 is that identical sweep, and adopts the kept state
+  // instead of repeating it (adoptPass1State: only from a search on the same seed
+  // and leaf count; returns whether it adopted). The next optimizeTwoLevel then
+  // starts at the first aggregation pass, bit-identical to a fresh run.
+  void setKeepPass1State(bool on) { m_keepPass1State = on; }
+  bool adoptPass1State(ColumnarTwoLevel& from);
+
   // Seeded leaf fine-tune across the current module level of a two-level
   // stack, gated on the true stack codelength (revert if not improving).
   // Used by optimizeTwoLevelStack to interleave leaf tuning with the
@@ -917,6 +927,17 @@ private:
   std::vector<double> m_leafFlow;
   std::vector<int> m_leafTop; // leaf -> current top-unit id
   std::vector<int> m_leafBlocks; // leaf -> pass-1 building block (see splitTopModules)
+  // What the leaf pass of optimizeTwoLevel left, before any aggregation: enough to
+  // consolidate the next level exactly as the pass itself would (see adoptPass1State).
+  struct Pass1State {
+    std::vector<int> module;
+    std::vector<double> mFlow, mEnter, mExit, mTeleFlow, mTeleWeight;
+    std::vector<int> mMembers;
+    double codelength = 0.0;
+  };
+  bool m_keepPass1State = false;
+  std::unique_ptr<Pass1State> m_pass1State; // kept by this search, for a later one to adopt
+  std::unique_ptr<Pass1State> m_adoptedPass1; // adopted from another search; consumed by optimizeTwoLevel
   std::vector<int> m_lastSinglesPieces; // leaf -> piece of the last fresh from-singletons derivation
   bool m_freshSinglesProductive = true; // last fresh derivation paid its cost (gates further fresh derives)
   bool m_seedHasWholeNetworkModule = false; // deep repair's seed: >1 module, one of kWholeNetworkModuleShare of the leaves

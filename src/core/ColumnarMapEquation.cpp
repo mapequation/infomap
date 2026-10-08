@@ -745,7 +745,42 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   {
     std::vector<int> newTop;
     int c = 0;
-    bestCodelength = runPass(newTop, c, pass1Seed);
+    if (m_adoptedPass1 && pass1Seed == nullptr) {
+      // This exact sweep already ran (adoptPass1State): restore what it left -- the
+      // assignment and the module aggregates the consolidation below reads -- and
+      // compact it the way runPass does.
+      Pass1State& kept = *m_adoptedPass1;
+      m_module = std::move(kept.module);
+      m_mFlow = std::move(kept.mFlow);
+      m_mEnter = std::move(kept.mEnter);
+      m_mExit = std::move(kept.mExit);
+      m_mTeleFlow = std::move(kept.mTeleFlow);
+      m_mTeleWeight = std::move(kept.mTeleWeight);
+      m_mMembers = std::move(kept.mMembers);
+      bestCodelength = kept.codelength;
+      m_adoptedPass1.reset();
+      std::vector<int> remap(lvl().n, -1);
+      for (int i = 0; i < lvl().n; ++i)
+        if (remap[m_module[i]] == -1)
+          remap[m_module[i]] = c++;
+      newTop.assign(m_nLeaves, 0);
+      for (int i = 0; i < m_nLeaves; ++i)
+        newTop[i] = remap[m_module[m_leafTop[i]]];
+    } else {
+      bestCodelength = runPass(newTop, c, pass1Seed);
+      if (m_keepPass1State && pass1Seed == nullptr && !m_pass1State) {
+        m_pass1State = std::make_unique<Pass1State>();
+        Pass1State& kept = *m_pass1State;
+        kept.module = m_module;
+        kept.mFlow = m_mFlow;
+        kept.mEnter = m_mEnter;
+        kept.mExit = m_mExit;
+        kept.mTeleFlow = m_mTeleFlow;
+        kept.mTeleWeight = m_mTeleWeight;
+        kept.mMembers = m_mMembers;
+        kept.codelength = bestCodelength;
+      }
+    }
     m_seededPhase = false;
     bestTop = std::move(newTop);
     bestK = static_cast<unsigned int>(c);
@@ -1137,6 +1172,14 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     bestCodelength = augL;
   }
   return bestCodelength;
+}
+
+bool ColumnarTwoLevel::adoptPass1State(ColumnarTwoLevel& from)
+{
+  if (!from.m_pass1State || from.m_seed != m_seed || from.m_nLeaves != m_nLeaves)
+    return false;
+  m_adoptedPass1 = std::move(from.m_pass1State);
+  return true;
 }
 
 double ColumnarTwoLevel::optimizeTwoLevelStack()

@@ -369,6 +369,11 @@ public:
       // so the rescue returns what `-2` would have returned for the same --seed.
       Random rescueRand(trialSeed(0));
       m_infomap.setupColumnarOptimizer(opt, rescueRand.randInt(0, std::numeric_limits<int>::max()));
+      // At -N1 the collapsed trial's own pass 1 IS this search's pass 1 (same seed,
+      // same leaves); start from it rather than sweep again (#1120). adoptPass1State
+      // checks the seed, so any other trial's stack is ignored.
+      if (m_infomap.m_columnarTrialStack)
+        opt.adoptPass1State(*m_infomap.m_columnarTrialStack);
       const double rescued = opt.optimizeTwoLevelStack();
       if (rescued < result.bestHierarchicalCodelength - 1e-10) {
         Console::detail(0, "columnar: every trial collapsed to one module ({}); the two-level search reaches {}", io::toPrecision(result.bestHierarchicalCodelength), io::toPrecision(rescued));
@@ -3002,6 +3007,15 @@ void InfomapBase::columnarPartition()
   // search); the first trial keeps hierarchical-first, so -N1 is unchanged.
   // Also meaningless for a seeded trial, which does not build a bottom at all --
   // the seed IS the bottom.
+  //
+  // So -N1 never searches the flat basin, and that is a property of -N1, not a
+  // defect (#1121): on the overlapping state family its lone trial refines a
+  // wrong-basin build 1-14% above `-2 -N1` (om5 `-d -N1` 7.81 against 6.87), and
+  // -N2 is where the flat-first trial supplies the flat answer. Giving the lone
+  // trial the flat-first probe fixes that family but costs the healthy memory
+  // networks 25-34% at -N1 for nothing; the only signal that separates the two
+  // regimes is the probe's own regroup detector, and no cheaper stand-in on the
+  // trial's partitions does (F59).
   const bool flatFirst = m_columnarFlatFirstTrial && !twoLevel && !seeded;
   if (flatFirst) {
     Console::detail(2, "columnar: flat-first trial (two-level optimum as the bottom)");
@@ -3020,6 +3034,10 @@ void InfomapBase::columnarPartition()
   // The lone trial instead refines a doomed build's interior first and gives up
   // only if that leaves it above one-level (F57): malaria / air30k recover there.
   opt.setAbandonUnrecoveredBuild(fallbackApplies && numTrials == 1);
+  // The run-level rescue repeats this trial's two-level search on its seed when the
+  // trial collapses; keep its pass 1 so the rescue does not sweep the leaves again
+  // (#1120). One trial only: the rescue draws trial 0's seed.
+  opt.setKeepPass1State(fallbackApplies && numTrials == 1);
 
   // With -2 (--two-level): the two-level search only, no hierarchy build.
   // With -F (--fast-hierarchical-solution, reused here as the columnar fast
