@@ -4960,3 +4960,71 @@ consistent with this one.
 There is no cheaper route to the same partition at `-N1`: it needs the repair (the gap) after the
 hierarchical trial (skipping that is #1121's probe, +25–34% on healthy rows). Opened as a PR for Daniel's
 decision under the marginal-trade rule, not as a default.
+
+### F61 — #1042 has a fix, the plain objective's partition, and no affordable way to run it (2026-10-09)
+
+Base: tip `7fd37a62` (#1125 merged, Daniel's go after F60: its cost lands only on runs that would
+otherwise return one module). Everything below is from env-gated experiment binaries, never committed;
+`-C --regularized --seed 123`, instructions retired as the time axis (load 7–11 throughout).
+
+**The missing candidate.** F56 found #1042 to be a proposal problem that both engines share: the
+regularized merge snowballs into one module holding 97–99% of the flow. That happens whatever the trial
+shape, because om5 `-2d --regularized` starts two-level on all ten trials and all ten end at 7.968. The
+plain objective does not snowball. Plain `-2d` on om5 reaches 6.8682. Scored under `--regularized`, that
+partition is 7.7619, below both the free search (7.9686) and the planted partition (7.7918). A
+`-c`-seeded regularized search from it reaches 7.7388, within 0.05% of the planted soft seed's 7.7351.
+In the engine the same thing needs no second flow calculation: a `ColumnarTwoLevel` set up as usual but
+with `setRecordedTeleportation(false)` runs `optimizeTwoLevelStack()` on the run's own regularized flow,
+and `optimizeFromSeed` refines the result under the regularized objective. That takes om5 to
+7.7445–7.7453 (−2.8% in bits) in `-2d` and `-d`, at `-N1`, `-N2` and `-N10`. As a replacement for the
+search it fails: the plain partition collapses to one module on om7 and om8 E100000 and om3–om8 E50000
+(+0.14% to +0.66% in bits). So it can only be a candidate, kept when it wins.
+
+**Where the cost is.** On om5 / om7 E100000 the plain build spends 15–20% of its time in pass 1, 25–36%
+in aggregation (which stalls fragmented at 2431 / 3240 modules), 41–45% in the plain regroup probe
+ladder (which reaches 61 / 144 modules; this is where the win comes from), and 8% in fine-tune. Builds
+that skip the ladder (pass 1 only, two aggregation passes) never win: om5 refines to 8.87. Capping the
+fine-tune at one round loses nothing. The floor is pass 1 plus the ladder, about half an `-N1` run,
+which on om E100000 is more than a whole regularized trial (0.53–0.63 s).
+
+**Design A: a post-trial candidate**, once per run after the rescue:
+
+- Ungated, it costs +55% to +191% in instructions at `-N1` and +11% to +37% at `-N10`, on every
+  `--regularized` run.
+- The candidate's own score separates wins from losses with a wide margin (≤ one-level × 1.0006 on every
+  win, ≥ × 1.015 on every loss), but that score only exists after the build. So it can skip the refine,
+  never the build.
+- A free gate exists: a snowballed winner, i.e. top module ≥ 90% of the flow and the run still below
+  one-level (share 0.966–0.975 against ≤ 0.23 everywhere else). It isolates om5–om8 E100000, and other
+  rows then pay +0.14% to +0.65% in instructions (instrumentation included).
+- Within that family nothing free separates om5 / om6 (wins) from om7 / om8 (no gain, +89% / +94% in
+  instructions at `-N1`). Pre-repair ÷ one-level overlaps (0.9975 / 0.9987 against 0.9949 / 0.9986), and
+  so do the trial's probe gains. Only the raw top-module count splits them (88 / 104 against 166 / 214),
+  and a raw count is not a gate that carries to other networks.
+- Comparing the candidate after the deep repair, instead of swapping it in before, removed the
+  narrow-margin regressions (< 0.1% in bits) that the pre-repair comparison caused on om3 / om4 E100000
+  and air30k.
+
+**Design B: a trial slot** (Daniel's pick). Trial index 1 of a `--regularized` run with N ≥ 2 starts from
+the plain partition. In `-d` it does a flat refine and then continues as the flat-first trial; rebuilding
+a hierarchy instead (`optimizeFromSeed(false)`) cost +9 to +17 points more for the same bits. Chosen by
+index only, so serial and `--parallel-trials` agree (om5 7.744545136 everywhere).
+
+- om5 is fixed at `-N2` and `-N10` in both modes.
+- It does not replace work. The build outweighs the trial it displaces, and a rejected candidate still
+  has to run the standard trial 1. Every `--regularized` row at N ≥ 2 pays +24% to +96% in instructions
+  at `-N2` and +4% to +23% at `-N10` (air30k +14–17% / +4–5%, om5 itself +13% at `-N10`).
+- om3 E100000 `-d -N2` (+0.03%) and om2 E50000 (+0.02%) lose bits, inferred to be because the standard
+  trial 1 that the slot replaced was their best.
+
+**Resolution, per Daniel's fallback for B: #1042 closed as documented.** The fix is known and measured,
+but it costs at least one regularized trial on every run it might help, and no signal available before
+the build tells om5 from om7. What would reopen it:
+
+- a plain build at a small fraction of a trial. Running the probe ladder straight on the pass-1 blocks
+  saves only ~30% of the build, not enough on its own;
+- or a free signal that separates om5 / om6 from om7 / om8;
+- or an opt-in quality flag, which the trade-off rule allows and which was not built.
+
+The experiment diffs (post-trial candidate, trial slot) were saved outside the repo; the mechanism above
+is enough to rebuild either.
