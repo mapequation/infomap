@@ -241,6 +241,15 @@ public:
     NodePaths bestDeepTree;
     double bestDeepCodelength = std::numeric_limits<double>::max();
     unsigned int bestDeepTrialIndex = std::numeric_limits<unsigned int>::max();
+    // The non-winning trial whose tree the terminal dissolve would bring lowest
+    // (#1127): the winner is picked on the rectangular trees, and the dissolve can
+    // reorder them. Each trial's reach is priced on its own stack while it exists,
+    // so the end of the run dissolves this tree only when it beats the settled
+    // winner. Lowest reach, earliest index on a tie: the same trial serial and parallel.
+    NodePaths runnerUpTree;
+    double runnerUpReach = std::numeric_limits<double>::max();
+    unsigned int runnerUpTrialIndex = std::numeric_limits<unsigned int>::max();
+    double bestReach = std::numeric_limits<double>::max(); // the current winner's, for when it is overtaken
   };
 
   // A columnar tree is two-level-shaped when every leaf path is {module, rank}.
@@ -423,10 +432,34 @@ public:
     // modules that no longer pay for their codebook. Every objective; a two-level run
     // has no interior level to remove (#1074).
     bool materializedByDissolve = false;
+    auto adoptRunnerUp = [&](double bar) {
+      // Not repaired: its dissolve is kept only when it beats `bar`, the winner's codelength.
+      double runnerUpL = bar;
+      if (!m_infomap.dissolveColumnarBest(result.runnerUpTree, runnerUpL, false))
+        return false;
+      Console::detail(0, "columnar: dissolving trial {} improved {} -> {}", result.runnerUpTrialIndex + 1, io::toPrecision(result.bestHierarchicalCodelength), io::toPrecision(runnerUpL));
+      result.bestTree = std::move(result.runnerUpTree);
+      result.runnerUpTree.clear();
+      result.bestHierarchicalCodelength = runnerUpL;
+      result.bestTrialIndex = result.runnerUpTrialIndex;
+      improved = true;
+      materializedByDissolve = true;
+      return true;
+    };
+    // The dissolve can reorder the trials (#1127): on netsci `-C -N10` the winner's tree
+    // dissolves to 4.0489 while another trial's dissolves to 4.0236. Every trial priced
+    // its own dissolve, so when nothing above changed the winner and the runner-up
+    // reaches lower, dissolve the runner-up instead -- one dissolve either way.
+    const double unpriced = std::numeric_limits<double>::lowest();
+    if (!improved && !rescuedFlat && !result.runnerUpTree.empty() && result.bestReach > unpriced && result.runnerUpReach > unpriced
+        && result.runnerUpReach < result.bestReach - 1e-10) {
+      auto timer = m_timing.scope("dissolve_s");
+      adoptRunnerUp(result.bestHierarchicalCodelength);
+    }
     // A flat (two-level-shaped) winner has no interior level to dissolve -- e.g. the
     // one-level fallback, or a flat-first trial that won and stayed flat through the
     // deep repair -- so do not build and score a stack to find that out.
-    if (!m_infomap.twoLevel && !isFlatTree(result.bestTree)) {
+    if (!materializedByDissolve && !m_infomap.twoLevel && !isFlatTree(result.bestTree)) {
       auto timer = m_timing.scope("dissolve_s");
       // Whether the tree in memory IS result.bestTree: the last serial trial won (every
       // -N1 run) and the deep repair above did not change it. Then the pass works on the
@@ -439,6 +472,14 @@ public:
         materializedByDissolve = true; // the tree in memory is the dissolved tree, stamped
       }
     }
+    // Otherwise the runner-up still gets its turn when the repair moved the winner, or
+    // its own reach was not priced.
+    if (!result.runnerUpTree.empty() && result.runnerUpTrialIndex != result.bestTrialIndex
+        && result.runnerUpReach < result.bestHierarchicalCodelength - 1e-10) {
+      auto timer = m_timing.scope("dissolve_s");
+      adoptRunnerUp(result.bestHierarchicalCodelength);
+    }
+    result.runnerUpTree = NodePaths();
     m_infomap.m_columnarTrialStack.reset(); // the winner's stack has served; free it before output
     if (!improved && !rescuedFlat)
       return;
@@ -678,6 +719,8 @@ private:
           }
 
           const auto trialCodelength = worker.m_hierarchicalCodelength;
+          const bool trackRunnerUp = tracksRunnerUp();
+          const double trialReach = trackRunnerUp ? trialDissolveReach(worker) : 0.0;
           const auto trialTopModules = worker.numTopModules();
           const auto trialTime = trialTimer.getElapsedTimeInSec();
           codelengths[trialIndex] = trialCodelength;
@@ -712,12 +755,18 @@ private:
           const auto isBetter = trialCodelength < result.bestHierarchicalCodelength - 1e-10;
           const auto isEarlierTie = std::abs(trialCodelength - result.bestHierarchicalCodelength) < 1e-10 && trialIndex < result.bestTrialIndex;
           if (bestIndexMissing || isBetter || isEarlierTie) {
+            if (trackRunnerUp && result.bestHierarchicalCodelength < std::numeric_limits<double>::max()
+                && claimRunnerUp(result, result.bestTrialIndex, result.bestReach, trialCodelength))
+              result.runnerUpTree = std::move(result.bestTree);
+            result.bestReach = trialReach;
             result.bestSolutionStatistics.clear();
             result.bestSolutionStatistics.str(trialStatistics.str());
             result.bestNumLevels = trialNumLevels;
             result.bestHierarchicalCodelength = trialCodelength;
             result.bestTrialIndex = trialIndex;
             result.bestTree = std::move(trialTree);
+          } else if (trackRunnerUp && claimRunnerUp(result, trialIndex, trialReach, result.bestHierarchicalCodelength)) {
+            result.runnerUpTree = std::move(trialTree);
           }
         } catch (const std::exception& e) {
           std::lock_guard<std::mutex> lock(errorMutex);
@@ -1446,9 +1495,53 @@ private:
 
     maybeTrackBestDeepTrial(trialIndex, result);
 
+    const bool trackRunnerUp = tracksRunnerUp();
+    const double reach = trackRunnerUp ? trialDissolveReach(m_infomap) : 0.0;
     if (m_infomap.m_hierarchicalCodelength < result.bestHierarchicalCodelength - 1e-10) {
+      // The overtaken winner is a runner-up candidate now, and its tree is bestTree.
+      if (trackRunnerUp && result.bestHierarchicalCodelength < std::numeric_limits<double>::max()
+          && claimRunnerUp(result, result.bestTrialIndex, result.bestReach, m_infomap.m_hierarchicalCodelength))
+        result.runnerUpTree = std::move(result.bestTree);
+      result.bestReach = reach;
       updateBestResult(trialIndex, result);
+    } else if (trackRunnerUp && claimRunnerUp(result, trialIndex, reach, result.bestHierarchicalCodelength)) {
+      m_infomap.root().sortChildrenOnFlow(); // the paths updateBestResult and the parallel path record
+      for (auto it(m_infomap.iterLeafNodes()); !it.isEnd(); ++it)
+        result.runnerUpTree.emplace_back(it->stateId, it.path());
     }
+  }
+
+  // The runner-up dissolve (#1127) prices every trial of a multi-trial hierarchical
+  // run. Not under L*: the pass's gain there is a base-objective estimate, and
+  // dissolveColumnarBest re-scores a candidate by materializing it.
+  bool tracksRunnerUp() const
+  {
+    return m_infomap.columnarSearch && !m_infomap.twoLevel && !m_infomap.nonRedundant && m_numTrials > 1
+        && !m_infomap.haveHardPartition() && !m_infomap.noInfomap;
+  }
+
+  // What the terminal dissolve would bring this trial's tree to, priced on the trial's
+  // own stack while it still exists -- the pass's gain alone, no score and no result. A
+  // tree the stack does not hold (a kept seed, the one-module fallback) is not priced:
+  // lowest(), so it is offered the dissolve rather than ruled out.
+  static double trialDissolveReach(InfomapBase& infomap)
+  {
+    if (!infomap.m_columnarTrialStack || !infomap.m_columnarTrialStackIsTree)
+      return std::numeric_limits<double>::lowest();
+    return infomap.m_hierarchicalCodelength + infomap.m_columnarTrialStack->dissolveUnprofitableLevels(true);
+  }
+
+  // Offer a trial that is not (or no longer) the winner to the runner-up slot. Returns
+  // whether its tree must be kept: not when its reach cannot beat bestL, which only
+  // falls from here, so the end-of-run gate would skip it anyway.
+  static bool claimRunnerUp(Result& result, unsigned int trialIndex, double reach, double bestL)
+  {
+    if (!(reach < result.runnerUpReach - 1e-10 || (std::abs(reach - result.runnerUpReach) < 1e-10 && trialIndex < result.runnerUpTrialIndex)))
+      return false;
+    result.runnerUpReach = reach;
+    result.runnerUpTrialIndex = trialIndex;
+    result.runnerUpTree.clear();
+    return reach < bestL - 1e-10;
   }
 
   // Keep the best DEEP (non-two-level) trial for the once-per-run hierarchical

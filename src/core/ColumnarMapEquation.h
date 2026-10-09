@@ -469,7 +469,9 @@ public:
   // Returns the (never-greater) codelength of the dissolved tree from the pass's own
   // accounting -- exact for every objective but L*, whose module-of-modules term this
   // pass does not price -- or the stack's own codelength when nothing dissolves.
-  double dissolveUnprofitableLevels();
+  // With gainOnly it prices the pass and nothing else: no score of the stack, no
+  // ragged result, and it returns the (non-positive) change in codelength instead.
+  double dissolveUnprofitableLevels(bool gainOnly = false);
 
   // Whether the last search produced a ragged result via dissolveUnprofitableLevels.
   bool hasDissolvedResult() const { return !m_dissolvedPaths.empty(); }

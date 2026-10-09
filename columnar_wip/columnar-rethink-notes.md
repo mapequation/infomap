@@ -5071,3 +5071,37 @@ dissolve, not the repair (the repair is a no-op on every base row): another tria
 than the winner's. netsci `-N10` 4.048858 → 4.023567 (−0.63% in bits) and powergrid 4.717760 → 4.712392
 (−0.11%), both from the pre-dissolve rank-2 trial. Dissolving the top-2 trees captures both for +1.3% /
 +1.4% in seconds on those rows. Dissolving all ten costs up to +19% in seconds (web-NotreDame, no gain).
+
+### F63 — The terminal dissolve reaches the runner-up trial's tree, priced on each trial's own stack (#1127) (2026-10-09)
+
+Found in F62's every-trial data: on the base objective the deep repair is a no-op, so the pre-repair
+selection alone decides which tree the terminal dissolve (#1074) gets. On netsci and powergrid `-N10` the
+second-best trial's tree dissolves lower than the winner's: 4.0236 against 4.0489 (−0.63% in bits) and
+4.7124 against 4.7178 (−0.11%).
+
+**Pricing makes it nearly free.** `dissolveUnprofitableLevels(true)` runs only the pass's gain
+accounting. It does not score the stack, build a ragged result or write anything that outlives the call
+(`totalGain` moves only with `numDissolved`, so the normal path is unchanged). Each trial of a
+multi-trial hierarchical run calls it on its own stack while that stack exists: ~29 ms over ten trials on
+web-NotreDame. The non-winning trial with the lowest priced reach keeps its tree, which is copied only
+while that reach could still beat the best. When the repair left the winner alone and the runner-up
+reaches lower, the runner-up is dissolved instead of the winner, so there is one dissolve either way.
+When the repair moved the winner, the runner-up is dissolved after it, if its reach beats the repaired
+winner.
+
+**Alternatives measured and rejected** (separate session, min of 2, instructions):
+
+- Ungated, the runner-up chosen by pre-repair L: the same three gains, but +1.93% / +2.01% on netsci /
+  powergrid, and up to +1.01% on rows that gain nothing.
+- A cheap upper bound on the dissolve's saving (the intermediate modules' codebook terms) as the gate:
+  6–29× the true saving, so it skipped nothing.
+- Exact pricing with two dissolves: +2.2% on the gaining rows.
+- Shipped: +0.73% / +0.41% / +1.29% on the gaining rows, at most +0.55% (median +0.10%) on the rest.
+
+**Snapshot session** (old tip `b478b244` md5 `4586def7`, new `c37d7436` md5 `54c8b6b2`, 720 runs at load
+13–18): three rows move, netsci −0.62% (+0.66% in instructions), powergrid −0.11% (+0.37%), om4 E50000
+`-d -N10` −0.060% (+1.35%). The last is the post-repair block alone; without it the row gains nothing for
++0.30%. The 43 other rows the change runs on are bit-identical at −0.24% to +0.54% in instructions,
+median +0.13%; the 116 it cannot reach sit at a median 0.00%. The five largest seconds readings (+14% to
++67%, two on `-2` rows the change cannot reach) re-measured at −1.0% to +2.0%. `-N1` never runs it. Serial
+and `--parallel-trials` agree on all three moved rows.
