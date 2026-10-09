@@ -314,7 +314,7 @@ double ColumnarTwoLevel::codelengthBreakdownFromStack(StackBreakdown& breakdown)
   return base + objectiveCorrection(&breakdown);
 }
 
-double ColumnarTwoLevel::dissolveUnprofitableLevels()
+double ColumnarTwoLevel::dissolveUnprofitableLevels(bool gainOnly)
 {
   using infomath::plogp;
   clearDissolvedPaths();
@@ -326,7 +326,7 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels()
   // The total is what the gains are taken off; the level-1 entries are the kept leaf
   // modules' stamps, which the pass never changes.
   StackBreakdown breakdown;
-  const double startL = codelengthBreakdownFromStack(breakdown);
+  const double startL = gainOnly ? 0.0 : codelengthBreakdownFromStack(breakdown);
   if (top < 2)
     return startL; // no module-of-modules to dissolve (two-level or flat)
 
@@ -475,9 +475,9 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels()
       offer(ch);
   }
 
-  if (numDissolved == 0) {
+  if (numDissolved == 0 || gainOnly) {
     m_dissolveOrder.clear();
-    return startL;
+    return startL - totalGain;
   }
 
   // The kept nodes' stamps on the dissolved tree, for InfomapBase::spliceDissolvedModules
