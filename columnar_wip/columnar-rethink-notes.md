@@ -5028,3 +5028,46 @@ the build tells om5 from om7. What would reopen it:
 
 The experiment diffs (post-trial candidate, trial slot) were saved outside the repo; the mechanism above
 is enough to rebuild either.
+
+### F62 — #1083 is noise in where the repair lands, not a selection bug (2026-10-09)
+
+A logging-only experiment binary (tip `7fd37a62`, md5 `4586def7…`) deep-repaired and dissolved EVERY
+trial of 84 `-N10 --seed 123` rows without changing the output: the base set with and without `-2`, and
+om2–om8 × E100000 / E50000 × `-2d` / `-d` × plain / `--regularized`. With the gate off it reproduced the
+tip, and "winner ∪ best-deep-if-flat, then dissolve" reproduced every row's actual final.
+
+**Regret from repair path dependence.** 28 of 84 rows end above what their best trial would have
+repaired to: 0.0015% to 0.158% in bits, 0.93% summed. The largest are om2 E50000 `-2d` 0.158%, om4
+E100000 `-2d` 0.105%, om8 E100000 `-d --regularized` 0.101%, om4 E50000 `-d` 0.081% and malaria `-2`
+0.068%. They are all `-2` rows or om `-d` rows with flat winners. The hierarchical winners of malaria,
+air30k (×3), wikispeedia and lazega have none.
+
+**Why it is noise, not selection.** The repair is a much stronger search than the trials. On om4 the ten
+trials spread 10% before repair, and all ten repair into a 0.13% band (6.8597–6.8686). The best-repairing
+trial is never the pre-repair winner, and it ranks anywhere from 2 to 9 before repair. Rank-to-rank
+correlation of pre-repair L with repaired L has a median of 0.55, and with the repair gain a median of
+0.52: worse trials gain more, which cancels the ranking. Top-module count predicts nothing (median
+0.01). `-N1` beating `-N10` on om4 (#1083's report) is one draw from that band landing low.
+
+**Cost of fixing.** One repair is a median 8.2% of a `-N10` run (1–25%; om2 E50000 `-2d` 25%).
+
+| rule | regret left (sum / max, % in bits) | repairs per run | extra time at `-N10`, mean / max |
+|---|---|---|---|
+| tip (winner, plus the best deep trial when the winner is flat) | 0.93 / 0.158 | 1.07 | 0 |
+| top-2 | 0.49 / 0.100 | 2.07 | +8.9% / +49% |
+| top-2 + a collapsed trial | 0.37 / 0.079 | 2.29 | +10.9% / +58% |
+| top-3 | 0.41 / 0.100 | 3.07 | +17.7% / +75% |
+| winner + coarsest trial | 0.60 / 0.081 | 1.78 | +5.6% / +37% |
+| top-5 | 0.30 / 0.100 | 5.06 | +34.8% / +110% |
+| all ten | 0 | 10 | +78% / +246% |
+
+Every rule pays a non-marginal time cost for at most 0.16% in bits. **Resolution (Daniel): #1083 closed
+as documented.** Not pursued: top-k behind an opt-in quality flag, and a redesign that makes the trials
+cheaper and spends the savings on a second repair. The data suggests the latter is where any real fix
+lives, because the trials' differences mostly vanish under the repair.
+
+**A second mechanism, filed as #1127.** On two base-objective rows the regret comes from the terminal
+dissolve, not the repair (the repair is a no-op on every base row): another trial's tree dissolves lower
+than the winner's. netsci `-N10` 4.048858 → 4.023567 (−0.63% in bits) and powergrid 4.717760 → 4.712392
+(−0.11%), both from the pre-dissolve rank-2 trial. Dissolving the top-2 trees captures both for +1.3% /
++1.4% in seconds on those rows. Dissolving all ten costs up to +19% in seconds (web-NotreDame, no gain).
