@@ -1,0 +1,102 @@
+# Where every input of the columnar benchmark set comes from. Read by
+# columnar_wip/fetch-benchmark-networks.py, which writes each one to networks/columnar-benchmark/<file>
+# and checks it against columnar_wip/benchmark-networks.sha256. Row descriptions and run
+# flags: columnar_wip/benchmark-networks.md.
+#
+# Recipes:
+#   repo                in this repository, nothing to fetch
+#   store               a file from mapequation/networks-store, pinned to `store_commit`
+#   netzschleuder       networks.netzschleuder.load(dataset), written as a link list
+#   lazega              netzschleuder law_firm layer 2 (friendship), both directions, + nodeGender
+#   malaria             netzschleuder malaria_genes HVR_1..9 as one multilayer network
+#   snap                networks.snap.load(dataset), the SNAP file as distributed
+#   wikispeedia         networks.paths wikispeedia, to_state_network(order=2, max_nodes=300)
+#   db1b-air30k         networks.paths db1b-coupon 2011 Q1-Q3, second order, on `airports`
+#   state-meta          columnar_wip/make-state-meta.py on another entry's output
+#   overlapping-memory  networks.generate.overlapping_memory_benchmark, network + planted .clu
+
+store_commit = "622481b95c0d331336a1130f1f267f01122e5da9"
+
+[[network]]
+name = "ninetriangles"
+file = "ninetriangles.net"
+recipe = "repo"
+path = "examples/networks/ninetriangles.net"
+
+[[network]]
+name = "multilayer"
+file = "multilayer.net"
+recipe = "repo"
+path = "examples/networks/multilayer.net"
+
+[[network]]
+name = "jazz"
+file = "jazz.txt"
+recipe = "netzschleuder"
+dataset = "jazz_collab"
+
+[[network]]
+name = "powergrid"
+file = "powergrid.txt"
+recipe = "netzschleuder"
+dataset = "power"
+
+[[network]]
+name = "netscicoauthor2010"
+file = "netscicoauthor2010.net"
+recipe = "store"
+path = "first-order/netscicoauthor2010.net"
+
+[[network]]
+name = "politicalblogs"
+file = "politicalblogs.net"
+recipe = "store"
+path = "first-order/politicalblogs.net"
+
+[[network]]
+name = "science2001"
+file = "science2001.net"
+recipe = "store"
+path = "first-order/science2001.net"
+
+[[network]]
+name = "web-NotreDame"
+file = "web-NotreDame.txt"
+recipe = "snap"
+dataset = "web-NotreDame"
+
+[[network]]
+name = "lazega"
+file = "lazega.net"
+meta = "lazega.meta"
+recipe = "lazega"
+
+[[network]]
+name = "malaria"
+file = "malaria.net"
+recipe = "malaria"
+
+[[network]]
+name = "air30k"
+file = "air30k.net"
+recipe = "db1b-air30k"
+airports = "columnar_wip/air30k-airports.tsv"
+
+[[network]]
+name = "air30k_usstate"
+file = "air30k_usstate.meta"
+recipe = "state-meta"
+of = "air30k"
+mode = "usstate"
+
+[[network]]
+name = "wikispeedia"
+file = "wikispeedia_states.net"
+recipe = "wikispeedia"
+
+[[network]]
+name = "overlapping"
+recipe = "overlapping-memory"
+memberships = [2, 3, 4, 5, 6, 7, 8]
+n_trigrams = [50000, 100000]
+seed = 1
