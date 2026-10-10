@@ -22,7 +22,6 @@ import shutil
 import subprocess
 import sys
 import tomllib
-import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
@@ -30,7 +29,6 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 MANIFEST = HERE / "benchmark-networks.toml"
 CHECKSUMS = HERE / "benchmark-networks.sha256"
-STORE = "https://raw.githubusercontent.com/mapequation/networks-store"
 
 
 def sha256(path):
@@ -55,12 +53,6 @@ def om_name(om, n_trigrams, seed):
 
 def build_repo(entry, out, manifest):
     shutil.copyfile(REPO / entry["path"], out / entry["file"])
-
-
-def build_store(entry, out, manifest):
-    url = f"{STORE}/{manifest['store_commit']}/{entry['path']}"
-    with urllib.request.urlopen(url) as response:
-        (out / entry["file"]).write_bytes(response.read())
 
 
 def build_netzschleuder(entry, out, manifest):
@@ -186,7 +178,6 @@ def build_overlapping_memory(entry, out, manifest):
 
 BUILD = {
     "repo": build_repo,
-    "store": build_store,
     "netzschleuder": build_netzschleuder,
     "lazega": build_lazega,
     "malaria": build_malaria,

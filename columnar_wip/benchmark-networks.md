@@ -19,10 +19,10 @@ python columnar_wip/fetch-benchmark-networks.py
 
 It needs Python 3.11+. Each file is checked against
 [`columnar_wip/benchmark-networks.sha256`](benchmark-networks.sha256), so a run on the
-result uses the bytes the published numbers were measured on. Sources: the public
-repositories through the [`mapequation-networks`](https://github.com/mapequation/networks)
-package; [`mapequation/networks-store`](https://github.com/mapequation/networks-store) for
-the three files with no public source; the package's generator for the synthetic family.
+result uses the bytes the published numbers were measured on. Every input comes through the
+[`mapequation-networks`](https://github.com/mapequation/networks) package: public
+repositories (netzschleuder, SNAP, the BTS DB1B coupons, Wikispeedia) and the package's
+generator for the synthetic family; ninetriangles and multilayer are in this repository.
 air30k is the slow one: the first run downloads ~270 MB of DB1B coupons and groups ~10 M
 itineraries (~15 min), cached afterwards. The networks package is pinned to a commit on
 its main branch, the first with `generate.overlapping_memory_benchmark`
@@ -32,23 +32,23 @@ its main branch, the first with `generate.overlapping_memory_benchmark`
 |---|---|---|---|---|---|--:|
 | ninetriangles | `ninetriangles.net` | this repo, `examples/networks/` | — | undirected | first-order · hierarchical toy | 27 nodes |
 | jazz | `jazz.txt` | netzschleuder `jazz_collab` | — | undirected | first-order · real-world (collaboration) | 198 nodes |
-| netscicoauthor2010 | `netscicoauthor2010.net` | networks-store | — | undirected | first-order · real-world (co-authorship) | 552 nodes |
+| netscience | `netscience.txt` | netzschleuder `netscience` | — | undirected | first-order · real-world (co-authorship, weighted; 396 components) | 1 461 nodes · 2 742 links |
 | powergrid | `powergrid.txt` | netzschleuder `power` | — | undirected | first-order · real-world (infrastructure) | 4 941 nodes |
-| politicalblogs | `politicalblogs.net` | networks-store | `-d` | directed | first-order · real-world (blog links; Swedish blogs, not Adamic–Glance) | 1 046 nodes |
-| science2001 | `science2001.net` | networks-store | `-d` | directed | first-order · real-world (journal citation) | 7 170 nodes |
+| polblogs | `polblogs.txt` | netzschleuder `polblogs` (Adamic–Glance) | `-d` | directed | first-order · real-world (blog links; two-level optimum) | 1 224 nodes · 19 025 links |
+| word_assoc | `word_assoc.txt` | netzschleuder `word_assoc` | `-d` | directed | first-order · real-world (word association, weighted) | 23 132 nodes · 312 310 links |
 | web-NotreDame | `web-NotreDame.txt` | SNAP `web-NotreDame`, as distributed | `-d` | directed | first-order · real-world (web graph) | 325 729 nodes · 1 497 134 links |
 | lazega (metadata) | `lazega.net` (+ `lazega.meta`) | netzschleuder `law_firm`, layer 2 (friendship) + `nodeGender` | `--meta-data networks/columnar-benchmark/lazega.meta` | undirected | first-order + **metadata** objective | 69 nodes |
 | multilayer (example) | `multilayer.net` | this repo, `examples/networks/` | — | undirected | **multilayer** / higher-order (memory) toy | 5 physical nodes |
 | malaria | `malaria.net` | netzschleuder `malaria_genes`, `HVR_1`–`HVR_9` as layers 1–9 | — | undirected | **multilayer** / higher-order (memory) real-world | 307 physical nodes · 9 layers |
 | air30k (states) | `air30k.net` | DB1B 2011 Q1–Q3 (`networks.paths`), second order on the 183 airports of [`air30k-airports.tsv`](air30k-airports.tsv) | — | undirected | **state / memory** (higher-order) real-world | 183 physical · 13 212 state nodes |
 | air30k (regularized) | `air30k.net` | as above | `-d --regularized` | directed | **state / memory** + **recorded teleportation** | 183 physical · 13 212 state nodes |
-| science2001 (preferred modules) | `science2001.net` | networks-store | `-d --preferred-number-of-modules 25` | directed | first-order + **preferred-number-of-modules** bias | 7 170 nodes |
+| word_assoc (preferred modules) | `word_assoc.txt` | netzschleuder `word_assoc` | `-d --preferred-number-of-modules 25` | directed | first-order + **preferred-number-of-modules** bias | 23 132 nodes |
 | air30k (meta) | `air30k.net` (+ `air30k_usstate.meta`) | as above; metadata from `columnar_wip/make-state-meta.py` | `--meta-data networks/columnar-benchmark/air30k_usstate.meta` | undirected | **state/memory + metadata** (both codebooks) | 183 physical · 13 212 state nodes |
 | overlapping om2–om8 | `om/overlapping-memory-n256-om<om>-nc64-E<E>-mu0.1-seed1.net` (+ planted `.clu`), E = 50000 and 100000 | `networks.generate.overlapping_memory_benchmark(om, E, seed=1)` | `-2d`, `-d` (each also `--regularized`) | directed | **state / memory**, planted overlapping communities, zero co-physical links | 256 physical · 28–59 k state nodes (table below) |
 | wikispeedia | `wikispeedia_states.net` | `networks.paths` wikispeedia, `to_state_network(order=2, max_nodes=300)` | `-2d` (also run `-d`) | directed | **state / memory**, real order-2 path network, zero co-physical links, healthy control for the overlapping rows | 300 physical · 6 475 state nodes |
 
-> **Inputs changed on 2026-10-10** (F64). Before that the rows ran on local files. Five of them
-> are now different bytes, and the snapshot of that PR compares both on one binary:
+> **Inputs changed on 2026-10-10** (F64, F65). Before that the rows ran on local files. The
+> snapshot of that PR compares old and new on one binary:
 > - **web-NotreDame** was a DAG: SNAP with self-loops dropped, reciprocal arcs merged to
 >   weight 2 and every edge pointing from low to high id. It is now the SNAP file as
 >   distributed.
@@ -60,6 +60,14 @@ its main branch, the first with `generate.overlapping_memory_benchmark`
 > - **om2 E50000 and om4 / om5 / om6 / om8 E100000** were unseeded draws of the generator
 >   and are now seed 1. The nine seeded om files are the same networks in the package's
 >   file layout.
+> - **Three networks were replaced** (F65) so that every input comes from the package:
+>   - netscicoauthor2010 (2010, 552 nodes, no public source) by netzschleuder's `netscience`
+>     (2006). Their authors overlap, but the 2010 file is a later compilation, not a subset.
+>   - politicalblogs, a network of Swedish blogs, by the Adamic–Glance `polblogs`. Both are
+>     directed with a two-level optimum, the property that exposed F15.
+>   - science2001, a journal citation network derived from licensed Journal Citation
+>     Reports data, by `word_assoc`. Both are directed and weighted with multi-second runs,
+>     and word_assoc is a row where columnar ends above OO.
 
 > **`air30k (meta)` metadata is generated, not checked in.** None of the higher-order inputs ships a
 > metadata file, so the fetch script reconstructs it with `columnar_wip/make-state-meta.py <air30k.net>
@@ -166,19 +174,21 @@ its main branch, the first with `generate.overlapping_memory_benchmark`
 > regroup machinery must leave it bit-identical in bits at `-N10` (5.907904741, 199 modules, `-2d`).
 
 **Coverage rationale**
-- **Base map equation, undirected**: ninetriangles (hierarchy), jazz, netscicoauthor2010, powergrid.
-- **Base map equation, directed** (where the up/down search and time matter most): politicalblogs,
-  science2001, web-NotreDame (the large stress case).
+- **Base map equation, undirected**: ninetriangles (hierarchy), jazz, netscience (disconnected:
+  396 components), powergrid.
+- **Base map equation, directed** (where the up/down search and time matter most): polblogs (a
+  two-level optimum), word_assoc (weighted, 23k nodes), web-NotreDame (the large stress case).
 - **Composable objectives** (exercise the correction hooks): lazega + metadata; air30k, multilayer,
   malaria for the memory/higher-order objective (physical-node codebook).
 - **Recorded teleportation** (exercises the tele-path move loop): air30k `-d --regularized` — the
   regularized directed flow model turns on recorded teleportation, so the leaf move loop runs the
   teleport-inclusive delta (`deltaCodelengthMovingNodeTele*`) rather than the link-only one.
-- **Search-shaping bias**: science2001 `-d --preferred-number-of-modules 25` exercises the columnar
+- **Search-shaping bias**: word_assoc `-d --preferred-number-of-modules 25` exercises the columnar
   `|K − K_pref|` bias (`PreferredModulesCorrection`).
 - **Scale**: from 5-node toys (fast correctness) to 325k-node web-NotreDame (time/memory).
 
-> **Fixed (see `columnar-rethink-notes.md` F15/F16):** `-C` best-of-N on **politicalblogs**
+> **Fixed (see `columnar-rethink-notes.md` F15/F16):** `-C` best-of-N on **politicalblogs** (the
+> Swedish blog network the set used until F65)
 > previously returned a negative, invalid "best codelength" — a cross-trial materialization bug
 > in the reconstructed OO tree. The engine now reports the columnar core's own (always-correct)
 > codelength (`columnarL`) rather than re-deriving it from the OO tree, so politicalblogs

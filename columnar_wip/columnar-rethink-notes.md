@@ -5220,3 +5220,63 @@ Driver: `columnar_wip/bench-inputs.py`; rows: `columnar_wip/inputs-ab-results.ts
 the unseeded om files. Each had been a silent property of one machine's data directory for months.
 Pinning bytes (sha256) instead of names makes the next such drift a loud failure of the fetch script,
 not a quiet change in the numbers.
+
+### F65 — Every benchmark input comes from the networks package: netscience, polblogs and word_assoc replace the three store files (2026-10-10)
+
+F64 left three inputs in `mapequation/networks-store` because they have no public source. The aim is
+one source for every input, and the networks package means to be complete, so those three are
+replaced by networks the package already has. Two of them should not have been public in any case:
+- **science2001** is derived from Journal Citation Reports, which is licensed data.
+- **politicalblogs** labels named Swedish bloggers with their party.
+
+Both were purged from the store's history (store `8aac7a9`). GitHub still serves the old commits by
+SHA until GitHub Support removes them.
+
+**The replacements, and what each one keeps.** All at `-C -N10`, seed 123, on `c9ce210b`, with OO as
+the reference.
+
+| replaced | by | bits · time | top / levels | columnar vs OO |
+|---|---|---|---|---|
+| netscicoauthor2010 | netzschleuder `netscience` | 3.363918 · 0.066 s | 278 / 4 | −0.018% |
+| politicalblogs | netzschleuder `polblogs` (Adamic–Glance), `-d` | 7.592773 · 0.082 s | 91 / 2 | −0.006% |
+| science2001 | netzschleuder `word_assoc`, `-d` | 11.432785 · 4.19 s | 762 / 2 | +0.069% |
+| science2001 (pref.) | `word_assoc -d --preferred-number-of-modules 25` | 11.734809 · 4.70 s | 25 / 2 | +0.91% (#1068) |
+
+- **netscience is not a fuller netscicoauthor2010.**
+  - It is the 2006 dataset. 422 of the 546 distinct names in the 2010 file (last name plus first
+    initial) appear in it, and 124 do not (Backstrom, Axelsson, …). So the 2010 file is a later
+    compilation, not a subset.
+  - It takes the same role, an undirected weighted co-authorship network, and adds one the set
+    lacked: a network in many pieces, 396 components with the largest holding 24% of the nodes.
+  - Infomap reads 1 461 nodes, because the 128 isolated authors drop out of a link list.
+- **politicalblogs exposed two bugs** through one property: F15 (a negative best codelength from
+  two-level materialization) and F33 (the leaf-network terms of #831, diagnosed from its −7.598 leaf
+  term). It was the set's only directed first-order network whose optimum is two-level. polblogs has
+  the same property (91 top modules, 2 levels) and costs 0.08 s per run.
+- **word_assoc was chosen among five directed, weighted, public candidates of 3k–30k nodes.**
+  Measured the same way:
+
+  | candidate | bits · time | top / levels | columnar vs OO |
+  |---|---|---|---|
+  | foldoc | 8.687909 · 1.42 s | 826 / 2 | −0.245% |
+  | dblp_cite (unweighted) | 9.356530 · 0.94 s | 283 / 3 | −0.097% |
+  | advogato | 7.339424 · 0.69 s | 1445 / 3 | +0.079% |
+  | word_assoc | 11.432785 · 4.16 s | 762 / 2 | +0.069% |
+  | fly_larva | 9.565415 · 0.67 s | 10 / 3 | +0.036% |
+
+  - word_assoc keeps what science2001 gave the set: directed, weighted, multi-second runs and many
+    top modules, so the preferred-modules bias toward 25 has work to do. It also adds a live gap to
+    OO for #832.
+  - It ends at two levels where science2001 ended at three.
+  - elec and chess were excluded: their weights are signed.
+- **The preferred-modules row** stays above OO in bits, as on science2001 (+3.74%), now by +0.91%.
+  Both engines reach 25 top modules. The difference is where each charges the term (#1068), not
+  the search.
+
+**Second pass.** Same binary and driver (`columnar_wip/bench-inputs.py`, `RENAMED`), old file
+against new network, under the new label, at load about 5. 48 columnar runs and the 8 OO rows.
+- The old-file arm reproduces #1128 on all 12 paired configurations (20 runs).
+- Every paired configuration moves, as two different networks must.
+- `columnar_wip/benchmark-networks.toml` no longer has a store recipe. Every input is fetched
+  through the package.
+- The three new files rebuild byte-identical to their pins from an empty directory.

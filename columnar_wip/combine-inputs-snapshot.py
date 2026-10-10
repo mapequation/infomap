@@ -24,6 +24,13 @@ CHANGED = {
     "air30k (reg.)",
     "air30k (meta)",
 }
+# Replaced by a different network (F65); the session writes their rows under the new label.
+REPLACED = {
+    "netscicoauthor2010",
+    "politicalblogs",
+    "science2001",
+    "science2001 (pref.)",
+}
 
 
 def rows(path):
@@ -34,7 +41,10 @@ def rows(path):
 
 
 def is_changed(label):
-    return label in CHANGED or re.match(r"(?:overlapping )?om\d", label) is not None
+    return (
+        label in CHANGED | REPLACED
+        or re.match(r"(?:overlapping )?om\d", label) is not None
+    )
 
 
 def fmt_time(t):

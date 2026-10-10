@@ -1,17 +1,9 @@
 C1	ninetriangles	old	1	-C -N1 	3.371875026	0.000416209	62974520	5	3	carried: 1127-ab-results.tsv new arm
 C1	ninetriangles	new	1	-C -N1 	3.371875026	0.000416209	62974520	5	3	carried: 1127-ab-results.tsv new arm
-C1	netscicoauthor2010	old	1	-C -N1 	4.047459862	0.003078792	89540343	7	4	carried: 1127-ab-results.tsv new arm
-C1	netscicoauthor2010	new	1	-C -N1 	4.047459862	0.003078792	89540343	7	4	carried: 1127-ab-results.tsv new arm
-C1	politicalblogs	old	1	-C -N1 -d	6.758265349	0.009494542	185945443	3	3	carried: 1127-ab-results.tsv new arm
-C1	politicalblogs	new	1	-C -N1 -d	6.758265349	0.009494542	185945443	3	3	carried: 1127-ab-results.tsv new arm
-C1	science2001	old	1	-C -N1 -d	7.807937174	0.40643425	5702696005	189	3	carried: 1127-ab-results.tsv new arm
-C1	science2001	new	1	-C -N1 -d	7.807937174	0.40643425	5702696005	189	3	carried: 1127-ab-results.tsv new arm
 C1	lazega	old	1	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.0007065	65592334	6	2	carried: 1127-ab-results.tsv new arm
 C1	lazega	new	1	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.0007065	65592334	6	2	carried: 1127-ab-results.tsv new arm
 C1	multilayer (ex.)	old	1	-C -N1 	2.011405238	0.000134125	58336624	2	2	carried: 1127-ab-results.tsv new arm
 C1	multilayer (ex.)	new	1	-C -N1 	2.011405238	0.000134125	58336624	2	2	carried: 1127-ab-results.tsv new arm
-C1	science2001 (pref.)	old	1	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.420200167	5831833644	5	3	carried: 1127-ab-results.tsv new arm
-C1	science2001 (pref.)	new	1	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.420200167	5831833644	5	3	carried: 1127-ab-results.tsv new arm
 C1	wikispeedia `-2d`	old	1	-C -2d -N1	5.91901362	0.094005208	999392069	184	2	carried: 1127-ab-results.tsv new arm
 C1	wikispeedia `-2d`	new	1	-C -2d -N1	5.91901362	0.094005208	999392069	184	2	carried: 1127-ab-results.tsv new arm
 C1	wikispeedia `-d`	old	1	-C -d -N1	6.066305904	0.0754485	822072819	187	3	carried: 1127-ab-results.tsv new arm
@@ -19,93 +11,47 @@ C1	wikispeedia `-d`	new	1	-C -d -N1	6.066305904	0.0754485	822072819	187	3	carrie
 C10	ninetriangles	old	1	-C -N10 	3.371875026	0.001180583	70496278	5	3	carried: 1127-ab-results.tsv new arm
 C10	ninetriangles	new	1	-C -N10 	3.371875026	0.001180583	70496278	5	3	carried: 1127-ab-results.tsv new arm
 L10	ninetriangles	new	1	-C --non-redundant -N10 	3.078067323	0.001181917	71829849	3	3	carried: 1127-ab-results.tsv new arm
-C2_10	netscicoauthor2010	old	1	-C -2 -N10 	4.283072584	0.014439166	158132413	59	2	carried: 1127-ab-results.tsv new arm
-C2_10	netscicoauthor2010	new	1	-C -2 -N10 	4.283072584	0.014439166	158132413	59	2	carried: 1127-ab-results.tsv new arm
-F10	politicalblogs	new	1	-C -F -N10 -d	6.740943136	0.056386667	674955507	81	2	carried: 1127-ab-results.tsv new arm
-C2_10	science2001	old	1	-C -2 -N10 -d	7.949978834	2.349982333	23851599778	506	2	carried: 1127-ab-results.tsv new arm
-C2_10	science2001	new	1	-C -2 -N10 -d	7.949978834	2.349982333	23851599778	506	2	carried: 1127-ab-results.tsv new arm
 F10	lazega	new	1	-C -F -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.004038167	99352112	7	2	carried: 1127-ab-results.tsv new arm
 C2_10	multilayer (ex.)	old	1	-C -2 -N10 	2.011405238	0.000423875	61341773	2	2	carried: 1127-ab-results.tsv new arm
 C2_10	multilayer (ex.)	new	1	-C -2 -N10 	2.011405238	0.000423875	61341773	2	2	carried: 1127-ab-results.tsv new arm
-F10	science2001 (pref.)	new	1	-C -F -N10 -d --preferred-number-of-modules 25	8.235585529	3.27438375	34720076377	25	2	carried: 1127-ab-results.tsv new arm
 C2_10	wikispeedia `-2d`	old	1	-C -2d -N10	5.907904741	0.735059792	6885292164	199	2	carried: 1127-ab-results.tsv new arm
 C2_10	wikispeedia `-2d`	new	1	-C -2d -N10	5.907904741	0.735059792	6885292164	199	2	carried: 1127-ab-results.tsv new arm
 C1	ninetriangles	old	2	-C -N1 	3.371875026	0.0002195	59104135	5	3	carried: 1127-ab-results.tsv new arm
 C1	ninetriangles	new	2	-C -N1 	3.371875026	0.0002195	59104135	5	3	carried: 1127-ab-results.tsv new arm
-C1	netscicoauthor2010	old	2	-C -N1 	4.047459862	0.002762333	89395792	7	4	carried: 1127-ab-results.tsv new arm
-C1	netscicoauthor2010	new	2	-C -N1 	4.047459862	0.002762333	89395792	7	4	carried: 1127-ab-results.tsv new arm
-C1	politicalblogs	old	2	-C -N1 -d	6.758265349	0.01943225	186061931	3	3	carried: 1127-ab-results.tsv new arm
-C1	politicalblogs	new	2	-C -N1 -d	6.758265349	0.01943225	186061931	3	3	carried: 1127-ab-results.tsv new arm
-C1	science2001	old	2	-C -N1 -d	7.807937174	0.408861375	5702466389	189	3	carried: 1127-ab-results.tsv new arm
-C1	science2001	new	2	-C -N1 -d	7.807937174	0.408861375	5702466389	189	3	carried: 1127-ab-results.tsv new arm
 C1	lazega	old	2	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000817584	65609474	6	2	carried: 1127-ab-results.tsv new arm
 C1	lazega	new	2	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000817584	65609474	6	2	carried: 1127-ab-results.tsv new arm
 C1	multilayer (ex.)	old	2	-C -N1 	2.011405238	0.000205917	58389622	2	2	carried: 1127-ab-results.tsv new arm
 C1	multilayer (ex.)	new	2	-C -N1 	2.011405238	0.000205917	58389622	2	2	carried: 1127-ab-results.tsv new arm
-C1	science2001 (pref.)	old	2	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.419030375	5827670693	5	3	carried: 1127-ab-results.tsv new arm
-C1	science2001 (pref.)	new	2	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.419030375	5827670693	5	3	carried: 1127-ab-results.tsv new arm
 C1	wikispeedia `-2d`	old	2	-C -2d -N1	5.91901362	0.094454541	999548285	184	2	carried: 1127-ab-results.tsv new arm
 C1	wikispeedia `-2d`	new	2	-C -2d -N1	5.91901362	0.094454541	999548285	184	2	carried: 1127-ab-results.tsv new arm
 C1	wikispeedia `-d`	old	2	-C -d -N1	6.066305904	0.073701583	821348923	187	3	carried: 1127-ab-results.tsv new arm
 C1	wikispeedia `-d`	new	2	-C -d -N1	6.066305904	0.073701583	821348923	187	3	carried: 1127-ab-results.tsv new arm
 C2_10	ninetriangles	old	1	-C -2 -N10 	3.517754809	0.000495375	62820840	9	2	carried: 1127-ab-results.tsv new arm
 C2_10	ninetriangles	new	1	-C -2 -N10 	3.517754809	0.000495375	62820840	9	2	carried: 1127-ab-results.tsv new arm
-F10	netscicoauthor2010	new	1	-C -F -N10 	4.03324474	0.015684125	220050810	9	4	carried: 1127-ab-results.tsv new arm
-C10	politicalblogs	old	1	-C -N10 -d	6.740943136	0.060256042	702609458	81	2	carried: 1127-ab-results.tsv new arm
-C10	politicalblogs	new	1	-C -N10 -d	6.740943136	0.060256042	702609458	81	2	carried: 1127-ab-results.tsv new arm
-L10	politicalblogs	new	1	-C --non-redundant -N10 -d	6.789241502	0.064775125	716880753	2	3	carried: 1127-ab-results.tsv new arm
-F10	science2001	new	1	-C -F -N10 -d	7.807937174	3.03834925	33151140701	189	3	carried: 1127-ab-results.tsv new arm
 C10	lazega	old	1	-C -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.004588875	100468054	7	2	carried: 1127-ab-results.tsv new arm
 C10	lazega	new	1	-C -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.004588875	100468054	7	2	carried: 1127-ab-results.tsv new arm
 L10	lazega	new	1	-C --non-redundant -N10 --meta-data networks/meta/lazega.meta	5.968624653	0.003898333	99963258	7	2	carried: 1127-ab-results.tsv new arm
 F10	multilayer (ex.)	new	1	-C -F -N10 	2.011405238	0.000505	62249052	2	2	carried: 1127-ab-results.tsv new arm
-C10	science2001 (pref.)	old	1	-C -N10 -d --preferred-number-of-modules 25	8.235585529	3.652192	35549789758	25	2	carried: 1127-ab-results.tsv new arm
-C10	science2001 (pref.)	new	1	-C -N10 -d --preferred-number-of-modules 25	8.235585529	3.652192	35549789758	25	2	carried: 1127-ab-results.tsv new arm
-L10	science2001 (pref.)	new	1	-C --non-redundant -N10 -d --preferred-number-of-modules 25	8.447745451	3.403712875	35373827037	25	2	carried: 1127-ab-results.tsv new arm
 F10	wikispeedia `-d`	new	1	-C -F -d -N10	5.907904741	0.713456042	6891548793	199	2	carried: 1127-ab-results.tsv new arm
 C1	ninetriangles	old	3	-C -N1 	3.371875026	0.000223209	59414375	5	3	carried: 1127-ab-results.tsv new arm
 C1	ninetriangles	new	3	-C -N1 	3.371875026	0.000223209	59414375	5	3	carried: 1127-ab-results.tsv new arm
-C1	netscicoauthor2010	old	3	-C -N1 	4.047459862	0.002651417	89284005	7	4	carried: 1127-ab-results.tsv new arm
-C1	netscicoauthor2010	new	3	-C -N1 	4.047459862	0.002651417	89284005	7	4	carried: 1127-ab-results.tsv new arm
-C1	politicalblogs	old	3	-C -N1 -d	6.758265349	0.009336458	185710120	3	3	carried: 1127-ab-results.tsv new arm
-C1	politicalblogs	new	3	-C -N1 -d	6.758265349	0.009336458	185710120	3	3	carried: 1127-ab-results.tsv new arm
-C1	science2001	old	3	-C -N1 -d	7.807937174	0.411801292	5702449854	189	3	carried: 1127-ab-results.tsv new arm
-C1	science2001	new	3	-C -N1 -d	7.807937174	0.411801292	5702449854	189	3	carried: 1127-ab-results.tsv new arm
 C1	lazega	old	3	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000706541	66160873	6	2	carried: 1127-ab-results.tsv new arm
 C1	lazega	new	3	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000706541	66160873	6	2	carried: 1127-ab-results.tsv new arm
 C1	multilayer (ex.)	old	3	-C -N1 	2.011405238	0.000221667	58261352	2	2	carried: 1127-ab-results.tsv new arm
 C1	multilayer (ex.)	new	3	-C -N1 	2.011405238	0.000221667	58261352	2	2	carried: 1127-ab-results.tsv new arm
-C1	science2001 (pref.)	old	3	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.540645667	5838059489	5	3	carried: 1127-ab-results.tsv new arm
-C1	science2001 (pref.)	new	3	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.540645667	5838059489	5	3	carried: 1127-ab-results.tsv new arm
 C1	wikispeedia `-2d`	old	3	-C -2d -N1	5.91901362	0.094518458	998200815	184	2	carried: 1127-ab-results.tsv new arm
 C1	wikispeedia `-2d`	new	3	-C -2d -N1	5.91901362	0.094518458	998200815	184	2	carried: 1127-ab-results.tsv new arm
 C1	wikispeedia `-d`	old	3	-C -d -N1	6.066305904	0.075240916	821639476	187	3	carried: 1127-ab-results.tsv new arm
 C1	wikispeedia `-d`	new	3	-C -d -N1	6.066305904	0.075240916	821639476	187	3	carried: 1127-ab-results.tsv new arm
 F10	ninetriangles	new	1	-C -F -N10 	3.371875026	0.00095675	68814457	5	3	carried: 1127-ab-results.tsv new arm
-C10	netscicoauthor2010	old	1	-C -N10 	4.023567105	0.023047625	308624209	11	4	carried: 1127-ab-results.tsv new arm
-C10	netscicoauthor2010	new	1	-C -N10 	4.023567105	0.023047625	308624209	11	4	carried: 1127-ab-results.tsv new arm
-L10	netscicoauthor2010	new	1	-C --non-redundant -N10 	3.892209764	0.023065875	309120868	2	5	carried: 1127-ab-results.tsv new arm
-C2_10	politicalblogs	old	1	-C -2 -N10 -d	6.739575295	0.043423167	517932107	81	2	carried: 1127-ab-results.tsv new arm
-C2_10	politicalblogs	new	1	-C -2 -N10 -d	6.739575295	0.043423167	517932107	81	2	carried: 1127-ab-results.tsv new arm
-C10	science2001	old	1	-C -N10 -d	7.807937174	3.297379167	34179978295	189	3	carried: 1127-ab-results.tsv new arm
-C10	science2001	new	1	-C -N10 -d	7.807937174	3.297379167	34179978295	189	3	carried: 1127-ab-results.tsv new arm
-L10	science2001	new	1	-C --non-redundant -N10 -d	8.009172258	2.800528459	31172141624	22	3	carried: 1127-ab-results.tsv new arm
 C2_10	lazega	old	1	-C -2 -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.003554	96981594	7	2	carried: 1127-ab-results.tsv new arm
 C2_10	lazega	new	1	-C -2 -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.003554	96981594	7	2	carried: 1127-ab-results.tsv new arm
 C10	multilayer (ex.)	old	1	-C -N10 	2.011405238	0.000501834	62821025	2	2	carried: 1127-ab-results.tsv new arm
 C10	multilayer (ex.)	new	1	-C -N10 	2.011405238	0.000501834	62821025	2	2	carried: 1127-ab-results.tsv new arm
 L10	multilayer (ex.)	new	1	-C --non-redundant -N10 	1.928856578	0.000546333	62853172	2	2	carried: 1127-ab-results.tsv new arm
-C2_10	science2001 (pref.)	old	1	-C -2 -N10 -d --preferred-number-of-modules 25	8.235585529	3.137468375	31558300827	25	2	carried: 1127-ab-results.tsv new arm
-C2_10	science2001 (pref.)	new	1	-C -2 -N10 -d --preferred-number-of-modules 25	8.235585529	3.137468375	31558300827	25	2	carried: 1127-ab-results.tsv new arm
 C10	wikispeedia `-d`	old	1	-C -d -N10	5.907904741	0.715405375	7180687137	199	2	carried: 1127-ab-results.tsv new arm
 C10	wikispeedia `-d`	new	1	-C -d -N10	5.907904741	0.715405375	7180687137	199	2	carried: 1127-ab-results.tsv new arm
 L10	wikispeedia `-d`	new	1	-C --non-redundant -d -N10	5.903208727	0.683396375	6860802747	199	2	carried: 1127-ab-results.tsv new arm
-C2_10	netscicoauthor2010	old	2	-C -2 -N10 	4.283072584	0.010099	166866649	59	2	carried: 1127-ab-results.tsv new arm
-C2_10	netscicoauthor2010	new	2	-C -2 -N10 	4.283072584	0.010099	166866649	59	2	carried: 1127-ab-results.tsv new arm
-C2_10	netscicoauthor2010	old	3	-C -2 -N10 	4.283072584	0.008983833	157685178	59	2	carried: 1127-ab-results.tsv new arm
-C2_10	netscicoauthor2010	new	3	-C -2 -N10 	4.283072584	0.008983833	157685178	59	2	carried: 1127-ab-results.tsv new arm
-C2_10	netscicoauthor2010	old	4	-C -2 -N10 	4.283072584	0.008722166	158441740	59	2	carried: 1127-ab-results.tsv new arm
-C2_10	netscicoauthor2010	new	4	-C -2 -N10 	4.283072584	0.008722166	158441740	59	2	carried: 1127-ab-results.tsv new arm
 C1	jazz	old	1	-C -N1	6.899367957	0.001226458	74815908	11	2	this session
 C1	jazz	new	1	-C -N1	6.896294162	0.000958084	70398465	10	2	this session
 C1	powergrid	old	1	-C -N1	4.730850312	0.026073209	363801841	12	5	this session
@@ -736,3 +682,51 @@ C2_10	powergrid	old	4	-C -2 -N10	5.63729688	0.101040958	1149668671	419	2	this se
 C2_10	powergrid	new	4	-C -2 -N10	5.634871397	0.101356458	1163105244	419	2	this session
 FAM	om4 E50000 `-2d --regularized -N10`	old	4	-C -2d --regularized -N10	7.92621405	2.948737709	23045469298	110	2	this session
 FAM	om4 E50000 `-2d --regularized -N10`	new	4	-C -2d --regularized -N10	7.92621405	2.827975917	23034718189	110	2	this session
+C1	netscience	old	1	-C -N1	4.047459862	0.002654458	91981442	7	4	this session
+C1	netscience	new	1	-C -N1	3.364566019	0.007371541	146463443	278	4	this session
+C1	polblogs	old	1	-C -N1 -d	6.758265349	0.009224833	186993985	3	3	this session
+C1	polblogs	new	1	-C -N1 -d	7.593689164	0.014712625	257201202	3	3	this session
+C1	word_assoc	old	1	-C -N1 -d	7.807937174	0.409737709	5703953198	189	3	this session
+C1	word_assoc	new	1	-C -N1 -d	11.70862241	0.272015584	3404212575	1817	2	this session
+C1	word_assoc (pref.)	old	1	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.433450083	5829850511	5	3	this session
+C1	word_assoc (pref.)	new	1	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.428500625	4426761761	25	2	this session
+F10	word_assoc	new	1	-C -F -N10 -d	11.43278494	3.482122542	38995881892	762	2	this session
+L10	word_assoc	new	1	-C --non-redundant -N10 -d	11.95700584	4.3672775	48541473275	1789	2	this session
+C1	netscience	old	2	-C -N1	4.047459862	0.002751958	90428630	7	4	this session
+C1	netscience	new	2	-C -N1	3.364566019	0.007227125	146148295	278	4	this session
+C1	polblogs	old	2	-C -N1 -d	6.758265349	0.009340125	186319562	3	3	this session
+C1	polblogs	new	2	-C -N1 -d	7.593689164	0.015283958	256396580	3	3	this session
+C1	word_assoc	old	2	-C -N1 -d	7.807937174	0.42715525	5701317158	189	3	this session
+C1	word_assoc	new	2	-C -N1 -d	11.70862241	0.272199333	3403360182	1817	2	this session
+C1	word_assoc (pref.)	old	2	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.412290333	5827209564	5	3	this session
+C1	word_assoc (pref.)	new	2	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.419829833	4429313183	25	2	this session
+C2_10	netscience	old	1	-C -2 -N10	4.283072584	0.008684458	157204794	59	2	this session
+C2_10	netscience	new	1	-C -2 -N10	3.529536656	0.020007167	277006823	312	2	this session
+F10	polblogs	new	1	-C -F -N10 -d	7.592773105	0.079187917	915385798	91	2	this session
+C10	polblogs	old	1	-C -N10 -d	6.740943136	0.063675833	703227896	81	2	this session
+C10	polblogs	new	1	-C -N10 -d	7.592773105	0.082122458	943310314	91	2	this session
+C10	word_assoc (pref.)	old	1	-C -N10 -d --preferred-number-of-modules 25	8.235585529	3.288141708	35502503503	25	2	this session
+C10	word_assoc (pref.)	new	1	-C -N10 -d --preferred-number-of-modules 25	11.73480892	4.703783833	49197225455	25	2	this session
+C10	netscience	old	1	-C -N10	4.023567105	0.0228675	309394976	11	4	this session
+C10	netscience	new	1	-C -N10	3.363918326	0.066189042	802456637	278	4	this session
+C2_10	polblogs	old	1	-C -2 -N10 -d	6.739575295	0.042684	517956410	81	2	this session
+C2_10	polblogs	new	1	-C -2 -N10 -d	7.592588015	0.068032292	812739501	89	2	this session
+C2_10	word_assoc (pref.)	old	1	-C -2 -N10 -d --preferred-number-of-modules 25	8.235585529	3.062311	31549129438	25	2	this session
+C2_10	word_assoc (pref.)	new	1	-C -2 -N10 -d --preferred-number-of-modules 25	11.73480892	3.981496125	45372567799	25	2	this session
+C1	netscience	old	3	-C -N1	4.047459862	0.002797708	90675284	7	4	this session
+C1	netscience	new	3	-C -N1	3.364566019	0.007561292	146224110	278	4	this session
+C1	polblogs	old	3	-C -N1 -d	6.758265349	0.009587292	186433676	3	3	this session
+C1	polblogs	new	3	-C -N1 -d	7.593689164	0.01820875	257447620	3	3	this session
+C1	word_assoc	old	3	-C -N1 -d	7.807937174	0.436874709	5700138030	189	3	this session
+C1	word_assoc	new	3	-C -N1 -d	11.70862241	0.279315458	3406585394	1817	2	this session
+C1	word_assoc (pref.)	old	3	-C -N1 -d --preferred-number-of-modules 25	8.460796773	0.420486	5834531924	5	3	this session
+C1	word_assoc (pref.)	new	3	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.420093917	4426953645	25	2	this session
+C2_10	word_assoc	old	1	-C -2 -N10 -d	7.949978834	2.319679667	23848989448	506	2	this session
+C2_10	word_assoc	new	1	-C -2 -N10 -d	11.42993396	3.094749042	34856121205	764	2	this session
+F10	word_assoc (pref.)	new	1	-C -F -N10 -d --preferred-number-of-modules 25	11.73480892	4.348200333	44526257185	25	2	this session
+F10	netscience	new	1	-C -F -N10	3.364888761	0.038301834	491187967	283	4	this session
+L10	polblogs	new	1	-C --non-redundant -N10 -d	7.592668282	0.080147417	934029380	3	3	this session
+L10	word_assoc (pref.)	new	1	-C --non-redundant -N10 -d --preferred-number-of-modules 25	12.7626516	4.78937275	49198428015	25	2	this session
+L10	netscience	new	1	-C --non-redundant -N10	3.313421599	0.053977917	664079980	272	4	this session
+C10	word_assoc	old	1	-C -N10 -d	7.807937174	3.049291584	34161294512	189	3	this session
+C10	word_assoc	new	1	-C -N10 -d	11.43278494	4.190791625	44479344884	762	2	this session

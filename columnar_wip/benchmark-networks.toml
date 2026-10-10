@@ -5,7 +5,6 @@
 #
 # Recipes:
 #   repo                in this repository, nothing to fetch
-#   store               a file from mapequation/networks-store, pinned to `store_commit`
 #   netzschleuder       networks.netzschleuder.load(dataset), written as a link list
 #   lazega              netzschleuder law_firm layer 2 (friendship), both directions, + nodeGender
 #   malaria             netzschleuder malaria_genes HVR_1..9 as one multilayer network
@@ -14,8 +13,6 @@
 #   db1b-air30k         networks.paths db1b-coupon 2011 Q1-Q3, second order, on `airports`
 #   state-meta          columnar_wip/make-state-meta.py on another entry's output
 #   overlapping-memory  networks.generate.overlapping_memory_benchmark, network + planted .clu
-
-store_commit = "622481b95c0d331336a1130f1f267f01122e5da9"
 
 [[network]]
 name = "ninetriangles"
@@ -42,22 +39,22 @@ recipe = "netzschleuder"
 dataset = "power"
 
 [[network]]
-name = "netscicoauthor2010"
-file = "netscicoauthor2010.net"
-recipe = "store"
-path = "first-order/netscicoauthor2010.net"
+name = "netscience"
+file = "netscience.txt"
+recipe = "netzschleuder"
+dataset = "netscience"
 
 [[network]]
-name = "politicalblogs"
-file = "politicalblogs.net"
-recipe = "store"
-path = "first-order/politicalblogs.net"
+name = "polblogs"
+file = "polblogs.txt"
+recipe = "netzschleuder"
+dataset = "polblogs"
 
 [[network]]
-name = "science2001"
-file = "science2001.net"
-recipe = "store"
-path = "first-order/science2001.net"
+name = "word_assoc"
+file = "word_assoc.txt"
+recipe = "netzschleuder"
+dataset = "word_assoc"
 
 [[network]]
 name = "web-NotreDame"

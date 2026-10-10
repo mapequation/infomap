@@ -7,7 +7,9 @@ numbers are carried from that TSV, measured with the same binary). The object-or
 on the new input of each changed row of the two OO tables. Interleaved by arm; -N1 rows as 3
 reps spread across the batch.
 Row: key label arm rep flags codelength total_s instr top levels
-Resumable: existing (key, label, arm, rep) rows are skipped."""
+Resumable: existing (key, label, arm, rep) rows are skipped. A second pass (F65) added the
+networks that were replaced by a different one (RENAMED): old file against the new network,
+written under the new label, with the object-oriented arm on the new network."""
 
 import json
 import os
@@ -41,6 +43,30 @@ BASE = {  # label -> (old input, new input, {old flag path: new flag path})
         {AIR_META: f"{NEW}/air30k_usstate.meta"},
     ),
 }
+# Networks replaced by a different one from the networks package (second pass, F65): the
+# #1127 label keeps its configurations; rows are written under the new label.
+RENAMED = {  # #1127 label -> (new label, old input, new input)
+    "netscicoauthor2010": (
+        "netscience",
+        "networks/db/netscicoauthor2010.net",
+        f"{NEW}/netscience.txt",
+    ),
+    "politicalblogs": (
+        "polblogs",
+        "networks/db/politicalblogs.net",
+        f"{NEW}/polblogs.txt",
+    ),
+    "science2001": (
+        "word_assoc",
+        "networks/db/science2001.net",
+        f"{NEW}/word_assoc.txt",
+    ),
+    "science2001 (pref.)": (
+        "word_assoc (pref.)",
+        "networks/db/science2001.net",
+        f"{NEW}/word_assoc.txt",
+    ),
+}
 MAIN_DENSITY = {
     2: 50000,
     3: 100000,
@@ -64,6 +90,8 @@ def inputs(label):
     """(old net, new net, flag substitutions) for a label whose input changed, else None."""
     if label in BASE:
         return BASE[label]
+    if label in RENAMED:
+        return RENAMED[label][1], RENAMED[label][2], {}
     m = re.match(r"(?:overlapping )?om(\d)(?: E(\d+))?\b", label)
     if not m:
         return None
@@ -138,6 +166,7 @@ def run(key, label, net, flags, arm, rep):
 
 def columnar(key, label, rep):
     flags, arms, _ = configs[key, label]
+    row_label = RENAMED[label][0] if label in RENAMED else label
     old, new, subst = inputs(label)
     for arm in ("old", "new"):
         if arm == "old" and "old" not in arms:
@@ -146,10 +175,14 @@ def columnar(key, label, rep):
         if arm == "new":
             for a, b in subst.items():
                 fl = fl.replace(a, b)
-        run(key, label, net, fl, arm, rep)
+        run(key, row_label, net, fl, arm, rep)
 
 
 def oo(key, label):
+    if label in RENAMED:  # the OO flags are the columnar row's without -C
+        flags = configs["C10" if key == "O10" else "C2_10", label][0].replace("-C ", "")
+        run(key, RENAMED[label][0], RENAMED[label][2], flags, "oo", 1)
+        return
     if (key, label) == ("O10", "air30k (meta)"):
         return  # killed after 9 h 25 min on the first pass and not retried: #1134
     flags = f"{OO[key][label]} {OO_FLAGS.get(label, '')}".strip()
@@ -160,6 +193,7 @@ n1 = [k for k, c in configs.items() if len(c[2]) == 3]
 # Everything else is -N10, run once; four of those had 4 reps in #1127 (its re-measures).
 n10 = [k for k, c in configs.items() if len(c[2]) != 3]
 n10 += [(key, lb) for key in OO for lb in OO[key]]
+n10 += [(key, lb) for key in OO for lb in RENAMED]
 chunks = [n10[i::3] for i in range(3)]  # three interleaved slices of the -N10 work
 for rep in (1, 2, 3):
     for key, label in n1:
