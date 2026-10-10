@@ -161,14 +161,18 @@ def html_rows(spec, data, order, old_lines):
     out = []
     for lb in existing:
         left = carried[lb][:5]
-        ref = Cell(
-            left[0],
-            float(left[0]),
-            float(left[1][:-1]),
-            float(left[2][:-1]) * 1e9,
-            left[3],
-            left[4],
-        )
+        try:
+            ref = Cell(
+                left[0],
+                float(left[0]),
+                float(left[1][:-1]),
+                float(left[2][:-1]) * 1e9,
+                left[3],
+                left[4],
+            )
+        except ValueError:  # an OO run that did not finish: no deltas
+            out.append(row(lb, left, left_cells(data[key, lb, "new"])))
+            continue
         out.append(row(lb, left, right_cells(data[key, lb, "new"], ref)))
     return out
 

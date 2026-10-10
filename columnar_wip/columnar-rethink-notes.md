@@ -5105,3 +5105,118 @@ winner.
 median +0.13%; the 116 it cannot reach sit at a median 0.00%. The five largest seconds readings (+14% to
 +67%, two on `-2` rows the change cannot reach) re-measured at −1.0% to +2.0%. `-N1` never runs it. Serial
 and `--parallel-trials` agree on all three moved rows.
+
+### F64 — The benchmark inputs come from a manifest anyone can fetch; web-NotreDame, air30k and five om networks change (2026-10-10)
+
+Until now every input of the benchmark set was a local file under `networks/` (a symlink to one
+machine's data directory), so nobody else could refresh the snapshot. Now
+`columnar_wip/benchmark-networks.toml` names a source for each input, and
+`columnar_wip/fetch-benchmark-networks.py` writes all of them to `networks/columnar-benchmark/` and
+checks each one against `columnar_wip/benchmark-networks.sha256`.
+
+**Sources.**
+- **Public repositories, through the `mapequation-networks` package:**
+  - jazz, powergrid, lazega and malaria from netzschleuder;
+  - web-NotreDame from SNAP;
+  - wikispeedia from `networks.paths`;
+  - air30k rebuilt from the BTS DB1B coupons.
+- **The package's generator:** the om family, `generate.overlapping_memory_benchmark`
+  (mapequation/networks#13, merged; the package is pinned at its main-branch commit `0e3646e`).
+- **`mapequation/networks-store`:** netscicoauthor2010, politicalblogs and science2001, which have no
+  public source and no recorded provenance.
+
+**What checking each local file against its source found.**
+
+- **web-NotreDame.net was a DAG.** It was SNAP with self-loops dropped, reciprocal arcs merged to
+  weight 2 and every edge oriented from low to high id. So `-d` ran a network with no directed cycle,
+  and no flag reproduces that orientation. On SNAP, `--no-self-links` gives 6.362 bits / 528 top
+  modules at `-C -N1`, against the DAG's 5.556 / 5. The only match is undirected: SNAP undirected
+  `--no-self-links` has the DAG's one-level codelength (16.02446292). The row now runs the SNAP file
+  as distributed, with `-d`.
+- **politicalblogs.net is a network of Swedish blogs** (1 046 nodes, party tags in the labels), not
+  Adamic–Glance's `polblogs`.
+- **air30k.net comes from Rosvall et al. 2014.** Supplementary Note 1 describes it: DB1B, 2011 Q1–Q3,
+  19 415 369 itineraries between 464 airports.
+  - It is exactly that paper's 464-airport trigram file with the self-memory `i i j` trigrams dropped,
+    restricted to the 183 airports in its `*Vertices`.
+  - No passenger threshold reproduces those 183: legs in, out or both, itinerary origins and transfers
+    all fail.
+  - Rebuilding the trigrams from DB1B (`networks.paths` `db1b-coupon` 2011 Q1–Q3, weighted by
+    passengers) reproduces the totals to 0.0005%. But 5 786 of the 264 989 air30k links differ, moving
+    0.11% of the weight. Open-jaw gaps are not the cause (the coupons have none).
+  - The paper's file stays in networks-store as `memory/air2011/air30k.net`.
+  - The benchmark now uses the rebuild, on the same 183 airports (`columnar_wip/air30k-airports.tsv`),
+    written in the original file's layout. Written that way, the paper's trigrams reproduce the
+    original file byte for byte.
+  - Against the original at `-C -N10 --seed 123`, the rebuild is within 0.1% in bits, and its
+    partitions are as close to the original's as two seeds of the same network are to each other. That
+    keeps its role as the control the om probes are compared with.
+
+    | config | bits original → rebuild | top | `total_s` | AMI original vs rebuild (seed 123, 456) | AMI seed 123 vs 456 (original, rebuild) |
+    |---|---|---|---|---|---|
+    | default | 5.392285 → 5.393235 (+0.018%) | 257 → 260 | 3.45 → 3.46 s | 0.972, 0.978 | 0.982, 0.974 |
+    | `-d --regularized` | 5.574537 → 5.578853 (+0.077%) | 228 → 225 | 3.78 → 3.78 s | 0.877, 0.903 | 0.939, 0.846 |
+    | `--meta-data` | 7.421664 → 7.414541 (−0.096%) | 2135 → 2238 | 9.48 → 9.13 s | 0.865, 0.874 | 0.853, 0.878 |
+
+- **The om family.** The generator is now in the networks package. It draws the original script's
+  random numbers in the original's order.
+  - **The nine seeded files are the same networks.** One-level and planted codelengths are identical
+    under both objectives.
+  - **The file layout does not matter.** States are now numbered in planting order and the files carry
+    a header. In the snapshot session all 71 configurations on those nine are bit-identical, old file
+    against new, at −1.36% to +0.19% in instructions (median +0.01%).
+  - **The five unseeded files are replaced by seed 1:** om2 E50000 and om4 / om5 / om6 / om8 E100000.
+    #1042's mode survives on the new om5 E100000: `--regularized` search ends +1.89% in bits above the
+    planted partition (+2.26% on the old draw). #1041's om8 E100000 `-d` gap does not appear on the new
+    draw: `-d` reaches 6.872783 bits, `-2d` 6.873357. On every row `-d` is below `-2d` or within
+    0.02% of it.
+  - **One new single-trial outlier:** om2 E50000 `--regularized -N1` stops at 7.930 bits on seed 123, near
+    one-level (7.959), against 7.549 on the old draw.
+    - Seeds 456, 7, 11 and 99 reach 7.532–7.539 bits.
+    - OO returns one-level on all five seeds.
+    - So it is one trial's luck, not a columnar gap. `-N10` reaches 7.535 bits.
+- **jazz, powergrid, malaria and lazega are the same networks** with other node ids or line orders.
+  - lazega is reproduced byte for byte.
+  - malaria is reproduced up to line order and gives the same bits on every configuration.
+  - jazz is 0-based and in another line order; powergrid is relabelled. Both search differently, like
+    another seed:
+    - jazz: identical on 2 of 3 configurations; `-N1` −0.045% in bits.
+    - powergrid: `-N1` −0.021%, `-C` +0.014% and `-C -2` −0.043% in bits. The `-C -2` row is +2.2% in
+      seconds at +1.20% in instructions, as the minimum of 4.
+
+**What the rebuilt inputs exposed.** Two findings come from running the engines on the new inputs.
+Both are filed rather than fixed here.
+- **#1134:** OO `air30k (meta)` `-N1 --seed 123` on the rebuild did not finish.
+  - It was killed after 9 h 25 min and 376 T instructions.
+  - Seeds 456 and 7 finish in 10 s and 6 s, and the original file finishes in 6 s on the same binary.
+  - `sample` puts it in the OO super-module tune loop (`partition → coarseTune → partition →
+    findTopModulesRepeatedly`) with `MetaMapEquation`. A `-vvv` run shows non-monotone codelengths
+    across tune iterations of about 20 s each.
+  - SIGTERM, which Infomap handles as a cooperative cancel, did not end it; it needed SIGKILL.
+  - That code is shared, so the fix goes to master.
+- **#1135:** columnar `-d --regularized -N10` on the rebuild ends 0.09–0.14% in bits above OO on three
+  seeds, and 0.145% above its own `-2d` run.
+  - On the original file the hierarchical run was 0.054% above `-2d` and 0.07% below OO.
+  - So the hierarchical-above-two-level gap was already there; the rebuild amplifies it past both
+    references.
+
+**Snapshot session (2026-10-10, load 5–14).** One binary, `c9ce210b` (md5 `54c8b6b2…`), the #1128
+snapshot's new one. Every row whose input changed ran old file against fetched file, interleaved:
+630 columnar runs over 166 configurations, plus the 13 OO rows of the two OO tables on the new input.
+Driver: `columnar_wip/bench-inputs.py`; rows: `columnar_wip/inputs-ab-results.tsv`.
+- **The old-file column reproduces #1128's new column** in bits, top modules and levels on all 152
+  configurations (305 runs, every rep).
+- **Rows on byte-identical inputs** are carried from #1128's session as both arms
+  (`columnar_wip/combine-inputs-snapshot.py` writes `columnar_wip/inputs-snapshot.tsv`).
+- **76 configurations move**, all on changed inputs. **76 are bit-identical:** the nine seeded om
+  networks (71), malaria (3) and jazz (2).
+- **A driver bug, caught by the completeness check:** the first pass scheduled only configurations with
+  exactly 1 or 3 reps in #1127's TSV. It skipped the four `-N10` rows #1127 had re-measured as 4 reps,
+  so those ran in a second pass.
+- **Two time outliers were re-measured** as the minimum of 4: powergrid `-C -2` went from +58.6% to
+  +2.2% in seconds, and om4 E50000 `-2d --regularized -N10` from +11.1% to +1.3%.
+
+**Lesson.** Checking each local file against its source is what found the DAG, the Swedish blogs and
+the unseeded om files. Each had been a silent property of one machine's data directory for months.
+Pinning bytes (sha256) instead of names makes the next such drift a loud failure of the fetch script,
+not a quiet change in the numbers.
