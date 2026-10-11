@@ -383,6 +383,42 @@ TEST_CASE("Undirected regularization remains stable on the two-triangles fixture
   infomap::test::checkApproxCodelength(im.codelength(), 2.575767408, 1e-9);
 }
 
+TEST_CASE("Regularization strength 0 matches its small-strength limit with dangling nodes [fast][core][flow]")
+{
+  // At strength 0 the prior out-weight t_i is zero, so alpha = t_i / (s_i + t_i) was
+  // 0/0 for a node without out-links. Directed flow went NaN and the run was rejected
+  // as degenerate; undirected flow left a NaN teleport flow on the isolated node, which
+  // blocked moves and returned a worse partition with a successful exit (#1144).
+  // Strength 0 is the limit of small strengths, so it has to agree with one.
+  const auto run = [](const std::string& flags, const std::string& strength) {
+    InfomapWrapper im(infomap::test::defaultFlags("--regularized --regularization-strength " + strength + " " + flags));
+    im.addLink(1, 2);
+    im.addLink(2, 3);
+    im.addLink(3, 1);
+    im.addLink(4, 5);
+    im.addLink(5, 6);
+    im.addLink(6, 4);
+    im.addLink(3, 4);
+    im.addLink(6, 7); // 7 has no out-links in directed flow
+    im.addNode(8); // isolated
+    im.run();
+    auto modules = im.getModules(1);
+    // Undirected flow gives 8 no flow at strength 0, so every module fits it equally well.
+    modules.erase(8);
+    return std::make_pair(im.codelength(), infomap::test::canonicalPartition(modules));
+  };
+
+  for (const std::string flags : { "--directed", "--directed --no-self-links", "", "--no-self-links" }) {
+    CAPTURE(flags);
+    const auto [codelengthAtZero, partitionAtZero] = run(flags, "0");
+    const auto [codelengthNearZero, partitionNearZero] = run(flags, "1e-12");
+
+    CHECK(std::isfinite(codelengthAtZero));
+    infomap::test::checkApproxCodelength(codelengthAtZero, codelengthNearZero, 1e-9);
+    CHECK(partitionAtZero == partitionNearZero);
+  }
+}
+
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 // examples/networks/multilayer_intra_inter.net -- a network we ship -- fails its
 // flow-imbalance check under --regularized. The imbalance itself is unresolved
