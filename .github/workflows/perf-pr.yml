@@ -7,6 +7,7 @@ on:
       - ".github/workflows/perf-pr.yml"
       - ".github/workflows/ci.yml"
       - ".github/workflows/_native-build.yml"
+      - ".github/actions/setup-ccache/action.yml"
       - ".github/actions/setup-python-build/action.yml"
       - "CMakeLists.txt"
       - "examples/networks/**"
@@ -19,6 +20,8 @@ on:
 
 permissions:
   contents: read
+  # Read the PR description at compare time for an `Output-change:` acknowledgement.
+  pull-requests: read
 
 concurrency:
   group: perf-pr-${{ github.workflow }}-${{ github.event.pull_request.number }}
@@ -31,24 +34,36 @@ jobs:
     timeout-minutes: 45
 
     steps:
-      - name: Checkout PR head
+      # The merge commit GitHub prepared for this event, not the PR head. A branch
+      # behind master would otherwise be compared with a newer master, and the
+      # difference would include master's own changes. The merge commit's first
+      # parent is the master it was merged onto, so the two trees differ by exactly
+      # this PR.
+      - name: Checkout PR merge commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
+          fetch-depth: 2
           path: head
 
-      - name: Checkout PR base
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
-          path: base
+      - name: Check out its base parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "$GITHUB_WORKSPACE/head" worktree add --detach "$GITHUB_WORKSPACE/base" HEAD^1
+          echo "head (merge): $(git -C "$GITHUB_WORKSPACE/head" rev-parse HEAD)"
+          echo "base:         $(git -C "$GITHUB_WORKSPACE/base" rev-parse HEAD)"
 
       - name: Set up Python
         uses: ./head/.github/actions/setup-python-build
         with:
           python-version: "3.14"
           cache-dependency-path: head/pyproject.toml
+
+      - name: Set up ccache
+        uses: ./head/.github/actions/setup-ccache
+        with:
+          key-prefix: perf-pr-ubuntu-24.04
 
       - name: Build base and head benchmark binaries
         shell: bash
@@ -61,11 +76,12 @@ jobs:
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               -DINFOMAP_MODE=release \
               -DINFOMAP_USE_OPENMP=ON
-            cmake --build "$tree/build/cmake" --target infomap_native_benchmark --parallel 1
+            cmake --build "$tree/build/cmake" --target infomap_native_benchmark --parallel "$(nproc)"
           }
 
           build_native_benchmark "$GITHUB_WORKSPACE/base"
           build_native_benchmark "$GITHUB_WORKSPACE/head"
+          ccache -s || true
 
       - name: Run base and head PR benchmarks
         shell: bash
@@ -83,6 +99,15 @@ jobs:
           # load. Repeats are higher than the old 3 now that one run covers both, and
           # an even count so each binary leads half the rounds -- going first costs a
           # measured 0.13%, which cancels exactly only when the leads are balanced.
+          #
+          # --num-threads 1 keeps the OpenMP build that ships but times it serially:
+          # thread scheduling on a shared 4-vCPU VM is noise the gate cannot separate
+          # from the code. Serial peak RSS also stays within about 1% between repeats,
+          # where threaded runs moved up to 8%.
+          #
+          # A run that passes --sample-timeout-sec is killed and reported as timed out,
+          # so a hang (#1134 ran 9 h 25 min) costs minutes and still leaves a verdict
+          # instead of using up the job's limit. The slowest case takes a few seconds.
           python "$GITHUB_WORKSPACE/head/scripts/benchmarks/run_native_benchmarks.py" \
             --binary "$GITHUB_WORKSPACE/base/build/cmake/infomap_native_benchmark" \
             --compare-binary "$GITHUB_WORKSPACE/head/build/cmake/infomap_native_benchmark" \
@@ -90,20 +115,35 @@ jobs:
             --repeats 6 \
             --warmup-runs 1 \
             --iterations 1 \
+            --flags "--silent --no-file-output --num-trials 1 --seed 123 --num-threads 1" \
+            --sample-timeout-sec 120 \
             --output "$GITHUB_WORKSPACE/artifacts/base-native-benchmarks.json" \
             --compare-output "$GITHUB_WORKSPACE/artifacts/head-native-benchmarks.json"
 
       - name: Compare base and head benchmark reports
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
+          # Fetched now rather than read from the event payload, which a re-run
+          # replays unchanged: acknowledging an output change is an edit to the
+          # description followed by a re-run of this job.
+          pr_description="$RUNNER_TEMP/pr-description.md"
+          if ! gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.body // ""' > "$pr_description"; then
+            echo "::warning::Could not read the PR description, so an Output-change line in it is not seen."
+            : > "$pr_description"
+          fi
           comparison_status=0
           python "$GITHUB_WORKSPACE/head/scripts/benchmarks/compare_native_benchmarks.py" \
             --base "$GITHUB_WORKSPACE/artifacts/base-native-benchmarks.json" \
             --head "$GITHUB_WORKSPACE/artifacts/head-native-benchmarks.json" \
             --markdown-out "$GITHUB_WORKSPACE/artifacts/perf-summary.md" \
             --json-out "$GITHUB_WORKSPACE/artifacts/perf-comparison.json" \
-            --fail-on-regression || comparison_status=$?
+            --pr-description "$pr_description" \
+            --fail-on-regression \
+            --fail-on-output-change || comparison_status=$?
           cat "$GITHUB_WORKSPACE/artifacts/perf-summary.md" >> "$GITHUB_STEP_SUMMARY"
           exit "$comparison_status"
 

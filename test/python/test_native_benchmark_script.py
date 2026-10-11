@@ -30,41 +30,14 @@ def _load_benchmark_module():
     return module
 
 
-def test_benchmark_case_tolerates_missing_rebuild_metrics(monkeypatch, tmp_path: Path):
+def test_benchmark_case_summarizes_peak_rss_by_median(monkeypatch, tmp_path: Path):
+    """The comparison judges memory on the median peak, like it judges wall time."""
     benchmark_module = _load_benchmark_module()
-    payload = {
-        "name": "toy",
-        "path": str(tmp_path / "toy.net"),
-        "flags": "--silent --no-file-output --num-trials 1 --seed 123",
-        "iterations": 1,
-        "total_sec": 0.3,
-        "read_input_sec": 0.1,
-        "run_sec": 0.2,
-        "peak_rss_bytes": 4096,
-        "node_size_bytes": 32,
-        "edge_size_bytes": 16,
-        "num_nodes": 5,
-        "num_links": 4,
-        "num_top_modules": 2,
-        "num_levels": 1,
-        "codelength": 1.5,
-        "higher_order_input": False,
-        "directed_input": False,
-        "runs": [
-            {
-                "iteration": 1,
-                "read_input_sec": 0.0,
-                "run_sec": 0.2,
-                "total_sec": 0.2,
-                "peak_rss_bytes": 4096,
-                "num_top_modules": 2,
-                "num_levels": 1,
-                "codelength": 1.5,
-            }
-        ],
-    }
+    peaks = [5000, 4096, 9000]
 
     def fake_run(*args, **kwargs):
+        payload = _minimal_payload(0.2)
+        payload["runs"][0]["peak_rss_bytes"] = peaks.pop(0)
         return benchmark_module.subprocess.CompletedProcess(
             args[0], 0, stdout=json.dumps(payload), stderr=""
         )
@@ -75,93 +48,15 @@ def test_benchmark_case_tolerates_missing_rebuild_metrics(monkeypatch, tmp_path:
         binary=tmp_path / "infomap_native_benchmark",
         name="toy",
         network_path=tmp_path / "toy.net",
-        repeats=1,
+        repeats=3,
         warmup_runs=0,
         iterations=1,
         flags="--silent",
     )
 
-    assert result["rebuild"]["mean_total_sec"] == 0.0
-    assert result["rebuild"]["median_total_calls"] == 0
-    assert result["rebuild"]["module_size_buckets"] == {}
-
-
-def test_benchmark_case_collects_dynamic_rebuild_bucket_labels(
-    monkeypatch, tmp_path: Path
-):
-    benchmark_module = _load_benchmark_module()
-    payload = {
-        "name": "toy",
-        "path": str(tmp_path / "toy.net"),
-        "flags": "--silent --no-file-output --num-trials 1 --seed 123",
-        "iterations": 1,
-        "total_sec": 0.5,
-        "read_input_sec": 0.1,
-        "run_sec": 0.4,
-        "peak_rss_bytes": 8192,
-        "node_size_bytes": 32,
-        "edge_size_bytes": 16,
-        "num_nodes": 8,
-        "num_links": 12,
-        "num_top_modules": 3,
-        "num_levels": 2,
-        "codelength": 2.5,
-        "higher_order_input": False,
-        "directed_input": True,
-        "runs": [
-            {
-                "iteration": 1,
-                "read_input_sec": 0.0,
-                "run_sec": 0.4,
-                "total_sec": 0.4,
-                "peak_rss_bytes": 8192,
-                "num_top_modules": 3,
-                "num_levels": 2,
-                "codelength": 2.5,
-                "rebuild": {
-                    "total_sec": 0.05,
-                    "network_sec": 0.01,
-                    "module_sec": 0.04,
-                    "total_calls": 7,
-                    "network_calls": 2,
-                    "module_calls": 5,
-                    "module_size_buckets": {
-                        "33-64": {
-                            "calls": 2,
-                            "sec": 0.03,
-                            "prep_sec": 0.01,
-                            "index_sec": 0.005,
-                            "reserve_sec": 0.004,
-                            "clone_sec": 0.006,
-                            "edge_clone_sec": 0.005,
-                        }
-                    },
-                },
-            }
-        ],
-    }
-
-    def fake_run(*args, **kwargs):
-        return benchmark_module.subprocess.CompletedProcess(
-            args[0], 0, stdout=json.dumps(payload), stderr=""
-        )
-
-    monkeypatch.setattr(benchmark_module.subprocess, "run", fake_run)
-
-    result = benchmark_module.benchmark_case(
-        binary=tmp_path / "infomap_native_benchmark",
-        name="toy",
-        network_path=tmp_path / "toy.net",
-        repeats=1,
-        warmup_runs=0,
-        iterations=1,
-        flags="--silent",
-    )
-
-    assert result["rebuild"]["mean_total_sec"] == pytest.approx(0.05)
-    assert result["rebuild"]["module_size_buckets"]["33-64"][
-        "mean_sec"
-    ] == pytest.approx(0.03)
+    assert result["median_peak_rss_bytes"] == 5000
+    assert result["peak_rss_bytes_max"] == 9000
+    assert "rebuild" not in result
 
 
 def test_benchmark_case_discards_warmup_samples(monkeypatch, tmp_path: Path):
@@ -317,6 +212,74 @@ def test_benchmark_case_pair_interleaves_and_rotates_the_lead(
             2,
             3,
         ]
+
+
+def test_benchmark_case_pair_reports_a_timed_out_binary_and_carries_on(
+    monkeypatch, tmp_path: Path
+):
+    """A hang is killed and reported per binary instead of taking the job's limit.
+
+    The binary that timed out is not run again on that case; the other one finishes
+    its rounds, so the comparison can tell which side hung.
+    """
+    benchmark_module = _load_benchmark_module()
+    invoked: list[str] = []
+    timeouts: list[float | None] = []
+
+    def fake_run(command, *args, timeout=None, **kwargs):
+        binary = Path(command[0]).name
+        invoked.append(binary)
+        timeouts.append(timeout)
+        if binary == "head_binary":
+            raise benchmark_module.subprocess.TimeoutExpired(command, timeout)
+        return benchmark_module.subprocess.CompletedProcess(
+            command, 0, stdout=json.dumps(_minimal_payload(1.0)), stderr=""
+        )
+
+    monkeypatch.setattr(benchmark_module.subprocess, "run", fake_run)
+
+    results = benchmark_module.benchmark_case_pair(
+        {"base": tmp_path / "base_binary", "head": tmp_path / "head_binary"},
+        name="toy",
+        network_path=tmp_path / "toy.net",
+        repeats=4,
+        warmup_runs=1,
+        iterations=1,
+        flags="--silent",
+        timeout_sec=120.0,
+    )
+
+    assert invoked.count("head_binary") == 1
+    assert invoked.count("base_binary") == 5
+    assert timeouts == [120.0] * len(invoked)
+    assert results["head"]["timed_out"] is True
+    assert results["head"]["sample_timeout_sec"] == 120.0
+    assert len(results["base"]["samples"]) == 4
+    assert "timed out after 120s" in benchmark_module.render_markdown([results["head"]])
+
+
+def test_main_rejects_a_non_positive_sample_timeout(monkeypatch):
+    benchmark_module = _load_benchmark_module()
+
+    import sys
+
+    old_argv = sys.argv
+    sys.argv = [
+        "run_native_benchmarks.py",
+        "--binary",
+        "missing-binary",
+        "--output",
+        "missing-output.json",
+        "--sample-timeout-sec",
+        "0",
+    ]
+    try:
+        with pytest.raises(SystemExit) as exc_info:
+            benchmark_module.main()
+    finally:
+        sys.argv = old_argv
+
+    assert exc_info.value.code == 2
 
 
 def test_metric_stats_reports_the_minimum_sample():
