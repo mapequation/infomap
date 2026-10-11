@@ -386,11 +386,12 @@ private:
 
   bool haveHardPartition() const { return !m_originalLeafNodes.empty(); }
 
-  // Share the cancel flag (only) with a sub/worker Infomap. The callback is NOT
-  // inherited here — a parallel-trial worker only reads the flag.
+  // Share the cancel flag and the largest-team count with a sub/worker Infomap.
+  // The callback is NOT inherited here — a parallel-trial worker only reads the flag.
   InfomapBase& inheritRuntimeContext(const InfomapBase& other)
   {
     m_cancel = other.m_cancel;
+    m_largestTeam = other.m_largestTeam;
     return *this;
   }
 
@@ -403,6 +404,16 @@ private:
     m_interruptUserData = other.m_interruptUserData;
     m_ownerThreadId = other.m_ownerThreadId;
     return *this;
+  }
+
+  // Any thread, from inside a parallel region: record the size of its team. The
+  // largest one is the timing report's threads_used, so that field counts the
+  // threads the run actually started rather than predicting them (#1145).
+  void recordTeamSize(unsigned int threads) noexcept
+  {
+    auto largest = m_largestTeam->load(std::memory_order_relaxed);
+    while (threads > largest && !m_largestTeam->compare_exchange_weak(largest, threads, std::memory_order_relaxed)) {
+    }
   }
 
   // Flag-only, any thread. Call only where a throw can unwind legally — NOT
@@ -797,6 +808,10 @@ protected:
   // so the run tree shares one flag. m_ownerThreadId is stamped in run(Network&).
   std::atomic<bool> m_cancelRequested { false };
   std::atomic<bool>* m_cancel = &m_cancelRequested;
+  // The largest OpenMP team the run started, shared through the run tree the same
+  // way. Reset in run(Network&); see recordTeamSize.
+  std::atomic<unsigned int> m_largestTeamSize { 1 };
+  std::atomic<unsigned int>* m_largestTeam = &m_largestTeamSize;
   InterruptCallback m_interruptCallback = nullptr;
   void* m_interruptUserData = nullptr;
   std::thread::id m_ownerThreadId;

@@ -735,6 +735,8 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
   {
 #ifdef _OPENMP
     const auto threadNum = static_cast<unsigned int>(omp_get_thread_num());
+    if (threadNum == 0)
+      m_infomap->recordTeamSize(static_cast<unsigned int>(omp_get_num_threads()));
 #else
     const unsigned int threadNum = 0;
 #endif
