@@ -1861,8 +1861,6 @@ TEST_CASE("Hierarchical partition is invariant to the OpenMP thread count [fast]
   CHECK(std::get<2>(parallelResult) == std::get<2>(serialResult));
 }
 
-} // namespace
-
 TEST_CASE("Aggregation stops after ten passes in a row that merge nothing [fast][core][partition]")
 {
   // A slightly negative single-node threshold makes every rescoring of an unchanged
@@ -1877,3 +1875,5 @@ TEST_CASE("Aggregation stops after ten passes in a row that merge nothing [fast]
   infomap::test::checkRunSanity(im);
   CHECK(im.numTopModules() > 1);
 }
+
+} // namespace
