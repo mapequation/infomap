@@ -326,7 +326,7 @@ public:
     m_reportNetwork.links = m_network.numLinks();
     m_reportNetwork.directed = !m_infomap.isUndirectedFlow();
     m_runParallelTrials = selectParallelTrialMode();
-    m_threadsUsed = m_runParallelTrials ? parallelTrialWorkers() : 1;
+    m_trialWorkers = m_runParallelTrials ? parallelTrialWorkers() : 1;
     releaseInputLinksIfCli();
     readClusterData();
     // After the parse, not before it: the other two files are already parsed
@@ -340,7 +340,9 @@ public:
       auto timer = m_timing.scope("trial_optimize_s");
       result = runTrials();
     }
-    result.threadsUsed = m_threadsUsed;
+    // Measured, not m_trialWorkers: a serial-trial run still takes its whole
+    // budget into the recursive partition and --inner-parallelization (#1145).
+    result.threadsUsed = m_infomap.m_largestTeam->load(std::memory_order_relaxed);
     return result;
   }
 
@@ -493,6 +495,9 @@ private:
 #pragma omp parallel for schedule(dynamic) num_threads(numWorkers)
 #endif
     for (int workerIndex = 0; workerIndex < static_cast<int>(numWorkers); ++workerIndex) {
+#ifdef _OPENMP
+      m_infomap.recordTeamSize(static_cast<unsigned int>(omp_get_num_threads()));
+#endif
       auto workerConfig = m_infomap.getConfig();
       // The run's trial count, not the worker's one trial: this field names and
       // labels the worker's --print-all-trials artifacts. outputPlanBasename only
@@ -1047,9 +1052,9 @@ private:
       }
       if (m_cpusetCount > 0) {
         const unsigned int innerThreads = (m_infomap.innerParallelization && !m_runParallelTrials) ? m_threadBudget.threads : 1;
-        const unsigned int demand = m_threadsUsed * innerThreads;
+        const unsigned int demand = m_trialWorkers * innerThreads;
         if (demand > m_cpusetCount) {
-          Console::warn(0, "{} trial workers × {} inner threads = {} exceeds the available cpuset of {} CPUs.", m_threadsUsed, innerThreads, demand, m_cpusetCount);
+          Console::warn(0, "{} trial workers × {} inner threads = {} exceeds the available cpuset of {} CPUs.", m_trialWorkers, innerThreads, demand, m_cpusetCount);
         }
       }
     }
@@ -1394,7 +1399,7 @@ private:
   unsigned int m_trialsRun = m_infomap.numTrials; // actual count; equals m_numTrials unless --converge stops early
   bool m_autoStopped = false;
   bool m_runParallelTrials = false;
-  unsigned int m_threadsUsed = 1;
+  unsigned int m_trialWorkers = 1;
   ThreadBudget m_threadBudget;
   unsigned int m_cpusetCount = 0;
   // --cluster-data, parsed once by readClusterData() and applied in every trial.
@@ -1489,11 +1494,13 @@ void InfomapBase::run(const std::string& parameters)
 
   printPrettyStart(*this, m_startDate, m_initialPartition.size());
 #ifdef _OPENMP
-#pragma omp parallel
-#pragma omp master
   {
+    // No thread count here: the budget is only resolved when the run starts, and
+    // the Threads section reports it. Opening a team to count it printed the
+    // OpenMP default instead, and started that many threads before the budget
+    // applied (#1145).
     Console console;
-    Log().print("{} Runtime    OpenMP {} with {} threads\n", console.bullet(), _OPENMP, omp_get_num_threads());
+    Log().print("{} Runtime    OpenMP {}\n", console.bullet(), _OPENMP);
   }
 #endif
 
@@ -1517,9 +1524,11 @@ void InfomapBase::run(Network& network)
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
   // Stamp the owner thread (gates the callback) and clear any leftover cancel so
-  // the instance is reusable after an interrupted run (issue #412).
+  // the instance is reusable after an interrupted run (issue #412). The team count
+  // starts over for the same reason: it describes this run, not the instance.
   m_ownerThreadId = std::this_thread::get_id();
   m_cancelRequested.store(false, std::memory_order_relaxed);
+  m_largestTeamSize.store(1, std::memory_order_relaxed);
   pollInterrupt();
 
   TimingRegistry timing;
@@ -3357,6 +3366,9 @@ unsigned int InfomapBase::recursivePartition()
 #pragma omp single
 #endif
     {
+#ifdef _OPENMP
+      recordTeamSize(static_cast<unsigned int>(omp_get_num_threads()));
+#endif
       for (auto moduleIndex : spawnOrder) {
         // Stop spawning once cancelled; never throw inside the task region (#412).
         if (interruptRequested())

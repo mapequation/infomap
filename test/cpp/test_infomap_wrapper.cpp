@@ -688,7 +688,7 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(timingJson.find("\"version\":\"") != std::string::npos);
   CHECK(timingJson.find("\"openmp\":") != std::string::npos);
   CHECK(timingJson.find("\"threads_requested\":") != std::string::npos);
-  CHECK(timingJson.find("\"threads_used\":1,") != std::string::npos);
+  CHECK(timingJson.find("\"threads_used\":") != std::string::npos);
   CHECK(timingJson.find("\"thread_source\":\"") != std::string::npos);
   CHECK(timingJson.find("\"thread_source\":\"\"") == std::string::npos); // value is non-empty
   CHECK(timingJson.find("\"network\":{\"nodes\":") != std::string::npos);
@@ -709,6 +709,45 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(timingJson.find("\"memory\":{\"rss_peak_mb\":") != std::string::npos);
 
   removeFiles(paths);
+}
+
+TEST_CASE("Timing report counts the threads a run started [fast][core][lifecycle][output][openmp]")
+{
+  // threads_used is the largest OpenMP team the run started, not the number of
+  // trial workers (#1145). A single trial still runs its recursive partition on
+  // the whole budget; a two-level run without --inner-parallelization starts no
+  // team; parallel trials start one worker per trial, up to the budget.
+  const std::string path = "run_report_threads_used.json";
+  const auto threadsUsed = [&path](const std::string& flags) {
+    removeFiles({ path });
+    InfomapWrapper im("--silent --seed 7 --no-file-output --timing-json " + path + " " + flags);
+    infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+    im.run();
+    const auto timingJson = infomap::test::readTextFile(path);
+    removeFiles({ path });
+    const std::string key = "\"threads_used\":";
+    const auto at = timingJson.find(key);
+    REQUIRE(at != std::string::npos);
+    return std::stoul(timingJson.substr(at + key.size()));
+  };
+
+#ifdef _OPENMP
+  CHECK(threadsUsed("--num-trials 1 --num-threads 3") == 3);
+  CHECK(threadsUsed("--num-trials 1 --num-threads 3 --two-level") == 1);
+  CHECK(threadsUsed("--num-trials 1 --num-threads 3 --two-level --inner-parallelization") == 1); // below the size threshold
+  CHECK(threadsUsed("--num-trials 2 --num-threads 3 --parallel-trials") == 2);
+  CHECK(threadsUsed("--num-trials 1 --num-threads 1") == 1);
+
+  // The Runtime line printed the size of a default OpenMP team, which is not the
+  // budget and contradicted the Threads section printed below it.
+  LogCapture capture;
+  InfomapWrapper im("--seed 7 --num-trials 1 --num-threads 2 --no-file-output");
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+  im.run();
+  CHECK(capture.output.str().find("Runtime    OpenMP " + std::to_string(_OPENMP) + "\n") != std::string::npos);
+#else
+  CHECK(threadsUsed("--num-trials 1 --num-threads 3") == 1);
+#endif
 }
 
 TEST_CASE("Per-trial num_levels reports the tree's depth, not the first-child branch's [fast][core][lifecycle][output]")
