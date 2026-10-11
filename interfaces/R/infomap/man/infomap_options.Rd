@@ -79,6 +79,9 @@ Algorithm
 \item{\code{flow_tolerance}}{Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run.}
 \item{\code{regularized}}{Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.}
 \item{\code{regularization_strength}}{Scale the relative strength of the Bayesian prior network used by --regularized.}
+\item{\code{intra_regularization_strength}}{Scale the intra-layer part of the multilayer prior used by --regularized, relative to --regularization-strength. Set to 0 to regularize only between layers.}
+\item{\code{inter_regularization_strength}}{Scale the inter-layer part of the multilayer prior used by --regularized, relative to --regularization-strength. Set to 0 to leave the layers uncoupled.}
+\item{\code{multilayer_skip_absent_nodes}}{Treat a physical node's absence from a layer as real rather than unobserved, so the prior network of --regularized spans only the nodes each layer holds.}
 \item{\code{entropy_corrected}}{Correct for negative entropy bias in small samples, especially solutions with many modules.}
 \item{\code{entropy_correction_strength}}{Scale the default correction used by --entropy-corrected.}
 \item{\code{markov_time}}{Scale link flow to change the cost of moving between modules. Higher values result in fewer modules.}

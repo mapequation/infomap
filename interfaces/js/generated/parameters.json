@@ -476,6 +476,42 @@
     "min": "0"
   },
   {
+    "long": "--intra-regularization-strength",
+    "short": "",
+    "description": "Scale the intra-layer part of the multilayer prior used by --regularized, relative to --regularization-strength. Set to 0 to regularize only between layers.",
+    "group": "Algorithm",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "number",
+    "shortType": "f",
+    "default": "1",
+    "min": "0"
+  },
+  {
+    "long": "--inter-regularization-strength",
+    "short": "",
+    "description": "Scale the inter-layer part of the multilayer prior used by --regularized, relative to --regularization-strength. Set to 0 to leave the layers uncoupled.",
+    "group": "Algorithm",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "number",
+    "shortType": "f",
+    "default": "1",
+    "min": "0"
+  },
+  {
+    "long": "--multilayer-skip-absent-nodes",
+    "short": "",
+    "description": "Treat a physical node's absence from a layer as real rather than unobserved, so the prior network of --regularized spans only the nodes each layer holds.",
+    "group": "Algorithm",
+    "required": false,
+    "advanced": true,
+    "incremental": false,
+    "default": false
+  },
+  {
     "long": "--entropy-corrected",
     "short": "",
     "description": "Correct for negative entropy bias in small samples, especially solutions with many modules.",
