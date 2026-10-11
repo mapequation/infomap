@@ -1108,7 +1108,7 @@ private:
   // call directly, and it runs again per parallel-trial worker.
   void warnOnObjectiveOptionsNotApplied()
   {
-    if (!m_infomap.m_optimizer->implementsObjectiveParameters()) {
+    if (!m_infomap.appliesObjectiveParameters()) {
       // Worded from the objective, not from the input: the condition is which objective
       // initOptimizer selected, and state, multilayer and meta-data input are the common way to
       // select another one but not the only way -- --lossy does it on an ordinary network too, and
@@ -3426,6 +3426,27 @@ void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
     opt.addCorrection(std::make_unique<LossyCorrection>(std::move(lossyLeafFlow), std::move(lossyLeafEntropy), lossyLambda));
   }
 #endif
+}
+
+bool InfomapBase::appliesObjectiveParameters() const
+{
+  // The columnar engine does not select one objective the way initOptimizer does: it sums
+  // corrections, and addColumnarCorrections above attaches the entropy bias and the
+  // module-count preference whenever they are set, next to whatever else the input adds
+  // (meta-data, memory, lossy). So under -C both apply on every input, including the
+  // state, multilayer and meta-data input whose object-oriented objective implements
+  // neither. m_optimizer is still that object-oriented objective under -C, and asking it
+  // printed "has no effect" on runs whose codelength the options visibly changed:
+  // states.net -C went from 2.011405238 to 2.169200009 under --entropy-corrected.
+  //
+  // Two -C outputs still come from m_optimizer and so still miss these terms on such
+  // input: the one-level reference codelength, and evaluateColumnarPartition's fallback
+  // for a tree with no modules at all (which adds the module-count penalty itself, but
+  // not the entropy term). Those are gaps in those two paths. The search, and every
+  // partition it returns or scores on the stack, applies both options.
+  if (columnarSearch)
+    return true;
+  return m_optimizer->implementsObjectiveParameters();
 }
 
 std::vector<std::vector<int>> InfomapBase::leafModulePathsFromTree() const

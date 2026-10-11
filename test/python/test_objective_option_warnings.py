@@ -9,6 +9,11 @@ echoed in the run banner, recorded in the run metadata as active -- and never ap
 objective dispatch, so that objective scores the network without the physical-node codebook
 that makes it a memory network. Both were silent, which read as "applied" (#904).
 
+Inert is a property of the object-oriented engine, not of the input. The columnar engine
+(``--columnar``) sums both options as corrections on top of whichever objective the input
+selects, so it applies them on every input, and a warning there contradicts the codelength
+the run reports.
+
 The assertions go through the routed ``infomap`` logger rather than fd-level capture: it
 is the supported way to observe engine output from Python, and it carries the level-0
 warnings these tests are about.
@@ -19,7 +24,7 @@ from __future__ import annotations
 import logging
 
 import pytest
-from infomap import Infomap
+from infomap import Infomap, Result
 
 pytestmark = pytest.mark.fast
 
@@ -55,7 +60,7 @@ def engine_messages():
     logger.setLevel(old_level)
 
 
-def _run_states(**kwargs) -> None:
+def _run_states(**kwargs) -> Result:
     im = Infomap(num_trials=1, **kwargs)
     im.add_state_node(1, 1)
     im.add_state_node(2, 2)
@@ -65,7 +70,7 @@ def _run_states(**kwargs) -> None:
     im.add_link(2, 3)
     im.add_link(3, 4)
     im.add_link(1, 4)
-    im.run()
+    return im.run()
 
 
 def _run_ordinary(**kwargs) -> None:
@@ -112,6 +117,46 @@ def test_ordinary_input_applies_both_options_silently(engine_messages):
 
     assert not _matching(engine_messages, ENTROPY_WARNING)
     assert not _matching(engine_messages, PREFERRED_WARNING)
+
+
+# Each option at a value that moves this network's columnar codelength: the columnar search
+# returns one module here, so a preference for one module would be applied and still cost
+# nothing.
+OBJECTIVE_OPTIONS = [
+    pytest.param({"entropy_corrected": True}, ENTROPY_WARNING, id="entropy-corrected"),
+    pytest.param(
+        {"preferred_number_of_modules": 2},
+        PREFERRED_WARNING,
+        id="preferred-number-of-modules",
+    ),
+]
+
+
+@pytest.mark.parametrize(("option", "warning"), OBJECTIVE_OPTIONS)
+def test_columnar_engine_applies_the_option_on_state_input(
+    engine_messages, option, warning
+):
+    # The check used to ask the object-oriented objective even under --columnar, so it
+    # warned "has no effect" next to a codelength the option had just changed.
+    baseline = _run_states(columnar=True)
+    applied = _run_states(columnar=True, **option)
+
+    assert applied.codelength != pytest.approx(baseline.codelength)
+    assert not _matching(engine_messages, warning)
+
+
+@pytest.mark.parametrize(("option", "warning"), OBJECTIVE_OPTIONS)
+def test_object_oriented_engine_warning_is_true_on_state_input(
+    engine_messages, option, warning
+):
+    # The other half of the test above, on the same input and the same option values: here
+    # the option leaves the codelength where it was, which is what the warning says. Neither
+    # test can then pass because the option happens to be inert on this network.
+    baseline = _run_states()
+    ignored = _run_states(**option)
+
+    assert ignored.codelength == pytest.approx(baseline.codelength)
+    assert _matching(engine_messages, warning)
 
 
 def test_meta_data_on_ordinary_input_is_not_a_codebooks_warning(
