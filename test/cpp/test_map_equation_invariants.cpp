@@ -164,6 +164,27 @@ TEST_CASE("MapEquation invariant: MetaMapEquation (meta-data), tracked == recomp
   checkTrackedMatchesRecompute(im);
 }
 
+// Regression for #1138: coarse-tune splits each module into sub-modules and
+// consolidates them, and by then InfomapOptimizer has overwritten each
+// sub-module's index with its former module's index. MetaMapEquation looked the
+// sub-modules' metadata up by that index, so they received each other's
+// collections. The tune loop runs coarse-tune under --two-level too, so the case
+// above reaches it, but no module of states.net splits and the two indices never
+// diverge there. Here they do: before the fix the tracked meta term fell to 0 and
+// the run reported 3.4965 against 5.0757 recomputed from the leaves.
+TEST_CASE("MapEquation invariant: MetaMapEquation through coarse-tune, tracked == recompute (repro #1138) [fast][core][mapeq][meta]")
+{
+  InfomapWrapper im(defaultFlags("--two-level --meta-data " + repoPath("test/fixtures/meta/ninetriangles_crossing.meta")));
+  im.readInputData(repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+
+  const double metaCodelength = im.getMetaCodelength();
+  INFO("metaCodelength=" << metaCodelength);
+  CHECK(metaCodelength > 0.0);
+
+  checkTrackedMatchesRecompute(im);
+}
+
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 TEST_CASE("MapEquation invariant: RegularizedMultilayerMapEquation, tracked == recompute [fast][core][mapeq][regularized]")
 {
