@@ -5280,3 +5280,82 @@ against new network, under the new label, at load about 5. 48 columnar runs and 
 - `columnar_wip/benchmark-networks.toml` no longer has a store recipe. Every input is fetched
   through the package.
 - The three new files rebuild byte-identical to their pins from an empty directory.
+
+### F66 — The objective-option warnings asked the object-oriented objective under `-C` (#1140) (2026-10-11)
+
+#956 added two run-path warnings for options the objective does not act on:
+`--entropy-corrected has no effect on this run` and the same for `--preferred-number-of-modules`. They
+decide from `m_optimizer->implementsObjectiveParameters()`, which is true only for
+`BiasedMapEquation`. `initOptimizer` still builds that object-oriented objective under `-C`, so on
+state, multilayer and meta-data input the warnings fired although the columnar engine applies both
+options: `addColumnarCorrections` attaches `BiasedEntropyCorrection` and `PreferredModulesCorrection`
+whenever the options are set, on top of whatever meta-data, memory or lossy correction the input adds.
+
+| input | flags | warned | bits (2.011405238 without the flag) |
+|---|---|---|---|
+| states.net, multilayer.net | `-C --entropy-corrected` | yes | 2.169200009 |
+| states.net, multilayer.net | `-C --preferred-number-of-modules 3` | yes | 2.592666098 |
+| states.net | `--non-redundant --entropy-corrected` (implies `-C`) | yes | 2.086651348 (1.928856578 without) |
+| states.net | `-C --no-infomap -c states_states.clu --entropy-corrected` | yes | 2.169200009 |
+| ninetriangles.net | `-C --meta-data <file> --entropy-corrected` | yes | 3.714052696 (3.371875026 without) |
+
+**Fix.** The check asks `InfomapBase::appliesObjectiveParameters()`: true under `-C`, otherwise the
+object-oriented objective's answer as before. It sits next to `addColumnarCorrections`, so the claim
+about what the columnar engine attaches is next to the code that attaches it. The master-resident
+warning function changes by the one call in its `if`. The meta-data warning in the same function
+avoided a branch-only symbol by rewording, but no wording helps here: under `-C` "has no effect" is
+false.
+
+**Review addendum: one `-C` path does score through the object-oriented objective.** `--no-infomap`
+without an input partition scores the tree `initNetwork` left, every leaf under the root. The
+columnar stack cannot hold a tree with no modules, so `evaluateColumnarPartition` falls back to
+`objectOrientedTreeCodelength`, and there the two options part ways:
+- the entropy term comes from `m_optimizer` alone, so on state input it is missing: states.net
+  `-C --no-infomap` reports 2.251629167 bits with and without `--entropy-corrected`;
+- the module-count penalty is added by hand (the swap from the master sync that filed #1068), so
+  `--preferred-number-of-modules 3` applies: 4.251629167 bits.
+
+The first cut silenced the entropy warning on that path too. It now warns there on its own
+(`warnOnColumnarObjectOrientedScoring`), for the entropy correction only. "No input partition" is the
+exact condition, decidable before the trials: every partition source gives the tree modules. A
+depth-1 `.tree` becomes singletons (initTree's two-level shortcut), a bare top-level leaf in a deeper
+tree gets a synthetic module (the padding), and nodes a `.clu` or an initial partition leaves out get
+modules of their own.
+
+**Two reporting gaps, noted and not fixed.**
+- **The one-level reference** is `calcCodelength(m_root) + calcTreeCodelengthCost(1)` through
+  `m_optimizer`, so under `-C` on state, multilayer and meta-data input it has neither term. states.net
+  `-C --entropy-corrected` prints `One-level codelength 2.251629167`, and its relative savings
+  (3.66087%) compare a corrected codelength with an uncorrected reference. The search's one-level
+  guard uses the columnar `oneLevelCodelength()`, so no returned partition depends on it.
+- **The module-less fallback** above still lacks the entropy term. It is warned about now, not
+  repaired; repairing it would move a reported codelength and is a separate change.
+
+**The module-less `--preferred-number-of-modules` count differs between engines.** On ninetriangles
+`--no-infomap --preferred-number-of-modules 3`, OO reports 28.74554553 bits and `-C` 6.745545529, on
+a one-level codelength of 4.745545529. OO charges |27 − 3| (`calcTreeCodelengthCost(root.childDegree())`
+counts the 27 leaves under the root as top modules) and `-C` charges |1 − 3| (the root as the one leaf
+module). This is #1068's question, which level owns K, in its degenerate form; nothing here changes it.
+
+**Snapshot session (2026-10-11).** Old = `501f523a` (md5 `eddfdee9…`), new = `78d58569` (md5
+`acb26dc5…`), both fresh `MODE=release OPENMP=0` builds, on the fetched inputs. Every configuration
+of the #1136 snapshot, both arms, 1 033 runs. Driver: `columnar_wip/bench-1140.py`; rows:
+`columnar_wip/1140-ab-results.tsv`.
+- **Nothing moves.** All 177 paired configurations are bit-identical in bits, top modules and levels
+  on every run. Instructions: −2.53% to +0.60% (median −0.03%), and every cell beyond ±0.3% is a row
+  under 0.07 s.
+- **It was a different machine from every earlier snapshot**, and it ran the same source as fast. The
+  old column reproduces #1136's new column in bits on all 177 configurations, at 0.991× its seconds
+  (median over 341 cells of at least 0.05 s, quartiles 0.96–1.02). So the carried OO cells still
+  compare in seconds as well as in bits.
+- **Load from other work on the machine reached 165** (1-minute average; median 7.8), and it inflated
+  single runs by up to 7.9× in seconds at unchanged instructions: F10 word_assoc (pref.) took 34.2 s,
+  against 4.35 s in #1136 and 3.52 s re-measured. Two more rounds re-measured both arms of every
+  distorted cell. After them, 41 cells read more than 1% slower in seconds and 57 more than 1% faster.
+  The largest slow one, om3 E50000 `-d -N10` at +6.0%, is one lucky old rep: the medians are 4.50 s
+  (old) and 4.49 s (new).
+
+**Lesson.** Check each cell against the previous snapshot's time for the same source, not only old
+against new. Under load, both arms of a row can inflate together, and old-vs-new sees nothing wrong.
+web-NotreDame `-C` read 49.6 s (old) and 39.5 s (new) in the first pass, against 20.6 s in #1136 and
+18.1 s / 18.0 s re-measured.
