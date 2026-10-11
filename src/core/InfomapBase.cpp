@@ -2388,8 +2388,7 @@ void InfomapBase::hierarchicalPartition()
     }
 
     else if (fastHierarchicalSolution == 1) {
-      const bool shouldRestoreSilent = isMainInfomap() && !Log::isThreadMuted();
-      bool isSilent = shouldRestoreSilent && Log::isSilent();
+      Log::ScopedSilentRestore restoreSilent(isMainInfomap() && !Log::isThreadMuted());
 
       double codelengthBefore = 0.0;
       double codelengthAfter = 0.0;
@@ -2456,8 +2455,7 @@ void InfomapBase::hierarchicalPartition()
         }
       }
 
-      if (shouldRestoreSilent)
-        Log::setSilent(isSilent);
+      restoreSilent.restore();
 
       const double diffCodelength = codelengthBefore - codelengthAfter;
       Console::detail(1, "fine-tune bottom modules: improvement {:g}% {} codelength {}", (diffCodelength / codelengthBefore) * 100, Console::arrow(), io::toPrecision(codelengthAfter));
@@ -3036,11 +3034,10 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   do {
     Console::detail(1, "super iter {}: searching {} modules", numLevelsCreated + 1, numTopModules());
     const bool shouldMuteNestedMainRun = isMainInfomap() && !Log::isThreadMuted();
-    bool isSilent = false;
-    if (shouldMuteNestedMainRun) {
-      isSilent = Log::isSilent();
+    // Unmutes again if superInfomap.run() throws InterruptionError (#1134).
+    Log::ScopedSilentRestore restoreSilent(shouldMuteNestedMainRun);
+    if (shouldMuteNestedMainRun)
       Log::setSilent(true);
-    }
     InfoNode tmp(m_root.data); // Temporary owner for the super Infomap instance
     auto& superInfomap = getSuperInfomap(tmp)
                              .setTwoLevel(true);
@@ -3048,9 +3045,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     // No interrupt catch needed: local `tmp` owns the super-Infomap, so
     // ~InfoNode frees it if run() throws InterruptionError (#412).
     superInfomap.run();
-    if (shouldMuteNestedMainRun) {
-      Log::setSilent(isSilent);
-    }
+    restoreSilent.restore();
     double superCodelength = superInfomap.getCodelength();
     double superIndexCodelength = superInfomap.getIndexCodelength();
 
