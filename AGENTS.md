@@ -60,7 +60,8 @@ git switch -c fix/<short-task-name>
 
 Baseline tools:
 
-- Python 3.11 or newer; use `python3` on macOS when `python` is unavailable
+- Python 3.11 or newer (the floor moves per the version policy in `RELEASING.md`);
+  use `python3` on macOS when `python` is unavailable
 - R 4.0 or newer for the R package; CI exercises both `release` and `oldrel`
 - Node.js 24 for the JavaScript worker package
 - `gcc` or `clang` with a working C++ toolchain
