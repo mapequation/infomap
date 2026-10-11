@@ -121,7 +121,7 @@ test-python-typecheck:
 # Type check only the core API/algorithm surface, excluding the optional
 # third-party integration adapters (io/, tl/) whose pyright diagnostics vary
 # with which optional deps + stub packages are installed. Used by the pre-push
-# hook (and CI quick mode) so the gate is deterministic across dev machines;
+# hook so the gate is deterministic across dev machines;
 # the full-scope check above covers everything in CI's full-suite leg. Scope
 # lives in interfaces/python/pyrightconfig-core.json.
 test-python-typecheck-core:
