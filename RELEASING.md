@@ -281,6 +281,51 @@ renders an empty version otherwise. Use the release in which the deprecation
 first shipped; the 2.x → 3.0 wave deprecating the pre-redesign API is `2.15`
 (2.14.0 shipped the redesign but no versioned markers or runtime warnings).
 
+### Python version support policy
+
+The supported Python versions follow
+[SPEC 0](https://scientific-python.org/specs/spec-0000/) one release behind:
+Python 3.N is dropped on the date SPEC 0 drops 3.N+1 (#813). Infomap has no
+runtime dependencies, so nothing upstream forces a faster pace. 3.11 is still
+the largest single cohort in the PyPI download data, so the calendar alone
+would strand the most users.
+
+| Python | SPEC 0 drops it | Infomap drops it                        |
+| ------ | --------------- | --------------------------------------- |
+| 3.11   | 2025-10-23      | due 2026-10-01; first release after 3.0 |
+| 3.12   | 2026-10-01      | 2027-10-07                              |
+| 3.13   | 2027-10-07      | 2028-10-06                              |
+
+The date is when a bump becomes due, not a release trigger: the bump ships in
+the next release after it. It never ships in a major that also removes API
+surface, so one upgrade does not carry two unrelated breaks. That is why 3.0
+ships on `>=3.11` even though 3.11 is due earlier. A floor bump does not need
+a major version, because pip keeps an older interpreter on the last release
+that supports it.
+
+Bump everything in one PR:
+
+- `requires-python` and the `Programming Language :: Python :: 3.N`
+  classifiers in `pyproject.toml` (ruff's pyupgrade target follows
+  `requires-python`)
+- pyright `pythonVersion` in `pyproject.toml`
+- the `python-version` test matrix and `CIBW_BUILD` in
+  `.github/workflows/_python-package.yml`
+- the baseline tools line in `AGENTS.md`
+
+Each floor unlocks cleanups in `interfaces/python/src/infomap/`. Do them in the
+bump PR or in a follow-up:
+
+- **`>=3.12`:** replace the `_external_stacklevel()` frame walker in
+  `_options.py` with `warnings.warn(..., skip_file_prefixes=...)`.
+- **`>=3.13`:** use `warnings.deprecated` (PEP 702) for the method
+  deprecations instead of hand-rolled `DeprecationWarning`s, which also gives
+  pyright and IDEs a strike-through.
+- **`>=3.14`:** the interpreter's own "did you mean" for keyword arguments
+  makes the `_OptionsMeta` suggestion shim in `_options.py` nearly redundant.
+  Keep the richer variant in `_run.py`, which also points at the parameter
+  reference.
+
 ### Red flags that block merge
 
 - **Tag format regressed.** PR title shows `infomap-vX.Y.Z` instead of
