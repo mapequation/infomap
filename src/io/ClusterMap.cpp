@@ -244,12 +244,13 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
       continue;
     }
 
-    // try_emplace, not find-then-assign: on a repeat its iterator already points at
+    // insert, not find-then-assign: on a repeat its iterator already points at
     // what the id held, so the old value, the fact that it is a repeat, and the
     // overwrite all come out of a single traversal. A well-formed file pays exactly
     // one lookup per row, which is what a clu reader should cost.
-    const auto [entry, inserted] = m_clusterIds.try_emplace(stateId, moduleId);
-    if (!inserted) {
+    const auto insertion = m_clusterIds.insert({ stateId, moduleId });
+    const auto entry = insertion.first;
+    if (!insertion.second) {
       const bool changesModule = entry->second != moduleId;
       entry->second = moduleId; // the last row wins, which is what this reports on
       auto& repeat = repeats[stateId];
@@ -266,7 +267,9 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
   // most rows wins. Without the first rule a file holding both kinds could name the
   // harmless one while the warning talks about changed modules.
   bool exampleIsConflicting = false;
-  for (const auto& [nodeId, repeat] : repeats) {
+  for (const auto& idRepeat : repeats) {
+    const auto nodeId = idRepeat.first;
+    const auto& repeat = idRepeat.second;
     m_duplicateClusterIds.rows += repeat.rows - 1;
     ++m_duplicateClusterIds.ids;
 
