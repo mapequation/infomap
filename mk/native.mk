@@ -40,10 +40,13 @@ $(NATIVE_OBJECT_DIR)/%.o: src/%.cpp $(NATIVE_HEADER_DEP) $(MK_FILES) Makefile
 build-lib: $(LIB_OUTPUT) $(LIB_HEADERS)
 	@echo "Wrote static library to lib/ and headers to include/"
 
+# Archive only the objects ($^ also lists the makefiles), and start from an
+# empty archive: `ar r` updates in place, so members of deleted sources linger.
 $(LIB_OUTPUT): $(LIB_OBJECTS) $(MK_FILES) Makefile
 	@echo "Creating static library..."
 	@mkdir -p $(dir $@)
-	$(AR) rcs $@ $^
+	@$(RM) $@
+	$(AR) rcs $@ $(LIB_OBJECTS)
 
 $(PUBLIC_INCLUDE_DIR)/%.h: src/%.h
 	@mkdir -p $(dir $@)
