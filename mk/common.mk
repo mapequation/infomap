@@ -157,7 +157,7 @@ help:
 		"  test-python-doctest   Run Python doctests and ruff checks for the installed package." \
 		"  test-python-examples  Run the Python example smoke tests." \
 		"  test-python-typecheck  Type-check the whole Python package with pyright." \
-		"  test-python-typecheck-core  Type-check the core Python surface (pre-push / quick-mode scope)." \
+		"  test-python-typecheck-core  Type-check the core Python surface (pre-push scope)." \
 		"  test-python-notebooks-smoke  Run PR-safe tutorial notebook smoke tests with nbmake." \
 		"  test-python-notebooks-full   Run all CI-maintained tutorial notebooks with nbmake." \
 		"  test-python-swig-freshness  Verify tracked SWIG outputs are up to date." \

@@ -45,7 +45,7 @@ repos:
   # the same version is pinned in pyproject.toml's `test` extra (which is what
   # CI installs) and all three bump together.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.0
+    rev: v0.16.9
     hooks:
       - id: ruff-check
         name: ruff (lint)
@@ -59,6 +59,10 @@ repos:
         # _options.py are skipped via [tool.ruff] extend-exclude (the generator
         # owns their formatting).
         exclude: ^examples/notebooks/
+        # The hook added markdown to its defaults after v0.16.0. The code
+        # blocks in the docs keep hand-aligned trailing comments, which the
+        # formatter would wrap, so stay on the file types it formatted before.
+        types_or: [python, pyi, jupyter]
 
   # C++ formatting for the core sources. This hook also runs in CI via the
   # pre-commit job (which replaced the old, disabled cxx-format job from #479),

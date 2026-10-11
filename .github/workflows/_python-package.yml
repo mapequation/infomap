@@ -172,17 +172,13 @@ jobs:
         if: matrix.run-full-suite
         run: make test-python-doctest
 
-      # Deterministic core-scope gate (io/ and tl/ excluded); mirrors the
-      # pre-push hook. Full mode runs the full-scope check below instead.
-      - name: Type check Python core surface
-        if: ${{ matrix.run-full-suite && inputs.mode == 'quick' }}
-        run: make test-python-typecheck-core
-
       # Full scope including the io/ and tl/ integration adapters. The
       # [test]+[examples] extras installed above pin the optional-dep set and
       # pyright is version-pinned, so the diagnostics are reproducible here.
+      # Both modes run it (~4 s): when PRs ran only the core scope that the
+      # pre-push hook checks, io/ and tl/ breakage first showed up on master.
       - name: Type check Python package
-        if: ${{ matrix.run-full-suite && inputs.mode == 'full' }}
+        if: matrix.run-full-suite
         run: make test-python-typecheck
 
       - name: Run Python example smoke tests

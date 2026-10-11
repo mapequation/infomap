@@ -24,6 +24,15 @@ updates:
     labels:
       - dependencies
     open-pull-requests-limit: 5
+    # One PR a week instead of about five. Majors stay out of the group, so one
+    # that needs code changes (vitest 4 -> 5) cannot hold back the patch bumps.
+    groups:
+      npm:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: pip
     directory: /
