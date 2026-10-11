@@ -9,10 +9,11 @@ echoed in the run banner, recorded in the run metadata as active -- and never ap
 objective dispatch, so that objective scores the network without the physical-node codebook
 that makes it a memory network. Both were silent, which read as "applied" (#904).
 
-Inert is a property of the object-oriented engine, not of the input. The columnar engine
-(``--columnar``) sums both options as corrections on top of whichever objective the input
-selects, so it applies them on every input, and a warning there contradicts the codelength
-the run reports.
+Inert is a property of the objective that scores the run, not of the input. The columnar
+engine (``--columnar``) sums both options as corrections on top of whichever objective the
+input selects, so a warning on its runs contradicts the codelength they report. The exception
+is ``--no-infomap`` without an input partition: the tree then has no modules, the
+object-oriented objective scores it, and the entropy term is as inert there as on that engine.
 
 The assertions go through the routed ``infomap`` logger rather than fd-level capture: it
 is the supported way to observe engine output from Python, and it carries the level-0
@@ -60,7 +61,7 @@ def engine_messages():
     logger.setLevel(old_level)
 
 
-def _run_states(**kwargs) -> Result:
+def _run_states(initial_partition: dict[int, int] | None = None, **kwargs) -> Result:
     im = Infomap(num_trials=1, **kwargs)
     im.add_state_node(1, 1)
     im.add_state_node(2, 2)
@@ -70,7 +71,7 @@ def _run_states(**kwargs) -> Result:
     im.add_link(2, 3)
     im.add_link(3, 4)
     im.add_link(1, 4)
-    return im.run()
+    return im.run(initial_partition=initial_partition)
 
 
 def _run_ordinary(**kwargs) -> None:
@@ -157,6 +158,44 @@ def test_object_oriented_engine_warning_is_true_on_state_input(
 
     assert ignored.codelength == pytest.approx(baseline.codelength)
     assert _matching(engine_messages, warning)
+
+
+# --no-infomap without an input partition scores the tree with no modules. The columnar stack
+# cannot hold that, so the object-oriented objective scores it, and there the two options part
+# ways: the fallback adds the module-count penalty by hand, but not the entropy term.
+def test_columnar_scoring_without_a_partition_warns_about_the_entropy_correction(
+    engine_messages,
+):
+    baseline = _run_states(columnar=True, no_infomap=True)
+    ignored = _run_states(columnar=True, no_infomap=True, entropy_corrected=True)
+
+    assert ignored.codelength == pytest.approx(baseline.codelength)
+    assert _matching(engine_messages, ENTROPY_WARNING)
+
+
+def test_columnar_scoring_without_a_partition_applies_the_module_preference(
+    engine_messages,
+):
+    baseline = _run_states(columnar=True, no_infomap=True)
+    applied = _run_states(columnar=True, no_infomap=True, preferred_number_of_modules=2)
+
+    assert applied.codelength != pytest.approx(baseline.codelength)
+    assert not _matching(engine_messages, PREFERRED_WARNING)
+
+
+def test_columnar_scoring_of_an_input_partition_applies_the_entropy_correction(
+    engine_messages,
+):
+    # With a partition the tree has modules and the columnar stack scores it: the input decides
+    # whether the fallback is reached, not --no-infomap.
+    partition = {1: 1, 2: 1, 3: 2, 4: 2}
+    baseline = _run_states(partition, columnar=True, no_infomap=True)
+    applied = _run_states(
+        partition, columnar=True, no_infomap=True, entropy_corrected=True
+    )
+
+    assert applied.codelength != pytest.approx(baseline.codelength)
+    assert not _matching(engine_messages, ENTROPY_WARNING)
 
 
 def test_meta_data_on_ordinary_input_is_not_a_codebooks_warning(
