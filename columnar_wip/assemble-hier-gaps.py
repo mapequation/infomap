@@ -16,6 +16,13 @@ all reps, minimum instructions over all reps (independently), top/levels of rep 
 The OO cells of the two "OO vs columnar" tables are not in the TSV; they are parsed
 from the existing snapshot and carried over (their deltas are recomputed from the
 printed, rounded values).
+
+The family table (FAM) pairs every search with its planted control (F66). Its rows may
+have a new arm only (a row this PR adds: the old cells read "—"), and it has one more
+column, the new search's codelength against the planted partition of the same network
+and objective. A planted row shows itself against one-level instead (a twelfth TSV
+column), and where the planted partition is worse than one-level it is no reference:
+that block's deltas are struck through.
 """
 
 import difflib
@@ -25,6 +32,7 @@ from collections import namedtuple
 
 Cell = namedtuple("Cell", "bits_s bits time instr top lvls")
 
+NEW_ONLY = {"FAM"}  # tables that show rows with no old arm
 HEADS = {  # heading prefix -> list of table specs, in document order
     "What the change moves": ["moves"],
     "Old vs new columnar — standard search": [("pair", "C10")],
@@ -47,6 +55,9 @@ MOVES_TABLE = {  # key -> "table" column of the moves table, in row order
 }
 
 
+ONE_LEVEL = {}  # (key, label) -> one-level codelength of a planted row
+
+
 def load(path):
     reps = {}
     order = []
@@ -60,6 +71,8 @@ def load(path):
         if (key, label) not in order:
             order.append((key, label))
         reps.setdefault((key, label, arm), []).append((rep, f))
+        if len(f) >= 12 and f[11]:
+            ONE_LEVEL[key, label] = float(f[11])
     data = {}
     for k, lst in reps.items():
         lst.sort(key=lambda r: r[0])
@@ -110,8 +123,26 @@ def right_cells(c, ref):
     ]
 
 
-def row(label, left, right):
-    return f"<tr>{tds(label, *left, *right)}</tr>"
+def row(label, left, right, extra=()):
+    return f"<tr>{tds(label, *left, *right, *extra)}</tr>"
+
+
+def vs_planted(label, data):
+    """The family table's last cell: the search against its planted control."""
+    m = re.match(r"(\S+) (planted, )?`(.*)`$", label)
+    net, is_planted, flags = m[1], m[2], m[3]
+    reg = " --regularized" if "--regularized" in flags else ""
+    planted = f"{net} planted, `-2d{reg} --no-infomap -c`"
+    p = data["FAM", planted, "new"].bits
+    one_level = ONE_LEVEL["FAM", planted]
+    if is_planted:
+        d = f"{pct(p, one_level, 2)} vs one-level"
+        return f"<b>{d}</b>" if p > one_level else d
+    c = data["FAM", label, "new"].bits
+    d = pct(c, p, 2)
+    if p > one_level:
+        return f"<s>{d}</s>"
+    return f"<b>{d}</b>" if c > p else d
 
 
 def ordered(labels, existing):
@@ -135,16 +166,18 @@ def html_rows(spec, data, order, old_lines):
         labels = [
             lb
             for k, lb in order
-            if k == key and (key, lb, "old") in data and (key, lb, "new") in data
+            if k == key
+            and (key, lb, "new") in data
+            and ((key, lb, "old") in data or key in NEW_ONLY)
         ]
-        return [
-            row(
-                lb,
-                left_cells(data[key, lb, "old"]),
-                right_cells(data[key, lb, "new"], data[key, lb, "old"]),
-            )
-            for lb in ordered(labels, existing)
-        ]
+        out = []
+        for lb in ordered(labels, existing):
+            new, old = data[key, lb, "new"], data.get((key, lb, "old"))
+            left = left_cells(old) if old else ["—"] * 5
+            right = right_cells(new, old) if old else left_cells(new)
+            extra = [vs_planted(lb, data)] if key == "FAM" else []
+            out.append(row(lb, left, right, extra))
+        return out
     if kind == "cross":
         k2 = spec[2]
         labels = [lb for k, lb in order if k == k2 and (key, lb, "new") in data]
