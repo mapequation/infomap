@@ -1861,11 +1861,11 @@ TEST_CASE("Hierarchical partition is invariant to the OpenMP thread count [fast]
   CHECK(std::get<2>(parallelResult) == std::get<2>(serialResult));
 }
 
-TEST_CASE("Aggregation stops after ten passes in a row that merge nothing [fast][core][partition]")
+TEST_CASE("Aggregation stops at the first pass that merges nothing [fast][core][partition]")
 {
   // A slightly negative single-node threshold makes every rescoring of an unchanged
   // partition count as an improvement, which is what metadata rescoring drift did in
-  // #1134. Only the pass cap in findTopModulesRepeatedly then ends the aggregation loop;
+  // #1134. Only the no-merge stop in findTopModulesRepeatedly then ends the aggregation loop;
   // without it this run never returns.
   InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
   im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));

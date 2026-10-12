@@ -2832,11 +2832,6 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
     maxLevels = std::numeric_limits<unsigned int>::max();
 
   std::string initialCodelength;
-  // A pass that merges nothing leaves the partition as it was, but rescoring it can shave
-  // a few ULPs off the codelength, which counts as an improvement and buys another pass.
-  // Metadata rescoring can drift down indefinitely (#1134), so stop after this many in a row.
-  constexpr unsigned int maxPassesWithoutMerge = 10;
-  unsigned int numPassesWithoutMerge = 0;
 
   // Reapply core algorithm on modular network, replacing modules with super modules
   while (numTopModules() > 1 && numLevelsConsolidated != maxLevels) {
@@ -2857,9 +2852,12 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
     passList.push_back(fmt::format(FMT_STRING("{}*{}"), numActiveBeforeMove, numOptimizationLoops));
     Log(3).print("done! -> codelength {} in {} modules.\n", io::stringify(*this), numActiveModules());
 
-    // If no improvement, revert codelength terms to the last consolidated state
-    numPassesWithoutMerge = numActiveModules() == numActiveBeforeMove ? numPassesWithoutMerge + 1 : 0;
-    if (haveModules() && restoreConsolidatedOptimizationPointIfNoImprovement(numPassesWithoutMerge >= maxPassesWithoutMerge)) {
+    // If no improvement, revert codelength terms to the last consolidated state. A pass that
+    // merges nothing leaves the partition as it was, but rescoring it can shave a few ULPs off
+    // the codelength, which would count as an improvement and buy another identical pass.
+    // Metadata rescoring can drift down indefinitely (#1134), so such a pass always ends here.
+    const bool mergedNothing = numActiveModules() == numActiveBeforeMove;
+    if (haveModules() && restoreConsolidatedOptimizationPointIfNoImprovement(mergedNothing)) {
       Log(3).print("-> Restored to codelength {} in {} modules.\n", io::stringify(*this), numTopModules());
       break;
     }
