@@ -245,6 +245,34 @@ TEST_CASE("requestInterrupt() aborts the run even when the handler returns false
   CHECK_THROWS_AS(im.run(), infomap::InterruptionError);
 }
 
+TEST_CASE("A handler that fires only inside the nested super-module run stops the run and unmutes logging [fast][core][lifecycle][crash]")
+{
+  // Not --silent: findHierarchicalSuperModules sets Log silent only while the super
+  // Infomap runs, so this handler can return true only when a nested instance polls
+  // it. The main instance never polls during that run, so before #1134 the signal
+  // went unseen and the run completed.
+  std::ostringstream out;
+  std::streambuf* originalOut = std::cout.rdbuf(out.rdbuf());
+  bool threw = false;
+  {
+    InfomapWrapper im("--seed 1 --num-trials 1 --no-file-output");
+    buildClusteredNetwork(im, 16);
+    im.setInterruptHandler([](void*) { return infomap::Log::isSilent(); });
+    try {
+      im.run();
+    } catch (const infomap::InterruptionError&) {
+      threw = true;
+    }
+  }
+  const bool silentAfter = infomap::Log::isSilent();
+  infomap::Log::setSilent(false);
+  std::cout.rdbuf(originalOut);
+
+  CHECK(threw);
+  // The nested run's mute must not outlive the interrupted run.
+  CHECK_FALSE(silentAfter);
+}
+
 // Cancel inside optimization, clear the handler, rerun, return the result.
 // We do NOT compare against a *fresh* instance: the RNG is seeded once at
 // construction (not per run()), so a reused instance legitimately differs from a
