@@ -217,6 +217,22 @@ TEST_CASE("clearLinks before finalize leaves no garbage counts [fast][core][csr]
   CHECK(network.numAggregatedLinks() == 0);
 }
 
+TEST_CASE("Self-links are counted as distinct links, also before finalize [fast][core][csr]")
+{
+  // numSelfLinks() feeds sumDegree() for the regularized prior, so it counts self-links
+  // the way numLinks() counts links: after merging, finalizing on demand.
+  Config config;
+  config.silent = true;
+  Network network(config);
+  network.addLink(1, 1, 0.5);
+  network.addLink(1, 1, 0.5);
+  network.addLink(1, 2, 1.0);
+
+  CHECK(network.numSelfLinks() == 1);
+  CHECK(network.numLinks() == 2);
+  CHECK(network.sumDegree() == 3);
+}
+
 TEST_CASE("Isolated/dangling node is in-bounds in mode-A CSR [fast][core][csr]")
 {
   Config config;

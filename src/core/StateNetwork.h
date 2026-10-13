@@ -268,7 +268,15 @@ public:
     return m_numLinks;
   }
   double sumLinkWeight() const { return m_sumLinkWeight; }
-  unsigned int numSelfLinks() const { return m_numSelfLinks; }
+  // Finalizes like numLinks(): parallel self-links are only merged in the CSR build,
+  // so sumDegree() must not see a count from before it, whichever operand runs first.
+  unsigned int numSelfLinks() const
+  {
+#ifndef SWIG
+    if (!m_useMapBuild) ensureFinalized();
+#endif
+    return m_numSelfLinks;
+  }
   double sumSelfLinkWeight() const { return m_sumSelfLinkWeight; }
   // Use convention of counting self-links only once, treating them as directed
   double sumWeightedDegree() const { return 2 * sumLinkWeight() - sumSelfLinkWeight(); }
