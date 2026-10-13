@@ -5281,7 +5281,55 @@ against new network, under the new label, at load about 5. 48 columnar runs and 
   through the package.
 - The three new files rebuild byte-identical to their pins from an empty directory.
 
-### F66 — The objective-option warnings asked the object-oriented objective under `-C` (#1140) (2026-10-11)
+### F66 — Every om search gets its planted control, and om labels name N and E (2026-10-12)
+
+**What was wrong.** Pairing was broken both ways in the snapshot's overlapping-family table. Daniel
+caught it on om5: the `-2d --regularized` search read 7.97 bits with no planted row to say whether that
+was good.
+- **Regularized:** the table had `--regularized` searches on all fourteen networks but no regularized
+  planted row anywhere. The control existed only in `benchmark-networks.md` (F64's planted-vs-search
+  tables).
+- **Plain:** it had a plain planted row on seven networks and no plain search next to any of them.
+  Those searches lived in the `-C`, `-C -2` and `-C -N1` tables under other labels.
+
+A search without its control cannot say whether it reached the partition the generator planted. That
+is the one codelength baseline the family has that does not depend on another search.
+
+**What changed.** No engine code and no input changes; the binary is the tip `501f523a`, md5
+`54c8b6b2…`, which is #1136's file.
+- **The family table is a grid:** 14 networks × {plain, `--regularized`} × {planted, `-2d -N10`,
+  `-2d -N1`, `-d -N10`, `-d -N1`}, 140 rows. A last column, **Δ vs planted**, compares the search with
+  the planted partition of its network and objective. On a planted row it compares planted with
+  one-level, since a planted partition worse than one-level is no reference.
+- **30 rows are new:** 21 planted scores, 7 plain `-2d -N1` at the density the `-C -N1` table lacked,
+  and om2 E100k's two regularized `-N1` rows (it had `-N10` only, F47).
+  - `columnar_wip/bench-om-controls.py` measured them: 3 reps spread across the batch, load 7–12.
+  - The seven plain planted rows the table already had were scored again and gave the same bits.
+  - Every carried row is #1136's new arm standing for both arms
+    (`columnar_wip/combine-om-controls.py`).
+- **Labels:** `om5_N256_E100k`, not `om5`. The bare form meant E100000 for om3–om8 but E50000 for
+  om2.
+
+**What the pairing shows.**
+- **One `-N10` search ends above its control:** om5_N256_E100k `--regularized`, +1.89% in bits
+  (`-2d` 7.973195 bits in 4.81 s; planted 7.825626). Daniel's recollection was ~7.5 bits for that
+  planted value. It is 7.826 in both engines, against one-level 7.989: planted beats one-level by
+  2.05%, and the search by only 0.20%.
+- **A better partition exists.** Seeded from the planted partition (`-C -2d --regularized -c planted`),
+  the search reaches 7.770 bits at `-N1` and 7.770 at `-N10` (53–54 top modules), 0.71% below
+  planted. This is #1042, closed as documented in F61.
+- **`-N1` cells above planted** are #1121's lone hierarchical trial (F59): plain `-d -N1` on om2
+  (both densities), om5, om6 and om7. The one new row among them is om2_N256_E100k
+  `-d --regularized -N1`, at 7.489 bits in 0.468 s (3 levels, 320 top modules), +7.52% above planted.
+  Its `-2d` partner reaches 6.951 bits, so it is the same mode under the regularized objective.
+- **Nine regularized blocks have planted worse than one-level:** om3–om8 at E50k and om6–om8 at
+  E100k. There the column strikes the search deltas.
+
+**Found on the way.** wikispeedia sits above OO in bits at `-d` (+0.38%, −68% in seconds) and at
+`-2` (+0.27%, −57% in seconds). Seeds 456, 7, 11 and 99 give +0.37% to +0.47% and +0.22% to +0.42%,
+so it is systematic. No finding or issue had it. Filed as #1157.
+
+### F67 — The objective-option warnings asked the object-oriented objective under `-C` (#1140) (2026-10-11)
 
 #956 added two run-path warnings for options the objective does not act on:
 `--entropy-corrected has no effect on this run` and the same for `--preferred-number-of-modules`. They
@@ -5400,6 +5448,18 @@ of the #1136 snapshot, both arms, 1 033 runs. Driver: `columnar_wip/bench-1140.p
   distorted cell. After them, 41 cells read more than 1% slower in seconds and 57 more than 1% faster.
   The largest slow one, om3 E50000 `-d -N10` at +6.0%, is one lucky old rep: the medians are 4.50 s
   (old) and 4.49 s (new).
+
+**Second session, after #1158 merged (2026-10-13).** #1158 (F66) turned the family table into a grid
+with a planted control per block and renamed the om labels, and changed nothing under `src/`: a clean
+build of the new tip `d5e32d85` gives the old binary's md5. So the first session stands, relabelled
+(`columnar_wip/combine-1140-snapshot.py`), and a second session measured the 37 family configurations
+#1158 added or re-scored, old against new (`columnar_wip/bench-1140-controls.py`, 222 runs at load
+4.6–6.0). All 37 are bit-identical between the arms and equal #1158's values, at 0.864× its seconds.
+- **A table the assembler skipped.** `assemble-hier-gaps.py` treats every line that starts with `#` as a
+  heading. In #1158's OO section a prose line wrapped to begin with `#1136`, which ended the section
+  before its table, so that table kept its cells instead of being rebuilt. It did not matter in #1158,
+  where every cell was carried; here it left #1136's columnar seconds in the OO table until the line
+  was rewrapped. Keep `#` off the start of prose lines in the snapshot.
 
 **Lesson.** Check each cell against the previous snapshot's time for the same source, not only old
 against new. Under load, both arms of a row can inflate together, and old-vs-new sees nothing wrong.
