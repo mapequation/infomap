@@ -121,6 +121,8 @@ protected:
   unsigned int m_numLinks = 0;
   double m_sumLinkWeight = 0.0;
   unsigned int m_numSelfLinksFound = 0;
+  // Distinct self-links after aggregation, like m_numLinks, so that sumDegree()
+  // compares like with like. m_numSelfLinksFound counts every occurrence.
   unsigned int m_numSelfLinks = 0;
   double m_sumSelfLinkWeight = 0.0;
   unsigned int m_numAggregatedLinks = 0;
