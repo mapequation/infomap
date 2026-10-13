@@ -2497,13 +2497,26 @@ void InfomapBase::hierarchicalPartition()
     return;
   }
 
+  // The recursive search below starts over from the super modules and can end above the
+  // super-level tree it threw away (#837). Keep that tree and its codelength to fall back on.
+  NodePaths superLevelTree;
+  double superLevelCodelength = 0.0;
   if (fastHierarchicalSolution == 0) {
+    superLevelCodelength = m_hierarchicalCodelength;
+    superLevelTree.reserve(numLeafNodes());
+    for (auto it(iterLeafNodes()); !it.isEnd(); ++it)
+      superLevelTree.emplace_back(it->stateId, it.path());
     removeSubModules(true);
     m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
   }
 
   recursivePartition();
   dissolveUnprofitableModules();
+
+  if (!superLevelTree.empty() && m_hierarchicalCodelength > superLevelCodelength + minimumCodelengthImprovement) {
+    Console::detail(1, "recursive: codelength {} above the super-level tree's {}, restoring it", io::toPrecision(m_hierarchicalCodelength), io::toPrecision(superLevelCodelength));
+    initTree(superLevelTree);
+  }
 }
 
 void InfomapBase::partition()
