@@ -311,6 +311,12 @@ void StateNetwork::clearLinks()
   // m_numAggregatedLinks = m_rawLinkCount - 0. m_numLinks/m_numAggregatedLinks keep
   // their pre-clear values so a post-clear numLinks() still reports the count (as
   // before); forEachLink() yields nothing by design (empty node list).
+  // An unbuilt buffer was never merged, so m_numLinks never counted its links and its
+  // self-link occurrences are not distinct self-links either. Keeping them would make
+  // sumDegree() = 2 * numLinks() - numSelfLinks() wrap around.
+  if (!m_useMapBuild && !m_linksFinalized) {
+    m_numSelfLinks = 0;
+  }
   m_rawLinkCount = 0;
   m_linksFinalized = true;
 }
