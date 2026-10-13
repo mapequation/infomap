@@ -5,8 +5,8 @@
 Single-threaded (`MODE=release OPENMP=0`), `--seed 123`. Codelength in bits. **`instr` is instructions retired** (`/usr/bin/time -l`). `time` is `--timing-json`'s `timing.total_s`.
 - `-N10` rows run once (deterministic; `instr` carries the comparison).
 - `-N1` rows are the interleaved minimum of 3.
-- Drivers: [`columnar_wip/bench-1140.py`](columnar_wip/bench-1140.py) for every configuration #1136's snapshot had, writing [`columnar_wip/1140-ab-results.tsv`](columnar_wip/1140-ab-results.tsv), and [`columnar_wip/bench-1140-controls.py`](columnar_wip/bench-1140-controls.py) for the family rows #1158 added, writing [`columnar_wip/1140-controls.tsv`](columnar_wip/1140-controls.tsv).
-- The tables are built from [`columnar_wip/1140-snapshot.tsv`](columnar_wip/1140-snapshot.tsv), which [`columnar_wip/combine-1140-snapshot.py`](columnar_wip/combine-1140-snapshot.py) writes, by [`columnar_wip/assemble-hier-gaps.py`](columnar_wip/assemble-hier-gaps.py).
+- Drivers: `bench-1140.py` for every configuration #1136's snapshot had, writing `1140-ab-results.tsv`, and `bench-1140-controls.py` for the family rows #1158 added, writing `1140-controls.tsv`. They are not kept on the branch, only in [`columnar_wip/` at #1140's head `f4f75f81`](https://github.com/mapequation/infomap/tree/f4f75f81c47a1f16b0621ac6d44a200ce799ca51/columnar_wip).
+- The tables are built from `1140-snapshot.tsv` (also at `f4f75f81`), which `combine-1140-snapshot.py` writes, by [`columnar_wip/assemble-hier-gaps.py`](columnar_wip/assemble-hier-gaps.py).
 
 > **This PR changes when the objective-option warnings fire, and nothing the engine computes (F67).**
 > - `--entropy-corrected` and `--preferred-number-of-modules` warned "has no effect on this run" under `-C` on state, multilayer and meta-data input, while the columnar engine applied both: states.net `-C` went from 2.011405238 to 2.169200009 bits under `--entropy-corrected`, next to a warning that it reported the uncorrected codelength.

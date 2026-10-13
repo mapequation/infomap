@@ -5390,7 +5390,8 @@ found; this is the same check on 15 inputs of the benchmark set. Each runs witho
 option, `-N1 --seed 123` (air30k (meta): seed 456, since OO does not finish seed 123, #1134), on OO
 and on `-C` with this PR, and `-C` again on the old binary for the warnings. Cells are the change in
 bits against the same engine without the option; "warns" means the run printed the option's "has
-no effect" warning. Driver `columnar_wip/verify-1140-warnings.py`, rows `columnar_wip/1140-warnings.tsv`.
+no effect" warning. Driver `verify-1140-warnings.py`, rows `1140-warnings.tsv`. These and the
+snapshot drivers and rows below are not kept on the branch, only at #1140's head `f4f75f81`.
 
 | network | input | OO `--entropy-corrected` | OO `--preferred-number-of-modules 5` | `-C` `--entropy-corrected` | `-C` `--preferred-number-of-modules 5` | `-C` before this PR |
 | --- | --- | --: | --: | --: | --: | --- |
@@ -5433,8 +5434,7 @@ no effect" warning. Driver `columnar_wip/verify-1140-warnings.py`, rows `columna
 
 **Snapshot session (2026-10-11).** Old = `501f523a` (md5 `eddfdee9…`), new = `78d58569` (md5
 `acb26dc5…`), both fresh `MODE=release OPENMP=0` builds, on the fetched inputs. Every configuration
-of the #1136 snapshot, both arms, 1 033 runs. Driver: `columnar_wip/bench-1140.py`; rows:
-`columnar_wip/1140-ab-results.tsv`.
+of the #1136 snapshot, both arms, 1 033 runs. Driver: `bench-1140.py`; rows: `1140-ab-results.tsv`.
 - **Nothing moves.** All 177 paired configurations are bit-identical in bits, top modules and levels
   on every run. Instructions: −2.53% to +0.60% (median −0.03%), and every cell beyond ±0.3% is a row
   under 0.07 s.
@@ -5452,8 +5452,8 @@ of the #1136 snapshot, both arms, 1 033 runs. Driver: `columnar_wip/bench-1140.p
 **Second session, after #1158 merged (2026-10-13).** #1158 (F66) turned the family table into a grid
 with a planted control per block and renamed the om labels, and changed nothing under `src/`: a clean
 build of the new tip `d5e32d85` gives the old binary's md5. So the first session stands, relabelled
-(`columnar_wip/combine-1140-snapshot.py`), and a second session measured the 37 family configurations
-#1158 added or re-scored, old against new (`columnar_wip/bench-1140-controls.py`, 222 runs at load
+(`combine-1140-snapshot.py`), and a second session measured the 37 family configurations
+#1158 added or re-scored, old against new (`bench-1140-controls.py`, 222 runs at load
 4.6–6.0). All 37 are bit-identical between the arms and equal #1158's values, at 0.864× its seconds.
 - **A table the assembler skipped.** `assemble-hier-gaps.py` treats every line that starts with `#` as a
   heading. In #1158's OO section a prose line wrapped to begin with `#1136`, which ended the section
