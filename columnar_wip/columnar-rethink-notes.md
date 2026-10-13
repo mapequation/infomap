@@ -5328,3 +5328,140 @@ is the one codelength baseline the family has that does not depend on another se
 **Found on the way.** wikispeedia sits above OO in bits at `-d` (+0.38%, −68% in seconds) and at
 `-2` (+0.27%, −57% in seconds). Seeds 456, 7, 11 and 99 give +0.37% to +0.47% and +0.22% to +0.42%,
 so it is systematic. No finding or issue had it. Filed as #1157.
+
+### F67 — The objective-option warnings asked the object-oriented objective under `-C` (#1140) (2026-10-11)
+
+#956 added two run-path warnings for options the objective does not act on:
+`--entropy-corrected has no effect on this run` and the same for `--preferred-number-of-modules`. They
+decide from `m_optimizer->implementsObjectiveParameters()`, which is true only for
+`BiasedMapEquation`. `initOptimizer` still builds that object-oriented objective under `-C`, so on
+state, multilayer and meta-data input the warnings fired although the columnar engine applies both
+options: `addColumnarCorrections` attaches `BiasedEntropyCorrection` and `PreferredModulesCorrection`
+whenever the options are set, on top of whatever meta-data, memory or lossy correction the input adds.
+
+| input | flags | warned | bits (2.011405238 without the flag) |
+|---|---|---|---|
+| states.net, multilayer.net | `-C --entropy-corrected` | yes | 2.169200009 |
+| states.net, multilayer.net | `-C --preferred-number-of-modules 3` | yes | 2.592666098 |
+| states.net | `--non-redundant --entropy-corrected` (implies `-C`) | yes | 2.086651348 (1.928856578 without) |
+| states.net | `-C --no-infomap -c states_states.clu --entropy-corrected` | yes | 2.169200009 |
+| ninetriangles.net | `-C --meta-data <file> --entropy-corrected` | yes | 3.714052696 (3.371875026 without) |
+
+**Fix.** The check asks `InfomapBase::appliesObjectiveParameters()`: true under `-C`, otherwise the
+object-oriented objective's answer as before. It sits next to `addColumnarCorrections`, so the claim
+about what the columnar engine attaches is next to the code that attaches it. The master-resident
+warning function changes by the one call in its `if`. The meta-data warning in the same function
+avoided a branch-only symbol by rewording, but no wording helps here: under `-C` "has no effect" is
+false.
+
+**Review addendum: one `-C` path does score through the object-oriented objective.** `--no-infomap`
+without an input partition scores the tree `initNetwork` left, every leaf under the root. The
+columnar stack cannot hold a tree with no modules, so `evaluateColumnarPartition` falls back to
+`objectOrientedTreeCodelength`, and there the two options part ways:
+- the entropy term comes from `m_optimizer` alone, so on state input it is missing: states.net
+  `-C --no-infomap` reports 2.251629167 bits with and without `--entropy-corrected`;
+- the module-count penalty is added by hand (the swap from the master sync that filed #1068), so
+  `--preferred-number-of-modules 3` applies: 4.251629167 bits.
+
+The first cut silenced the entropy warning on that path too. It now warns there on its own
+(`warnOnColumnarObjectOrientedScoring`), for the entropy correction only. "No input partition" is the
+exact condition, decidable before the trials: every partition source gives the tree modules. A
+depth-1 `.tree` becomes singletons (initTree's two-level shortcut), a bare top-level leaf in a deeper
+tree gets a synthetic module (the padding), and nodes a `.clu` or an initial partition leaves out get
+modules of their own.
+
+**Two reporting gaps, noted and not fixed.**
+- **The one-level reference** is `calcCodelength(m_root) + calcTreeCodelengthCost(1)` through
+  `m_optimizer`, so under `-C` on state, multilayer and meta-data input it has neither term. states.net
+  `-C --entropy-corrected` prints `One-level codelength 2.251629167`, and its relative savings
+  (3.66087%) compare a corrected codelength with an uncorrected reference. The search's one-level
+  guard uses the columnar `oneLevelCodelength()`, so no returned partition depends on it.
+- **The module-less fallback** above still lacks the entropy term. It is warned about now, not
+  repaired; repairing it would move a reported codelength and is a separate change.
+
+**The module-less `--preferred-number-of-modules` count differs between engines.** On ninetriangles
+`--no-infomap --preferred-number-of-modules 3`, OO reports 28.74554553 bits and `-C` 6.745545529, on
+a one-level codelength of 4.745545529. OO charges |27 − 3| (`calcTreeCodelengthCost(root.childDegree())`
+counts the 27 leaves under the root as top modules) and `-C` charges |1 − 3| (the root as the one leaf
+module). This is #1068's question, which level owns K, in its degenerate form; nothing here changes it.
+
+**Verified on the benchmark networks (2026-10-13).** The toy inputs above are where the bug was
+found; this is the same check on 15 inputs of the benchmark set. Each runs without and with each
+option, `-N1 --seed 123` (air30k (meta): seed 456, since OO does not finish seed 123, #1134), on OO
+and on `-C` with this PR, and `-C` again on the old binary for the warnings. Cells are the change in
+bits against the same engine without the option; "warns" means the run printed the option's "has
+no effect" warning. Driver `columnar_wip/verify-1140-warnings.py`, rows `columnar_wip/1140-warnings.tsv`.
+
+| network | input | OO `--entropy-corrected` | OO `--preferred-number-of-modules 5` | `-C` `--entropy-corrected` | `-C` `--preferred-number-of-modules 5` | `-C` before this PR |
+| --- | --- | --: | --: | --: | --: | --- |
+| jazz | ordinary | +0.39% | +0.12% | +0.39% | -0.26% | silent |
+| netscience | ordinary | +11.83% | +8.03% | +7.12% | +8101.20% | silent |
+| powergrid | ordinary | +59.96% | +6.94% | +6.95% | +2777.66% | silent |
+| polblogs | ordinary | +0.23% | +0.45% | +0.33% | +2.02% | silent |
+| word_assoc | ordinary | +0.08% | +4.90% | +0.15% | +4.68% | silent |
+| web-NotreDame | ordinary | +24.45% | +7.19% | +1.43% | +50562.36% | silent |
+| lazega | ordinary + meta-data | =, warns | =, warns | +0.55% | +2.80% | warned on both |
+| malaria | multilayer | =, warns | +0.0040%, **warns** | +0.02% | +180.57% | warned on both |
+| air30k | state | =, warns | +0.0030%, **warns** | +0.0037% | +50.52% | warned on both |
+| air30k (reg.) | state | =, warns | =, warns | +0.0036% | +46.94% | warned on both |
+| air30k (meta) | state + meta-data | =, warns | did not finish | +0.0033% | +72.84% | warned on both |
+| wikispeedia | state | =, warns | =, warns | +0.68% | +471.84% | warned on both |
+| om4 E100000 | state | =, warns | +6.50%, **warns** | +2.40% | +133.04% | warned on both |
+| om4 E100000 planted, --no-infomap -c | state | =, warns | =, warns | +2.38% | +160.03% | warned on both |
+| air30k, --no-infomap (no partition) | state | =, warns | =, warns | =, warns | +64.36% | warned on both |
+
+- **`-C` with this PR warns exactly where the option leaves the bits unchanged**, on all 15 inputs.
+  The one warning left is the entropy term on air30k `--no-infomap` without a partition, the
+  object-oriented fallback described above. The old binary warned on 17 cells whose bits the option
+  moved: both options on every non-ordinary input, and the module preference on that fallback.
+- **The OO entropy warning is right everywhere**: on every non-ordinary input the bits stay put.
+- **The OO module-preference warning is not.** It fires on every non-ordinary input, and on three of
+  them the option moves the result anyway: malaria (+0.0040% in bits, 142 → 140 top modules), air30k
+  (+0.0030%, 250 → 19) and om4 E100000 `-2d` (+6.50%, 1 → 2 337). The objective never charges the
+  cost there, but three object-oriented control-flow gates read `preferredNumberOfModules` whatever
+  the objective: the one-level fallback (`preferredNumberOfModules == 0` in its guard, which is what
+  turns om4's collapse into 2 337 modules at 8.503 bits), the super-module search (only when
+  `numTopModules() > preferredNumberOfModules`) and `dissolveUnprofitableModules` (skipped when it is
+  set). All three are on master, so the half-true warning is #956's, not this branch's; it is not
+  changed here.
+- **OO air30k (meta) `--preferred-number-of-modules 5` did not finish in 15 minutes** on seed 456,
+  where the run without the option takes 9 s. Same run shape as #1134 (OO super-module search
+  with `MetaMapEquation`), not followed up here.
+- **The `-C` module-preference penalties are large** (+2 778% on powergrid, +50 562% on web-NotreDame):
+  the columnar engine charges |K − 5| on the leaf-module count, which no search can bring to 5 on
+  those networks. That is #1068's question, unchanged here.
+
+**Snapshot session (2026-10-11).** Old = `501f523a` (md5 `eddfdee9…`), new = `78d58569` (md5
+`acb26dc5…`), both fresh `MODE=release OPENMP=0` builds, on the fetched inputs. Every configuration
+of the #1136 snapshot, both arms, 1 033 runs. Driver: `columnar_wip/bench-1140.py`; rows:
+`columnar_wip/1140-ab-results.tsv`.
+- **Nothing moves.** All 177 paired configurations are bit-identical in bits, top modules and levels
+  on every run. Instructions: −2.53% to +0.60% (median −0.03%), and every cell beyond ±0.3% is a row
+  under 0.07 s.
+- **It was a different machine from every earlier snapshot**, and it ran the same source as fast. The
+  old column reproduces #1136's new column in bits on all 177 configurations, at 0.991× its seconds
+  (median over 341 cells of at least 0.05 s, quartiles 0.96–1.02). So the carried OO cells still
+  compare in seconds as well as in bits.
+- **Load from other work on the machine reached 165** (1-minute average; median 7.8), and it inflated
+  single runs by up to 7.9× in seconds at unchanged instructions: F10 word_assoc (pref.) took 34.2 s,
+  against 4.35 s in #1136 and 3.52 s re-measured. Two more rounds re-measured both arms of every
+  distorted cell. After them, 41 cells read more than 1% slower in seconds and 57 more than 1% faster.
+  The largest slow one, om3 E50000 `-d -N10` at +6.0%, is one lucky old rep: the medians are 4.50 s
+  (old) and 4.49 s (new).
+
+**Second session, after #1158 merged (2026-10-13).** #1158 (F66) turned the family table into a grid
+with a planted control per block and renamed the om labels, and changed nothing under `src/`: a clean
+build of the new tip `d5e32d85` gives the old binary's md5. So the first session stands, relabelled
+(`columnar_wip/combine-1140-snapshot.py`), and a second session measured the 37 family configurations
+#1158 added or re-scored, old against new (`columnar_wip/bench-1140-controls.py`, 222 runs at load
+4.6–6.0). All 37 are bit-identical between the arms and equal #1158's values, at 0.864× its seconds.
+- **A table the assembler skipped.** `assemble-hier-gaps.py` treats every line that starts with `#` as a
+  heading. In #1158's OO section a prose line wrapped to begin with `#1136`, which ended the section
+  before its table, so that table kept its cells instead of being rebuilt. It did not matter in #1158,
+  where every cell was carried; here it left #1136's columnar seconds in the OO table until the line
+  was rewrapped. Keep `#` off the start of prose lines in the snapshot.
+
+**Lesson.** Check each cell against the previous snapshot's time for the same source, not only old
+against new. Under load, both arms of a row can inflate together, and old-vs-new sees nothing wrong.
+web-NotreDame `-C` read 49.6 s (old) and 39.5 s (new) in the first pass, against 20.6 s in #1136 and
+18.1 s / 18.0 s re-measured.

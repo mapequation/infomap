@@ -1064,6 +1064,33 @@ private:
       Console::warn(0, "--preferred-number-of-levels has no effect with --columnar (the columnar up-build has no depth-preference bias); ignoring it.");
   }
 
+  // The one -C run the columnar stack does not score, which appliesObjectiveParameters cannot
+  // see because it depends on the input partition. Without one, a --no-infomap run scores the
+  // tree initNetwork left, every leaf directly under the root, and a tree with no modules gives
+  // the stack nothing to hold: evaluateColumnarPartition hands it to the object-oriented
+  // objective, which then decides --entropy-corrected exactly as on the object-oriented engine.
+  // Every partition source does give the tree modules (a depth-1 .tree becomes singletons, a
+  // bare top-level leaf gets a synthetic module, nodes a .clu leaves out get modules of their
+  // own), so "no input partition" is exactly the case that reaches that fallback.
+  //
+  // --preferred-number-of-modules is not warned about here: objectOrientedTreeCodelength adds
+  // its penalty by hand, so the fallback applies it.
+  void warnOnColumnarObjectOrientedScoring()
+  {
+    if (!m_infomap.columnarSearch || !m_infomap.noInfomap || !m_infomap.entropyBiasCorrection)
+      return;
+    if (m_infomap.m_optimizer->implementsObjectiveParameters())
+      return;
+    // The sources initTrialPartition applies.
+    const bool haveInputPartition = !m_infomap.clusterDataFile.empty()
+        || !m_infomap.m_multilayerInitialPartition.empty()
+        || !m_infomap.m_initialPartition.empty()
+        || !m_network.initialPartitionPaths().empty();
+    if (haveInputPartition)
+      return;
+    Console::warn(0, "--entropy-corrected has no effect on this run: without an input partition, --no-infomap scores the partition with no modules, which the columnar engine leaves to the object-oriented objective, and that objective implements the entropy bias correction for the ordinary map equation only. The run reports the uncorrected codelength.");
+  }
+
   void calculateFlowAndInitNetwork()
   {
     // Build the consumed CSR link storage before flow: FlowCalculator reads CSR
@@ -1090,6 +1117,7 @@ private:
 
     checkFlowPostCondition();
     warnOnObjectiveOptionsNotApplied();
+    warnOnColumnarObjectOrientedScoring();
 
     // Build the columnar leaf SoA straight from the network now, while the links
     // are still present (the CLI releases them before the trials run). Reused
@@ -1108,7 +1136,7 @@ private:
   // call directly, and it runs again per parallel-trial worker.
   void warnOnObjectiveOptionsNotApplied()
   {
-    if (!m_infomap.m_optimizer->implementsObjectiveParameters()) {
+    if (!m_infomap.appliesObjectiveParameters()) {
       // Worded from the objective, not from the input: the condition is which objective
       // initOptimizer selected, and state, multilayer and meta-data input are the common way to
       // select another one but not the only way -- --lossy does it on an ordinary network too, and
@@ -3426,6 +3454,30 @@ void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
     opt.addCorrection(std::make_unique<LossyCorrection>(std::move(lossyLeafFlow), std::move(lossyLeafEntropy), lossyLambda));
   }
 #endif
+}
+
+bool InfomapBase::appliesObjectiveParameters() const
+{
+  // The columnar engine does not select one objective the way initOptimizer does: it sums
+  // corrections, and addColumnarCorrections above attaches the entropy bias and the
+  // module-count preference whenever they are set, next to whatever else the input adds
+  // (meta-data, memory, lossy). So under -C both apply on every input, including the
+  // state, multilayer and meta-data input whose object-oriented objective implements
+  // neither. m_optimizer is still that object-oriented objective under -C, and asking it
+  // printed "has no effect" on runs whose codelength the options visibly changed:
+  // states.net -C went from 2.011405238 to 2.169200009 under --entropy-corrected.
+  //
+  // Two -C outputs still come from m_optimizer and so still miss these terms on such
+  // input: the one-level reference codelength, and evaluateColumnarPartition's fallback
+  // for a tree with no modules at all (which adds the module-count penalty itself, but
+  // not the entropy term). The fallback is the one that decides a run's codelength --
+  // --no-infomap without an input partition -- and the run path warns about it on its own
+  // (warnOnColumnarObjectOrientedScoring), because it is one option and one input shape,
+  // not the engine. The search, and every partition it returns or scores on the stack,
+  // applies both options.
+  if (columnarSearch)
+    return true;
+  return m_optimizer->implementsObjectiveParameters();
 }
 
 std::vector<std::vector<int>> InfomapBase::leafModulePathsFromTree() const

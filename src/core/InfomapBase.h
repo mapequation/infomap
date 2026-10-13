@@ -597,6 +597,12 @@ private:
   // Shared by columnarPartition() and evaluateColumnarPartition().
   void addColumnarCorrections(ColumnarTwoLevel& opt) const;
 
+  // Whether the engine this run searches with applies --entropy-corrected and
+  // --preferred-number-of-modules: the condition for the run path's "has no effect"
+  // warnings. Asked here rather than of m_optimizer, which under --columnar is not
+  // the objective the search runs on.
+  bool appliesObjectiveParameters() const;
+
   // Per-leaf module ids coarsest-first (top module .. finest module), read from
   // the current InfoNode tree — the seed for a columnar codelength evaluation.
   std::vector<std::vector<int>> leafModulePathsFromTree() const;
