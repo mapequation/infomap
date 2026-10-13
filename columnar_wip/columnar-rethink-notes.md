@@ -5337,6 +5337,52 @@ a one-level codelength of 4.745545529. OO charges |27 − 3| (`calcTreeCodelengt
 counts the 27 leaves under the root as top modules) and `-C` charges |1 − 3| (the root as the one leaf
 module). This is #1068's question, which level owns K, in its degenerate form; nothing here changes it.
 
+**Verified on the benchmark networks (2026-10-13).** The toy inputs above are where the bug was
+found; this is the same check on 15 inputs of the benchmark set. Each runs without and with each
+option, `-N1 --seed 123` (air30k (meta): seed 456, since OO does not finish seed 123, #1134), on OO
+and on `-C` with this PR, and `-C` again on the old binary for the warnings. Cells are the change in
+bits against the same engine without the option; "warns" means the run printed the option's "has
+no effect" warning. Driver `columnar_wip/verify-1140-warnings.py`, rows `columnar_wip/1140-warnings.tsv`.
+
+| network | input | OO `--entropy-corrected` | OO `--preferred-number-of-modules 5` | `-C` `--entropy-corrected` | `-C` `--preferred-number-of-modules 5` | `-C` before this PR |
+| --- | --- | --: | --: | --: | --: | --- |
+| jazz | ordinary | +0.39% | +0.12% | +0.39% | -0.26% | silent |
+| netscience | ordinary | +11.83% | +8.03% | +7.12% | +8101.20% | silent |
+| powergrid | ordinary | +59.96% | +6.94% | +6.95% | +2777.66% | silent |
+| polblogs | ordinary | +0.23% | +0.45% | +0.33% | +2.02% | silent |
+| word_assoc | ordinary | +0.08% | +4.90% | +0.15% | +4.68% | silent |
+| web-NotreDame | ordinary | +24.45% | +7.19% | +1.43% | +50562.36% | silent |
+| lazega | ordinary + meta-data | =, warns | =, warns | +0.55% | +2.80% | warned on both |
+| malaria | multilayer | =, warns | +0.0040%, **warns** | +0.02% | +180.57% | warned on both |
+| air30k | state | =, warns | +0.0030%, **warns** | +0.0037% | +50.52% | warned on both |
+| air30k (reg.) | state | =, warns | =, warns | +0.0036% | +46.94% | warned on both |
+| air30k (meta) | state + meta-data | =, warns | did not finish | +0.0033% | +72.84% | warned on both |
+| wikispeedia | state | =, warns | =, warns | +0.68% | +471.84% | warned on both |
+| om4 E100000 | state | =, warns | +6.50%, **warns** | +2.40% | +133.04% | warned on both |
+| om4 E100000 planted, --no-infomap -c | state | =, warns | =, warns | +2.38% | +160.03% | warned on both |
+| air30k, --no-infomap (no partition) | state | =, warns | =, warns | =, warns | +64.36% | warned on both |
+
+- **`-C` with this PR warns exactly where the option leaves the bits unchanged**, on all 15 inputs.
+  The one warning left is the entropy term on air30k `--no-infomap` without a partition, the
+  object-oriented fallback described above. The old binary warned on 17 cells whose bits the option
+  moved: both options on every non-ordinary input, and the module preference on that fallback.
+- **The OO entropy warning is right everywhere**: on every non-ordinary input the bits stay put.
+- **The OO module-preference warning is not.** It fires on every non-ordinary input, and on three of
+  them the option moves the result anyway: malaria (+0.0040% in bits, 142 → 140 top modules), air30k
+  (+0.0030%, 250 → 19) and om4 E100000 `-2d` (+6.50%, 1 → 2 337). The objective never charges the
+  cost there, but three object-oriented control-flow gates read `preferredNumberOfModules` whatever
+  the objective: the one-level fallback (`preferredNumberOfModules == 0` in its guard, which is what
+  turns om4's collapse into 2 337 modules at 8.503 bits), the super-module search (only when
+  `numTopModules() > preferredNumberOfModules`) and `dissolveUnprofitableModules` (skipped when it is
+  set). All three are on master, so the half-true warning is #956's, not this branch's; it is not
+  changed here.
+- **OO air30k (meta) `--preferred-number-of-modules 5` did not finish in 15 minutes** on seed 456,
+  where the run without the option takes 9 s. Same run shape as #1134 (OO super-module search
+  with `MetaMapEquation`), not followed up here.
+- **The `-C` module-preference penalties are large** (+2 778% on powergrid, +50 562% on web-NotreDame):
+  the columnar engine charges |K − 5| on the leaf-module count, which no search can bring to 5 on
+  those networks. That is #1068's question, unchanged here.
+
 **Snapshot session (2026-10-11).** Old = `501f523a` (md5 `eddfdee9…`), new = `78d58569` (md5
 `acb26dc5…`), both fresh `MODE=release OPENMP=0` builds, on the fetched inputs. Every configuration
 of the #1136 snapshot, both arms, 1 033 runs. Driver: `columnar_wip/bench-1140.py`; rows:
