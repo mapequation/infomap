@@ -39,10 +39,24 @@ namespace infomap {
 
 using namespace columnar;
 
-void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed)
+void columnar::stripLeafTeleportRates(ColumnarLevel& leaf)
+{
+  double totalTele = 0.0;
+  for (double tf : leaf.teleFlow)
+    totalTele += tf;
+  // max(0, .): a node with no links keeps exactly its teleport rates, which the
+  // subtraction cancels only to rounding.
+  for (int i = 0; i < leaf.n; ++i) {
+    leaf.linkEnter[i] = std::max(0.0, leaf.linkEnter[i] - (totalTele - leaf.teleFlow[i]) * leaf.teleWeight[i]);
+    leaf.linkExit[i] = std::max(0.0, leaf.linkExit[i] - leaf.teleFlow[i] * (1.0 - leaf.teleWeight[i]));
+  }
+}
+
+void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed, bool recordedTeleport)
 {
   using infomath::plogp;
   m_undirected = undirected;
+  m_recordedTeleport = recordedTeleport;
   m_seed = seed;
   m_exitNetworkFlow = 0.0; // whole network is closed
   m_nLeaves = static_cast<int>(leafNodes.size());
@@ -80,6 +94,8 @@ void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, 
     m_totalTeleFlow += m_leafTeleFlow[i];
     m_leafNodeFlow_log_nodeFlow += plogp(L.flow[i]);
   }
+  if (recordedTeleport)
+    stripLeafTeleportRates(L); // the stored enter/exit are total rates here
 
   // Out + in CSR from leaf out-edges (in is the transpose), matching the OO
   // core's use of outEdges()/inEdges() in the move loop.
@@ -702,6 +718,9 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   double bestCodelength = std::numeric_limits<double>::infinity();
   std::vector<int> bestTop = m_leafTop;
   unsigned int bestK = static_cast<unsigned int>(lvl().n);
+  std::vector<int> runnerUpTop; // see the collapsed-winner comparison after the fine-tune
+  unsigned int runnerUpK = 0;
+  double runnerUpL = std::numeric_limits<double>::infinity();
 
   // One optimizing pass over the current m_lvl units: move loop, compose the
   // (compacted) leaf -> module map, and score by the augmented objective (base
@@ -849,10 +868,15 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
       const double L = runPass(newTop, c);
       if (L >= bestCodelength - kMinImprovement)
         break;
+      // A stalled aggregation ends here: once a pass buys less than
+      // kAggregationStallGain of the codelength, the next ones re-sort a few
+      // units each (om6_N256_E100k `-2d --regularized`: ~0.001% per pass over
+      // ~2,700 units, #1042). Keep the pass, stop there.
+      const bool stalled = bestCodelength - L < kAggregationStallGain * bestCodelength;
       bestTop = std::move(newTop);
       bestCodelength = L;
       bestK = static_cast<unsigned int>(c);
-      if (c <= 1 || c == lvl().n)
+      if (c <= 1 || c == lvl().n || stalled)
         break;
       if (maxAggPasses != 0 && pass >= maxAggPasses)
         break; // stop early: keep this (finer) level as the building-block bottom
@@ -943,6 +967,9 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     // sub-detectors cost malaria `-C -N10` +5.2% in time for exactly 0 change
     // in bits. The gate is scale-free: om5's 12224-of-50133-leaf super-group
     // (24% of the root) qualifies, malaria's ~55-leaf modules (<1%) never do.
+    // The ladder's best non-collapsed candidate, kept for the collapsed-winner
+    // comparison after the fine-tune (below).
+    const bool trackRunnerUp = doFineTune;
     if (regroupProbeEnabled() && maxAggPasses == 0 && m_nLeaves * 10 >= m_rootLeaves && !trajComp.empty()) {
       // The ladder is multi-scale on purpose: one probe pass finds the base
       // objective's OWN resolution on the base graph, which on a large sparse
@@ -1067,6 +1094,11 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
               for (auto* cp : unitCorr)
                 cp->setUnits(comp0, nBase);
             }
+            if (trackRunnerUp && L < runnerUpL && largestModuleFlowShare(newTop, c) < kCollapsedModuleFlowShare) {
+              runnerUpTop = newTop;
+              runnerUpK = static_cast<unsigned int>(c);
+              runnerUpL = L;
+            }
             if (L < bestCodelength - kMinImprovement) {
               bestTop = std::move(newTop);
               bestCodelength = L;
@@ -1145,6 +1177,39 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
   if (!doFineTune)
     return bestCodelength;
 
+  bestCodelength = fineTuneLeafTop(bestCodelength);
+
+  // A collapsed winner -- one module holding effectively the whole network --
+  // is compared with the ladder's best non-collapsed candidate only after BOTH
+  // are leaf-tuned (#1042). The rungs are judged at the granularity of the
+  // pass-1 blocks, and those blocks can be impure: under recorded teleportation
+  // the teleport term rewards merging states across communities from the very
+  // first sweep. A structured candidate pays for every impure block until its
+  // leaves are re-sorted; the collapsed one, holding them all in one module,
+  // pays nothing. om5_N256_E100k `-2d --regularized -N1`: the 70-module rung
+  // scores 8.113 against the collapse's 7.993 bits at block granularity, but
+  // 7.842 against 7.993 once tuned, and the run then ends at 7.825 (planted
+  // 7.826) instead of 7.974. The test runs only after a collapse, so a run
+  // whose winner keeps its structure pays nothing; and only for a candidate
+  // within kRunnerUpTuneGap of the tuned winner, the most a leaf tune was ever
+  // seen to recover.
+  if (!runnerUpTop.empty() && runnerUpL <= bestCodelength * (1.0 + kRunnerUpTuneGap)
+      && largestModuleFlowShare(m_leafTop, static_cast<int>(m_numTopModules)) >= kCollapsedModuleFlowShare) {
+    std::swap(m_leafTop, runnerUpTop);
+    std::swap(m_numTopModules, runnerUpK);
+    const double runnerUpTuned = fineTuneLeafTop(runnerUpL);
+    if (runnerUpTuned < bestCodelength - kMinImprovement) {
+      bestCodelength = runnerUpTuned;
+    } else {
+      std::swap(m_leafTop, runnerUpTop);
+      std::swap(m_numTopModules, runnerUpK);
+    }
+  }
+  return bestCodelength;
+}
+
+double ColumnarTwoLevel::fineTuneLeafTop(double bestCodelength)
+{
   // Fine-tune to convergence (tune level 0): re-optimize leaves across the
   // current top modules, seeded at the current assignment. Leaves may move
   // between modules and modules may merge/empty. Same primitive that will tune
@@ -1172,6 +1237,20 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     bestCodelength = augL;
   }
   return bestCodelength;
+}
+
+double ColumnarTwoLevel::largestModuleFlowShare(const std::vector<int>& leafModule, int numModules) const
+{
+  std::vector<double> flow(static_cast<std::size_t>(numModules), 0.0);
+  double total = 0.0;
+  for (int i = 0; i < m_nLeaves; ++i) {
+    flow[static_cast<std::size_t>(leafModule[i])] += leaf0().flow[i];
+    total += leaf0().flow[i];
+  }
+  double largest = 0.0;
+  for (double f : flow)
+    largest = std::max(largest, f);
+  return total > 0.0 ? largest / total : 0.0;
 }
 
 bool ColumnarTwoLevel::adoptPass1State(ColumnarTwoLevel& from)

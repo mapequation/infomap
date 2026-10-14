@@ -249,7 +249,7 @@ def assemble(tsv, text):
     specs, ti = None, 0
     while i < len(lines):
         ln = lines[i]
-        if ln.startswith("#"):
+        if re.match(r"#+ ", ln):  # a heading; prose may start with an issue number
             specs, ti = spec_for(ln.lstrip("# ")), 0
         if specs and ln == "<table>" and ti < len(specs):
             spec = specs[ti]

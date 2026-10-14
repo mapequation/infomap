@@ -3799,6 +3799,17 @@ instruction count is the measurement.
 > **Renumbered on merge (2026-09-05).** These two findings were written before
 > [#1043](https://github.com/mapequation/infomap/pull/1043) landed and were still uncommitted when it
 > did; that PR had already taken F49. They are F50 and F51 here, unchanged otherwise.
+**F49 addendum — the leaf level's `enter` was never link-only under recorded teleportation (2026-10-13,
+F68).** F49 reasoned that "leaves are untouched, so the columnar leaf level's `enter` is genuinely
+link-only and there is no double count", because `aggregateFlowValuesFromLeafToRoot` folds `(T − t)·w`
+into non-leaf nodes only. That checked the wrong producer. A leaf's own enter/exit come from
+FlowCalculator, which has stored them as total rates since the regularized map equation (#181): the
+regularized fallback sets `enterFlow = flow − t·w − self-link`, and the directed branch adds `t·(1 − w)`
+and `(T − t)·w` when teleportation is recorded. Both columnar leaf builders copied those totals into
+`linkEnter` / `linkExit`, so every module rate the move loop and the aggregation passes formed counted
+each member's teleportation twice. F49's index-rate change stands; its premise about the leaf level does
+not. See F68.
+
 ### F50 — First-order fallback for dangling state nodes: the model change is real but only pays on om2 (2026-08-26)
 
 Daniel's observation: the overlapping networks have a high rate of dangling state nodes, so ~1/8 of the
@@ -5029,6 +5040,16 @@ the build tells om5 from om7. What would reopen it:
 The experiment diffs (post-trial candidate, trial slot) were saved outside the repo; the mechanism above
 is enough to rebuild either.
 
+**F61 addendum — every number above was measured on a double-counted objective (2026-10-13, F68).**
+The columnar search counted recorded teleportation twice in its move and merge decisions (F68);
+reported codelengths were right, the search's steering was not. Two conclusions change. The plain
+objective's partition is not the only route to om5's basin: with the objective corrected, the regroup
+ladder already proposes the structure (a 70-module rung), and it was the block-granularity comparison
+that dropped it. A leaf tune of that rung, run only after a collapse, keeps it for the cost of one
+fine-tune instead of a plain build. And the "free signal that separates om5 / om6 from om7 / om8" that
+this finding asked for exists once the objective is right: the candidate's block-level gap to the tuned
+collapse (every win 0.34–4.57%, every loss 6.19–12.99%, 98 comparisons).
+
 ### F62 — #1083 is noise in where the repair lands, not a selection bug (2026-10-09)
 
 A logging-only experiment binary (tip `7fd37a62`, md5 `4586def7…`) deep-repaired and dissolved EVERY
@@ -5465,3 +5486,128 @@ build of the new tip `d5e32d85` gives the old binary's md5. So the first session
 against new. Under load, both arms of a row can inflate together, and old-vs-new sees nothing wrong.
 web-NotreDame `-C` read 49.6 s (old) and 39.5 s (new) in the first pass, against 20.6 s in #1136 and
 18.1 s / 18.0 s re-measured.
+
+### F68 — #1042's root cause: the columnar search counted recorded teleportation twice (2026-10-13)
+
+Base of the investigation: tip `d5e32d85` (#1158 merged; binary md5 `54c8b6b2…`, #1136's file). The
+snapshot session at the end is on the tip after #1140 / #1161, `4c3e5c7b`.
+
+**How it was found.** Revisiting #1042 against its planted control (F66), a trace of the regroup
+ladder on om5_N256_E100k `-2d --regularized -N1` showed the move loop scoring partitions on a
+different scale from the stack scorer. For the trial's own 93-module partition the move loop read
+8.617 bits where `hierarchicalCodelengthFromStack` read 7.975, and the offset was not constant: 1.03
+bits on a 201-module ladder candidate, 0.65 on the collapse. So the ladder kept the collapse (8.627
+against 8.990 in move-loop units) although the candidate was better (7.961 against 7.975 in true
+units). Plain om5 had no offset (6.963281 both); first-order jazz `-2 --regularized` had 0.51 bits
+(move loop 7.980, scorer 7.469, same 2-module partition), netscience 4.97.
+
+**The bug.** `ColumnarLevel::linkEnter / linkExit` must carry link crossings only; the core adds the
+teleport half per module (`moduleTeleEnter/Exit`, from the aggregated `t` and `w`), because that half
+is a product of two aggregates and does not sum (F49). FlowCalculator stores a node's enter/exit as its
+total boundary rates whenever teleportation is recorded (`--regularized`, `--recorded-teleportation`),
+the object-oriented convention — OO's `getDeltaCodelengthOnMovingNode` treats them as totals and adds
+the node↔module teleport flow as an extra delta, which is consistent. The columnar leaf builders
+(`InfomapBase::buildColumnarLeafInput`, `ColumnarTwoLevel::buildFromLeaves`) copied the totals into
+the link-only fields. Every module rate in the move loop and in every aggregated level (which
+inherits `m_mExit`) then held `Σ members' t(1 − w)` on top of the module's own `t(1 − w)`, and
+likewise for enter. The stack scorer rebuilds module boundaries from the link CSR (`aggregateLevel`),
+so every reported codelength was right; only the search steered by the biased value. Fix: strip each
+leaf's own teleport rates once, when the leaf level is built (`columnar::stripLeafTeleportRates`). With
+it the move loop and the scorer agree exactly (jazz 7.251756 = 7.251756; om5's 70-module candidate
+7.841608 = 7.841608). Runs without recorded teleportation never reach the strip and are bit-identical.
+
+**What the bias did — a brake on the collapse.** The double count charged every module an extra exit
+of about its own teleport flow, which does not shrink when modules merge. That cancels much of the
+regularized objective's reward for growing a module (`t_A·w_B + t_B·w_A` per merge, superadditive in
+size), the reward that drives greedy search into one module. So the biased objective was a better
+guide on weakly modular networks, and the true objective is the one OO fails on: OO `-2d --regularized
+-N1 --seed 123` returns one-level on om4–om8 E100k (7.984230648 … 7.99515376), against the tip
+columnar's 7.535 / 7.974 / 7.980 / 7.951 / 7.985. With the fix alone, the columnar trials collapse too:
+om5/om7/om8 E100k trials return exactly one-level, and the deep repair's one-module rescue pulls the
+run back below it (0.35–0.6 s per run); om2_N256_E50k collapses on all ten `-N10` trials (+5.17% in
+bits, where tip trials 2–10 reach ~7.54).
+
+**Why #1042 fails against its planted control.** om5 is the last network of the om ladder whose
+planted partition beats one-level under the prior (om2 −12.5%, om3 −8.7%, om4 −5.3%, om5 −2.05%, om6
++0.34%, om7 +1.76%, om8 +3.59%): it sits at the detectability edge. With the true objective the regroup
+ladder does propose the structure (rung 1: 70 modules, top module 9.6% of the flow), but it judges
+rungs at pass-1-block granularity, and under recorded teleportation the pass-1 blocks are impure: the
+teleport term pays for merging states across communities from the first sweep. A structured candidate
+pays for every impure block until its leaves are re-sorted; the collapse, holding them all, pays
+nothing. om5: 8.113 against the collapse's 7.993 at block granularity, 7.842 against 7.993 once
+leaf-tuned.
+
+**The collapsed-winner comparison.** After the fine-tune, if the winner's largest module holds ≥ 90%
+of the flow (`kCollapsedModuleFlowShare`, F61's free gate), leaf-tune the ladder's best non-collapsed
+rung too and keep the better. Three details, each measured:
+- **Flow share, not leaf share.** A first version reused `kWholeNetworkModuleShare` (0.95 of the
+  leaves) and never fired on om2_N256_E50k: the collapse holds 99.9% of the flow there but its crumbs
+  keep many low-flow states.
+- **Detector rungs compete.** The escalated ladder's structured rungs on om2_N256_E50k are poor (500
+  modules); the detector's rung 0 (63 modules, top 13%) is the one that tunes to the planted scale.
+  Including it: `-N1` 7.924 → 7.589, `-N10` 7.924 → 7.567 (tip 7.535).
+- **A 5% gap bound** (`kRunnerUpTuneGap`). Over the 98 comparisons of the om family at `-2d
+  --regularized -N10`, every candidate that won started 0.34–4.57% behind the tuned winner, every one
+  that lost 6.19–12.99% (om7 / om8 E100k and om3–om6 E50k lose all ten). The bound skips exactly the
+  tunes that cannot win.
+
+**Where the time goes** (om6_N256_E100k `-2d --regularized -N10`, phase timers, s over 10 trials,
+biased → fixed): aggregation 1.20 → 2.22, trajectory repair 0.08 → 1.07, detector ladder 0.005 → 0.35,
+winner fine-tune 0.34 → 0.10. The aggregation now stalls fragmented (≈2,700 modules over 4–7 passes)
+instead of collapsing in two, which is the plain objective's cost profile (plain om5 `-2d -N1` 1.62 s;
+fixed regularized 1.6 s). Those costs are what the cuts below went after.
+
+**Two time cuts, first gated, then measured everywhere.** Daniel picked two cuts after the measurement
+above: (a) skip the trajectory repair when the regroup ladder runs next, since its 0.1–0.3% at the
+fragmented level is replaced by the ladder's rungs; (b) make an aggregation pass that improves the
+codelength by less than 1e-4 of it the last one (`kAggregationStallGain`). Both, and the collapsed-winner
+comparison, were first gated on recorded teleportation so that every other row stayed bit-identical.
+Daniel rejected that: core search changes are not limited to the flag that motivated them, at least not
+without measuring them more generally, and bit-identity has no value in itself. Ungated and screened on
+the 148 searches without recorded teleportation (1 rep): the comparison never fires there (0 codelengths
+change); the stop changes one (−0.003%) for −2.0% in seconds; the skip changes 35, mostly +0.01…+0.09%,
+air30k (meta) L* −0.52%, but om2_N256_E100k `-d -N1` +2.97%, for −4.3% in seconds. The skip's premise —
+the ladder replaces the repaired partition — holds only under recorded teleportation; on plain memory and
+metadata input the repair still pays. So the skip is dropped, and the comparison and the stop apply to
+every run. The rescue's yield bar (`kFreshYieldOneModule` 5e-4 → 1e-4) was tried for om7 and dropped:
++3% / +12% in seconds, om7 unchanged.
+
+**Beyond the om family — the cost Daniel ruled on.** Every non-family benchmark network was run under
+`--regularized` (and `--recorded-teleportation` where directed), tip against this PR, 3 interleaved reps
+(the snapshot's REG table holds the final session). Gains: web-NotreDame −17.0% in bits
+(`--recorded-teleportation`) and −2.9% (`--regularized`), netscience `-2` −3.1%, word_assoc
+`--recorded-teleportation` −0.96%, jazz up to −2.4%. But networks whose regularized answer is one module both
+before and after pay for nothing: word_assoc +116…+213% in seconds, powergrid +56…+77%, polblogs +41…+78%.
+The bias had made the first pass collapse into one module almost at once (word_assoc: 22 pass-1 modules, the
+largest 93.5% of the flow, against 2,023 with the fix), so every later stage was trivial; the corrected search
+does the normal work at every stage, about what OO spends (word_assoc 2.47 s against OO 2.54 s, powergrid 0.13
+against 0.22 s). Two shortcuts were tried and failed: stopping the move loop's sweeps once one buys < 1e-4
+of the codelength (0–9% in seconds on these rows; at 1e-3 web-NotreDame and om2_N256_E50k lose bits), and
+skipping the second up-build setting when the first build is already worse than one-level (0–10%). The old
+biased search is no one-module oracle either: on jazz `-N1` it returns one-level where the corrected search
+finds 7.252 (−2.4%). Daniel's call: ship, document the cost, file the shortcut as a follow-up. wikispeedia
+`--regularized` ends +0.10–0.21% in bits, but both columnar arms were already above OO (OO 4.2865, tip
+4.3075, this PR 4.3164), the gap #1157 has for the plain objective.
+
+**Still open** (#1164 one-module shortcut, #1165 wikispeedia, #1166 om7 / om2). om7_N256_E100k +0.34–0.36% in bits: both partitions are one giant
+module plus crumbs (tip 96.7% of the flow + 167 crumbs at 7.9488; now 98.0% + 47 at 7.9777); every corrected
+trial collapses (OO: one-level) and the one-module rescue extracts fewer crumbs. om2_N256_E50k `-N10`
++0.43% / +0.71% (the same rows are −4.31% at `-N1`). A one-module shortcut for recorded teleportation.
+
+**Per feature, in the snapshot session** (2026-10-14, one session; old = fresh build of the tip
+`4c3e5c7b`, md5 `1a1fb5a5…`; new md5 `ccc09e19…`; arms fixonly on the recorded-teleportation searches and
+cmp everywhere; another benchmark shared the machine at load 6–13, so instructions retired are the
+steady axis). Earlier sessions measured the gated versions, on the previous tip `d5e32d85` and on
+`4c3e5c7b`; all of their runs agreed in codelength across the tip change (#1140 is diagnostics only).
+- Family (56 recorded-teleportation searches): old 1107G, leaf fix 1483G (+34.0%), + comparison 1561G
+  (+41.0%), + stop 1452G (+31.2%).
+- The 49 other recorded-teleportation searches: 815G → 1008G → 1008G → 1005G (+23.3%).
+- The 225 configurations without recorded teleportation: comparison +0.0%, comparison + stop −3.19% in
+  instructions (−1.7% in seconds), and one configuration moves, by −0.0026% in bits.
+- Every family search under `--regularized` ends at or below its planted control except om2_N256_E50k
+  (+0.25%; it was +4.77% at `-N1`), and om5 sits at −0.52% / −0.00% (was +1.89%). air30k (reg.) drops
+  0.13% in bits, which takes #1135's gap to OO from +0.14% to +0.02%.
+
+**Found on the way.** `assemble-hier-gaps.py` read any line starting with `#` as a heading, so the prose
+line "#1136 measured on the fetched inputs" reset the OO section and its table was never regenerated —
+harmless while that table was carried, wrong as soon as a columnar cell moved. It now matches `# ` only.

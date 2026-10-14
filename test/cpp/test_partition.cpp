@@ -290,6 +290,26 @@ TEST_CASE("Two-level search finds the same optimum on OO and columnar engines [f
   infomap::test::checkApproxCodelength(columnar, oo);
 }
 
+TEST_CASE("Columnar search under recorded teleportation is not worse than OO [fast][core][partition][columnar-differential]")
+{
+  // The network stores each node's enter/exit with its own teleport rates folded
+  // in; the columnar move loop adds the teleport term per module itself, so
+  // reading the stored rates as link flow counted teleportation twice and the
+  // search optimized a biased objective (#1042). Reported codelengths stayed
+  // right, the search did not: before the fix both rows ended above OO (6.4268
+  // against 6.4183, 3.7808 against 3.7704 bits), with it below (6.4005, 3.7530).
+  for (const char* network : { "clique_ring.net", "unbalanced_hierarchy.net" }) {
+    CAPTURE(network);
+    auto search = [network](bool columnar) {
+      InfomapWrapper im(std::string("--silent --two-level --directed --recorded-teleportation --seed 1 --num-trials 1") + (columnar ? " --columnar" : ""));
+      im.readInputData(infomap::test::networkFixturePath(network));
+      im.run();
+      return im.codelength();
+    };
+    CHECK(search(true) <= search(false) + 1e-9);
+  }
+}
+
 //! Sum InfoNode::codelength over every module including the root, i.e. the quantity
 //! calcCodelengthOnTree(root(), true) returns. Leaves carry no codelength of their own.
 double sumModuleCodelengths(const InfoNode& node)
