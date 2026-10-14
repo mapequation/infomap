@@ -2792,7 +2792,7 @@ void InfomapBase::setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long se
       totalTele += tf;
     opt.buildFromBorrowedLevel(leaf, isUndirectedClustering(), seed, 0.0, recordedTeleportation, totalTele);
   } else {
-    opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seed);
+    opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seed, recordedTeleportation);
   }
   opt.setRecordedTeleportation(recordedTeleportation);
   opt.setNonRedundant(nonRedundant);
@@ -3334,6 +3334,10 @@ void InfomapBase::buildColumnarLeafInput(Network& network)
     leaf.teleWeight[i] = n.weight; // teleport weight
     ++i;
   }
+  // The network stores total boundary rates; the columnar level wants link-only
+  // crossings and adds the teleport half per module itself.
+  if (recordedTeleportation)
+    columnar::stripLeafTeleportRates(leaf);
 
   // Out + in CSR (in is the transpose), self-links excluded as in generateSubNetwork.
   std::vector<int> outDeg(numNodes, 0), inDeg(numNodes, 0);

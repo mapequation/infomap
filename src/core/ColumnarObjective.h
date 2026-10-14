@@ -71,6 +71,29 @@ namespace columnar {
   // the derivations stop at pass-1 blocks: each is cheap and the rounds after the
   // first buy 0.005-0.03%, so 1e-4 lets them run 4-7 times (F59).
   constexpr double kFreshYieldOneModule = 5e-4;
+  // A two-level partition whose largest module holds at least this share of the
+  // flow has collapsed. The regroup ladder judges it against structured rungs at a
+  // granularity only the collapse is immune to, which matters where the collapse is
+  // an attractor of the greedy search, as under recorded teleportation (#1042, see
+  // optimizeTwoLevel).
+  // A flow share, not a leaf share: on the sparse om E50000 networks the collapsed
+  // module holds 99.9% of the flow while its crumbs keep many low-flow states.
+  // F61 measured the collapsed winners at 0.966-0.975 and every other benchmark
+  // winner at <= 0.23.
+  constexpr double kCollapsedModuleFlowShare = 0.9;
+  // ...and the best non-collapsed candidate is leaf-tuned against it only when
+  // its block-granularity codelength is within this fraction of the tuned
+  // collapsed winner. Measured over the 98 comparisons of the om family at
+  // `-2d --regularized -N10`: every one the candidate won started 0.34-4.57%
+  // behind, every one it lost 6.19-12.99% behind (om7 / om8 E100000 and om3-om6
+  // E50000 lose all ten), so the bound skips exactly the tunes that cannot win.
+  constexpr double kRunnerUpTuneGap = 0.05;
+  // An aggregation pass that improves the codelength by less than this fraction
+  // is the last one run (it is kept). The stalled passes re-sort a few units for
+  // ~0.001% each; the productive ones buy 0.27% or more (om6_N256_E100k
+  // `-2d --regularized`). Over the 148 benchmark searches without recorded
+  // teleportation it changed one codelength, by -0.003% (#1042).
+  constexpr double kAggregationStallGain = 1e-4;
 
   // Exact port of MapEquation::getDeltaCodelengthOnMovingNode for the base
   // objective: change in codelength from moving a unit out of its old module

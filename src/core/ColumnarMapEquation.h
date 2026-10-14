@@ -64,6 +64,26 @@ namespace columnar {
       return sum;
     }
   };
+
+  /**
+   * Reduce a leaf level's stored enter/exit to the link-only crossings the
+   * ColumnarLevel contract requires, under recorded teleportation.
+   *
+   * FlowCalculator stores a node's enter/exit as its TOTAL boundary rates — the
+   * object-oriented convention since the regularized map equation (#181): with
+   * teleportation recorded they already hold the node's own teleport enter
+   * (T - t) * w and exit t * (1 - w). The columnar core adds the teleport half
+   * per module instead (moduleTeleEnter/Exit, from the aggregated t and w), so
+   * reading the stored rates as link flow counted every member's teleportation a
+   * second time in every module rate the move loop and the aggregation passes
+   * saw (#1042: the search steered by an objective 0.5 bits off on jazz, 0.65 on
+   * om5). The stack scorer never saw it — it rebuilds module boundaries from the
+   * link CSR — so every reported codelength was right; only the search was not.
+   *
+   * Call once, on the leaf level, and only when teleportation is recorded: in
+   * every other flow model the stored rates are link-only already.
+   */
+  void stripLeafTeleportRates(ColumnarLevel& leaf);
 } // namespace columnar
 
 /**
@@ -306,7 +326,9 @@ public:
   std::vector<double> leafCodebookRates() const;
 
   // Build the leaf level (flow, enter/exit, out+in CSR) from the leaf network.
-  void buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed);
+  // recordedTeleport: the leaves' stored enter/exit include their own teleport
+  // rates, which are stripped to link-only (columnar::stripLeafTeleportRates).
+  void buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed, bool recordedTeleport = false);
 
   // Build the leaf level directly from columnar arrays (used to feed the
   // enter-flow super-network, or a sub-network within a module, into a nested
@@ -338,6 +360,12 @@ public:
   // existing partition rather than re-deriving one. Used by the hierarchical
   // refinements' partial seeding (see buildPartialSeed).
   double optimizeTwoLevel(unsigned int maxAggPasses = 0, bool doFineTune = true, const std::vector<int>* pass1Seed = nullptr);
+  // optimizeTwoLevel's fine-tune: re-optimize the leaves of m_leafTop to
+  // convergence, seeded at it; returns the tuned codelength (bestCodelength if
+  // no sweep improved on it).
+  double fineTuneLeafTop(double bestCodelength);
+  // Share of the leaf flow in the largest module of a leaf -> module assignment.
+  double largestModuleFlowShare(const std::vector<int>& leafModule, int numModules) const;
 
   // Two-level engine entry (the `--columnar --two-level` search): run the full
   // two-level optimize and materialize it as a two-level stack (leaves + one
