@@ -13,9 +13,10 @@ TSV row: key label arm rep flags codelength total_s instr top levels
 Each (key, label, arm) is reduced to: codelength string of rep 1, minimum total_s over
 all reps, minimum instructions over all reps (independently), top/levels of rep 1.
 
-The OO cells of the two "OO vs columnar" tables are not in the TSV; they are parsed
-from the existing snapshot and carried over (their deltas are recomputed from the
-printed, rounded values).
+The OO cells of the two "OO vs columnar" tables come from the TSV's new OO10 / OO2_10
+rows when it has them (a master sync measures both engines, bench-sync.py). Otherwise
+they are parsed from the existing snapshot and carried over (their deltas are then
+recomputed from the printed, rounded values).
 
 The family table (FAM) pairs every search with its planted control (F66). Its rows may
 have a new arm only (a row this PR adds: the old cells read "—"), and it has one more
@@ -44,7 +45,9 @@ HEADS = {  # heading prefix -> list of table specs, in document order
     "The non-redundant map equation L": [("cross", "C10", "L10")],
     "OO vs columnar —": [("oo", "C2_10")],
     "OO vs columnar": [("oo", "C10")],
+    "Old vs new object-oriented": [("pair", "OO10"), ("pair", "OO2_10")],
 }
+OO_KEY = {"C10": "OO10", "C2_10": "OO2_10"}  # columnar key -> its measured OO rows
 MOVES_TABLE = {  # key -> "table" column of the moves table, in row order
     "C1": "`-C -N1`",
     "C10": "`-C`",
@@ -52,6 +55,8 @@ MOVES_TABLE = {  # key -> "table" column of the moves table, in row order
     "F1": "`-C -F -N1`",
     "F10": "`-C -F`",
     "FAM": "family",
+    "OO10": "OO",
+    "OO2_10": "OO `-2`",
 }
 
 
@@ -189,10 +194,14 @@ def html_rows(spec, data, order, old_lines):
             )
             for lb in ordered(labels, existing)
         ]
-    # oo: left cells carried from the snapshot, right from the TSV
+    # oo: right cells from the TSV; left from its OO rows, else carried from the snapshot
     carried = parse_rows(old_lines)
     out = []
     for lb in existing:
+        oo = data.get((OO_KEY[key], lb, "new"))
+        if oo is not None:
+            out.append(row(lb, left_cells(oo), right_cells(data[key, lb, "new"], oo)))
+            continue
         left = carried[lb][:5]
         try:
             ref = Cell(

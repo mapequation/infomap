@@ -2802,6 +2802,18 @@ python3 columnar_wip/make-state-meta.py networks/states/air2011/air30k.net ussta
 **Still not measured:** peak memory on any of these configurations, and `-N10` timings on the
 `--regularized` multilayer arm (which is scored without the teleport prior under `-C` anyway).
 
+**F39 addendum — the proposed row was added, and then compared with OO as if like for like
+(2026-10-14).** The air30k (meta) row went into the benchmark set as proposed above, but the "OO vs
+columnar" table then quoted it with a delta: #1077's snapshot had columnar 7.42215327 against OO
+8.43783233, "−12.04%". That compares the composed objective with OO's meta-only one. While OO never
+finished the row (#1134) the cell read "did not finish" and the question did not come up; #1142 fixed
+#1134, the master sync through #1162 (F69) measured the row on OO again, and cross-scoring reproduces
+this finding's gap on the fetched input. Columnar's `-2 -N10` partition: 7.416311014 bits composed
+(`-C`), 11.09228388 meta-only (OO), a gap of 3.676. OO's own partition: 9.118912583 composed, 9.225476493
+meta-only. Without `--meta-data` the two engines agree on both partitions to every printed digit
+(6.727034479 / 8.191237089), so the gap is the objective and not the reading of the state-level `.clu`.
+The OO tables now show the row without a delta, labelled as the other objective.
+
 ### F40 — The lossy noise credit is derived against L, not L\*; the multiplier belongs inside the gate (#1011, 2026-08-15)
 
 F37's item (2) filed `LossyCorrection` as "the same defect in kind, needs its own derivation". It does,
@@ -5611,3 +5623,40 @@ steady axis). Earlier sessions measured the gated versions, on the previous tip 
 **Found on the way.** `assemble-hier-gaps.py` read any line starting with `#` as a heading, so the prose
 line "#1136 measured on the fetched inputs" reset the OO section and its table was never regenerated —
 harmless while that table was carried, wrong as soon as a columnar cell moved. It now matches `# ` only.
+
+### F69 — Master sync through #1162: the columnar search is untouched, #1142 moves OO, and the input fingerprint is the one cost (2026-10-14)
+
+Merges 54 master commits since #1077 (#1082 through #1162) into the branch as `b4524f2f`.
+Conflicts: `InfomapBase.cpp` (keep the branch's `maybeDeepRepairBest`, take #1148's measured
+`threadsUsed`; no columnar code opens a parallel region, and the parallel-trial loop records its
+team) and the two `twotriangles_top_level_leaf*` fixtures, which both sides had added with the same
+rows. The one follow-up the merge itself needs is #1082's: a bare top-level row now reads as `k:1`,
+so `-C` prices `twotriangles_top_level_leaf.tree` like the explicit module, 3.014170945 bits instead
+of 2.714170945 (checked on both binaries before moving the pin).
+
+**The session reproduces the last one.** The old arm, a fresh build of the tip `aa4f8689`, is
+byte-identical to #1163's new arm (md5 `ccc09e19`). All 332 columnar codelengths match that session
+and instructions agree to a median +0.02%, every configuration above 0.3G within ±1%. Below 0.3G they
+do not: ninetriangles, lazega and jazz scatter up to ±7% (±5M instructions) between sessions on one
+binary, which is process startup. Instructions retired are a reliable code-speed measure only above
+that floor.
+
+**Columnar: bit-identical on all 332 configurations, and the input fingerprint is the whole cost.**
+#1096 made every run hash each input file byte by byte (FNV-1a), and that costs a constant ~7.7
+instructions per byte on every input from malaria (0.8 MB, +6M) to web-NotreDame (21.5 MB, +177M).
+Subtracting 7.7 per byte of network, `.clu` and `.meta` leaves a median of −0.000% over the 296
+configurations above 0.3G (5th–95th percentile ±0.11%). A throwaway build with the hash returning
+early is back at the old count (om5_N256_E100k planted: new +1.98%, gated −0.24%; web-NotreDame `-C
+-N1`: new +0.68%, gated −0.00%). It matters on runs that do little else: the planted `--no-infomap -c`
+rows pay +1.3% to +2.3% in instructions. Filed on master as #1167 (shared code).
+
+**OO: 14 of 28 configurations move, −0.008% to +0.046% in bits, all from #1142.** Master builds just
+before #1142 (`c6aec7ad`), at it (`d01700a3`) and at #1159 (`b6f0dacc`) put every one of the 14 changes
+on #1142, which drops the aggregation pass that merges nothing and so shifts the seeded search path.
+#1159, #1160 and #1162 change none of them. Those chain runs went seven at a time, and their
+instruction counts did not mix cleanly with the sequential sweep's: powergrid reads −2.2% and then
++2.1% across two steps where its codelength does not change. Compare instruction counts within one
+batch only; across batches only the large moves survive (air30k −7%/−8%, malaria −6%/−9% at #1142).
+
+**OO air30k (meta) finishes now** (8.243378829 bits `-N10` in 24.9 s; 9.225476493 `-2 -N10`), and is
+no comparison for the columnar row: see the F39 addendum.
