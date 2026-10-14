@@ -275,6 +275,24 @@ def test_add_igraph_graph_names_non_numeric_physical_ids(make_infomap):
     assert dict(im.names) == {0: "beta", 1: "alpha"}
 
 
+def test_add_igraph_multilayer_graph_keeps_vertex_names_as_state_names():
+    # The multilayer branch built its state nodes through add_multilayer_node,
+    # which had no name parameter, so vertex names that the state-network branch
+    # keeps were dropped for multilayer input (#798).
+    ig = pytest.importorskip("igraph")
+    graph = ig.Graph(edges=[(0, 1), (0, 2)], directed=False)
+    graph.vs["name"] = ["alpha@1", "beta@1", "alpha@2"]
+    graph.vs["node_id"] = ["alpha", "beta", "alpha"]
+    graph.vs["layer_id"] = [1, 1, 2]
+
+    im = infomap.Infomap(num_trials=1, seed=1)
+    im.add_igraph_graph(graph)
+    result = im.run()
+
+    assert result.state_names == {0: "alpha@1", 1: "beta@1", 2: "alpha@2"}
+    assert set(result.names.values()) == {"alpha", "beta"}
+
+
 def test_find_igraph_communities_partitions_multilayer_vertices():
     ig = pytest.importorskip("igraph")
     graph = ig.Graph(edges=[(0, 1), (0, 2)], directed=False)

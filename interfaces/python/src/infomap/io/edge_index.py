@@ -68,15 +68,17 @@ def _validate_num_nodes(edge_index: Any, num_nodes: int | None) -> int:
     return int(num_nodes)
 
 
-def _validate_node_ids(node_ids: Sequence[Any] | None, n_nodes: int) -> list[Any]:
+def _validate_node_ids(
+    node_ids: Sequence[Any] | None, n_nodes: int, *, name: str = "node_ids"
+) -> list[Any]:
     if node_ids is None:
         return list(range(n_nodes))
 
     labels = list(node_ids)
     if len(labels) != n_nodes:
-        raise ValueError("`node_ids` length must match `num_nodes`.")
+        raise ValueError(f"`{name}` length must match `num_nodes`.")
     if len(set(labels)) != len(labels):
-        raise ValueError("`node_ids` values must be unique.")
+        raise ValueError(f"`{name}` values must be unique.")
     return labels
 
 
@@ -133,6 +135,7 @@ def add_edge_index(
     num_nodes: int | None = None,
     directed: bool = True,
     node_ids: Sequence[Any] | None = None,
+    labels_parameter: str = "node_ids",
 ) -> dict[int, Any]:
     """Add links and nodes from a PyG-style ``edge_index``.
 
@@ -152,7 +155,7 @@ def add_edge_index(
     """
     edge_index_array = _validate_edge_index(edge_index)
     n_nodes = _validate_num_nodes(edge_index_array, num_nodes)
-    labels = _validate_node_ids(node_ids, n_nodes)
+    labels = _validate_node_ids(node_ids, n_nodes, name=labels_parameter)
     weights = _validate_edge_weight(edge_weight, edge_index_array.shape[1])
 
     internal_to_label = {index: label for index, label in enumerate(labels)}

@@ -189,26 +189,26 @@ G_hier = hierarchical_graph()
 for two_level in [False, True]:
     result = infomap.run(G_hier, two_level=two_level, seed=123, num_trials=10)
 
-    m_top = result.modules(depth=1)    # top-level groups
-    m_leaf = result.modules(depth=-1)  # finest-level assignments
+    m_top = result.modules(level=1)    # top-level groups
+    m_leaf = result.modules(level=-1)  # finest-level assignments
 
     print(f"two_level={two_level}:")
     print(f"  levels={result.num_levels}, top modules={result.num_top_modules}")
-    print(f"  distinct groups at depth 1:      {len(set(m_top.values()))}")
+    print(f"  distinct groups at level 1:      {len(set(m_top.values()))}")
     print(f"  distinct groups at finest level: {len(set(m_leaf.values()))}")
     print(f"  L={result.codelength:.4f}")
 ```
 
 With `two_level=False`, the multilevel solution recovers the built-in nesting:
 the two main branches at the top and the eight cliques at the finest level. You
-reach that level with `result.modules(depth=-1)`; the cell above prints the
+reach that level with `result.modules(level=-1)`; the cell above prints the
 exact counts.
 The codelength is lower because the deeper code captures the real hierarchy. With
 `two_level=True`, the eight cliques become the top-level modules and the nested
 structure is invisible.
 
-Use `result.modules(depth=k)` to access any level of the hierarchy. The default
-`result.modules()` returns level 1, the coarsest (top modules); pass `depth=-1`
+Use `result.modules(level=k)` to access any level of the hierarchy. The default
+`result.modules()` returns level 1, the coarsest (top modules); pass `level=-1`
 for the finest (leaf) level.
 
 ### `directed` and the flow model

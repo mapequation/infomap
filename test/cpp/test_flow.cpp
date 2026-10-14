@@ -383,6 +383,42 @@ TEST_CASE("Undirected regularization remains stable on the two-triangles fixture
   infomap::test::checkApproxCodelength(im.codelength(), 2.575767408, 1e-9);
 }
 
+TEST_CASE("Regularization strength 0 matches its small-strength limit with dangling nodes [fast][core][flow]")
+{
+  // At strength 0 the prior out-weight t_i is zero, so alpha = t_i / (s_i + t_i) was
+  // 0/0 for a node without out-links. Directed flow went NaN and the run was rejected
+  // as degenerate; undirected flow left a NaN teleport flow on the isolated node, which
+  // blocked moves and returned a worse partition with a successful exit (#1144).
+  // Strength 0 is the limit of small strengths, so it has to agree with one.
+  const auto run = [](const std::string& flags, const std::string& strength) {
+    InfomapWrapper im(infomap::test::defaultFlags("--regularized --regularization-strength " + strength + " " + flags));
+    im.addLink(1, 2);
+    im.addLink(2, 3);
+    im.addLink(3, 1);
+    im.addLink(4, 5);
+    im.addLink(5, 6);
+    im.addLink(6, 4);
+    im.addLink(3, 4);
+    im.addLink(6, 7); // 7 has no out-links in directed flow
+    im.addNode(8); // isolated
+    im.run();
+    auto modules = im.getModules(1);
+    // Undirected flow gives 8 no flow at strength 0, so every module fits it equally well.
+    modules.erase(8);
+    return std::make_pair(im.codelength(), infomap::test::canonicalPartition(modules));
+  };
+
+  for (const std::string flags : { "--directed", "--directed --no-self-links", "", "--no-self-links" }) {
+    CAPTURE(flags);
+    const auto [codelengthAtZero, partitionAtZero] = run(flags, "0");
+    const auto [codelengthNearZero, partitionNearZero] = run(flags, "1e-12");
+
+    CHECK(std::isfinite(codelengthAtZero));
+    infomap::test::checkApproxCodelength(codelengthAtZero, codelengthNearZero, 1e-9);
+    CHECK(partitionAtZero == partitionNearZero);
+  }
+}
+
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 // examples/networks/multilayer_intra_inter.net -- a network we ship -- fails its
 // flow-imbalance check under --regularized. The imbalance itself is unresolved
@@ -899,6 +935,56 @@ TEST_CASE("skip-adjust-bipartite-flow keeps its documented unnormalized flow [fa
   // link flows now carry the 1/(1 - danglingRank) scaling the node flows already had,
   // so the exit flows -- and with them the module codelength -- are no longer deflated.
   infomap::test::checkApproxCodelength(im.codelength(), 0.2776646519);
+}
+
+TEST_CASE("Parallel self-links count once in the regularized prior [fast][core][flow]")
+{
+  // sumDegree() subtracted every self-link occurrence from the number of distinct links.
+  // Two parallel self-loops on a node with no other links made the degree sum 0, so
+  // regularized flow took the no-link shortcut and the node got a negative enter flow;
+  // three wrapped the unsigned sum around and reported codelength 0. Found by igraph's
+  // fuzzer (igraph/igraph#2940). Parallel links are aggregated, so they must give the
+  // same result as one link of their summed weight.
+  const auto run = [](const std::string& flags, const std::vector<double>& selfLinkWeights) {
+    InfomapWrapper im(infomap::test::defaultFlags("--regularized --two-level -N 1 --seed 1 " + flags));
+    for (const auto weight : selfLinkWeights) {
+      im.addLink(1, 1, weight);
+    }
+    im.addLink(1, 2);
+    im.addLink(2, 3);
+    im.addLink(3, 4);
+    im.addLink(4, 1);
+    for (unsigned int node = 5; node <= 14; ++node) {
+      im.addNode(node);
+    }
+    im.run();
+    return std::make_pair(im.codelength(), im.getModules(1));
+  };
+
+  for (const std::string flags : { "--directed", "" }) {
+    CAPTURE(flags);
+    const auto single = run(flags, { 1.0 });
+    for (const auto& parallel : { std::vector<double> { 0.5, 0.5 }, std::vector<double> { 0.25, 0.25, 0.5 } }) {
+      CAPTURE(parallel.size());
+      const auto aggregated = run(flags, parallel);
+      infomap::test::checkApproxCodelength(aggregated.first, single.first, 1e-12);
+      CHECK(aggregated.second == single.second);
+    }
+  }
+
+  // The fuzzer's input: one node whose only links are two self-loops, plus isolated nodes.
+  for (const std::string flags : { "--directed", "" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(infomap::test::defaultFlags("--regularized --two-level -N 1 --seed 1 " + flags));
+    im.addLink(0, 0, 0.609524);
+    im.addLink(0, 0, 0.00952381);
+    for (unsigned int node = 1; node <= 13; ++node) {
+      im.addNode(node);
+    }
+    CHECK_NOTHROW(im.run());
+    CHECK(std::isfinite(im.codelength()));
+    CHECK(im.codelength() > 0);
+  }
 }
 
 TEST_CASE("A link-free network keeps its trivial zero-flow result [fast][core][flow]")

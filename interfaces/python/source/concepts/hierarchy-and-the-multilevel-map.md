@@ -57,8 +57,8 @@ until none shortens the description, then stops.
 
 The result is a tree of modules. Each leaf is a network node. Internal tree
 nodes are modules at different granularities. You can read off the coarse
-super-group membership at depth 1, the fine-grained triangle membership at
-depth 2, and so on.
+super-group membership at level 1, the fine-grained triangle membership at
+level 2, and so on.
 
 ## Nested codebooks
 
@@ -217,11 +217,11 @@ bits; dropping exactly one saves 0.014 bits.)
 ### Read module assignments at each level
 
 ```{code-cell} python
-# Coarsest level (depth 1): two super-groups plus the three triangles of the third
-modules_l1 = result.modules(depth=1)
+# Coarsest level (level 1): two super-groups plus the three triangles of the third
+modules_l1 = result.modules(level=1)
 
-# Finer level (depth 2): the nine individual triangles
-modules_l2 = result.modules(depth=2)
+# Finer level (level 2): the nine individual triangles
+modules_l2 = result.modules(level=2)
 
 print("Level-1 assignment (top modules):")
 print(modules_l1)
@@ -232,7 +232,7 @@ print(modules_l2)
 assert len(set(modules_l2.values())) == 9
 ```
 
-Pass `depth=-1` for the finest (leaf) level whatever the tree depth.
+Pass `level=-1` for the finest (leaf) level whatever the tree depth.
 
 ### Visualise both levels side by side
 
@@ -278,9 +278,9 @@ description.
 
 ## API pointers
 
-All on {class}`~infomap.Result`: {attr}`~infomap.Result.num_levels` (alias
-{attr}`~infomap.Result.max_depth`), {attr}`~infomap.Result.num_top_modules`,
-{meth}`~infomap.Result.modules` (pass `depth=k`, or `depth=-1` for the leaf
+All on {class}`~infomap.Result`: {attr}`~infomap.Result.num_levels`,
+{attr}`~infomap.Result.num_top_modules`,
+{meth}`~infomap.Result.modules` (pass `level=k`, or `level=-1` for the leaf
 level), and {meth}`~infomap.Result.effective_num_modules`; see
 {doc}`/working-with-infomap/results-and-iteration`. The engine option
 `two_level=True` restricts the search to two levels — leave it off for the full

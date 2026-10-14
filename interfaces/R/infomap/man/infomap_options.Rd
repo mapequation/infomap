@@ -53,7 +53,7 @@ Output
 \item{\code{hide_bipartite_nodes}}{Hide bipartite nodes in output by projecting the solution to primary nodes.}
 \item{\code{print_all_trials}}{Write each trial to separate output files. Has effect only when --num-trials is greater than 1.}
 \item{\code{no_overwrite}}{Fail with an output error if any target output file already exists. By default existing files are replaced.}
-\item{\code{print_config_fingerprint}}{Print the canonical configuration fingerprint and exit.}
+\item{\code{print_config_fingerprint}}{Print the canonical configuration fingerprint and exit. Deprecated: leaves the R surface in 3.0. A print-and-exit CLI diagnostic; run the infomap binary.}
 \item{\code{timing_json}}{Write machine-readable run timing JSON to this path. Use - for stdout.}
 \item{\code{summary_json}}{Write machine-readable final run summary JSON to this path. Use - for stdout.}
 \item{\code{manifest_json}}{Write a machine-readable run manifest JSON to this path. Use - for stdout.}
@@ -116,7 +116,7 @@ Accuracy
 \item{\code{parallel_trials}}{Run independent trials in parallel with OpenMP. --num-trials remains the total number of trials; the number of parallel workers follows the OpenMP thread count (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory scales with the worker count. Nested OpenMP and --inner-parallelization are disabled inside workers.}
 \item{\code{converge}}{Treat the trial count as a cap and stop early once the best codelength has plateaued (no meaningful improvement over several consecutive trials). Runs trials serially; cannot be combined with parallel trials or distributed sharding. With no explicit trial count, a default cap is used.}
 \item{\code{num_threads}}{Effective thread budget: 'auto' (resolve from --num-threads > INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset > hardware), or a positive integer. 1 forces fully serial. Governs the recursive partition, parallel trials, and inner parallelization.}
-\item{\code{threads}}{Alias for --num-threads.}
+\item{\code{threads}}{Alias for --num-threads. Deprecated: leaves the R surface in 3.0. Use num_threads; threads is a redundant alias of the same engine option.}
 \item{\code{prefer_modular_solution}}{Prefer a modular solution even when one module gives a lower codelength.}
 \item{\code{num_random_moves}}{Try this many random moves in each core loop to merge weakly connected nodes.}
 \item{\code{max_degree_for_random_moves}}{Try random moves only for nodes with degree at most this value.}

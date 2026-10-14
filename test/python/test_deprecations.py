@@ -508,3 +508,343 @@ def test_deprecated_infomap_graph_constructors_emit_pending():
         warnings.simplefilter("always")
         Infomap.from_edge_index(np.array([[0, 1], [1, 0]]))
     assert any("from_edge_index" in message for message in _pending(records))
+
+
+# -- removed Options fields ---------------------------------------------------
+#
+# The four fields the 3.0 policy classifies `remove` for Python (threads,
+# silent, verbosity_level, print_config_fingerprint) leave Options too: their
+# replacement is another option, the logging module or the CLI binary. Until
+# #915 they warned only as bare Infomap()/run() keywords -- the very route the
+# advanced-tier message steers callers *away* from -- and never on Options
+# itself, so a caller who followed the steering met the 3.0 TypeError with no
+# notice at all.
+
+
+def _removed_fields():
+    from infomap._options import _REMOVED_FIELDS
+
+    return _REMOVED_FIELDS
+
+
+@pytest.mark.fast
+def test_removed_fields_are_the_four_the_policy_names():
+    assert set(_removed_fields()) == {
+        "threads",
+        "silent",
+        "verbosity_level",
+        "print_config_fingerprint",
+    }
+
+
+@pytest.mark.fast
+@pytest.mark.parametrize(
+    "field, value",
+    [
+        ("threads", 4),
+        ("silent", False),
+        ("verbosity_level", 2),
+        ("print_config_fingerprint", True),
+    ],
+)
+def test_removed_field_on_options_warns_once_with_the_surface_lead(field, value):
+    """Options(<removed>=...) emits exactly one legacy-tier warning, with the same
+    lead as the signature route and the field's catalog replacement, and it is
+    attributed to the caller's line -- not to the ``<string>`` frame of the
+    dataclass-synthesized ``__init__``, where PEP 565 would hide it."""
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        Options(**{field: value})
+    messages = _pending(records)
+    assert messages == [m for m in messages if f"'{field}'" in m]
+    assert len(messages) == 1, messages
+    assert messages[0].startswith(f"'{field}' leaves the Python surface in 3.0. ")
+    assert _removed_fields()[field].replacement in messages[0]
+    assert "signatures" not in messages[0]
+    legacy = [r for r in records if issubclass(r.category, LEGACY_SURFACE_WARNING)]
+    assert legacy[0].filename == __file__
+
+
+@pytest.mark.fast
+def test_removed_field_left_at_its_default_does_not_warn():
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        Options()
+        Options(silent=True, verbosity_level=1, print_config_fingerprint=False)
+        Options(regularized=True, core_loop_limit=5, num_threads=2)
+    assert _pending(records) == []
+
+
+@pytest.mark.fast
+def test_removed_field_warns_once_across_the_internal_merges():
+    """One announcement per typed field, however many Options the package builds
+    on the way to the engine (the run-context base, the keyword merge, the
+    rendered-args funnel, the inferred-flow-model fold)."""
+    # Bare keyword on the constructor: the signature route announces it, and
+    # the merge that follows must not announce it again.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        im = Infomap(threads=1, num_trials=1, seed=1)
+        im.add_link(0, 1)
+        im.run()
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+
+    # A mapping carrier on the constructor.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        im = Infomap(options={"threads": 1, "num_trials": 1, "seed": 1})
+        im.add_link(0, 1)
+        im.run()
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+
+    # The functional front door, mapping and bare keyword alike.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        run([(0, 1), (1, 2), (2, 0)], options={"threads": 1}, seed=1)
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        run([(0, 1), (1, 2), (2, 0)], threads=1, seed=1)
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+
+    # An Options instance announced itself where it was built; passing it on
+    # must not repeat the announcement.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        options = Options(threads=1, seed=1)
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        run([(0, 1), (1, 2), (2, 0)], options=options)
+        run([(0, 1), (1, 2), (2, 0)], options=options, num_trials=2)
+    assert _pending(records) == []
+
+
+@pytest.mark.fast
+def test_removed_field_on_network_run_warns_for_mapping_and_bare_keyword():
+    from infomap import Network
+
+    net = Network().add_links([(0, 1), (1, 2), (2, 0)])
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        net.run(options={"threads": 1, "seed": 1})
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+
+    # Network.run() has no signature route: a bare keyword used to slip through
+    # the merge unannounced.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        net.run(threads=1, seed=1)
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+
+
+@pytest.mark.fast
+def test_removed_field_next_to_an_options_instance_warns_once():
+    """run(edges, options=Options(...), threads=1): the instance announced itself
+    already, the bare keyword has not, and the merge must announce exactly it."""
+    options = Options(seed=1)
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        run([(0, 1), (1, 2), (2, 0)], options=options, threads=1)
+    assert [m for m in _pending(records) if "'threads'" in m] == _pending(records)
+    assert len(_pending(records)) == 1
+
+
+@pytest.mark.fast
+def test_removed_field_through_an_in_package_adapter_warns_at_the_caller():
+    """find_communities(g, threads=1) reaches Infomap(**kwargs) from inside the
+    package, where the signature route's frame gate is silent by design; the
+    option merge announces the removed field instead, attributed to the caller."""
+    nx = pytest.importorskip("networkx")
+    from infomap import find_communities
+
+    graph = nx.Graph([(0, 1), (1, 2), (2, 0)])
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        find_communities(graph, threads=1, seed=1)
+    legacy = [r for r in records if issubclass(r.category, LEGACY_SURFACE_WARNING)]
+    assert [str(r.message) for r in legacy if "'threads'" in str(r.message)]
+    assert len(legacy) == 1
+    assert legacy[0].filename == __file__
+
+
+@pytest.mark.fast
+def test_options_carrier_through_the_adapters_is_not_re_announced():
+    """find_communities(g, options=Options(threads=1)) and the legacy
+    from_options / run_with_options used to flatten the carrier into keywords,
+    so every field reached the merge as if freshly typed and the removed field
+    was announced a second time. The carrier now travels as itself."""
+    nx = pytest.importorskip("networkx")
+    from infomap import find_communities
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        options = Options(threads=1, seed=1)
+    assert len(_pending(records)) == 1
+
+    graph = nx.Graph([(0, 1), (1, 2), (2, 0)])
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        find_communities(graph, options=options)
+        # A bare keyword next to the carrier is still announced, once.
+        find_communities(graph, options=options, print_config_fingerprint=True)
+    assert _pending(records) == [
+        m for m in _pending(records) if "'print_config_fingerprint'" in m
+    ]
+    assert len(_pending(records)) == 1
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        im = Infomap.from_options(options)
+        im.add_link(0, 1)
+        im.run_with_options(options)
+    # Only the method deprecations themselves, nothing about the carrier's fields.
+    assert [m for m in _pending(records) if "'threads'" in m] == []
+    assert all(
+        "from_options" in m or "run_with_options" in m for m in _pending(records)
+    )
+
+
+@pytest.mark.fast
+def test_removed_field_on_an_empty_graph_finder_is_still_announced():
+    """The finders return before building an engine for an empty graph, so the
+    constructor's merge never sees the keyword; the notice must not depend on
+    the input's size."""
+    nx = pytest.importorskip("networkx")
+    from infomap import find_communities
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        assert find_communities(nx.Graph(), threads=4) == []
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        assert find_communities(nx.Graph(), options={"threads": 4}) == []
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 1
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        assert find_communities(nx.Graph(), seed=1) == []
+    assert _pending(records) == []
+
+
+@pytest.mark.fast
+def test_removed_field_on_an_empty_igraph_finder_is_still_announced():
+    ig = pytest.importorskip("igraph")
+    from infomap import find_igraph_communities
+
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        find_igraph_communities(ig.Graph(), threads=4)
+        find_igraph_communities(ig.Graph(), options={"threads": 4})
+    assert len([m for m in _pending(records) if "'threads'" in m]) == 2
+
+
+@pytest.mark.fast
+def test_options_carrier_through_the_igraph_finder_is_not_re_announced():
+    ig = pytest.importorskip("igraph")
+    from infomap import find_igraph_communities
+
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        options = Options(threads=1, seed=1)
+    graph = ig.Graph(edges=[(0, 1), (1, 2), (2, 0)])
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        find_igraph_communities(graph, options=options)
+    assert _pending(records) == []
+
+
+@pytest.mark.fast
+def test_run_context_default_decides_what_counts_as_typed():
+    """On an instance, run(silent=True) is a real choice (the run context's no-op
+    default is False) and is announced; run(silent=False) restates that default
+    and is not. Mirrors the signature route this replaces for removed fields."""
+    im = _two_triangles()
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        im.run(silent=True)
+    assert len([m for m in _pending(records) if "'silent'" in m]) == 1
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        im.run(silent=False)
+    assert _pending(records) == []
+
+
+@pytest.mark.fast
+def test_functional_run_on_an_instance_uses_the_run_context():
+    """run(im, silent=True) agrees with im.run(silent=True): on an existing
+    Infomap or Network a bare keyword is a run-context override, where the
+    no-op default of a flag is False, so True is the typed choice and False is
+    not. A mapping carrier stays a full Options, announced against the
+    dataclass defaults, as on im.run(options=mapping)."""
+    from infomap import Network
+
+    im = _two_triangles()
+    net = Network().add_links([(0, 1), (1, 2), (2, 0)])
+    for instance in (im, net):
+        with warnings.catch_warnings(record=True) as records:
+            warnings.simplefilter("always")
+            run(instance, silent=True, seed=1)
+        assert len([m for m in _pending(records) if "'silent'" in m]) == 1
+        with warnings.catch_warnings(record=True) as records:
+            warnings.simplefilter("always")
+            run(instance, silent=False, seed=1)
+        assert _pending(records) == []
+        with warnings.catch_warnings(record=True) as records:
+            warnings.simplefilter("always")
+            run(instance, options={"silent": False, "seed": 1})
+        assert len([m for m in _pending(records) if "'silent'" in m]) == 1
+
+    # And the direct route it mirrors, for the record.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        im.run(silent=False)
+        im.run(options={"seed": 1})
+    assert _pending(records) == []
+
+
+@pytest.mark.fast
+def test_pretty_in_a_mapping_carrier_still_reaches_the_constructor():
+    """options={"pretty": True} on infomap.run() is not an engine option and must
+    keep its own path to Infomap(), where it emits the typed-parameter warning."""
+    with pytest.warns(TYPED_PARAMETER_WARNING, match="pretty is deprecated"):
+        run([(0, 1), (1, 2), (2, 0)], options={"pretty": True, "seed": 1})
+
+
+@pytest.mark.fast
+def test_removed_field_on_options_is_visible_with_python_dash_c():
+    """python -c compiles the caller's code as a "<string>" frame too, and that
+    one must not be mistaken for the dataclass-synthesized __init__: the warning
+    names the caller's own line 2 rather than overshooting the stack."""
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONWARNINGS"}
+    result = subprocess.run(
+        [sys.executable, "-c", "from infomap import Options\nOptions(threads=4)"],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "LegacySurfaceWarning" in result.stderr, result.stderr
+    assert "<string>:2" in result.stderr, result.stderr
+
+
+@pytest.mark.fast
+def test_removed_field_on_options_is_visible_in_a_plain_script(tmp_path):
+    """The point of the tier: under default filters, in __main__, a removed field
+    on Options prints -- and names the user's own line, which the ``<string>``
+    frame of the synthesized __init__ used to swallow."""
+    result = _run_script(
+        tmp_path,
+        """
+        from infomap import Options
+
+        Options(threads=4)
+        """,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "LegacySurfaceWarning" in result.stderr, result.stderr
+    assert "'threads' leaves the Python surface in 3.0" in result.stderr, result.stderr
+    # Line 4 of the dedented script is the Options(...) call.
+    assert "analysis.py:4" in result.stderr, result.stderr

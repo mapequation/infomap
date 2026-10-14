@@ -24,7 +24,16 @@ the :class:`~infomap.Result` it returned. They live in the public
 ``infomap.io`` namespace. ``infomap.export`` is a back-compatibility alias for
 :mod:`!infomap.io.export`.
 
-.. autofunction:: annotate_networkx_graph
-.. autofunction:: annotate_igraph_graph
+.. autofunction:: annotate_networkx
+.. autofunction:: annotate_igraph
 .. autofunction:: write_graphml
 .. autofunction:: write_gexf
+
+Deprecated spellings
+--------------------
+
+The pre-2.16 names of the two annotate helpers. Same arguments; each emits a
+:class:`DeprecationWarning` and leaves in 3.0.
+
+.. autofunction:: annotate_networkx_graph
+.. autofunction:: annotate_igraph_graph

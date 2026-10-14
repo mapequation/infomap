@@ -166,8 +166,8 @@ and {doc}`Hierarchy and the multilevel map equation <concepts/hierarchy-and-the-
 ### Does Infomap choose the hierarchy depth for me, and how do I read each level?
 
 Yes: multilevel is the default, and Infomap adds levels only when they shorten
-the description. Read a given level with `result.modules(depth=k)`
-(`k=1` is the coarsest, `depth=-1` the finest). Check `result.num_levels`.
+the description. Read a given level with `result.modules(level=k)`
+(`k=1` is the coarsest, `level=-1` the finest). Check `result.num_levels`.
 See {doc}`Hierarchy and the multilevel map equation <concepts/hierarchy-and-the-multilevel-map>`.
 
 ## Flow and directed networks

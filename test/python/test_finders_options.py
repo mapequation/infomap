@@ -21,15 +21,21 @@ pytestmark = pytest.mark.fast
 
 @pytest.fixture
 def recorded(monkeypatch):
-    """Capture the keyword options the finder hands to ``Infomap(...)``."""
+    """Capture the effective options the finder's ``Infomap(...)`` resolves.
+
+    Recorded after the constructor has merged its ``options=`` carrier with the
+    bare keywords -- the finders pass the carrier through as itself rather than
+    flattening it into keywords (#915), so the constructor's keyword dict alone
+    no longer shows the configuration the engine gets.
+    """
     captured: dict = {}
     real_infomap = facade.Infomap
 
     class RecordingInfomap(real_infomap):
-        def __init__(self, *args, **options):
+        def _init_from_options(self, args, options):
             captured.clear()
-            captured.update(options)
-            super().__init__(*args, **options)
+            captured.update(options.to_kwargs())
+            super()._init_from_options(args, options)
 
     monkeypatch.setattr(facade, "Infomap", RecordingInfomap)
     return captured

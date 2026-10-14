@@ -209,12 +209,33 @@ TEST_CASE("clearLinks before finalize leaves no garbage counts [fast][core][csr]
   Network network(config);
   network.addLink(1, 2, 1.0);
   network.addLink(1, 2, 2.0); // duplicate: would aggregate on finalize
+  network.addLink(3, 3, 1.0);
+  network.addLink(3, 3, 1.0); // parallel self-link: also merged only on finalize
   network.clearLinks();       // cleared while still unfinalized (mode A)
 
   // A lazy finalize here must NOT rebuild from cleared buffers and compute
   // m_numAggregatedLinks = m_rawLinkCount - 0.
   CHECK(network.numLinks() == 0);
   CHECK(network.numAggregatedLinks() == 0);
+  // Nor keep the self-link occurrences, which made sumDegree() wrap around.
+  CHECK(network.numSelfLinks() == 0);
+  CHECK(network.sumDegree() == 0);
+}
+
+TEST_CASE("Self-links are counted as distinct links, also before finalize [fast][core][csr]")
+{
+  // numSelfLinks() feeds sumDegree() for the regularized prior, so it counts self-links
+  // the way numLinks() counts links: after merging, finalizing on demand.
+  Config config;
+  config.silent = true;
+  Network network(config);
+  network.addLink(1, 1, 0.5);
+  network.addLink(1, 1, 0.5);
+  network.addLink(1, 2, 1.0);
+
+  CHECK(network.numSelfLinks() == 1);
+  CHECK(network.numLinks() == 2);
+  CHECK(network.sumDegree() == 3);
 }
 
 TEST_CASE("Isolated/dangling node is in-bounds in mode-A CSR [fast][core][csr]")
@@ -1064,6 +1085,31 @@ TEST_CASE("JSON node and state weights must be finite and non-negative [fast][co
   CHECK(parses(header + R"("nodes":[{"id":1,"weight":0.0}],"edges":[{"source":1,"target":2}]})"));
   CHECK_FALSE(parses(header + R"("nodes":[{"id":1,"weight":-1.0}],"edges":[{"source":1,"target":2}]})"));
   CHECK_FALSE(parses(header + R"("states":[{"id":1,"node":1,"weight":-2.5}],"links":[{"source":1,"target":2}]})"));
+}
+
+TEST_CASE("addMultilayerNode records the state node name it is given [fast][core][network]")
+{
+  // The bindings' multilayer import paths build their state nodes here, not via
+  // addStateNode, so a per-state name from a networkx/igraph graph had nowhere
+  // to go and Result.state_names came back empty for multilayer input (#798).
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  CHECK(network.addMultilayerNode(7u, 1u, 3u, 1.0, "alpha in layer 1") == 7u);
+  CHECK(network.nodes().at(7u).name == "alpha in layer 1");
+  CHECK(network.nodes().at(7u).layerId == 1u);
+  CHECK(network.nodes().at(7u).physicalId == 3u);
+
+  // As with addStateNode, the name is fixed when the node is created: a repeat
+  // for the same (layer, physical node) returns the existing state node and
+  // keeps its name.
+  CHECK(network.addMultilayerNode(7u, 1u, 3u, 1.0, "renamed") == 7u);
+  CHECK(network.nodes().at(7u).name == "alpha in layer 1");
+
+  // The unnamed overload behaves as before.
+  CHECK(network.addMultilayerNode(8u, 2u, 3u, 1.0) == 8u);
+  CHECK(network.nodes().at(8u).name.empty());
 }
 
 TEST_CASE("Matchable multilayer ids reject a physical id that would wrap [fast][core][crash]")

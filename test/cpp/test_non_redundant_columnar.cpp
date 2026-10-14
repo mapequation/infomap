@@ -379,16 +379,15 @@ TEST_CASE("NonRedundant/columnar: the ragged padding does not leak into the entr
 
 TEST_CASE("NonRedundant/columnar: a BARE top-level leaf is scored under L* too [fast][core][non-redundant]")
 {
-  // The most common ragged shape there is: Infomap's .tree format writes a module of
-  // one node as a bare top-level leaf (`2 0.15 "A" 1`) and reads it back the same way,
-  // so leafModulePathsFromTree hands the padding an EMPTY path -- no finest id to
-  // repeat. Bailing there left --non-redundant reporting the base L, bit-identical to
-  // the run without the flag (2.714170945 against a true L* of 2.187131226).
+  // A bare top-level row (`2 0.15 "A" 1`) next to deeper paths. The reader completes it
+  // to `2:1` (#1067), so node A is alone in top module 2 and the tree is ragged: A's
+  // branch is one level shallower than the others. Before that completion the row reached
+  // the padding as an EMPTY path, and bailing there left --non-redundant reporting the
+  // base L, bit-identical to the run without the flag (2.714170945 against a true L* of
+  // 2.187131226).
   //
-  // A top-level leaf IS its own module, so it gets a synthetic module id and the same
-  // padding as any short path. The three fixtures are three spellings of ONE partition
-  // -- bare, explicit module, explicit module plus a pass-through -- so L* must give
-  // all three the same value.
+  // The three fixtures are three spellings of ONE partition -- bare, explicit module,
+  // explicit module plus a pass-through -- so L* must give all three the same value.
   const double bareLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf.tree", "--non-redundant");
   const double moduleLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_module.tree", "--non-redundant");
   const double rectLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_rect.tree", "--non-redundant");
@@ -397,13 +396,14 @@ TEST_CASE("NonRedundant/columnar: a BARE top-level leaf is scored under L* too [
   CHECK(bareLstar == doctest::Approx(rectLstar).epsilon(1e-12));
   CHECK(bareLstar == doctest::Approx(2.187131226).epsilon(1e-9));
 
-  // The base map equation is NOT invariant under those spellings and must not move:
-  // it charges each extra level, and it addresses a bare top-level leaf in the root's
-  // own codebook rather than giving it a module codebook.
+  // The base map equation is NOT invariant under every spelling: it charges each extra
+  // level a real codebook. The bare row and the explicit module are the same tree once the
+  // reader completes the row, so they agree with each other and with the object-oriented
+  // scorer (test_partition.cpp pins 3.014170945 for both).
   const double bareL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf.tree", "");
   const double moduleL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_module.tree", "");
-  CHECK(bareL == doctest::Approx(2.714170945).epsilon(1e-9));
   CHECK(moduleL == doctest::Approx(3.014170945).epsilon(1e-9));
+  CHECK(bareL == doctest::Approx(moduleL).epsilon(1e-12));
   CHECK(bareLstar < bareL - 1e-6); // it was bit-equal to bareL before
 
   // --entropy-corrected counts nodes, so the pass-through the padding stacks above A's

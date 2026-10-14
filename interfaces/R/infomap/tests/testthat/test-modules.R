@@ -118,8 +118,10 @@ test_that("num_levels is the tree depth, not the first-child branch's (#1036)", 
   im$run()
 
   # Precondition: the tree really is three deep, so this is not vacuous.
-  expect_equal(im$max_tree_depth, 3L)
-  expect_equal(im$num_levels, im$max_tree_depth)
+  expect_equal(im$num_levels, 3L)
+  # max_tree_depth is the deprecated alias (#757) and still reports the same
+  # number; it leaves the R surface in 3.0.
+  expect_equal(suppressWarnings(im$max_tree_depth), im$num_levels)
 
   ml <- im$get_multilevel_modules()
   expect_length(ml, 6L)

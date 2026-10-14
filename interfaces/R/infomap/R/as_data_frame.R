@@ -9,12 +9,14 @@
 #' @param states If `TRUE`, return one row per state node (for
 #'   higher-order networks); otherwise merge state nodes with the same
 #'   physical id within a module. Default `TRUE`.
-#' @param depth_level Tree depth used for the `module_id` column. `1`
+#' @param level Level of the hierarchy used for the `module_id` column. `1`
 #'   gives top-level modules, `-1` the bottom level. Default `1`.
 #' @param tibble If `TRUE`, return a `tibble` (requires the `tibble`
 #'   package). Default `FALSE` returns a plain `data.frame` so the
 #'   return type is independent of installed packages.
 #' @param ... Unused.
+#' @param depth_level Deprecated spelling of `level`; leaves the infomap R
+#'   surface in 3.0.
 #'
 #' @return A `data.frame` (or a `tibble` when `tibble = TRUE`) with
 #'   columns `state_id`, `node_id`, `module_id`, `flow`, `name`,
@@ -34,12 +36,14 @@ as.data.frame.Infomap <- function(
   row.names = NULL,
   optional = FALSE,
   states = TRUE,
-  depth_level = 1L,
+  level = 1L,
   tibble = FALSE,
-  ...
+  ...,
+  depth_level = NULL
 ) {
+  level <- .resolve_level(level, depth_level, "as.data.frame")
   raw <- x$get_nodes(
-    depth_level = as.integer(depth_level),
+    level = level,
     states = isTRUE(states)
   )
   df <- data.frame(

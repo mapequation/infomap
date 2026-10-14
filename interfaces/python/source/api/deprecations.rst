@@ -60,9 +60,43 @@ as properties (``result.codelength``) and collections as methods
 (``result.modules()``, ``result.nodes()``, ``result.tree()``). See
 :doc:`/working-with-infomap/results-and-iteration`.
 
+The tree-level selector
+-----------------------
+
+From 2.16 the :class:`Result` readers and ``write_clu`` select a level of the
+hierarchy with ``level`` (``1`` is the top, coarsest level; ``-1`` the bottom)::
+
+    result.modules(level=2)
+    result.to_dataframe(level=-1)
+    result.write_clu("bottom.clu", level=-1)
+
+``depth`` was the selector through 2.15, but the same word is
+:attr:`TreeNode.depth`, a node's distance from the root, so
+``result.nodes(depth=1)`` yielded nodes whose ``.depth`` is ``2``. ``depth``
+and the older ``depth_level`` keep working as aliases through 2.x and emit the
+legacy tier's :class:`DeprecationWarning`; they leave in 3.0. On the same
+grounds :attr:`Result.max_depth` is a deprecated alias of
+:attr:`Result.num_levels`.
+
 Compatibility aliases
 ---------------------
 
+- On the graph constructors and finders, ``node_id`` and ``layer_id`` were
+  the *attribute names* to read ids from, while ``node_ids`` on the matrix
+  constructors was a *sequence of labels* -- two unrelated parameters that read
+  as singular and plural of one. From 2.16 the attribute names are
+  ``node_id_attribute`` / ``layer_id_attribute`` (the ``*_attribute`` spelling
+  ``meta_attribute`` already uses) and the label sequence is ``node_labels``,
+  on :meth:`Network.from_networkx`, :meth:`Network.from_igraph`,
+  :meth:`Network.from_scipy_sparse_matrix`, :meth:`Network.from_edge_index`,
+  :func:`find_communities` and :func:`find_igraph_communities`. The old
+  spellings keep working, emit the legacy tier's :class:`DeprecationWarning`,
+  and leave in 3.0.
+- ``annotate_networkx_graph`` and ``annotate_igraph_graph`` are the pre-2.16
+  spellings of :func:`infomap.io.export.annotate_networkx` and
+  :func:`infomap.io.export.annotate_igraph` -- the ``_graph`` suffix that
+  ``to_networkx`` / ``from_networkx`` never carried. Same arguments; the long
+  names emit the legacy tier's :class:`DeprecationWarning` and leave in 3.0.
 - ``include_self_links`` is a deprecated alias kept for backward compatibility.
   Infomap includes self-links by default. Pass ``no_self_links=True`` to
   exclude them. Passing ``include_self_links`` explicitly emits a
@@ -74,6 +108,10 @@ Compatibility aliases
 
 Error base classes
 ------------------
+
+:class:`infomap.merge.MergeError` derives from :class:`InfomapError` since 2.16,
+so ``except InfomapError`` catches shard-merge failures too; it derived from
+plain ``Exception`` before. ``except MergeError`` keeps working.
 
 Through 2.x, :class:`InfomapError` inherits :class:`RuntimeError`, and
 :class:`NotRunError` also keeps :class:`ValueError` in its MRO. Pre-taxonomy

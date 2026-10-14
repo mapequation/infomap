@@ -2,12 +2,14 @@
 
 #include "Infomap.h"
 #include "io/Output.h"
+#include "io/RunMetadata.h"
 #include "io/OutputView.h"
 
 #include "TestUtils.h"
 
 #include <algorithm>
 #include <cstdio>
+#include <fstream>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -142,6 +144,78 @@ TEST_CASE("The tree header records how many trials produced it [fast][core][outp
   CHECK(tree.find("# trials 3 of 3") != std::string::npos);
 
   std::remove(treePath.c_str());
+}
+
+TEST_CASE("The tree header records the input fingerprint and the config fingerprint [fast][core][output]")
+{
+  // The header had the seed (#1055) but nothing identifying the input, so a
+  // published .tree could not say which of the day's network.net versions it came
+  // from (#1026). The fingerprint is the whole-content hash the manifest records.
+  const auto networkPath = infomap::test::repoPath("examples/networks/twotriangles.net");
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap.readInputData(networkPath); });
+
+  const std::string treePath = "input_fingerprint_header.tree";
+  std::remove(treePath.c_str());
+  infomap::writeTree(*im, im->network(), treePath, false);
+  const auto tree = infomap::test::readTextFile(treePath);
+  std::remove(treePath.c_str());
+
+  const auto identity = infomap::inputIdentity(networkPath);
+  CHECK(identity.known());
+  CHECK(identity.hash.size() == 16);
+  CHECK(tree.find("# input fingerprint " + identity.hash + " (" + std::to_string(identity.size) + " bytes)") != std::string::npos);
+  CHECK(tree.find("# config fingerprint " + infomap::configFingerprint(im->getConfig())) != std::string::npos);
+  // Not used by this run, so not claimed by its header.
+  CHECK(tree.find("# cluster data fingerprint") == std::string::npos);
+  CHECK(tree.find("# meta data fingerprint") == std::string::npos);
+
+  // The same record, programmatically.
+  const auto provenance = im->provenanceJson();
+  CHECK(provenance.find("\"hash\":\"" + identity.hash + "\"") != std::string::npos);
+  CHECK(provenance.find("\"clusterData\":null") != std::string::npos);
+}
+
+TEST_CASE("An in-memory network has no input identity, and its header says nothing about one [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap([&](InfomapWrapper& infomap) {
+    infomap.addLink(1, 2);
+    infomap.addLink(2, 3);
+    infomap.addLink(3, 1);
+  });
+
+  const std::string treePath = "in_memory_header.tree";
+  std::remove(treePath.c_str());
+  infomap::writeTree(*im, im->network(), treePath, false);
+  const auto tree = infomap::test::readTextFile(treePath);
+  std::remove(treePath.c_str());
+
+  CHECK(tree.find("# input fingerprint") == std::string::npos);
+  CHECK(tree.find("# config fingerprint ") != std::string::npos);
+  CHECK(im->provenanceJson().find("\"input\":null") != std::string::npos);
+}
+
+TEST_CASE("The input fingerprint covers the whole file [fast][core][output]")
+{
+  // It used to hash the size plus the first and last 64 KiB, which was blind to
+  // a same-size edit anywhere in the interior of a file larger than 128 KiB --
+  // the edit-and-rerun case the fingerprint exists to catch (#1026).
+  const std::string a = "fingerprint_a.net";
+  const std::string b = "fingerprint_b.net";
+  {
+    std::string body(200 * 1024, 'x');
+    std::ofstream(a, std::ios::binary) << body;
+    body[body.size() / 2] = 'y';
+    std::ofstream(b, std::ios::binary) << body;
+  }
+  const auto identityA = infomap::inputIdentity(a);
+  const auto identityB = infomap::inputIdentity(b);
+  std::remove(a.c_str());
+  std::remove(b.c_str());
+
+  CHECK(identityA.size == identityB.size);
+  CHECK(identityA.hash != identityB.hash);
+  CHECK(infomap::inputIdentity("").known() == false);
 }
 
 TEST_CASE("A node name with a quote survives the tree and csv writers [fast][core][output][parser]")

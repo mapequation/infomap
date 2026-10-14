@@ -6,6 +6,7 @@ from numbers import Integral, Real
 from typing import TYPE_CHECKING, Any
 
 from .._optional import require_igraph
+from .._options import _UNSET
 from ..errors import InfomapError
 from ._arrays import apply_node_meta_data, community_node_data
 
@@ -102,9 +103,12 @@ def _integer_like(value, *, name):
     raise ValueError(f"`{name}` values must be integer-like.")
 
 
-def _node_ids(values):
+def _node_ids(values, *, name: str = "node_id"):
+    # ``name`` is the vertex attribute the values were read from, as the caller
+    # spelled it, so an error names the attribute -- not a keyword the caller
+    # may never have typed (node_id_attribute vs the deprecated node_id).
     if all(isinstance(value, Real) and not isinstance(value, bool) for value in values):
-        ids = [_integer_like(value, name="node_id") for value in values]
+        ids = [_integer_like(value, name=name) for value in values]
         # Coercing integer-valued floats to ints can make two textually distinct
         # labels (e.g. 1 and 1.0, or 2 and 2.0) collapse onto the same physical
         # id. Detect that here and name the colliding labels instead of silently
@@ -114,7 +118,7 @@ def _node_ids(values):
             seen = labels_by_id.setdefault(_node_id, label)
             if repr(seen) != repr(label):
                 raise ValueError(
-                    f"`node_id` labels {seen!r} and {label!r} both map to physical "
+                    f"`{name}` labels {seen!r} and {label!r} both map to physical "
                     f"id {_node_id}. Use distinct integer-valued node ids."
                 )
         return ids, {_node_id: str(_node_id) for _node_id in dict.fromkeys(ids)}
@@ -132,7 +136,7 @@ def _node_ids(values):
             seen = canonical[label]
             if repr(seen) != repr(label):
                 raise ValueError(
-                    f"`node_id` labels {seen!r} and {label!r} are distinct but "
+                    f"`{name}` labels {seen!r} and {label!r} are distinct but "
                     f"collide as the same key. Use distinct node ids."
                 )
         else:
@@ -143,8 +147,8 @@ def _node_ids(values):
     return ids, names
 
 
-def _layer_ids(values):
-    return [_integer_like(value, name="layer_id") for value in values]
+def _layer_ids(values, *, name: str = "layer_id"):
+    return [_integer_like(value, name=name) for value in values]
 
 
 def _vertex_names(g):
@@ -200,10 +204,10 @@ def add_igraph_graph(
 
     phys_names = {}
     if is_state_network:
-        phys, phys_names = _node_ids(phys_values)
+        phys, phys_names = _node_ids(phys_values, name=node_id)
     else:
         phys = vertices
-    layers = _layer_ids(layer_values) if is_multilayer_network else None
+    layers = _layer_ids(layer_values, name=layer_id) if is_multilayer_network else None
 
     for _node_id, name in phys_names.items():
         infomap.set_name(_node_id, name)
@@ -211,11 +215,15 @@ def add_igraph_graph(
     if is_multilayer_network:
         assert layers is not None  # implied by is_multilayer_network (see above)
         for vertex_id in vertices:
+            # The vertex name travels with the state node, as on the
+            # state-network branch below (#798).
+            name = names[vertex_id] if names is not None else None
             infomap.network.add_multilayer_node(
                 vertex_id,
                 layers[vertex_id],
                 phys[vertex_id],
                 1.0,
+                name=name,
             )
     elif is_state_network:
         for vertex_id in vertices:
@@ -324,12 +332,14 @@ def find_igraph_communities(
     vertex_weights: Any = None,
     options: Options | Mapping[str, Any] | None = None,
     trials: int | None = None,
-    node_id: str = "node_id",
-    layer_id: str = "layer_id",
+    node_id_attribute: str = "node_id",
+    layer_id_attribute: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
     meta_attribute: str | None = None,
+    node_id: str | None = _UNSET,
+    layer_id: str | None = _UNSET,
     **infomap_options: Any,
 ) -> igraph.VertexClustering:
     """Find communities in a python-igraph graph.
@@ -360,11 +370,12 @@ def find_igraph_communities(
         alias for the ``num_trials`` Infomap option. Pass ``trials`` or
         ``num_trials``, not both; if neither is given the engine default
         ``num_trials=1`` applies -- raise it for research runs.
-    node_id : str, optional
+    node_id_attribute : str, optional
         Vertex attribute for physical node ids, implying a state network.
-    layer_id : str, optional
-        Vertex attribute for layer ids, implying a multilayer network when
-        ``node_id`` is also present.
+        Default ``"node_id"``.
+    layer_id_attribute : str, optional
+        Vertex attribute for layer ids, implying a multilayer network when the
+        physical-id attribute is also present. Default ``"layer_id"``.
     multilayer_inter_intra_format : bool, optional
         Use intra/inter format to simulate inter-layer links. Default
         ``True``.
@@ -379,6 +390,11 @@ def find_igraph_communities(
         encoded to integers in first-seen order and set as Infomap
         metadata; vertices with missing values are skipped. Raises
         :class:`ValueError` if the attribute does not exist.
+    node_id, layer_id : str, optional
+        .. deprecated:: 2.16
+            The pre-2.16 spellings of ``node_id_attribute`` and
+            ``layer_id_attribute``; they emit a :class:`DeprecationWarning`
+            and leave in 3.0.
     **infomap_options
         Engine options passed to :class:`infomap.Infomap`. The engine is quiet
         by default; call ``infomap.enable_log()`` for the log. Prefer carrying
@@ -405,7 +421,31 @@ def find_igraph_communities(
     ig = _validate_igraph_graph(g)
     if trials is not None and "num_trials" in infomap_options:
         raise ValueError("Pass only one of `trials` and `num_trials`.")
+    from .._renamed import renamed_keyword
+
+    node_id_attribute = renamed_keyword(
+        "find_igraph_communities",
+        new_name="node_id_attribute",
+        new_value=node_id_attribute,
+        old_name="node_id",
+        old_value=node_id,
+        default="node_id",
+    )
+    layer_id_attribute = renamed_keyword(
+        "find_igraph_communities",
+        new_name="layer_id_attribute",
+        new_value=layer_id_attribute,
+        old_name="layer_id",
+        old_value=layer_id,
+        default="layer_id",
+    )
     if g.vcount() == 0:
+        # No engine is built for an empty graph, so the constructor's merge --
+        # where a removed field typed here is normally announced -- never
+        # runs; announce it before returning (#915).
+        from .networkx import _announce_removed_fields
+
+        _announce_removed_fields(options, infomap_options)
         if module_attribute is not None:
             g.vs[module_attribute] = []
         if flow_attribute is not None:
@@ -415,25 +455,28 @@ def find_igraph_communities(
         return clustering
 
     from .._facade import Infomap
-    from .._run import _resolve_options
 
-    # Merge the options= carrier under the caller's bare keyword arguments (bare
-    # kwargs win) and apply the `trials` alias. num_trials is left to the engine
+    # The options= carrier goes through as the base configuration and the
+    # caller's bare keyword arguments override it (Infomap()'s own merge rule),
+    # with the `trials` alias applied on top. num_trials is left to the engine
     # default (1), matching infomap.run(). The engine is quiet by default, so
     # silent is not forced (a deprecated bare kwarg leaving in 3.0); no_file_output
-    # is not forced either (redundant without an output directory).
-    engine_options = _resolve_options(options, infomap_options)
+    # is not forced either (redundant without an output directory). The carrier
+    # is not flattened into keywords: an Options instance announced its removed
+    # fields where it was built, and flattened fields would be announced again
+    # by the merge as if freshly typed (#915).
+    engine_options = dict(infomap_options)
     if trials is not None:
         engine_options["num_trials"] = trials
 
-    infomap = Infomap(**engine_options)
+    infomap = Infomap(options=options, **engine_options)
     node_mapping = add_igraph_graph(
         infomap,
         g,
         edge_weights=edge_weights,
         vertex_weights=vertex_weights,
-        node_id=node_id,
-        layer_id=layer_id,
+        node_id=node_id_attribute,
+        layer_id=layer_id_attribute,
         multilayer_inter_intra_format=multilayer_inter_intra_format,
         meta_attribute=meta_attribute,
     )

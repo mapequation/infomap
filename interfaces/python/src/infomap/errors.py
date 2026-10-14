@@ -10,6 +10,9 @@ so existing ``except RuntimeError`` code keeps working; the base may detach
 in 3.0. :class:`NotRunError` additionally keeps ``ValueError`` in its MRO
 through 2.x because the results-before-run guard used to raise ``ValueError``.
 
+:class:`infomap.merge.MergeError`, raised by the offline shard-merge tool,
+also derives from :class:`InfomapError` and is defined next to that tool.
+
 This module is pure Python and importable without the compiled bindings.
 """
 

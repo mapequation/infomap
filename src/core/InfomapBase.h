@@ -20,6 +20,7 @@
 #include "../io/ClusterMap.h"
 #include "../io/Network.h"
 #include "../io/Output.h"
+#include "../io/RunMetadata.h"
 #include "../utils/Log.h"
 #include "../utils/Date.h"
 #include "../utils/Stopwatch.h"
@@ -174,6 +175,17 @@ public:
   // Guarded from SWIG so it is not exposed as a new binding, the same way
   // getReferenceOneLevelCodelength above is: the output writer is its only caller.
   unsigned long baseSeed() const { return m_haveBaseSeed ? m_baseSeed : seedToRandomNumberGenerator; }
+
+  // Identity of every result-affecting input file and of the effective config,
+  // captured once when a run starts so every artifact the run writes -- the
+  // .tree/.ftree/.clu headers, the JSON tree, the manifest -- carries the same
+  // values (#1026). Unknown (empty hash) when the network was built in memory
+  // or the file was not used. Guarded from SWIG like baseSeed(); the bindings
+  // read all of it through provenanceJson().
+  const InputIdentity& inputIdentity() const { return m_inputIdentity; }
+  const InputIdentity& clusterDataIdentity() const { return m_clusterDataIdentity; }
+  const InputIdentity& metaDataIdentity() const { return m_metaDataIdentity; }
+  const std::string& runConfigFingerprint() const { return m_configFingerprint; }
 #endif
 
 #ifndef SWIG
@@ -339,7 +351,8 @@ private:
                            .setIsMain(false)
                            .setSubLevel(m_subLevel + 1)
                            .setNonMainConfig(*this)
-                           .inheritRuntimeContext(*this);
+                           .inheritRuntimeContext(*this)
+                           .inheritInterruptHandler(*this);
     // Carry the full-network properties down so entropy bias correction stays consistent
     // across the hierarchy (this used to be a shared static). A sub instance partitions
     // InfoNodes and never sees a StateNetwork, so both the objective's copy and the
@@ -355,7 +368,8 @@ private:
                              .setIsMain(false)
                              .setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
                              .setNonMainConfig(*this)
-                             .inheritRuntimeContext(*this);
+                             .inheritRuntimeContext(*this)
+                             .inheritInterruptHandler(*this);
     superInfomap.m_optimizer->inheritNetworkPropertiesFrom(*m_optimizer);
     superInfomap.m_entropyBiasTotalDegree = m_entropyBiasTotalDegree;
     // getNewInfomapInstanceWithoutMemory builds the objective from a default Config, so unlike a
@@ -389,12 +403,34 @@ private:
 
   bool haveHardPartition() const { return !m_originalLeafNodes.empty(); }
 
-  // Share the cancel flag (only) with a sub/worker Infomap. The callback is NOT
-  // inherited — only the main instance, on the owner thread, ever invokes it.
+  // Share the cancel flag and the largest-team count with a sub/worker Infomap.
+  // The callback is NOT inherited here — a parallel-trial worker only reads the flag.
   InfomapBase& inheritRuntimeContext(const InfomapBase& other)
   {
     m_cancel = other.m_cancel;
+    m_largestTeam = other.m_largestTeam;
     return *this;
+  }
+
+  // A nested sub/super Infomap also takes the callback and the owner thread, so a
+  // signal is still polled while the main instance waits inside its run(). The
+  // owner-thread guard in pollInterrupt() keeps the callback on that thread (#1134).
+  InfomapBase& inheritInterruptHandler(const InfomapBase& other)
+  {
+    m_interruptCallback = other.m_interruptCallback;
+    m_interruptUserData = other.m_interruptUserData;
+    m_ownerThreadId = other.m_ownerThreadId;
+    return *this;
+  }
+
+  // Any thread, from inside a parallel region: record the size of its team. The
+  // largest one is the timing report's threads_used, so that field counts the
+  // threads the run actually started rather than predicting them (#1145).
+  void recordTeamSize(unsigned int threads) noexcept
+  {
+    auto largest = m_largestTeam->load(std::memory_order_relaxed);
+    while (threads > largest && !m_largestTeam->compare_exchange_weak(largest, threads, std::memory_order_relaxed)) {
+    }
   }
 
   // Flag-only, any thread. Call only where a throw can unwind legally — NOT
@@ -951,6 +987,18 @@ protected:
   double m_oneLevelCodelength = 0.0;
   unsigned long m_baseSeed = 0;
   bool m_haveBaseSeed = false;
+  // See inputIdentity(). The wrapper's readInputData records the files it read
+  // in m_readInputPaths, since the bindings never set networkFile.
+  InputIdentity m_inputIdentity;
+  InputIdentity m_clusterDataIdentity;
+  InputIdentity m_metaDataIdentity;
+  std::string m_configFingerprint;
+  std::vector<std::string> m_readInputPaths;
+  // Hashed when the file was read, not when the run starts: a file edited in
+  // between must not be hashed in the name of a partition built from the old
+  // content. Dropped by any in-memory build call (InfomapWrapper).
+  InputIdentity m_inputIdentityFromRead;
+  bool m_networkHasInMemoryContent = false;
   unsigned int m_numNonTrivialTopModules = 0;
   unsigned int m_tuneIterationIndex = 0;
   bool m_isCoarseTune = false;
@@ -976,6 +1024,10 @@ protected:
   // so the run tree shares one flag. m_ownerThreadId is stamped in run(Network&).
   std::atomic<bool> m_cancelRequested { false };
   std::atomic<bool>* m_cancel = &m_cancelRequested;
+  // The largest OpenMP team the run started, shared through the run tree the same
+  // way. Reset in run(Network&); see recordTeamSize.
+  std::atomic<unsigned int> m_largestTeamSize { 1 };
+  std::atomic<unsigned int>* m_largestTeam = &m_largestTeamSize;
   InterruptCallback m_interruptCallback = nullptr;
   void* m_interruptUserData = nullptr;
   std::thread::id m_ownerThreadId;

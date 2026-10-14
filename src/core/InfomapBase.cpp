@@ -214,6 +214,34 @@ namespace {
     unsigned long m_previous;
   };
 
+  // A one-level tree path -- `2 0.15 "A" 1` -- names a top-level slot without saying
+  // what sits in it, and its two readings are different partitions: "the root's second
+  // child IS the leaf A", so A is in no module, or "module 2, with the child index left
+  // off". Read it as the module.
+  //
+  // That is already what the rest of the reader does with the same spelling. A file
+  // whose rows are ALL one level deep never reaches this ambiguity -- initTree's
+  // `maxDepth == 2` shortcut routes it through initPartition, which gives every
+  // top-level id a real module -- and neither does --two-level, which keeps path[0] as
+  // the module id. Only a file that mixes a bare row with a deeper one took the other
+  // reading, and it took it silently and inconsistently: whether it did depended on
+  // which row sorted first, because haveModules() tests the root's first child alone
+  // (#1067). The leaf-under-the-root shape it produced is also one the search never
+  // builds and one Infomap will not accept a level down, where a parent holding a leaf
+  // and a sub-module side by side is rejected outright (#898).
+  //
+  // Only the DEPTH of the path matters here: initTree builds the module chain from
+  // path[0..n-2] and never looks at the last index, so appending 1 says "in module k"
+  // and nothing more. Two bare rows sharing a top-level id therefore land in the same
+  // module, which is what the file says they do.
+  void completeTopLevelLeafPaths(NodePaths& tree)
+  {
+    for (auto& nodePath : tree) {
+      if (nodePath.second.size() == 1)
+        nodePath.second.push_back(1);
+    }
+  }
+
 } // namespace
 
 class InfomapBase::RunSession {
@@ -291,6 +319,18 @@ public:
     // Before the first seedTrial, so this is the seed the run was asked for.
     m_infomap.m_baseSeed = m_infomap.seedToRandomNumberGenerator;
     m_infomap.m_haveBaseSeed = true;
+    // The identity of what this run reads, captured before anything is written
+    // so the headers, the JSON tree and the manifest agree (#1026). The network
+    // path is the CLI's networkFile, or the file the bindings' readInputData
+    // last read; an in-memory network has none.
+    // Qualified: the unqualified name is InfomapBase::inputIdentity(), the accessor.
+    // The CLI names its file in the config; the bindings hashed theirs when they
+    // read it, which is also where a multi-file union was already resolved to
+    // "unknown" (InfomapWrapper::readInputData).
+    m_infomap.m_inputIdentity = !m_infomap.networkFile.empty()
+        ? infomap::inputIdentity(m_infomap.networkFile)
+        : m_infomap.m_inputIdentityFromRead;
+    m_infomap.m_metaDataIdentity = infomap::inputIdentity(m_infomap.metaDataFile);
     {
       auto timer = m_timing.scope("configure_network_s");
       configureNetworkMode();
@@ -309,6 +349,11 @@ public:
       writeOutputArtifacts(m_infomap, m_network, OutputPhase::BeforeFlow);
     }
     calculateFlowAndInitNetwork();
+    // Only now: configureNetworkMode() and the flow calculation settle flowModel
+    // and bipartite, both of which the canonical config hashes. Taken earlier,
+    // the fingerprint would not hash the config the manifest publishes beside
+    // it, and would disagree with the trial-results fingerprint.
+    m_infomap.m_configFingerprint = configFingerprint(m_infomap.getConfig());
     {
       auto timer = m_timing.scope("post_flow_output_s");
       writeOutputArtifacts(m_infomap, m_network, OutputPhase::AfterFlow);
@@ -317,9 +362,14 @@ public:
     m_reportNetwork.links = m_network.numLinks();
     m_reportNetwork.directed = !m_infomap.isUndirectedFlow();
     m_runParallelTrials = selectParallelTrialMode();
-    m_threadsUsed = m_runParallelTrials ? parallelTrialWorkers() : 1;
+    m_trialWorkers = m_runParallelTrials ? parallelTrialWorkers() : 1;
     releaseInputLinksIfCli();
     readClusterData();
+    // After the parse, not before it: the other two files are already parsed
+    // when a run starts, and hashing this one first would have published the
+    // old content's hash for a seed the run then read fresh. (Hash and parse
+    // are still two reads of the file; a rewrite between them is not detected.)
+    m_infomap.m_clusterDataIdentity = infomap::inputIdentity(m_infomap.clusterDataFile);
     logRunPartitionStart();
     Result result;
     {
@@ -327,7 +377,9 @@ public:
       result = runTrials();
     }
     maybeDeepRepairBest(result);
-    result.threadsUsed = m_threadsUsed;
+    // Measured, not m_trialWorkers: a serial-trial run still takes its whole
+    // budget into the recursive partition and --inner-parallelization (#1145).
+    result.threadsUsed = m_infomap.m_largestTeam->load(std::memory_order_relaxed);
     return result;
   }
 
@@ -659,6 +711,9 @@ private:
 #pragma omp parallel for schedule(dynamic) num_threads(numWorkers)
 #endif
     for (int workerIndex = 0; workerIndex < static_cast<int>(numWorkers); ++workerIndex) {
+#ifdef _OPENMP
+      m_infomap.recordTeamSize(static_cast<unsigned int>(omp_get_num_threads()));
+#endif
       auto workerConfig = m_infomap.getConfig();
       // The run's trial count, not the worker's one trial: this field names and
       // labels the worker's --print-all-trials artifacts. outputPlanBasename only
@@ -674,6 +729,15 @@ private:
 
       InfomapBase worker(workerConfig);
       worker.m_initialPartition = m_infomap.m_initialPartition;
+      // A worker writes its own --print-all-trials artifacts, so it needs the
+      // run's captured provenance; built from a Config, it would otherwise
+      // publish headers with no input identity at all (#1026).
+      worker.m_inputIdentity = m_infomap.m_inputIdentity;
+      worker.m_clusterDataIdentity = m_infomap.m_clusterDataIdentity;
+      worker.m_metaDataIdentity = m_infomap.m_metaDataIdentity;
+      worker.m_configFingerprint = m_infomap.m_configFingerprint;
+      worker.m_baseSeed = m_infomap.baseSeed();
+      worker.m_haveBaseSeed = true;
       // Share the cancel flag so workers observe a cancel; they only read it and
       // unwind, caught by the per-trial handler below (issue #412).
       worker.inheritRuntimeContext(m_infomap);
@@ -1346,9 +1410,9 @@ private:
       }
       if (m_cpusetCount > 0) {
         const unsigned int innerThreads = (m_infomap.innerParallelization && !m_runParallelTrials) ? m_threadBudget.threads : 1;
-        const unsigned int demand = m_threadsUsed * innerThreads;
+        const unsigned int demand = m_trialWorkers * innerThreads;
         if (demand > m_cpusetCount) {
-          Console::warn(0, "{} trial workers × {} inner threads = {} exceeds the available cpuset of {} CPUs.", m_threadsUsed, innerThreads, demand, m_cpusetCount);
+          Console::warn(0, "{} trial workers × {} inner threads = {} exceeds the available cpuset of {} CPUs.", m_trialWorkers, innerThreads, demand, m_cpusetCount);
         }
       }
     }
@@ -1657,13 +1721,22 @@ public:
     }
 
     if (!m_infomap.runManifestPath.empty()) {
-      writeJsonReport(m_infomap.runManifestPath, runManifestJson(m_infomap), m_infomap.overwriteOutput());
+      RunIdentities identities;
+      identities.input = m_infomap.inputIdentity();
+      identities.clusterData = m_infomap.clusterDataIdentity();
+      identities.metaData = m_infomap.metaDataIdentity();
+      identities.configFingerprint = m_infomap.runConfigFingerprint();
+      writeJsonReport(m_infomap.runManifestPath, runManifestJson(m_infomap, identities), m_infomap.overwriteOutput());
     }
 
     if (!m_infomap.trialResultsPath.empty()) {
       TrialResultsFile trialResultsFile;
-      trialResultsFile.networkFingerprint = networkFingerprint(m_infomap.networkFile);
-      trialResultsFile.configFingerprint = configFingerprint(m_infomap.getConfig());
+      // The identity this run captured, not a re-read: a binding run has no
+      // networkFile to re-hash and emitted an empty fingerprint, which
+      // infomap.merge rejects, and a CLI re-read could disagree with the
+      // headers if the file changed during the run (#1026).
+      trialResultsFile.networkFingerprint = m_infomap.inputIdentity().hash;
+      trialResultsFile.configFingerprint = m_infomap.runConfigFingerprint();
       trialResultsFile.infomapVersion = INFOMAP_VERSION;
       trialResultsFile.baseSeed = m_baseSeed;
       trialResultsFile.trialOffset = m_infomap.trialOffset;
@@ -1758,7 +1831,7 @@ private:
   unsigned int m_trialsRun = m_infomap.numTrials; // actual count; equals m_numTrials unless --converge stops early
   bool m_autoStopped = false;
   bool m_runParallelTrials = false;
-  unsigned int m_threadsUsed = 1;
+  unsigned int m_trialWorkers = 1;
   ThreadBudget m_threadBudget;
   unsigned int m_cpusetCount = 0;
   // --cluster-data, parsed once by readClusterData() and applied in every trial.
@@ -1853,11 +1926,13 @@ void InfomapBase::run(const std::string& parameters)
 
   printPrettyStart(*this, m_startDate, m_initialPartition.size());
 #ifdef _OPENMP
-#pragma omp parallel
-#pragma omp master
   {
+    // No thread count here: the budget is only resolved when the run starts, and
+    // the Threads section reports it. Opening a team to count it printed the
+    // OpenMP default instead, and started that many threads before the budget
+    // applied (#1145).
     Console console;
-    Log().print("{} Runtime    OpenMP {} with {} threads\n", console.bullet(), _OPENMP, omp_get_num_threads());
+    Log().print("{} Runtime    OpenMP {}\n", console.bullet(), _OPENMP);
   }
 #endif
 
@@ -1881,9 +1956,11 @@ void InfomapBase::run(Network& network)
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
   // Stamp the owner thread (gates the callback) and clear any leftover cancel so
-  // the instance is reusable after an interrupted run (issue #412).
+  // the instance is reusable after an interrupted run (issue #412). The team count
+  // starts over for the same reason: it describes this run, not the instance.
   m_ownerThreadId = std::this_thread::get_id();
   m_cancelRequested.store(false, std::memory_order_relaxed);
+  m_largestTeamSize.store(1, std::memory_order_relaxed);
   pollInterrupt();
 
   TimingRegistry timing;
@@ -2056,6 +2133,7 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
   if (allState) {
     for (const auto& tp : tree)
       normalized.emplace_back(tp.nodeId, tp.path);
+    completeTopLevelLeafPaths(normalized);
     return normalized;
   }
 
@@ -2129,6 +2207,7 @@ NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& n
                   numSplitPhysicalNodes == 1 ? "physical node has its" : "physical nodes have their");
   }
 
+  completeTopLevelLeafPaths(normalized);
   return normalized;
 }
 
@@ -3518,11 +3597,14 @@ std::vector<int> InfomapBase::padLeafPathsToUniformDepth(std::vector<std::vector
   // fire) and no --two-level; a file whose every path is one level deep takes the
   // shortcut, arrives here rectangular, and never had an empty path to rescue.
   //
-  // That mix is the most common ragged shape there is, because Infomap's own .tree
-  // format writes a module of one node as a bare `2 0.15 "A" 1` and reads it back the
-  // same way. Bailing here reported the base L for an L* run: twotriangles_flow.net
-  // with `1:1:1 .. 1:2:3` plus that bare leaf gave 2.714170945 with and without
-  // --non-redundant, against a true L* of 2.187131226.
+  // Cluster input no longer produces that mix: normalizeTreePaths completes a bare
+  // top-level row (`2 0.15 "A" 1`) to `2:1` (#1067), so node A arrives in a real module
+  // of one node, a ragged but non-empty path. (Infomap's own writer never emitted the bare
+  // row; it writes `2:1`.) Before that completion, bailing here reported the base L for an
+  // L* run: twotriangles_flow.net with `1:1:1 .. 1:2:3` plus that bare row gave
+  // 2.714170945 with and without --non-redundant, against a true L* of 2.187131226. The
+  // rescue stays for a tree built some other way; the padding below is what every ragged
+  // tree still needs.
   //
   // An empty path has no finest id to repeat, but it does not need one: a top-level
   // leaf IS a module of one node -- writing the same partition as `2:1 "A"` gives an
@@ -3947,8 +4029,7 @@ void InfomapBase::hierarchicalPartition()
     }
 
     else if (fastHierarchicalSolution == 1) {
-      const bool shouldRestoreSilent = isMainInfomap() && !Log::isThreadMuted();
-      bool isSilent = shouldRestoreSilent && Log::isSilent();
+      Log::ScopedSilentRestore restoreSilent(isMainInfomap() && !Log::isThreadMuted());
 
       double codelengthBefore = 0.0;
       double codelengthAfter = 0.0;
@@ -4015,8 +4096,7 @@ void InfomapBase::hierarchicalPartition()
         }
       }
 
-      if (shouldRestoreSilent)
-        Log::setSilent(isSilent);
+      restoreSilent.restore();
 
       const double diffCodelength = codelengthBefore - codelengthAfter;
       Console::detail(1, "fine-tune bottom modules: improvement {:g}% {} codelength {}", (diffCodelength / codelengthBefore) * 100, Console::arrow(), io::toPrecision(codelengthAfter));
@@ -4049,13 +4129,26 @@ void InfomapBase::hierarchicalPartition()
     return;
   }
 
+  // The recursive search below starts over from the super modules and can end above the
+  // super-level tree it threw away (#837). Keep that tree and its codelength to fall back on.
+  NodePaths superLevelTree;
+  double superLevelCodelength = 0.0;
   if (fastHierarchicalSolution == 0) {
+    superLevelCodelength = m_hierarchicalCodelength;
+    superLevelTree.reserve(numLeafNodes());
+    for (auto it(iterLeafNodes()); !it.isEnd(); ++it)
+      superLevelTree.emplace_back(it->stateId, it.path());
     removeSubModules(true);
     m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
   }
 
   recursivePartition();
   dissolveUnprofitableModules();
+
+  if (!superLevelTree.empty() && m_hierarchicalCodelength > superLevelCodelength + minimumCodelengthImprovement) {
+    Console::detail(1, "recursive: codelength {} above the super-level tree's {}, restoring it", io::toPrecision(m_hierarchicalCodelength), io::toPrecision(superLevelCodelength));
+    initTree(superLevelTree);
+  }
 }
 
 void InfomapBase::partition()
@@ -4346,8 +4439,12 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
     passList.push_back(fmt::format(FMT_STRING("{}*{}"), numActiveBeforeMove, numOptimizationLoops));
     Log(3).print("done! -> codelength {} in {} modules.\n", io::stringify(*this), numActiveModules());
 
-    // If no improvement, revert codelength terms to the last consolidated state
-    if (haveModules() && restoreConsolidatedOptimizationPointIfNoImprovement()) {
+    // If no improvement, revert codelength terms to the last consolidated state. A pass that
+    // merges nothing leaves the partition as it was, but rescoring it can shave a few ULPs off
+    // the codelength, which would count as an improvement and buy another identical pass.
+    // Metadata rescoring can drift down indefinitely (#1134), so such a pass always ends here.
+    const bool mergedNothing = numActiveModules() == numActiveBeforeMove;
+    if (haveModules() && restoreConsolidatedOptimizationPointIfNoImprovement(mergedNothing)) {
       Log(3).print("-> Restored to codelength {} in {} modules.\n", io::stringify(*this), numTopModules());
       break;
     }
@@ -4531,11 +4628,10 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   do {
     Console::detail(1, "super iter {}: searching {} modules", numLevelsCreated + 1, numTopModules());
     const bool shouldMuteNestedMainRun = isMainInfomap() && !Log::isThreadMuted();
-    bool isSilent = false;
-    if (shouldMuteNestedMainRun) {
-      isSilent = Log::isSilent();
+    // Unmutes again if superInfomap.run() throws InterruptionError (#1134).
+    Log::ScopedSilentRestore restoreSilent(shouldMuteNestedMainRun);
+    if (shouldMuteNestedMainRun)
       Log::setSilent(true);
-    }
     InfoNode tmp(m_root.data); // Temporary owner for the super Infomap instance
     auto& superInfomap = getSuperInfomap(tmp)
                              .setTwoLevel(true);
@@ -4543,9 +4639,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     // No interrupt catch needed: local `tmp` owns the super-Infomap, so
     // ~InfoNode frees it if run() throws InterruptionError (#412).
     superInfomap.run();
-    if (shouldMuteNestedMainRun) {
-      Log::setSilent(isSilent);
-    }
+    restoreSilent.restore();
     double superCodelength = superInfomap.getCodelength();
     double superIndexCodelength = superInfomap.getIndexCodelength();
 
@@ -4858,6 +4952,9 @@ unsigned int InfomapBase::recursivePartition()
 #pragma omp single
 #endif
     {
+#ifdef _OPENMP
+      recordTeamSize(static_cast<unsigned int>(omp_get_num_threads()));
+#endif
       for (auto moduleIndex : spawnOrder) {
         // Stop spawning once cancelled; never throw inside the task region (#412).
         if (interruptRequested())

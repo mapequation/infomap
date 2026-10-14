@@ -12,6 +12,7 @@
 
 #include <map>
 #include <set>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -122,6 +123,39 @@ TEST_CASE("Config construction applies cross-field invariants from flags [fast][
   // applyOptionInteractions: regularized implies recordedTeleportation
   CHECK(config.recordedTeleportation);
   CHECK_FALSE(config.parsedOptions.empty());
+}
+
+TEST_CASE("--pretty warns that it is a deprecated no-op, and only when typed [fast][core][config][cli]")
+{
+  // The flag has been a no-op since pretty output became the only rendering, and
+  // 3.0 removes it from the command line (#756); until now no surface said so
+  // (#915). The warning must be tied to the flag being typed, not to the value
+  // it leaves behind, which is the same either way.
+  const auto warningsFor = [](const std::string& flags) {
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      const Config config(flags, true);
+      CHECK(config.prettyOutput);
+    }
+    return captured.str();
+  };
+
+  const auto typed = warningsFor("input.net --no-file-output --pretty");
+  CHECK(typed.find("--pretty") != std::string::npos);
+  CHECK(typed.find("deprecated") != std::string::npos);
+
+  // The negated spelling is the same option and gets the same notice.
+  const auto negated = warningsFor("input.net --no-file-output --no-pretty");
+  CHECK(negated.find("deprecated") != std::string::npos);
+
+  // Not typed: nothing about pretty on the console.
+  const auto absent = warningsFor("input.net --no-file-output --num-trials 2");
+  CHECK(absent.find("pretty") == std::string::npos);
+
+  // --silent mutes it like every other warning, since it fires after Log::init.
+  const auto silenced = warningsFor("input.net --no-file-output --silent --pretty");
+  CHECK(silenced.empty());
 }
 
 TEST_CASE("Config construction applies runtime output interactions [fast][core][config][cli]")

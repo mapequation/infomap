@@ -97,7 +97,17 @@ DEPRECATED_ANY_RECEIVER = (
     "run_with_options",
 )
 
+# Deprecated module-level functions (#791): matched by bare name, since they are
+# usually imported and called unqualified (`from infomap.export import
+# annotate_networkx_graph; annotate_networkx_graph(...)`) or referenced as
+# ``{func}`...``` in prose, neither of which the receiver-based regexes see.
+DEPRECATED_FUNCTIONS = (
+    "annotate_networkx_graph",
+    "annotate_igraph_graph",
+)
+
 _IM_RECEIVER = re.compile(r"\bim\.(" + "|".join(DEPRECATED_INSTANCE_MEMBERS) + r")\b")
+_DEPRECATED_FUNCTIONS = re.compile(r"\b(" + "|".join(DEPRECATED_FUNCTIONS) + r")\b")
 _ANY_RECEIVER = re.compile(r"\.(" + "|".join(DEPRECATED_ANY_RECEIVER) + r")\(")
 _DEPRECATED_CLASSMETHODS = re.compile(
     r"\bInfomap\.(from_options|from_scipy_sparse_matrix|from_edge_index)\("
@@ -259,6 +269,22 @@ def _allowed(rel: str, name: str) -> bool:
     return name in ALLOWLIST.get(rel, set())
 
 
+def test_deprecated_function_regex_matches_bare_and_referenced_uses():
+    """The safeguard must see the ways docs actually spell a function: a bare
+    call after an import, a module-qualified call, and a Sphinx role."""
+    for text in (
+        (
+            "from infomap.export import annotate_networkx_graph\n"
+            "annotate_networkx_graph(graph, im)"
+        ),
+        "infomap.io.export.annotate_igraph_graph(g, im)",
+        "{func}`infomap.io.export.annotate_networkx_graph`",
+    ):
+        assert _DEPRECATED_FUNCTIONS.search(text), text
+    assert not _DEPRECATED_FUNCTIONS.search("annotate_networkx(graph, im)")
+    assert not _DEPRECATED_FUNCTIONS.search("_annotate_networkx_graph_impl")
+
+
 def test_docs_and_examples_avoid_the_deprecated_surface():
     if not DOCS.is_dir():
         pytest.skip("docs source not available (wheel/sdist test run)")
@@ -282,6 +308,12 @@ def test_docs_and_examples_avoid_the_deprecated_surface():
             if not _allowed(str(rel), match.group(1)):
                 violations.append(
                     f"{rel}: Infomap.{match.group(1)}() (use Network.from_* or run())"
+                )
+        for match in _DEPRECATED_FUNCTIONS.finditer(text):
+            if not _allowed(str(rel), match.group(1)):
+                violations.append(
+                    f"{rel}: {match.group(1)} (deprecated spelling; drop the "
+                    "_graph suffix)"
                 )
         for span in _call_argument_spans(text):
             span = _strip_nested_option_calls(span)

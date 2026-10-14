@@ -200,14 +200,27 @@ def test_stale_result_message_names_the_engine_that_was_re_run():
 
 def test_export_before_run_raises_not_run_error(make_infomap):
     networkx = pytest.importorskip("networkx")
-    from infomap.io.export import annotate_networkx_graph
+    from infomap.io.export import annotate_networkx
 
     graph = networkx.Graph([(0, 1)])
     im = make_infomap()
     im.add_networkx_graph(graph)
 
     with pytest.raises(NotRunError, match="Run Infomap"):
-        annotate_networkx_graph(graph, im)
+        annotate_networkx(graph, im)
+
+
+def test_merge_error_is_an_infomap_error():
+    # #791 §6: `except InfomapError` is the documented way to catch any Infomap
+    # failure, and the shard-merge tool's error used to sit outside it.
+    from infomap.merge import MergeError
+
+    assert issubclass(MergeError, InfomapError)
+    assert issubclass(MergeError, Exception)
+    try:
+        raise MergeError("shards disagree")
+    except InfomapError as caught:
+        assert isinstance(caught, MergeError)
 
 
 def test_run_time_parse_message_fragments_still_appear_in_engine_source():

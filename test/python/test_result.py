@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import pytest
-from infomap import Infomap, Result, datasets, run
+from infomap import Infomap, NetworkParseError, Result, __version__, datasets, run
+from infomap._options import LEGACY_SURFACE_WARNING
 
 
 def _two_triangles() -> Infomap:
@@ -340,18 +341,21 @@ def test_to_dataframe_depth_and_deprecated_aliases_agree(
     im.read_file(str(example_network_path("ninetriangles.net")))
     result = im.run()
 
-    by_depth = result.to_dataframe(columns=["node_id", "module_id"], depth=2)
     by_level = result.to_dataframe(columns=["node_id", "module_id"], level=2)
-    by_depth_level = result.to_dataframe(
-        columns=["node_id", "module_id"], depth_level=2
-    )
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth' is deprecated"):
+        by_depth = result.to_dataframe(columns=["node_id", "module_id"], depth=2)
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level' is deprecated"):
+        by_depth_level = result.to_dataframe(
+            columns=["node_id", "module_id"], depth_level=2
+        )
 
-    assert by_depth.equals(by_level)
-    assert by_depth.equals(by_depth_level)
+    assert by_level.equals(by_depth)
+    assert by_level.equals(by_depth_level)
 
     # Equal values across the primary kwarg and an alias are accepted.
-    both = result.to_dataframe(columns=["node_id"], depth=2, depth_level=2)
-    assert both.equals(result.to_dataframe(columns=["node_id"], depth=2))
+    with pytest.warns(LEGACY_SURFACE_WARNING):
+        both = result.to_dataframe(columns=["node_id"], level=2, depth_level=2)
+    assert both.equals(result.to_dataframe(columns=["node_id"], level=2))
 
 
 def test_to_dataframe_conflicting_depth_aliases_raise(
@@ -363,8 +367,73 @@ def test_to_dataframe_conflicting_depth_aliases_raise(
     im.read_file(str(example_network_path("ninetriangles.net")))
     result = im.run()
 
-    with pytest.raises(ValueError, match="Conflicting values for the tree depth"):
+    with pytest.raises(ValueError, match="Conflicting values for the tree level"):
         result.to_dataframe(depth=1, level=2)
+
+
+def test_to_dataframe_resolves_the_selector_before_needing_pandas(
+    monkeypatch, make_infomap, example_network_path
+):
+    # Without pandas, a conflicting pair of spellings is still the documented
+    # ValueError, and a deprecated spelling is still announced -- the selector
+    # is resolved before the pandas guard, as on every other reader.
+    import infomap.result as result_module
+
+    def no_pandas(_what):
+        raise ImportError("pandas is not installed")
+
+    monkeypatch.setattr(result_module, "require_pandas", no_pandas)
+    im = make_infomap(num_trials=1, seed=1)
+    im.read_file(str(example_network_path("ninetriangles.net")))
+    result = im.run()
+    with pytest.raises(ValueError, match="Conflicting values for the tree level"):
+        result.to_dataframe(level=1, depth=2)
+    with (
+        pytest.warns(LEGACY_SURFACE_WARNING, match="'depth' is deprecated"),
+        pytest.raises(ImportError),
+    ):
+        result.to_dataframe(depth=2)
+
+
+def test_legacy_max_depth_points_at_num_levels():
+    # The legacy Infomap.max_depth used to steer to result.max_depth, itself a
+    # deprecated alias now; the replacement is the canonical property.
+    from infomap._results import _LEGACY_RESULT_ACCESSORS
+
+    assert _LEGACY_RESULT_ACCESSORS["max_depth"] == "result.num_levels"
+
+
+def test_nodes_iterator_acquired_before_a_rerun_raises_on_iteration(
+    make_infomap,
+    example_network_path,
+):
+    # The selector is resolved when nodes() is called, but the snapshot is
+    # taken when the first node is pulled, so the generation guard still
+    # fires for an iterator that outlived a re-run -- as tree() does.
+    import infomap.result as result_module
+
+    im = make_infomap(num_trials=1, seed=1)
+    im.read_file(str(example_network_path("ninetriangles.net")))
+    result = im.run()
+    stale = result.nodes(level=1)
+    im.run()
+    with pytest.raises(result_module._StaleResultError):
+        list(stale)
+
+
+def test_modules_conflicting_spellings_raise_before_the_higher_order_guard(
+    network_fixture_path,
+):
+    # On a higher-order result, modules() without states= raises InfomapError;
+    # a conflicting selector pair must still be the documented ValueError, so
+    # the selector is resolved first.
+    from infomap import Infomap
+
+    im = Infomap(num_trials=1, seed=1)
+    im.read_file(str(network_fixture_path("states.net")))
+    result = im.run()
+    with pytest.raises(ValueError, match="Conflicting values for the tree level"):
+        result.modules(level=2, depth=1)
 
 
 def test_to_dataframe_index_true_is_rejected(make_infomap, example_network_path):
@@ -384,10 +453,12 @@ def test_to_dataframe_index_true_is_rejected(make_infomap, example_network_path)
     assert result.to_dataframe(index=False).index.name is None
 
 
-def test_to_dataframe_deprecated_aliases_stay_silent(
+def test_level_is_the_canonical_selector_and_the_aliases_announce_themselves(
     make_infomap, example_network_path
 ):
-    # Docs-only deprecation policy: the aliases must not warn at runtime.
+    """#789: `level` selects the tree level everywhere and is silent; `depth`
+    and `depth_level` keep working, announce themselves on the legacy tier
+    (they leave in 3.0), and name the caller's line."""
     pytest.importorskip("pandas")
     import warnings
 
@@ -397,8 +468,64 @@ def test_to_dataframe_deprecated_aliases_stay_silent(
 
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
+        warnings.simplefilter("error", FutureWarning)
+        expected_modules = result.modules(level=2)
+        expected_nodes = [n.node_id for n in result.nodes(level=2)]
+        expected_tree = sum(1 for _ in result.tree(level=2))
+        expected_effective = result.effective_num_modules(level=2)
         result.to_dataframe(level=2)
-        result.to_dataframe(depth_level=2)
+        # Positional stays the level, as before.
+        assert result.modules(2) == expected_modules
+
+    for call in (
+        lambda: result.modules(depth=2),
+        lambda: [n.node_id for n in result.nodes(depth=2)],
+        lambda: sum(1 for _ in result.tree(depth=2)),
+        lambda: result.effective_num_modules(depth=2),
+    ):
+        with warnings.catch_warnings(record=True) as records:
+            warnings.simplefilter("always")
+            call()
+        legacy = [r for r in records if issubclass(r.category, LEGACY_SURFACE_WARNING)]
+        assert len(legacy) == 1, [str(r.message) for r in records]
+        assert "'depth' is deprecated as the level selector" in str(legacy[0].message)
+        assert "level=2" in str(legacy[0].message)
+        assert legacy[0].filename == __file__
+    assert result.modules(depth=2) == expected_modules
+    assert [n.node_id for n in result.nodes(depth=2)] == expected_nodes
+    assert sum(1 for _ in result.tree(depth=2)) == expected_tree
+    assert result.effective_num_modules(depth=2) == expected_effective
+
+    # A node's own depth is a different quantity and keeps its name: the leaves
+    # of the level-2 view sit below the two module levels above them.
+    assert all(n.depth >= 2 for n in result.nodes(level=2))
+
+    # nodes() announces the alias when called, not when the first node is
+    # pulled, so an unconsumed iterator still tells the caller.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        unconsumed = result.nodes(depth=2)
+    assert any(issubclass(r.category, LEGACY_SURFACE_WARNING) for r in records)
+    del unconsumed
+
+    # The pre-redesign spelling is an alias on every reader, not only on
+    # to_dataframe and write_clu.
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level' is deprecated"):
+        assert result.modules(depth_level=2) == expected_modules
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level'"):
+        assert [n.node_id for n in result.nodes(depth_level=2)] == expected_nodes
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level'"):
+        assert sum(1 for _ in result.tree(depth_level=2)) == expected_tree
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="'depth_level'"):
+        assert result.effective_num_modules(depth_level=2) == expected_effective
+
+    # max_depth follows the same word: deprecated alias of num_levels.
+    with warnings.catch_warnings(record=True) as records:
+        warnings.simplefilter("always")
+        assert result.max_depth == result.num_levels
+    legacy = [r for r in records if issubclass(r.category, LEGACY_SURFACE_WARNING)]
+    assert len(legacy) == 1 and "num_levels" in str(legacy[0].message)
+    assert legacy[0].filename == __file__
 
 
 @pytest.mark.fast
@@ -430,3 +557,147 @@ def test_stale_result_html_declines():
     first = im.run()
     im.run()  # re-run makes `first` stale
     assert first._repr_html_() is None
+
+
+def test_result_provenance_records_seed_config_and_input(example_network_path):
+    # #1026: a program could not log what it ran without a manifest-file round
+    # trip. The record is the engine's own, so it matches the headers.
+    path = example_network_path("twotriangles.net")
+    result = run(str(path), seed=7, num_trials=2)
+    record = result.provenance()
+
+    assert record["version"] == f"v{__version__}"
+    assert record["seed"] == 7
+    assert record["trials"] == 2 and record["numTrials"] == 2
+    assert record["config"]["seed"] == 7
+    assert len(record["configFingerprint"]) == 16
+    assert record["input"]["path"] == str(path)
+    assert record["input"]["size"] == path.stat().st_size
+    assert len(record["input"]["hash"]) == 16
+    assert record["clusterData"] is None and record["metaData"] is None
+    # A copy: mutating it does not touch the Result.
+    record["seed"] = 0
+    assert result.provenance()["seed"] == 7
+
+    # In memory: no input identity, but the configuration and seed are there.
+    in_memory = run([(0, 1), (1, 2), (2, 0)], seed=7)
+    assert in_memory.provenance()["input"] is None
+    assert in_memory.provenance()["seed"] == 7
+
+
+def test_infomap_keeps_the_options_it_was_built_with():
+    from infomap import Options
+
+    im = Infomap(seed=7, options=Options(num_trials=3, regularized=True))
+    assert im.options.seed == 7
+    assert im.options.num_trials == 3
+    assert im.options.regularized is True
+    assert isinstance(im.options, Options)
+
+
+def test_provenance_input_identity_follows_what_was_actually_read(
+    tmp_path, example_network_path
+):
+    """Only a network that came from one file gets an input identity.
+
+    The path is recorded after a successful read, so a failed one leaves no
+    claim, and a union accumulated from several files has no single identity to
+    report rather than the last file's.
+    """
+    first = example_network_path("twotriangles.net")
+    second = example_network_path("ninetriangles.net")
+
+    im = Infomap(num_trials=1, seed=1)
+    im.read_file(str(first))
+    assert im.run().provenance()["input"]["path"] == str(first)
+
+    # A second accumulated file makes the network a union of both.
+    union = Infomap(num_trials=1, seed=1)
+    union.read_file(str(first))
+    union.read_file(str(second))
+    assert union.run().provenance()["input"] is None
+
+    # accumulate=False replaces the network, so the new file is the sole source.
+    replaced = Infomap(num_trials=1, seed=1)
+    replaced.read_file(str(first))
+    replaced.read_file(str(second), accumulate=False)
+    assert replaced.run().provenance()["input"]["path"] == str(second)
+
+    # A read that failed never becomes the identity of what did get read, and
+    # it leaves the network unidentifiable: the parser writes straight into it,
+    # so a malformed file can leave part of itself behind and nothing says how
+    # far it got. Replacing the network is what restores an identity.
+    after_failure = Infomap(num_trials=1, seed=1)
+    with pytest.raises(NetworkParseError):
+        after_failure.read_file(str(tmp_path / "missing.net"))
+    after_failure.read_file(str(first))
+    assert after_failure.run().provenance()["input"] is None
+
+    recovered = Infomap(num_trials=1, seed=1)
+    with pytest.raises(NetworkParseError):
+        recovered.read_file(str(tmp_path / "missing.net"))
+    recovered.read_file(str(first), accumulate=False)
+    assert recovered.run().provenance()["input"]["path"] == str(first)
+
+    # The case the rule exists for: a partial parse over a network read from a
+    # file. Node and link counts cannot detect it, because the malformed file's
+    # ids overlap what is already there.
+    partial = tmp_path / "partial.net"
+    partial.write_text('*Vertices 3\n1 "a"\n2 "b"\n3 "c"\n*Edges\n1 2\nnot-an-id 3\n')
+
+    for accumulate in (True, False):
+        broken = Infomap(num_trials=1, seed=1)
+        broken.read_file(str(first))
+        with pytest.raises(NetworkParseError):
+            broken.read_file(str(partial), accumulate=accumulate)
+        assert broken.run().provenance()["input"] is None
+
+    # Building on top of a file makes the network a mixture the file alone does
+    # not describe, so it stops identifying the run -- in either order, since
+    # a read with the default accumulate=True keeps what was there.
+    extended = Infomap(num_trials=1, seed=1)
+    extended.read_file(str(first))
+    extended.add_link(90, 91)
+    assert extended.run().provenance()["input"] is None
+
+    built_first = Infomap(num_trials=1, seed=1)
+    built_first.add_link(90, 91)
+    built_first.read_file(str(first))
+    assert built_first.run().provenance()["input"] is None
+
+    # accumulate=False replaces the network, so the in-memory content is gone
+    # and the file is the sole source again.
+    built_then_replaced = Infomap(num_trials=1, seed=1)
+    built_then_replaced.add_link(90, 91)
+    built_then_replaced.read_file(str(first), accumulate=False)
+    assert built_then_replaced.run().provenance()["input"]["path"] == str(first)
+
+    # The mutators Python reaches through the network proxy invalidate too.
+    removed = Infomap(num_trials=1, seed=1)
+    removed.read_file(str(first))
+    removed.remove_link(1, 2)
+    assert removed.run().provenance()["input"] is None
+
+    with_meta = Infomap(num_trials=1, seed=1)
+    with_meta.read_file(str(first))
+    with_meta.set_meta_data(1, 7)
+    assert with_meta.run().provenance()["input"] is None
+
+
+def test_provenance_hashes_the_content_that_was_read(tmp_path):
+    """The identity is captured at the read, not at the run.
+
+    A file edited in between would otherwise be hashed in the name of a
+    partition computed from the content that was actually parsed.
+    """
+    path = tmp_path / "net.net"
+    path.write_text("*Edges\n1 2 1.0\n2 3 1.0\n3 1 1.0\n", encoding="utf-8")
+
+    im = Infomap(num_trials=1, seed=1)
+    im.read_file(str(path))
+    at_read = run(str(path), seed=1).provenance()["input"]["hash"]
+
+    # Same length, different content: the run must report what it parsed.
+    path.write_text("*Edges\n1 2 9.0\n2 3 1.0\n3 1 1.0\n", encoding="utf-8")
+    assert im.run().provenance()["input"]["hash"] == at_read
+    assert run(str(path), seed=1).provenance()["input"]["hash"] != at_read

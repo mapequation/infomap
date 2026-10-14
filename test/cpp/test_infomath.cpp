@@ -1,8 +1,11 @@
 #include "vendor/doctest.h"
 
+#include "utils/MetaCollection.h"
 #include "utils/infomath.h"
 
 #include <cmath>
+#include <initializer_list>
+#include <utility>
 #include <vector>
 
 using infomap::infomath::linlog;
@@ -74,4 +77,52 @@ TEST_CASE("linlog leaves the Tsallis entropy uncorrected above q = 1 [fast][core
       CHECK(linlog(k, q) == doctest::Approx(tsallisEntropyUniform(k, q)).epsilon(1e-12));
     }
   }
+}
+
+namespace {
+
+infomap::MetaCollection metaCollection(std::initializer_list<std::pair<unsigned int, double>> entries)
+{
+  infomap::MetaCollection collection;
+  for (const auto& entry : entries)
+    collection.add(entry.first, entry.second);
+  return collection;
+}
+
+std::vector<std::pair<unsigned int, double>> flows(const infomap::MetaCollection& collection)
+{
+  std::vector<std::pair<unsigned int, double>> out;
+  for (const auto& entry : collection)
+    out.emplace_back(entry.first, entry.second.flow);
+  return out;
+}
+
+} // namespace
+
+TEST_CASE("MetaCollection scores an add or a remove without changing itself [fast][core][utils]")
+{
+  // #1134: scoring a move by adding the node's metadata and removing it again left a
+  // rounding residue in the module's collection on every evaluation, and the metadata
+  // term drifted down pass after pass. calculateEntropyWith must give exactly what
+  // add()/remove() + calculateEntropy() gives, and leave the collection bit-identical.
+  auto module = metaCollection({ { 1, 0.1 }, { 2, 0.2 }, { 2, 0.15 }, { 3, 0.3 } });
+  const auto before = flows(module);
+  const double entropyBefore = module.calculateEntropy();
+
+  const auto joining = metaCollection({ { 2, 0.05 }, { 4, 0.07 } }); // 4 is new to the module
+  auto added = module;
+  added.add(joining);
+  CHECK(module.calculateEntropyWith(joining, 1) == added.calculateEntropy());
+
+  const auto leaving = metaCollection({ { 1, 0.1 }, { 2, 0.15 } }); // 1 empties, 2 keeps one member
+  auto removed = module;
+  removed.remove(leaving);
+  CHECK(module.calculateEntropyWith(leaving, -1) == removed.calculateEntropy());
+
+  for (int i = 0; i < 1000; ++i) {
+    module.calculateEntropyWith(joining, 1);
+    module.calculateEntropyWith(leaving, -1);
+  }
+  CHECK(flows(module) == before);
+  CHECK(module.calculateEntropy() == entropyBefore);
 }

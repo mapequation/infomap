@@ -126,7 +126,13 @@ def _with_inferred_flow_model(core: Any, options):
         return options
     if options.flow_model is not None or options.directed is not None:
         return options
-    return options.replace(flow_model=inferred)
+    # Re-building the caller's Options with one more field is the package's
+    # own construction; their removed fields were announced where they typed
+    # them (#915).
+    from ._options import _internal_construction
+
+    with _internal_construction():
+        return options.replace(flow_model=inferred)
 
 
 def apply_initial_partition(core: Any, module_ids) -> bool:

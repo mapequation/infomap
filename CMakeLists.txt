@@ -121,6 +121,12 @@ target_compile_options(infomap_core PRIVATE ${INFOMAP_COMPILE_FLAGS})
 # while still linking libomp -- which is how every #ifdef _OPENMP test case in the
 # suite came to compile to nothing (#930).
 target_compile_options(infomap_core PUBLIC ${INFOMAP_OPENMP_COMPILE_FLAGS})
+# /utf-8 is PUBLIC for the same reason: utils/Log.h includes {fmt}, which fails a
+# static_assert on MSVC without it, so every translation unit that includes
+# Infomap's headers needs the flag, not only the sources compiled here.
+if("/utf-8" IN_LIST INFOMAP_COMPILE_FLAGS)
+    target_compile_options(infomap_core PUBLIC /utf-8)
+endif()
 target_compile_definitions(infomap_core PUBLIC ${INFOMAP_ENABLED_FEATURE_DEFINES})
 target_link_options(infomap_core PUBLIC ${INFOMAP_LINK_FLAGS})
 

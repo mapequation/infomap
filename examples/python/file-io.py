@@ -14,7 +14,7 @@ im.read_file(filename, accumulate=False)
 result = im.run(num_trials=5)
 
 print(
-    f"Found {result.max_depth} levels with {result.num_leaf_modules} leaf modules "
+    f"Found {result.num_levels} levels with {result.num_leaf_modules} leaf modules "
     f"in {result.num_top_modules} top modules and codelength: "
     f"{result.codelength:.8f} bits"
 )
@@ -24,7 +24,7 @@ print("Tree:\n# path node_id module_id flow")
 for node in result.nodes():
     print(f"{node.path} {node.node_id} {node.module_id} {node.flow:.8f}")
 
-for module_level in range(1, result.max_depth):
+for module_level in range(1, result.num_levels):
     print(
         f"Modules at level {module_level}: "
         f"{tuple(result.modules(module_level).values())}"
@@ -39,10 +39,10 @@ print(f"Writing top level modules to output/{name}.clu...")
 result.write(f"output/{name}.clu")
 
 print(f"Writing second level modules to output/{name}_level2.clu...")
-result.write(f"output/{name}_level2.clu", depth=2)
+result.write(f"output/{name}_level2.clu", level=2)
 
 print(f"Writing bottom level modules to output/{name}_level-1.clu...")
-result.write(f"output/{name}_level-1.clu", depth=-1)
+result.write(f"output/{name}_level-1.clu", level=-1)
 
 print(f"Writing tree to output/{name}.tree...")
 result.write(f"output/{name}.tree")
@@ -53,7 +53,7 @@ result2 = net2.run(
     options=Options(two_level=True, no_infomap=True, cluster_data=f"output/{name}.clu")
 )
 print(
-    f"Found {result2.max_depth} levels with {result2.num_top_modules} top modules "
+    f"Found {result2.num_levels} levels with {result2.num_top_modules} top modules "
     f"and codelength: {result2.codelength:.8f} bits"
 )
 

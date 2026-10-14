@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
+from .._options import _UNSET
 from ._arrays import apply_node_meta_data, community_node_data
 
 if TYPE_CHECKING:
@@ -23,6 +24,23 @@ def _label_to_internal_id(labels):
     if all(isinstance(label, int) and not isinstance(label, bool) for label in labels):
         return {label: label for label in labels}
     return {label: index for index, label in enumerate(labels)}
+
+
+def _announce_removed_fields(options, infomap_options):
+    from .._options import _warn_removed_overrides
+
+    _warn_removed_overrides(infomap_options, "init")
+    if isinstance(options, Mapping):
+        _warn_removed_overrides(options, "init")
+
+
+def _state_label_name(label, attribute_name):
+    # Decided per node, not from the first label of the graph: a string label
+    # is the name, any other label type (an int, a tuple, ...) is not and the
+    # "name" attribute stands in. Labels may be mixed -- _label_to_internal_id
+    # enumerates [1, "a"] -- and a graph-wide rule read off the first label
+    # would hand an int to the std::string name parameter for the rest.
+    return label if isinstance(label, str) else attribute_name
 
 
 def _stable_unique_labels(labels):
@@ -86,6 +104,7 @@ def _run_networkx(
     multilayer_inter_intra_format: bool = True,
     initial_partition: Any = None,
     meta_attribute: str | None = None,
+    options: Any = None,
     **infomap_options: Any,
 ) -> tuple[Any, Any, dict[int, Any]]:
     from .._facade import Infomap
@@ -94,7 +113,11 @@ def _run_networkx(
     # finder does not force silent (a deprecated bare kwarg leaving in 3.0) or
     # no_file_output (redundant: the library surface writes no files without an
     # output directory). Both stay overridable through infomap_options.
-    infomap = Infomap(**infomap_options)
+    # The options= carrier travels as itself rather than flattened into
+    # keywords: an Options instance announced its removed fields where it was
+    # built, and flattening it would present every field as a freshly typed
+    # keyword to the merge, which announces them again (#915).
+    infomap = Infomap(options=options, **infomap_options)
     node_mapping = add_networkx_graph(
         infomap,
         g,
@@ -116,8 +139,8 @@ def find_communities(
     g: networkx.Graph,
     *,
     weight: str | None = "weight",
-    node_id: str = "node_id",
-    layer_id: str = "layer_id",
+    node_id_attribute: str = "node_id",
+    layer_id_attribute: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
     options: Options | Mapping[str, Any] | None = None,
     trials: int | None = None,
@@ -125,6 +148,8 @@ def find_communities(
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
     meta_attribute: str | None = None,
+    node_id: str | None = _UNSET,
+    layer_id: str | None = _UNSET,
     **infomap_options: Any,
 ) -> list[set[Any]]:
     """Find communities in a NetworkX-style graph.
@@ -147,10 +172,12 @@ def find_communities(
         matches networkx; the igraph counterpart
         :func:`~infomap.find_igraph_communities` uses ``edge_weights`` /
         ``vertex_weights`` (python-igraph's own ``community_infomap`` names).
-    node_id : str, optional
+    node_id_attribute : str, optional
         Node attribute for physical node ids, implying a state network.
-    layer_id : str, optional
-        Node attribute for layer ids, implying a multilayer network.
+        Default ``"node_id"``.
+    layer_id_attribute : str, optional
+        Node attribute for layer ids, implying a multilayer network. Default
+        ``"layer_id"``.
     multilayer_inter_intra_format : bool, optional
         Use intra/inter format to simulate inter-layer links. Default
         ``True``.
@@ -164,6 +191,11 @@ def find_communities(
         :func:`~infomap.find_igraph_communities`). Pass ``trials`` or
         ``num_trials``, not both; if neither is given the engine default
         ``num_trials=1`` applies -- raise it for research runs.
+    node_id, layer_id : str, optional
+        .. deprecated:: 2.16
+            The pre-2.16 spellings of ``node_id_attribute`` and
+            ``layer_id_attribute``; they emit a :class:`DeprecationWarning`
+            and leave in 3.0.
     module_attribute : str, optional
         If set, write each node's module id back to this node attribute on
         ``g``.
@@ -215,26 +247,49 @@ def find_communities(
             "find_communities expects a networkx graph (with a `.nodes` view)." + hint
         )
 
+    from .._renamed import renamed_keyword
+
+    node_id_attribute = renamed_keyword(
+        "find_communities",
+        new_name="node_id_attribute",
+        new_value=node_id_attribute,
+        old_name="node_id",
+        old_value=node_id,
+        default="node_id",
+    )
+    layer_id_attribute = renamed_keyword(
+        "find_communities",
+        new_name="layer_id_attribute",
+        new_value=layer_id_attribute,
+        old_name="layer_id",
+        old_value=layer_id,
+        default="layer_id",
+    )
     if len(g.nodes) == 0:
+        # No engine is built for an empty graph, so the constructor's merge --
+        # which is where a removed field typed here is normally announced --
+        # never runs. Announce it before returning, so the notice does not
+        # depend on the input's size (#915).
+        _announce_removed_fields(options, infomap_options)
         return []
 
-    from .._run import _resolve_options
-
-    # Merge the options= carrier under the caller's bare keyword arguments (bare
-    # kwargs win) and apply the `trials` alias. num_trials is left to the engine
+    # The options= carrier goes through as the base configuration and the
+    # caller's bare keyword arguments override it (Infomap()'s own merge rule),
+    # with the `trials` alias applied on top. num_trials is left to the engine
     # default (1), matching infomap.run().
-    engine_options = _resolve_options(options, infomap_options)
+    engine_options = dict(infomap_options)
     if trials is not None:
         engine_options["num_trials"] = trials
 
     infomap, _, node_mapping = _run_networkx(
         g,
         weight=weight,
-        node_id=node_id,
-        layer_id=layer_id,
+        node_id=node_id_attribute,
+        layer_id=layer_id_attribute,
         multilayer_inter_intra_format=multilayer_inter_intra_format,
         initial_partition=initial_partition,
         meta_attribute=meta_attribute,
+        options=options,
         **engine_options,
     )
 
@@ -281,17 +336,14 @@ def add_networkx_graph(
     forwarded to ``add_link`` (their weights accumulate in the engine), and
     self-loops (``g.add_edge(n, n)``) are passed through to ``add_link`` as-is.
     """
-    try:
-        nodes = list(g.nodes)
-        first = nodes[0]
-    except IndexError:
+    nodes = list(g.nodes)
+    if not nodes:
         return {}
 
     if g.is_directed():
         infomap._core.note_inferred_flow_model("directed")
 
     node_map = _label_to_internal_id(nodes)
-    is_string_id = isinstance(first, str)
     node_ids = dict(g.nodes.data(node_id))
     layer_ids = dict(g.nodes.data(layer_id))
     is_state_network = None not in node_ids.values()
@@ -317,16 +369,19 @@ def add_networkx_graph(
                 infomap.set_name(label, f"{label}")
 
         if is_multilayer_network:
+            # Same naming rule as the state-network branch below (#798).
             for state_label, data in g.nodes.data():
+                node_name = _state_label_name(state_label, data.get("name"))
                 infomap.network.add_multilayer_node(
                     node_map[state_label],
                     data[layer_id],
                     phys_map[data[node_id]],
                     1.0,
+                    name=node_name,
                 )
         else:
             for state_label, state_name in g.nodes.data("name"):
-                node_name = state_label if is_string_id else state_name
+                node_name = _state_label_name(state_label, state_name)
                 infomap.add_state_node(
                     node_map[state_label],
                     phys_map[node_ids[state_label]],
@@ -335,7 +390,7 @@ def add_networkx_graph(
     else:
         for node, name in g.nodes.data("name"):
             _node_id = node_map[node]
-            node_name = node if is_string_id else name
+            node_name = _state_label_name(node, name)
             infomap.add_node(_node_id, name=node_name)
 
     if is_multilayer_network:
