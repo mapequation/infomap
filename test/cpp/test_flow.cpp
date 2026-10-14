@@ -937,6 +937,56 @@ TEST_CASE("skip-adjust-bipartite-flow keeps its documented unnormalized flow [fa
   infomap::test::checkApproxCodelength(im.codelength(), 0.2776646519);
 }
 
+TEST_CASE("Parallel self-links count once in the regularized prior [fast][core][flow]")
+{
+  // sumDegree() subtracted every self-link occurrence from the number of distinct links.
+  // Two parallel self-loops on a node with no other links made the degree sum 0, so
+  // regularized flow took the no-link shortcut and the node got a negative enter flow;
+  // three wrapped the unsigned sum around and reported codelength 0. Found by igraph's
+  // fuzzer (igraph/igraph#2940). Parallel links are aggregated, so they must give the
+  // same result as one link of their summed weight.
+  const auto run = [](const std::string& flags, const std::vector<double>& selfLinkWeights) {
+    InfomapWrapper im(infomap::test::defaultFlags("--regularized --two-level -N 1 --seed 1 " + flags));
+    for (const auto weight : selfLinkWeights) {
+      im.addLink(1, 1, weight);
+    }
+    im.addLink(1, 2);
+    im.addLink(2, 3);
+    im.addLink(3, 4);
+    im.addLink(4, 1);
+    for (unsigned int node = 5; node <= 14; ++node) {
+      im.addNode(node);
+    }
+    im.run();
+    return std::make_pair(im.codelength(), im.getModules(1));
+  };
+
+  for (const std::string flags : { "--directed", "" }) {
+    CAPTURE(flags);
+    const auto single = run(flags, { 1.0 });
+    for (const auto& parallel : { std::vector<double> { 0.5, 0.5 }, std::vector<double> { 0.25, 0.25, 0.5 } }) {
+      CAPTURE(parallel.size());
+      const auto aggregated = run(flags, parallel);
+      infomap::test::checkApproxCodelength(aggregated.first, single.first, 1e-12);
+      CHECK(aggregated.second == single.second);
+    }
+  }
+
+  // The fuzzer's input: one node whose only links are two self-loops, plus isolated nodes.
+  for (const std::string flags : { "--directed", "" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(infomap::test::defaultFlags("--regularized --two-level -N 1 --seed 1 " + flags));
+    im.addLink(0, 0, 0.609524);
+    im.addLink(0, 0, 0.00952381);
+    for (unsigned int node = 1; node <= 13; ++node) {
+      im.addNode(node);
+    }
+    CHECK_NOTHROW(im.run());
+    CHECK(std::isfinite(im.codelength()));
+    CHECK(im.codelength() > 0);
+  }
+}
+
 TEST_CASE("A link-free network keeps its trivial zero-flow result [fast][core][flow]")
 {
   // No links means no flow to distribute and no structure to find: the trivial

@@ -209,12 +209,33 @@ TEST_CASE("clearLinks before finalize leaves no garbage counts [fast][core][csr]
   Network network(config);
   network.addLink(1, 2, 1.0);
   network.addLink(1, 2, 2.0); // duplicate: would aggregate on finalize
+  network.addLink(3, 3, 1.0);
+  network.addLink(3, 3, 1.0); // parallel self-link: also merged only on finalize
   network.clearLinks();       // cleared while still unfinalized (mode A)
 
   // A lazy finalize here must NOT rebuild from cleared buffers and compute
   // m_numAggregatedLinks = m_rawLinkCount - 0.
   CHECK(network.numLinks() == 0);
   CHECK(network.numAggregatedLinks() == 0);
+  // Nor keep the self-link occurrences, which made sumDegree() wrap around.
+  CHECK(network.numSelfLinks() == 0);
+  CHECK(network.sumDegree() == 0);
+}
+
+TEST_CASE("Self-links are counted as distinct links, also before finalize [fast][core][csr]")
+{
+  // numSelfLinks() feeds sumDegree() for the regularized prior, so it counts self-links
+  // the way numLinks() counts links: after merging, finalizing on demand.
+  Config config;
+  config.silent = true;
+  Network network(config);
+  network.addLink(1, 1, 0.5);
+  network.addLink(1, 1, 0.5);
+  network.addLink(1, 2, 1.0);
+
+  CHECK(network.numSelfLinks() == 1);
+  CHECK(network.numLinks() == 2);
+  CHECK(network.sumDegree() == 3);
 }
 
 TEST_CASE("Isolated/dangling node is in-bounds in mode-A CSR [fast][core][csr]")
