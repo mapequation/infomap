@@ -93,7 +93,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 from infomap import Infomap
-from infomap.errors import InfomapError
+from infomap._logging import engine_log_routing
+from infomap.errors import InfomapError, _translate_engine_errors
+from infomap.result import build_result
 from reference_codelength import Leaf, Partition, codelength, total_degree
 from reference_flow import MODELS, bipartite_projection, flow
 
@@ -544,7 +546,7 @@ class _Messages(logging.Handler):
 
 
 def _run(net: Net, opts: Mapping[str, object], *, hard: bool = False):
-    """Run with every option set on the engine, so a hard partition survives the run."""
+    """Run with the engine's log captured, and with a hard partition if asked."""
     handler = _Messages()
     logger = logging.getLogger("infomap")
     old_level = logger.level
@@ -553,11 +555,18 @@ def _run(net: Net, opts: Mapping[str, object], *, hard: bool = False):
     try:
         im = Infomap(**opts)
         im.read_file(str(net.path))
-        if hard:
-            # No CLI flag or keyword; the engine re-parses its options when a run
-            # passes new ones, so it is set here and the run passes none.
+        if not hard:
+            result = im.run()
+        else:
+            # A hard partition has no CLI flag or keyword, so it is set on the
+            # engine. The engine re-parses its options whenever a run passes any,
+            # and Infomap.run() always passes some (-vv while the log is captured
+            # at DEBUG), which would reset it. So the engine runs with none.
             im._core._im.clusterDataIsHard = True
-        result = im.run()
+            with engine_log_routing(), _translate_engine_errors(classify=True):
+                im._core.run("")
+            assert im._core._im.clusterDataIsHard, "the run reset the hard partition"
+            result = build_result(im)
     finally:
         logger.removeHandler(handler)
         logger.setLevel(old_level)
@@ -865,6 +874,9 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
             "#1231",
             lambda o: o.exp.regularized and _markov_below_one(o),
         ),
+        # --regularized with Markov time above 1 where the negative-flow guard does
+        # not fire, as under a hard partition: a wrong codelength, no error.
+        ("#1191", lambda o: o.exp.regularized and _markov_above_one(o)),
         ("#1189", lambda o: o.exp.recorded and bool(o.case.row["node_weights"])),
         ("#1207", lambda o: o.case.row["cluster_data"] == "hard"),
         (
@@ -1038,6 +1050,12 @@ def test_bipartite_recorded_teleportation_with_node_weights_as_flow(network):
             {**opts, "use_node_weights_as_flow": False},
         )
     # A flow invariant violation in invariant builds; a wrong codelength in release.
-    result, _ = _run(Net(network.stem, "bipartite", network), opts)
+    # Refusing it as without the option is a fix too.
+    try:
+        result, _ = _run(Net(network.stem, "bipartite", network), opts)
+    except InfomapError as error:
+        if "Degenerate flow" in str(error):
+            return
+        raise
     enter, exit_ = _leaf_flow_balance(result)
     assert enter == pytest.approx(exit_, rel=REL, abs=ABS)
