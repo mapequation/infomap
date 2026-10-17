@@ -582,14 +582,19 @@ TEST_CASE("--recorded-teleportation has no effect under undirected flow, over se
   checkRecordedTeleportationHasNoEffect("--flow-model undirected", [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
 }
 
-// Recorded teleportation over a node flow that is not the coded walk's own (undirdir,
-// outdirdir or rawdir under --regularized, or --use-node-weights-as-flow): the finished tree can hold
-// a module of modules whose enter and exit flow do not balance against its children's.
-// A release run then reports a worse tree than the recursive search found, e.g.
-// ninetriangles.net with --recorded-teleportation --use-node-weights-as-flow --seed 46
-// (libc++): 4.32 bits, against 3.64 after the recursive step. It needs particular
-// search paths, and the seeds that hit differ between standard libraries, so sweep them.
-TEST_CASE("Fuzz finding: recorded teleportation over a foreign node flow balances module flow in the finished tree (#1189) [fast][core][mapeq]" * doctest::should_fail())
+// --regularized over a node flow that is not the coded walk's own (--use-node-weights-as-flow,
+// or undirdir, outdirdir and rawdir, whose flow ignores --regularized and leaves every teleport
+// weight at 0): the regularized flow step takes the leaves' enter and exit flow from the node
+// flow, not from the links and the recorded teleportation. The search prices a module from its
+// leaves' own flow, but a restored tree (initTree, for the super-level fallback, the best of
+// several trials, or cluster data) is priced from the links, which is what the reference
+// codelength (test/python/reference_codelength.py) does too. The restored tree then holds
+// modules whose flow does not balance against their children's, and a release run can report
+// a worse tree than the recursive search found: on the network below with --seed 1 (libc++),
+// 3.73 bits against 2.00 for the super-level tree it restored (#1189). Which seeds take that
+// path differs between standard libraries, so sweep them; the case after it does not depend
+// on it.
+TEST_CASE("Fuzz finding: --regularized over a foreign node flow balances module flow in the finished tree (#1189) [fast][core][mapeq]" * doctest::should_fail())
 {
   const auto moduleFlowBalances = [](InfomapWrapper& im) {
     try {
@@ -613,12 +618,6 @@ TEST_CASE("Fuzz finding: recorded teleportation over a foreign node flow balance
   };
 
   unsigned int numUnbalanced = 0;
-  for (unsigned int seed = 1; seed <= 200; ++seed) {
-    InfomapWrapper im(defaultFlags("--recorded-teleportation --use-node-weights-as-flow --seed " + std::to_string(seed)));
-    im.readInputData(repoPath("examples/networks/ninetriangles.net"));
-    if (!moduleFlowBalances(im))
-      ++numUnbalanced;
-  }
   for (unsigned int seed = 1; seed <= 100; ++seed) {
     InfomapWrapper im(defaultFlags("--flow-model outdirdir --regularized --core-loop-limit 1 --seed " + std::to_string(seed)));
     for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 0, 2 }, { 1, 3 }, { 2, 3 }, { 4, 5 }, { 5, 6 }, { 7, 9 }, { 3, 7 } })
@@ -628,6 +627,28 @@ TEST_CASE("Fuzz finding: recorded teleportation over a foreign node flow balance
       ++numUnbalanced;
   }
   CHECK(numUnbalanced == 0);
+}
+
+// The same tree, rebuilt through initTree as a restore does, is priced as the search priced it.
+TEST_CASE("Fuzz finding: --regularized over a foreign node flow: a restored tree keeps the search's codelength (#1189) [fast][core][mapeq]" * doctest::should_fail())
+{
+  const std::vector<std::pair<std::string, std::string>> cases {
+    { "examples/networks/ninetriangles.net", "--flow-model outdirdir --regularized --seed 3" },
+    { "test/fixtures/networks/lossy_benchmark.net", "--regularized --use-node-weights-as-flow --seed 1" },
+  };
+  for (const auto& networkAndFlags : cases) {
+    CAPTURE(networkAndFlags.second);
+    InfomapWrapper im(defaultFlags(networkAndFlags.second));
+    im.readInputData(repoPath(networkAndFlags.first));
+    im.run();
+    REQUIRE(im.numLevels() > 2);
+    const double searched = im.getHierarchicalCodelength();
+    NodePaths tree;
+    for (auto it(im.iterLeafNodes()); !it.isEnd(); ++it)
+      tree.emplace_back(it->stateId, it.path());
+    im.initTree(tree);
+    checkApproxCodelength(im.getHierarchicalCodelength(), searched);
+  }
 }
 
 // --variable-markov-time scales each link by the largest node flow over the local one.
