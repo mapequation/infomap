@@ -38,17 +38,33 @@ from run_python_asan import asan_runtime, is_clang
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SANITIZE = "address,undefined"
 
-# Sources every example and test file and stops at the first error. Kept in one
-# R process per kind so a sanitizer report names the file it came from.
+# One R process runs the testthat suite and the Rd examples ("suite"); each file
+# in examples/R gets its own ("example"), as in make test-r-examples, because an
+# example may attach a package that masks infomap's functions (igraph's
+# cluster_infomap) for the files after it.
 RUNNER = r"""
 args <- commandArgs(trailingOnly = TRUE)
-lib <- args[[1]]; tests <- args[[2]]; examples <- args[[3]]
+lib <- args[[1]]; what <- args[[2]]; path <- args[[3]]
 .libPaths(c(lib, .libPaths()))
+
+if (what == "example") {
+  needs <- regmatches(readLines(path), regexpr("(?<=library\\()[A-Za-z0-9.]+", readLines(path), perl = TRUE))
+  missing <- needs[!vapply(needs, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(missing)) {
+    cat("== skip", basename(path), "(needs", paste(missing, collapse = ", "), ")\n")
+    quit(status = 0)
+  }
+  cat("== examples/R:", basename(path), "\n")
+  setwd(dirname(path))
+  source(path, echo = FALSE)
+  quit(status = 0)
+}
+
 suppressPackageStartupMessages(library(infomap, lib.loc = lib))
 cat("infomap loaded from", find.package("infomap"), "\n")
 
 cat("== testthat\n")
-testthat::test_dir(tests, package = "infomap", load_package = "installed",
+testthat::test_dir(path, package = "infomap", load_package = "installed",
                    stop_on_failure = TRUE, reporter = "summary")
 
 cat("== Rd examples\n")
@@ -63,20 +79,6 @@ for (name in names(db)) {
     withr::with_dir(wd, source(out, echo = FALSE, local = new.env()))
   })
 }
-
-cat("== examples/R\n")
-for (f in Sys.glob(file.path(examples, "*.R"))) {
-  if (grepl("load-infomap.R$", f)) next
-  needs <- regmatches(readLines(f), regexpr("(?<=library\\()[A-Za-z0-9.]+", readLines(f), perl = TRUE))
-  missing <- needs[!vapply(needs, requireNamespace, logical(1), quietly = TRUE)]
-  if (length(missing)) {
-    cat("-- skip", basename(f), "(needs", paste(missing, collapse = ", "), ")\n")
-    next
-  }
-  cat("--", basename(f), "\n")
-  withr::with_dir(dirname(f), source(f, echo = FALSE, local = new.env()))
-}
-cat("== done\n")
 """
 
 
@@ -172,15 +174,10 @@ def main() -> int:
 
     runner = build_dir / "run.R"
     runner.write_text(RUNNER)
-    r_args = [
-        "--vanilla",
-        "--no-echo",
-        "-f",
-        str(runner),
-        "--args",
-        str(lib_dir),
-        str(build_dir / "infomap" / "tests" / "testthat"),
-        str(REPO_ROOT / "examples" / "R"),
+    runs = [("suite", build_dir / "infomap" / "tests" / "testthat")] + [
+        ("example", path)
+        for path in sorted((REPO_ROOT / "examples" / "R").glob("*.R"))
+        if path.name != "load-infomap.R"
     ]
 
     if args.mode == "valgrind":
@@ -188,37 +185,44 @@ def main() -> int:
             "valgrind --error-exitcode=1 --leak-check=no --track-origins=yes "
             + args.valgrind_args
         ).strip()
-        return subprocess.run(
-            [args.r, "-d", valgrind, *r_args], cwd=build_dir, check=False
-        ).returncode
-
-    # R's front end is a shell script, and macOS strips DYLD_* variables from
-    # anything started through /bin/sh. Take the environment the script would
-    # set and start the R binary directly instead.
-    env = _r_env(args.r)
-    # macOS: configure pins Apple clang, so its runtime is the one the package links.
-    runtime = asan_runtime("/usr/bin/clang++" if sys.platform == "darwin" else args.cxx)
-    if sys.platform == "darwin":
-        env["DYLD_INSERT_LIBRARIES"] = str(runtime)
+        command, env = [args.r, "-d", valgrind], None
     else:
-        env["LD_PRELOAD"] = str(runtime)
-    env["ASAN_OPTIONS"] = ":".join(
-        filter(None, ["detect_leaks=0", os.environ.get("ASAN_OPTIONS", "")])
-    )
-    env["UBSAN_OPTIONS"] = ":".join(
-        filter(
-            None,
-            [
-                "print_stacktrace=1",
-                "halt_on_error=1",
-                os.environ.get("UBSAN_OPTIONS", ""),
-            ],
+        # R's front end is a shell script, and macOS strips DYLD_* variables from
+        # anything started through /bin/sh. Take the environment the script would
+        # set and start the R binary directly instead.
+        env = _r_env(args.r)
+        # macOS: configure pins Apple clang, so its runtime is the one the package links.
+        runtime = asan_runtime(
+            "/usr/bin/clang++" if sys.platform == "darwin" else args.cxx
         )
-    )
-    r_binary = Path(env["R_HOME"]) / "bin" / "exec" / "R"
-    return subprocess.run(
-        [str(r_binary), *r_args], env=env, cwd=build_dir, check=False
-    ).returncode
+        if sys.platform == "darwin":
+            env["DYLD_INSERT_LIBRARIES"] = str(runtime)
+        else:
+            env["LD_PRELOAD"] = str(runtime)
+        env["ASAN_OPTIONS"] = ":".join(
+            filter(None, ["detect_leaks=0", os.environ.get("ASAN_OPTIONS", "")])
+        )
+        env["UBSAN_OPTIONS"] = ":".join(
+            filter(
+                None,
+                [
+                    "print_stacktrace=1",
+                    "halt_on_error=1",
+                    os.environ.get("UBSAN_OPTIONS", ""),
+                ],
+            )
+        )
+        command = [str(Path(env["R_HOME"]) / "bin" / "exec" / "R")]
+
+    for what, path in runs:
+        r_args = ["--vanilla", "--no-echo", "-f", str(runner)]
+        r_args += ["--args", str(lib_dir), what, str(path)]
+        status = subprocess.run(
+            [*command, *r_args], env=env, cwd=build_dir, check=False
+        ).returncode
+        if status != 0:
+            return status
+    return 0
 
 
 if __name__ == "__main__":
