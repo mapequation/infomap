@@ -3,6 +3,7 @@ project(infomap LANGUAGES CXX)
 
 option(INFOMAP_USE_OPENMP "Enable OpenMP support when available." ON)
 option(INFOMAP_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
+option(INFOMAP_ENABLE_TSAN "Enable the thread sanitizer (Clang only; excludes INFOMAP_ENABLE_SANITIZERS)." OFF)
 option(INFOMAP_BUILD_FUZZERS "Build libFuzzer harnesses for the network intake (Clang only)." OFF)
 option(INFOMAP_NATIVE_ARCH "Enable -march=native, LTO, and loop unrolling for the host CPU. Produces non-portable binaries; opt-in for local builds only." OFF)
 set(INFOMAP_MODE "release" CACHE STRING "Build mode shared with the Make-based native build policy.")
@@ -141,6 +142,21 @@ if(INFOMAP_ENABLE_SANITIZERS)
     else()
         message(FATAL_ERROR "INFOMAP_ENABLE_SANITIZERS requires Clang or GCC.")
     endif()
+endif()
+
+if(INFOMAP_ENABLE_TSAN)
+    if(INFOMAP_ENABLE_SANITIZERS)
+        message(FATAL_ERROR "INFOMAP_ENABLE_TSAN cannot be combined with INFOMAP_ENABLE_SANITIZERS.")
+    endif()
+    # Clang only: TSan needs the OpenMP runtime to report its synchronisation,
+    # which LLVM's libomp does through Archer (OMP_TOOL_LIBRARIES). GCC's
+    # libgomp has no OMPT support for Archer to attach to, so every barrier
+    # would read as a race.
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "INFOMAP_ENABLE_TSAN requires Clang.")
+    endif()
+    target_compile_options(infomap_core PUBLIC -fsanitize=thread -fno-omit-frame-pointer)
+    target_link_options(infomap_core PUBLIC -fsanitize=thread)
 endif()
 
 add_executable(infomap_cli "${infomap_main_source}")
@@ -301,6 +317,19 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/interfaces/js/generated/output-formats.json"
     )
     set_tests_properties(js_output_format_manifest PROPERTIES LABELS "fast;core;output;js")
+
+    # The OpenMP paths the unit tests barely reach (recursive partition tasks,
+    # inner parallelization, parallel trials). Only meaningful under TSan.
+    if(INFOMAP_ENABLE_TSAN)
+        add_test(
+            NAME tsan_cli
+            COMMAND
+                "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_tsan_cli.py"
+                "$<TARGET_FILE:infomap_cli>"
+        )
+        set_tests_properties(tsan_cli PROPERTIES LABELS "core;cli;threads")
+    endif()
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(infomap_cpp_lifecycle_tests PRIVATE -fno-access-control)

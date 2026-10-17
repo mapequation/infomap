@@ -172,6 +172,7 @@ help:
 		"  test-node             Build the Node module and smoke-test its CLI and programmatic API." \
 		"  test-fast             Run the fast native + Python feedback suite." \
 		"  test-sanitizers       Run the C++ test suite under ASan/UBSan." \
+		"  test-tsan             Run the C++ tests and threaded CLI runs under TSan with OpenMP." \
 		"  bench-native          Run the native benchmark and memory baseline harness." \
 		"  bench-python          Run the nightly-style Python benchmark harness." \
 		"" \

@@ -1,0 +1,3 @@
+# ThreadSanitizer suppressions for `make test-tsan`. One entry per report from
+# code TSan cannot see into, each with a one-line reason. Keep entries narrow:
+# never `race:*`, and never a suppression for a race in src/.
