@@ -17,7 +17,6 @@
 #include "InfoNode.h"
 #include "FlowData.h"
 #include "../utils/Random.h"
-#include "../io/InfomapError.h"
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
 #include "LossyMapEquation.h"
 #endif
@@ -25,6 +24,7 @@
 #include <set>
 #include <utility>
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 #ifdef _OPENMP
@@ -124,8 +124,8 @@ protected:
 
   // The delta an accepted move was chosen on must be the change it made to the objective's
   // codelength. A wrong delta steers the search without breaking any bookkeeping (#830, #904),
-  // so neither the flow invariants nor a recomputed codelength can see it. Throws InfomapError
-  // naming `where`. Compiled in only with INFOMAP_CHECK_INVARIANTS, like checkInvariants.
+  // so neither the flow invariants nor a recomputed codelength can see it. Throws through
+  // InfomapBase::failMoveDelta. Compiled in only with INFOMAP_CHECK_INVARIANTS, like checkInvariants.
 #if INFOMAP_CHECK_INVARIANTS
   void checkMoveDelta(double predictedDelta, double codelengthBefore, const char* where) const;
 #endif
@@ -1143,13 +1143,7 @@ void InfomapOptimizer<Objective>::checkMoveDelta(double predictedDelta, double c
   const double actualDelta = m_objective.getCodelength() - codelengthBefore;
   const double scale = std::max({ 1.0, std::abs(codelengthBefore), m_infomap->rateScale() });
   if (std::abs(actualDelta - predictedDelta) > tolerance * scale)
-    throw InfomapError(ExitCode::InternalError,
-                       fmt::format(FMT_STRING("Move invariant violated in {}{}: the move was chosen on a codelength change of {:.12g} "
-                                              "but changed the codelength by {:.12g}. This is a bug in Infomap."),
-                                   where,
-                                   m_infomap->isMainInfomap() ? "" : " in a sub-partition",
-                                   predictedDelta,
-                                   actualDelta));
+    m_infomap->failMoveDelta(where, predictedDelta, actualDelta);
 }
 #endif
 
