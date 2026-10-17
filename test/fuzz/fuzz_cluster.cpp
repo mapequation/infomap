@@ -189,12 +189,6 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // calcCodelengthOnTree on the same instance repeats; a fresh instance scores less.
   if (im.haveMemory() && !im.noInfomap && misreported && contains(message, "read back"))
     return true;
-  // #1210: under undirected flow with --recorded-teleportation, a tree of three or more levels
-  // built by initTree (a .tree read as cluster data, or the deep seed of a search) gets
-  // modules of modules whose enter and exit flow do not balance: the recorded-teleportation
-  // terms in aggregateFlowValuesFromLeafToRoot are added on top of undirected link flow.
-  if (im.recordedTeleportation && !im.regularized && im.isUndirectedClustering() && unbalanced)
-    return true;
   return false;
 }
 

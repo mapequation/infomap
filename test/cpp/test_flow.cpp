@@ -446,6 +446,35 @@ TEST_CASE("Undirected regularization remains stable on the two-triangles fixture
   infomap::test::checkApproxCodelength(im.codelength(), 2.575767408, 1e-9);
 }
 
+TEST_CASE("Directed regularization on both directions of a link with a self-link is the undirected one [fast][core][flow]")
+{
+  // The directed prior's average link weight counted a self-link once, as an undirected
+  // link end, while its out- and in-weights count it as both an out-link and an in-link (#1204).
+  const auto run = [](bool directed) {
+    InfomapWrapper im(infomap::test::defaultFlags(std::string("--regularized --two-level -N 1 --seed 1") + (directed ? " --directed" : "")));
+    for (const auto& [source, target] : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 2 }, { 1, 3 }, { 2, 3 }, { 3, 4 }, { 4, 5 }, { 4, 6 }, { 5, 6 } }) {
+      im.addLink(source, target);
+      if (directed) im.addLink(target, source);
+    }
+    im.addLink(5, 5, 2.0);
+    im.run();
+    std::map<unsigned int, double> flow;
+    for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+      flow[it->physicalId] = it->data.flow;
+    }
+    return std::make_pair(im.codelength(), flow);
+  };
+
+  const auto undirected = run(false);
+  const auto directed = run(true);
+  CHECK(undirected.second.at(5) == doctest::Approx(0.233721).epsilon(1e-5));
+  for (const auto& entry : undirected.second) {
+    CAPTURE(entry.first);
+    CHECK(directed.second.at(entry.first) == doctest::Approx(entry.second).epsilon(1e-12));
+  }
+  infomap::test::checkApproxCodelength(directed.first, undirected.first, 1e-12);
+}
+
 TEST_CASE("Regularization strength 0 matches its small-strength limit with dangling nodes [fast][core][flow]")
 {
   // At strength 0 the prior out-weight t_i is zero, so alpha = t_i / (s_i + t_i) was
