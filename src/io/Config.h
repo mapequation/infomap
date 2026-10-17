@@ -319,10 +319,16 @@ struct Config {
 #ifndef SWIG
   bool isRegularizedMultilayerFlow() const { return isMultilayerNetwork() && regularized; }
 
+  // Whether the flow step adds the regularized prior. It is implemented for the directed and
+  // undirected models; undirdir, outdirdir, rawdir and precomputed compute their flow as without
+  // it, so the option is ignored there (#1189). Multilayer input is left as it was: its flow
+  // model is settled only after the network has been generated for --regularized.
+  bool usesRegularizedFlow() const { return regularized && (flowModel == FlowModel::directed || flowModel == FlowModel::undirected || isMultilayerNetwork()); }
+
   // Whether the coded walk has teleportation steps to record. Only the directed model and the
   // regularized prior teleport; under the other flow models the link flow already sums to 1, and
   // the recorded-teleportation terms would add exit flow with no enter flow to match (#1188).
-  bool recordsTeleportation() const { return recordedTeleportation && (flowModel == FlowModel::directed || regularized); }
+  bool recordsTeleportation() const { return recordedTeleportation && (flowModel == FlowModel::directed || usesRegularizedFlow()); }
 #endif
 
   bool haveMemory() const { return stateInput; }

@@ -184,10 +184,8 @@ NetworkShape networkShape(const infomap::Network& network)
 // ("Fuzz finding:"); drop the entry when the bug is fixed so the fuzzer guards the fix.
 bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
 {
-  using infomap::FlowModel;
   const bool negative = contains(message, "Negative");
   const bool unbalanced = contains(message, "do not balance");
-  const auto model = im.flowModel;
   const auto shape = networkShape(im.network());
   const auto& network = im.network();
 
@@ -199,11 +197,9 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // enter flow.
   if (im.regularized && (im.markovTime > 1.0 || im.variableMarkovTime) && negative)
     return true;
-  // #1189: --regularized over a node flow that is not the coded walk's own, from undirdir,
-  // outdirdir, rawdir or --use-node-weights-as-flow: the leaves' enter and exit flow comes
-  // from the node flow, so a restored tree does not balance against its leaves.
-  const bool foreignFlow = (model != FlowModel::undirected && model != FlowModel::directed) || im.useNodeWeightsAsFlow;
-  if (im.regularized && foreignFlow && unbalanced && contains(message, "after the finished tree"))
+  // #1189: --regularized with --use-node-weights-as-flow: the leaves' enter and exit flow
+  // comes from the node weights, so a restored tree does not balance against its leaves.
+  if (im.usesRegularizedFlow() && im.useNodeWeightsAsFlow && unbalanced && contains(message, "after the finished tree"))
     return true;
   // #1191: --variable-markov-time with --use-node-weights-as-flow: negative enter flow when an
   // isolated node holds the largest flow.
