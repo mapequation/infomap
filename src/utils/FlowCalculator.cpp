@@ -148,8 +148,22 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   // internal index (the directed model reorders dangling nodes first).
   network.forEachLink([&](unsigned int srcIdx, unsigned int tgtIdx, double linkWeight, double&) {
     const auto sourceId = network.nodeId(srcIdx);
+    const auto targetId = network.nodeId(tgtIdx);
     const auto sourceIndex = nodeIndexMap[sourceId];
-    const auto targetIndex = nodeIndexMap[network.nodeId(tgtIdx)];
+    const auto targetIndex = nodeIndexMap[targetId];
+
+    // The parser checks this for the *Bipartite section only, so links from a *Links
+    // section or the API reach here unchecked. A link inside one side breaks the flow
+    // below, which takes every link to cross: directed --bipartite-teleportation
+    // diverged to a total node flow of 1.7e27 (#1190).
+    if (network.isBipartite() && (sourceId >= network.bipartiteStartId()) == (targetId >= network.bipartiteStartId())) {
+      throw InfomapError(ExitCode::InputError,
+                         fmt::format(FMT_STRING("Link {} -> {} does not cross bipartite start id {}. In a bipartite network every "
+                                                "link connects a node below the start id to a node at or above it."),
+                                     sourceId,
+                                     targetId,
+                                     network.bipartiteStartId()));
+    }
 
     ++nodeOutDegree[sourceIndex];
     sumLinkOutWeight[sourceIndex] += linkWeight;

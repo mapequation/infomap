@@ -624,30 +624,56 @@ TEST_CASE("Fuzz finding: --regularized with --multilayer-relax-to-self keeps mod
   CHECK_NOTHROW(im.run());
 }
 
-// Only the *Bipartite section is checked for links that cross the start id, so feature
-// nodes can still be linked to each other. Directed PageRank with
-// --bipartite-teleportation then diverges to a total node flow of 1.7e27. A release run
-// warns about it, searches with codelengths of that size, and is refused by the
-// negative-flow guard at the end.
-TEST_CASE("Fuzz finding: --bipartite-teleportation keeps directed flow normalized (#1190) [fast][core][mapeq]" * doctest::should_fail())
+// Only the *Bipartite section was checked for links that cross the start id, so a
+// *Links section or the API could still link feature nodes to each other. Directed
+// PageRank with --bipartite-teleportation then diverged to a total node flow of 1.7e27,
+// and the other flow models silently uncoded primary nodes. Such links are now refused
+// as input on every path (#1190).
+namespace {
+
+void checkRefusesLinkInsideBipartiteSide(InfomapWrapper& im, const std::string& link)
 {
-  InfomapWrapper im(defaultFlags("--directed --bipartite-teleportation -N 1 --seed 1"));
-  im.setBipartiteStartId(4);
-  im.addLink(2, 4, 1.0);
-  im.addLink(4, 6, 3.0);
-  im.addLink(6, 7, 8.0);
-  im.addLink(6, 8, 5.0);
-  im.addLink(8, 10, 2.0);
-  im.addLink(7, 11, 3.0);
-  im.addLink(10, 33, 1.0);
-  im.addLink(33, 35, 1.0);
-  im.addLink(35, 36, 1.0);
-  im.addLink(36, 10, 0.5);
-  CHECK_NOTHROW(im.run());
-  double sumFlow = 0.0;
-  for (const auto& node : im.network().nodes())
-    sumFlow += node.second.flow;
-  CHECK(sumFlow == doctest::Approx(1.0));
+  try {
+    im.run();
+    FAIL("expected a bipartite link inside one side to be refused");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    const std::string message(e.what());
+    INFO(message);
+    CHECK(message.find("Link " + link + " does not cross bipartite start id") != std::string::npos);
+  }
+}
+
+} // namespace
+
+TEST_CASE("Bipartite input refuses links inside one side (#1190) [fast][core][mapeq]")
+{
+  for (const char* flags : { "", "--directed", "--directed --bipartite-teleportation -N 1 --seed 1" }) {
+    INFO(flags);
+    InfomapWrapper im(defaultFlags(flags));
+    im.setBipartiteStartId(4);
+    im.addLink(2, 4, 1.0);
+    im.addLink(4, 6, 3.0);
+    im.addLink(6, 7, 8.0);
+    im.addLink(6, 8, 5.0);
+    im.addLink(8, 10, 2.0);
+    im.addLink(7, 11, 3.0);
+    im.addLink(10, 33, 1.0);
+    im.addLink(33, 35, 1.0);
+    im.addLink(35, 36, 1.0);
+    im.addLink(36, 10, 0.5);
+    checkRefusesLinkInsideBipartiteSide(im, "4 -> 6");
+  }
+  // Links added before the start id is set are checked too.
+  InfomapWrapper late(defaultFlags());
+  late.addLink(1, 3);
+  late.addLink(1, 2);
+  late.setBipartiteStartId(3);
+  checkRefusesLinkInsideBipartiteSide(late, "1 -> 2");
+  // A *Links section after the *Bipartite section.
+  InfomapWrapper file(defaultFlags("--directed --bipartite-teleportation"));
+  file.readInputData(networkFixturePath("bipartite_link_inside_side.net"));
+  checkRefusesLinkInsideBipartiteSide(file, "3 -> 4");
 }
 
 // --use-node-weights-as-flow replaces the node flow after the link flow is computed,
