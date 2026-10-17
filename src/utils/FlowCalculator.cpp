@@ -669,8 +669,11 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   std::vector<unsigned int> k_in(N, 0);
   std::vector<double> s_out(N, 0);
   std::vector<double> s_in(N, 0);
-  double sum_s = sumWeightedDegree;
-  unsigned int sum_k = network.sumDegree();
+  // Average link weight sum(s_in + s_out) / sum(k_in + k_out) (Eq. 13 in Smiljanić et al. 2021).
+  // Every link is one out-link and one in-link, a self-link too, as in u_out and u_in below,
+  // so this is sumLinkWeight / numLinks, not the undirected sumWeightedDegree / sumDegree (#1204).
+  double sum_s = sumLinkWeight;
+  unsigned int sum_k = network.numLinks();
   if (sum_k == 0) {
     const auto uniformFlow = 1.0 / N;
     std::fill(nodeFlow.begin(), nodeFlow.end(), uniformFlow);
