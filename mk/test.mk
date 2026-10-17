@@ -263,7 +263,7 @@ coverage:
 		$(if $(filter-out 0,$(COVERAGE_FUZZ_SECONDS)),fuzz_intake fuzz_run fuzz_cluster,) --parallel $(JOBS)
 	@rm -rf $(COVERAGE_BUILD_DIR)/profiles $(COVERAGE_BUILD_DIR)/report
 	@mkdir -p $(COVERAGE_BUILD_DIR)/profiles
-	@LLVM_PROFILE_FILE="$(CURDIR)/$(COVERAGE_BUILD_DIR)/profiles/ctest-%p.profraw" \
+	@LLVM_PROFILE_FILE="$(abspath $(COVERAGE_BUILD_DIR))/profiles/ctest-%p.profraw" \
 		"$(CTEST)" --test-dir $(COVERAGE_BUILD_DIR) --output-on-failure $(CTEST_ARGS) \
 		|| printf "%s\n" "coverage: some tests failed; the report covers what ran."
 ifneq ($(COVERAGE_FUZZ_SECONDS),0)
@@ -277,7 +277,7 @@ ifneq ($(COVERAGE_FUZZ_SECONDS),0)
 		esac; \
 		mkdir -p $(COVERAGE_BUILD_DIR)/corpus-$$target $(COVERAGE_BUILD_DIR)/artifacts; \
 		printf "%s\n" "coverage: fuzzing $$target for $(COVERAGE_FUZZ_SECONDS)s"; \
-		LLVM_PROFILE_FILE="$(CURDIR)/$(COVERAGE_BUILD_DIR)/profiles/fuzz-$$target-%p.profraw" \
+		LLVM_PROFILE_FILE="$(abspath $(COVERAGE_BUILD_DIR))/profiles/fuzz-$$target-%p.profraw" \
 			$(COVERAGE_BUILD_DIR)/fuzz_$$target -max_total_time=$(COVERAGE_FUZZ_SECONDS) \
 			-max_len=$$max_len -timeout=10 -dict=test/fuzz/$$dict.dict \
 			-artifact_prefix=$(COVERAGE_BUILD_DIR)/artifacts/$$target- $(COVERAGE_FUZZ_ARGS) \
@@ -292,8 +292,8 @@ ifeq ($(COVERAGE_PYTHON),1)
 	@CC="$(COVERAGE_CC)" CXX="$(COVERAGE_CXX)" MODE=debug OPENMP=$(COVERAGE_OPENMP) INFOMAP_BUILD_JOBS="$(JOBS)" \
 		CXXFLAGS="$(COVERAGE_FLAGS)" LDFLAGS="-fprofile-instr-generate" \
 		$(PYTHON) setup.py -q build_ext --build-lib $(COVERAGE_BUILD_DIR)/python --build-temp $(COVERAGE_BUILD_DIR)/python-obj
-	@PYTHONPATH="$(CURDIR)/$(COVERAGE_BUILD_DIR)/python" \
-		LLVM_PROFILE_FILE="$(CURDIR)/$(COVERAGE_BUILD_DIR)/profiles/python-%p.profraw" \
+	@PYTHONPATH="$(abspath $(COVERAGE_BUILD_DIR))/python" \
+		LLVM_PROFILE_FILE="$(abspath $(COVERAGE_BUILD_DIR))/profiles/python-%p.profraw" \
 		$(PYTEST) -q -p no:cacheprovider $(PYTEST_ARGS) $(PYTHON_TEST_DIR) \
 		|| printf "%s\n" "coverage: some Python tests failed; the report covers what ran."
 endif
