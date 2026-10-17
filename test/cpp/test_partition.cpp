@@ -2030,11 +2030,49 @@ TEST_CASE("Hard cluster-data keeps a hard module together [fast][core][partition
   CHECK(hardModuleKept(partition));
 }
 
-// initPartition passes `hard` on only when every node has a module. When the partition
-// leaves a node out, the rest is used as a soft seed and the search splits its modules.
-TEST_CASE("Fuzz finding: hard cluster-data that leaves nodes out keeps a hard module together (#1206) [fast][core][partition]" * doctest::should_fail())
+// The nodes a hard partition leaves out get modules of their own, as in a soft one, and
+// the modules it names are kept whole. initPartition used to pass `hard` on only when every
+// node had a module, so the search split them.
+TEST_CASE("Hard cluster-data that leaves nodes out keeps a hard module together (#1206) [fast][core][partition]")
 {
   CHECK(hardModuleKept({ { 1, 1 }, { 10, 1 } })); // the other 25 nodes left out
+}
+
+// With three triangles of ninetriangles as hard modules, the recursive search ends above
+// the super-level tree. Restoring that tree by node id under a hard partition, whose leaves
+// are the collapsed hard modules, gave a tree with a node 0 and without node 14, and a crash
+// at exit. The search keeps its own tree there instead.
+TEST_CASE("A search over hard cluster-data returns every node once (#1206) [fast][core][partition]")
+{
+  for (const bool complete : { false, true }) {
+    CAPTURE(complete);
+    infomap::InfomapBase::InitialPartition partition { { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 }, { 7, 3 }, { 8, 3 }, { 9, 3 } };
+    if (complete) {
+      for (unsigned int node = 10; node <= 27; ++node)
+        partition[node] = node;
+    }
+    InfomapWrapper im(infomap::test::defaultFlags());
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.clusterDataIsHard = true;
+    im.setInitialPartition(partition);
+    im.run();
+    std::map<unsigned int, const InfoNode*> parentOf;
+    unsigned int numLeaves = 0;
+    for (auto& node : im.root().infomapTree()) {
+      if (node.isLeaf()) {
+        parentOf[node.stateId] = node.parent;
+        ++numLeaves;
+      }
+    }
+    CHECK(numLeaves == 27);
+    REQUIRE(parentOf.size() == 27);
+    CHECK(parentOf.begin()->first == 1);
+    CHECK(parentOf.rbegin()->first == 27);
+    for (unsigned int first : { 1, 4, 7 }) {
+      CHECK(parentOf.at(first) == parentOf.at(first + 1));
+      CHECK(parentOf.at(first) == parentOf.at(first + 2));
+    }
+  }
 }
 
 // The hard modules are leaves while the run scores the tree, and restoreHardPartition
