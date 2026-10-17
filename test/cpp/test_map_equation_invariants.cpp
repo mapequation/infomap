@@ -771,6 +771,21 @@ TEST_CASE("Bipartite input refuses links inside one side (#1190) [fast][core][ma
   checkRefusesLinkInsideBipartiteSide(file, "3 -> 4");
 }
 
+// On bipartite input the feature nodes are not coded, and their teleport weights were set to 0
+// without renormalising the others: they summed to 0.6 on this network. Part of the recorded
+// teleportation then went nowhere, and the leaves exited at 0.795 but were entered at 0.735
+// (#1175).
+TEST_CASE("Bipartite input renormalises the teleport weights of the coded nodes (#1175) [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags("--directed --recorded-teleportation --to-nodes"));
+  im.readInputData(repoPath("examples/networks/bipartite.net"));
+  checkLeafFlowBalances(im);
+  double sumWeight = 0.0;
+  for (const auto& node : im.network().nodes())
+    sumWeight += node.second.weight;
+  CHECK(sumWeight == doctest::Approx(1.0));
+}
+
 // --use-node-weights-as-flow replaces the node flow after the link flow is computed,
 // and the regularized path takes enter and exit flow from the node flow. Where a node's
 // weight gives it less flow than its links carry, enter flow goes negative, on the node

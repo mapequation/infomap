@@ -1384,6 +1384,13 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
       }
       // TODO: Should flow double before moving to nodes, does it cancel out in normalization?
 
+      // The teleportation that landed on the feature nodes lands on the coded nodes instead.
+      // Left as it was, the weights summed to less than 1 (0.618 on
+      // examples/networks/bipartite.net with --regularized), so part of the recorded
+      // teleportation left every module and entered none, and module enter and exit flow no
+      // longer balanced (#1175).
+      normalize(nodeTeleportWeights);
+
       normalizeNodeFlow = true;
 
     } else if (config.bipartiteTeleportation) {
