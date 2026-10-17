@@ -889,9 +889,12 @@ private:
 
     // Recorded teleportation needs a walk that teleports (recordsTeleportation). Undirected flow
     // has always ignored the option silently; the other models reported a wrong codelength
-    // instead (#1188), so they say that the option is now ignored.
+    // instead (#1188), so they say that the option is now ignored. The same models ignore
+    // --regularized, which sets the option itself, so that warning covers both (#1189).
     const auto model = m_infomap.flowModel;
-    if (m_infomap.recordedTeleportation && !m_infomap.recordsTeleportation() && model != FlowModel::undirected)
+    if (m_infomap.regularized && !m_infomap.usesRegularizedFlow())
+      Console::warn(0, "--regularized has no effect with the {} flow model: the regularized flow is implemented for the directed and undirected models only. The run uses the {} flow and reports the codelength without the prior.", io::stringify(model), io::stringify(model));
+    else if (m_infomap.recordedTeleportation && !m_infomap.recordsTeleportation() && model != FlowModel::undirected)
       Console::warn(0, "--recorded-teleportation has no effect with the {} flow model: it does not teleport, so there are no teleportation steps to record. The run optimizes and reports the codelength without them.", io::stringify(model));
   }
 
@@ -2224,7 +2227,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   m_root.data.flow = sumNodeFlow;
   m_root.data.teleportFlow = sumTeleFlow;
   // m_calculateEnterExitFlow = true; //TODO: Implement always in flow calculation
-  if (!this->regularized) {
+  if (!usesRegularizedFlow()) {
     m_calculateEnterExitFlow = true;
   }
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
@@ -2613,7 +2616,7 @@ void InfomapBase::partition()
   if (m_numNonTrivialTopModules != numTopModules())
     nonTrivialSummary = fmt::format(FMT_STRING(" ({} non-trivial)"), m_numNonTrivialTopModules);
   progress.finish(fmt::format(FMT_STRING("{} {} codelength {}, {} modules{}"), compressionSummary(prettyCompression), Console::arrow(), io::toPrecision(getCodelength()), numTopModules(), nonTrivialSummary));
-  const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
+  const bool regularizedPriorOnly = usesRegularizedFlow() && network().numLinks() == 0;
   if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > getOneLevelCodelength()) {
     Console::detail(1, "worse codelength than one-level, putting all nodes in one module");
 

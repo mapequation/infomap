@@ -1515,7 +1515,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
   // Enter/exit flow
   if (enterFlow.empty()) {
-    if (!config.isUndirectedClustering() && !config.regularized) {
+    if (!config.isUndirectedClustering() && !config.usesRegularizedFlow()) {
       enterFlow.assign(numNodes, 0);
       exitFlow.assign(numNodes, 0);
       double alpha = config.teleportationProbability;
