@@ -947,16 +947,17 @@ private:
   // came out at 1.1e-16 -- no cost at all for entering either of two modules (#957). An error
   // rather than a warning: there is no reading of the map equation under which this is a result.
   // Not an exact zero bound: the flow models accumulate, so a value a few epsilons below zero is
-  // rounding, not a broken distribution.
+  // rounding, not a broken distribution. Enter and exit flow are compared against `rateScale`
+  // times the bound, see InfomapBase::rateScale().
   static constexpr double negativeFlowTolerance = -1e-10;
 
-  static const char* negativeFlowQuantity(const FlowData& data) noexcept
+  static const char* negativeFlowQuantity(const FlowData& data, double rateScale) noexcept
   {
     if (data.flow < negativeFlowTolerance)
       return "flow";
-    if (data.enterFlow < negativeFlowTolerance)
+    if (data.enterFlow < negativeFlowTolerance * rateScale)
       return "enter flow";
-    if (data.exitFlow < negativeFlowTolerance)
+    if (data.exitFlow < negativeFlowTolerance * rateScale)
       return "exit flow";
     return nullptr;
   }
@@ -965,7 +966,11 @@ private:
   {
     for (const auto* leafNode : m_infomap.leafNodes()) {
       const auto& data = leafNode->data;
-      const char* quantity = negativeFlowQuantity(data);
+      // Unscaled: a leaf's enter and exit flow are only added up from non-negative terms -- link
+      // flow (scaled by the Markov time in initEnterExitFlow()) and teleportation -- so nothing of
+      // size t cancels, unlike in a module's, which subtracts the flow internal to it. Under
+      // --regularized they are the flow calculator's, which does not apply the Markov time.
+      const char* quantity = negativeFlowQuantity(data, 1.0);
       if (quantity == nullptr)
         continue;
 
@@ -1009,7 +1014,7 @@ private:
       if (node.isLeaf())
         continue;
 
-      const char* quantity = negativeFlowQuantity(node.data);
+      const char* quantity = negativeFlowQuantity(node.data, m_infomap.rateScale());
       if (quantity == nullptr)
         continue;
 
@@ -2845,7 +2850,7 @@ void InfomapBase::checkInvariants(const InfoNode& root, const char* phase) const
   // enter and exit flow scale with the Markov time and are built by adding and subtracting rates
   // of that size, so their tolerance scales with it and with the rates compared.
   constexpr double tolerance = 1e-9;
-  const double rateScale = std::max(1.0, markovTime);
+  const double rateScale = this->rateScale();
   const auto rateTolerance = [rateScale](double a, double b) { return tolerance * std::max({ rateScale, std::abs(a), std::abs(b) }); };
   const bool undirectedBalance = isUndirectedClustering() && !recordedTeleportation;
 

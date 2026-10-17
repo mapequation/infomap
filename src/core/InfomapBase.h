@@ -24,6 +24,7 @@
 #include "../utils/Date.h"
 #include "../utils/Stopwatch.h"
 
+#include <algorithm>
 #include <vector>
 #include <deque>
 #include <map>
@@ -528,6 +529,10 @@ private:
   NodePaths normalizeTreePaths(const TreePaths& tree, unsigned int& numNodesNotInNetwork) const;
 
   void init();
+
+  // The scale of enter and exit flow. They are built from link flow scaled by the Markov time, so
+  // their rounding grows with it, and so does the tolerance of every check on them (#1192).
+  double rateScale() const { return std::max(1.0, markovTime); }
 
   // Flow invariants of the tree under `root`: total flow, no negative flow, enter and exit
   // flow that balance at every module, and module flow that equals the sum of its children.
