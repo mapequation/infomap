@@ -521,13 +521,8 @@ def test_recorded_teleportation_with_self_link_only_node(tmp_path, seed, to_node
     _assert_flow(result, expected)
 
 
-@pytest.mark.xfail(
-    reason="node weights set through the API (add_node with a weight) are reset to the "
-    "physical node's default weight 1 by Network::postProcessInputData, so teleportation "
-    "to nodes ignores them; the same weights from a Pajek file are used (#1183)",
-    strict=True,
-)
 def test_api_node_weights_reach_teleportation():
+    # Node weights set with add_node used to be reset to 1 before the flow (#1183).
     links, node_weights = _directed_network(1)
     net = Network()
     for node_id, weight in node_weights.items():
