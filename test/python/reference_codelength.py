@@ -174,18 +174,22 @@ class Codelength:
     flow: dict[Path, float] = field(default_factory=dict)
 
 
-def total_degree(weights: Iterable[tuple[Hashable, Hashable, float]]) -> float:
+def total_degree(
+    weights: Iterable[tuple[Hashable, Hashable, float]], *, undirected: bool = False
+) -> float:
     """Number of observed walk steps: ``2 sum(w) - sum(w_self)``.
 
     Falls back to the unweighted link count when the weights average below 1,
-    since the bias correction is about discrete counts.
+    since the bias correction is about discrete counts. On undirected input a
+    pair listed as ``a b`` and ``b a`` is one link.
     """
     weighted = 0.0
-    unweighted = 0.0
+    links = set()
     for source, target, weight in weights:
         self_link = source == target
         weighted += weight if self_link else 2 * weight
-        unweighted += 1 if self_link else 2
+        links.add(frozenset((source, target)) if undirected else (source, target))
+    unweighted = sum(1 if len(set(link)) == 1 else 2 for link in links)
     return max(weighted, unweighted)
 
 
