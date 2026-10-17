@@ -165,7 +165,8 @@ jobs:
               echo "build/fuzz/fuzz_$target $unit"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-            grep -E "^fuzz_$target: (network|options): " "$log" | while IFS= read -r line; do
+            # fuzz_intake prints no such lines, nor does a timeout in any target.
+            { grep -E "^fuzz_$target: (network|options): " "$log" || true; } | while IFS= read -r line; do
               echo "::error title=fuzz_$target::${line//%/%25}"
             done
             echo "::error title=fuzz_$target::Replay: build/fuzz/fuzz_$target $unit (the input is in the fuzz-pr-findings artifact)"
