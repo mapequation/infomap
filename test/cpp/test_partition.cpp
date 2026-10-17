@@ -795,6 +795,57 @@ TEST_CASE("A restored flat best-of-N winner keeps its module codelengths [fast][
   CHECK(sumModuleCodelengths(im.root()) == doctest::Approx(im.codelength()));
 }
 
+TEST_CASE("A restored best-of-N winner keeps the tree order of its trial [fast][core][partition][lifecycle]")
+{
+  // #1202: restoreBestResult rebuilds a two-level winner through initPartition, which
+  // creates the modules in node id order, so module 1 was the triangle on the lowest
+  // ids and not the clique with the most flow. Every trial starts from that partition,
+  // the optimum, so the trials tie, trial 1 is restored, and the tree must be the
+  // one-trial tree. A search from scratch can end in one module with some standard
+  // libraries.
+  const std::string clu = "restored_order.clu";
+  {
+    std::ofstream out(clu);
+    out << "# node_id module\n1 1\n2 1\n3 1\n4 2\n5 2\n6 2\n7 2\n8 2\n9 2\n";
+  }
+
+  using Leaves = std::vector<std::pair<unsigned int, std::vector<unsigned int>>>;
+  const auto run = [&clu](const std::string& flags, bool hard) {
+    InfomapWrapper im("--seed 1 --silent --two-level --no-file-output --cluster-data " + clu + " " + flags);
+    im.clusterDataIsHard = hard;
+    im.addLink(1, 2);
+    im.addLink(2, 3);
+    im.addLink(3, 1);
+    im.addLink(3, 4);
+    for (unsigned int a = 4; a < 10; ++a)
+      for (unsigned int b = a + 1; b < 10; ++b)
+        im.addLink(a, b);
+    im.run();
+    double lastFlow = 1.0;
+    for (const auto& module : im.root().children()) {
+      CHECK(module.data.flow <= lastFlow);
+      lastFlow = module.data.flow;
+    }
+    Leaves leaves;
+    for (auto it(im.iterLeafNodes()); !it.isEnd(); ++it) {
+      const auto& path = it.path();
+      leaves.emplace_back(it->stateId, std::vector<unsigned int>(path.begin(), path.end()));
+    }
+    return leaves;
+  };
+
+  for (const bool hard : { false, true }) {
+    CAPTURE(hard);
+    const auto oneTrial = run("--num-trials 1", hard);
+    CHECK(oneTrial.front().first == 4); // the clique is module 1
+    CHECK(oneTrial.back().second.front() == 2);
+    CHECK(run("--num-trials 2", hard) == oneTrial);
+    CHECK(run("--num-trials 2 --parallel-trials", hard) == oneTrial);
+  }
+
+  std::remove(clu.c_str());
+}
+
 TEST_CASE("Pretty per-level codelength renders a structured levels table [fast][core][partition][output]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--directed -0 --no-file-output --pretty"));

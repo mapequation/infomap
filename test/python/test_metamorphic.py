@@ -695,14 +695,6 @@ def test_parallel_trial_worker_runs_a_second_trial_alike(tmp_path, name, variant
     assert parallel.codelengths == serial.codelengths
 
 
-@pytest.mark.xfail(
-    reason="restoreBestResult rebuilds a two-level best trial with initTree, which goes "
-    "through initPartition and creates the modules in node id order, and the tree is not "
-    "sorted on flow again; module ids then depend on whether the best trial was the last "
-    "one, and --parallel-trials always restores",
-    strict=True,
-    raises=AssertionError,
-)
 @pytest.mark.parametrize(
     "extra",
     [{"num_trials": 2}, {"num_trials": 2, "parallel_trials": True}],
@@ -713,7 +705,8 @@ def test_restored_tree_is_sorted_on_flow(tmp_path, extra):
     # more flow, so it is module 1 in a one-trial run. Every trial starts from
     # that partition, the optimum, so the trials tie and the first is restored
     # whatever path the seed takes (a search from scratch can end in one module
-    # with some standard libraries).
+    # with some standard libraries). The restored tree used to come back in node
+    # id order (#1202).
     links = [(1, 2), (2, 3), (3, 1), (3, 4)]
     links += [(a, b) for a in range(4, 10) for b in range(a + 1, 10)]
     path = Net(range(1, 10), [(s, t, 1.0) for s, t in links]).write(
