@@ -1,0 +1,89 @@
+name: TSan
+
+# Non-blocking: ThreadSanitizer with OpenMP on, over the C++ tests and the
+# CLI's parallel paths (make test-tsan). The blocking sanitizer job in ci.yml
+# builds with OpenMP off, so this is the only run that sees the threaded code.
+# A separate workflow so it never gates PRs while it settles in, but it goes
+# RED on a report. Same pattern as fuzz.yml -- do NOT add continue-on-error,
+# that would mask the alert. PRs run it only when they touch the TSan setup;
+# src/ changes are covered by the weekly run until it is made blocking (#1171).
+on:
+  pull_request:
+    paths:
+      - "test/scripts/check_tsan_cli.py"
+      - "test/tsan.supp"
+      - "CMakeLists.txt"
+      - "mk/test.mk"
+      - ".github/workflows/tsan.yml"
+  schedule:
+    - cron: "0 5 * * 3" # Wednesdays 05:00 UTC (clear of the Monday/Tuesday crons)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tsan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tsan:
+    name: Linux TSan (OpenMP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install TSan toolchain
+        # libomp-dev ships LLVM's OpenMP runtime with Archer (libarcher.so),
+        # which make test-tsan finds next to libomp and loads through
+        # OMP_TOOL_LIBRARIES.
+        run: |
+          # A third-party repo in the runner image (azure-cli, chrome, ...) can
+          # 403, which fails `apt-get update` even when the Ubuntu archive we
+          # install from downloaded fine. The install is the real gate.
+          sudo apt-get update || echo "::warning::apt-get update reported errors; continuing to the install"
+          sudo apt-get install -y clang libomp-dev ninja-build
+        shell: bash
+
+      - name: Install Python test helpers
+        run: python -m pip install --upgrade "jsonschema>=4.18" referencing
+        shell: bash
+
+      - name: Build and test under TSan
+        # libomp.so and libarcher.so live in the LLVM lib dir (e.g.
+        # /usr/lib/llvm-18/lib), which is not on the default link path.
+        run: |
+          llvm_lib="$(clang++ -print-resource-dir)/../.."
+          llvm_lib="$(cd "$llvm_lib" && pwd)"
+          ls "$llvm_lib"/libomp.so "$llvm_lib"/libarcher.so
+          make test-tsan CMAKE_GENERATOR=Ninja TSAN_CXX=clang++ \
+            TSAN_ARCHER_LIB="$llvm_lib/libarcher.so" \
+            LDFLAGS="-L$llvm_lib -Wl,-rpath,$llvm_lib" \
+            TSAN_CMAKE_ARGS="-DPython3_EXECUTABLE=$(python -c 'from pathlib import Path; import sys; print(Path(sys.executable).as_posix())')"
+        shell: bash
+
+  # Surface a scheduled failure as a tracking issue so it is not lost in the
+  # Actions tab. Only fires for cron runs.
+  report-failure:
+    name: Report scheduled failure
+    needs: [tsan]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Open or update the tracking issue
+        uses: ./.github/actions/report-cron-failure
+        with:
+          workflow-name: ${{ github.workflow }}
+          run-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          token: ${{ github.token }}
