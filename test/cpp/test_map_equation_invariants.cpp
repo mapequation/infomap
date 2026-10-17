@@ -448,9 +448,7 @@ TEST_CASE("Flow invariants hold after a run and catch an unbalanced module [fast
 // t = 1e7 the rounding of the boundary rates alone exceeds an absolute 1e-9.
 TEST_CASE("Flow invariants accept the boundary rates of a large Markov time [fast][core][mapeq]")
 {
-  // --directed is left out: at this Markov time the run's own negative-module-flow guard, which
-  // has an absolute tolerance, already refuses it.
-  for (const std::string flags : { "--flow-model rawdir", "" }) {
+  for (const std::string flags : { "--directed", "--flow-model rawdir", "" }) {
     CAPTURE(flags);
     InfomapWrapper im(defaultFlags("--markov-time 1e7 -N 1 --seed 1 " + flags));
     im.readInputData(repoPath("examples/networks/modular_wd.net"));
@@ -477,6 +475,19 @@ TEST_CASE("Flow invariants accept a link-free run on an instance that ran a link
   CHECK(im.numLeafNodes() == 2);
 }
 #endif
+
+// The run's own negative-module-flow guard, which every build has, scales the same way. Module
+// enter and exit flow carry rounding residues of about t * 1e-16, which an absolute -1e-10 refused
+// from t = 1e7 on (#1192).
+TEST_CASE("The negative module flow guard accepts the boundary rates of a large Markov time (#1192) [fast][core][mapeq]")
+{
+  for (const std::string flags : { "--directed --markov-time 1e7", "--flow-model rawdir --markov-time 3e7", "--flow-model rawdir --markov-time 1e8", "--flow-model undirdir --markov-time 1e8" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(defaultFlags("-N 1 --seed 1 " + flags));
+    im.readInputData(repoPath("examples/networks/modular_wd.net"));
+    CHECK_NOTHROW(im.run());
+  }
+}
 
 // Open bugs found by the fuzz_run target (#1171), stated as what should happen and
 // marked should_fail, so each turns red when its bug is fixed. Release builds refuse
