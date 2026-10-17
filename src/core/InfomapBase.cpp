@@ -1196,8 +1196,12 @@ private:
     else
       infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
 
-    if (infomap.haveHardPartition())
+    if (infomap.haveHardPartition()) {
       infomap.restoreHardPartition();
+      // The hard modules were leaves while the run scored the tree, so their own codebooks
+      // were not in its codelength. Score the tree that is returned (#1207).
+      infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
+    }
 
     checkNoNegativeModuleFlow(infomap.root());
     infomap.checkInvariants(infomap.root(), "the finished tree");
@@ -2656,7 +2660,10 @@ void InfomapBase::restoreHardPartition()
   for (InfoNode* node : leafNodes) {
     ++numExpandedNodes;
     numExpandedChildren += node->expandChildren();
-    node->replaceWithChildren();
+    // A hard module directly under the root, as every one is under --no-infomap, stays a
+    // module. Replaced by its nodes there, the partition it was part of would be lost.
+    if (!node->parent->isRoot())
+      node->replaceWithChildren();
   }
 
   // Swap back original leaf nodes

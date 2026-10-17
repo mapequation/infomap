@@ -183,11 +183,6 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // `hard` on only when every node has a module.
   if (im.clusterDataIsHard && contains(message, "hard partition was split") && contains(message, "misses"))
     return true;
-  // #1207: the tree is not scored again after the hard partition is restored: a module that held
-  // a single hard module is left without that module's codebook, and a hard module
-  // directly under the root (all of them under --no-infomap) is replaced by its nodes there.
-  if (im.clusterDataIsHard && misreported)
-    return true;
   // #1209: on a state network, a search from a tree that it reshapes reports the codelength of
   // the memory map equation's stale per-module physical-node bookkeeping, which
   // calcCodelengthOnTree on the same instance repeats; a fresh instance scores less.
@@ -473,7 +468,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
     if (options.hard && std::strcmp(options.extension, "clu") == 0)
       checkKeepsHardModules(im, clusterFile.path, leaves);
-    if (options.noInfomap && !options.hard)
+    if (options.noInfomap)
       checkKeepsPartition(im, options, clusterFile.path, leaves);
 
     if (!leafUnderRoot) {
