@@ -1406,8 +1406,10 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   // is approximate only when those neighbours are cross-community (the relay then
   // charges a second crossing the one-hop spread model does not); reproducing that
   // exactly would need spread's O(L^2*k) links. (Same Markov-time-2 idea as the
-  // bipartite handling above.)
-  if (config.multilayerRelaxToSelf && !network.isBipartite()) {
+  // bipartite handling above.) Multilayer input only: on a state network a link between
+  // two states of one physical node is not a layer switch, and relaying its flow gave
+  // modules negative enter flow under --regularized (#1191).
+  if (config.multilayerRelaxToSelf && config.isMultilayerNetwork() && !network.isBipartite()) {
     std::vector<unsigned int> physId(numNodes, 0);
     for (const auto& nodeIt : network.nodes()) {
       physId[nodeIndexMap[nodeIt.second.id]] = nodeIt.second.physicalId;

@@ -162,7 +162,6 @@ MetaData applyMetaData(infomap::InfomapWrapper& im, uint8_t byte)
 
 // What the known findings below need from the network.
 struct NetworkShape {
-  bool stateLinkWithinNode = false; // a link between two states of one physical node
   bool isolatedNode = false;
 };
 
@@ -172,10 +171,6 @@ NetworkShape networkShape(const infomap::Network& network)
   std::vector<bool> linked(network.numNodes(), false);
   network.forEachLink([&](unsigned int source, unsigned int target, double /*weight*/, double& /*flow*/) {
     linked[source] = linked[target] = true;
-    const unsigned int sourceId = network.nodeId(source);
-    const unsigned int targetId = network.nodeId(target);
-    if (sourceId != targetId && network.nodes().at(sourceId).physicalId == network.nodes().at(targetId).physicalId)
-      shape.stateLinkWithinNode = true;
   });
   for (const bool isLinked : linked)
     shape.isolatedNode = shape.isolatedNode || !isLinked;
@@ -209,10 +204,6 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // from the node flow, so a restored tree does not balance against its leaves.
   const bool foreignFlow = (model != FlowModel::undirected && model != FlowModel::directed) || im.useNodeWeightsAsFlow;
   if (im.regularized && foreignFlow && unbalanced && contains(message, "after the finished tree"))
-    return true;
-  // #1191: --regularized with --multilayer-relax-to-self: the relay also runs on a link
-  // between two states of one physical node, and gives a module negative enter flow.
-  if (im.regularized && im.multilayerRelaxToSelf && shape.stateLinkWithinNode && negative)
     return true;
   // #1191: --variable-markov-time with --use-node-weights-as-flow: negative enter flow when an
   // isolated node holds the largest flow.
