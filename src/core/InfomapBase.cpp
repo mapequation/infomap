@@ -241,6 +241,40 @@ namespace {
     }
   }
 
+  // Order every node's children as they come in the tree rows: a leaf by its own row,
+  // a module by its first leaf. Returns the row of the first leaf under node.
+  std::size_t orderChildrenAsRows(InfoNode& node, const std::unordered_map<unsigned int, std::size_t>& rowOfState)
+  {
+    if (node.isLeaf()) {
+      const auto it = rowOfState.find(node.stateId);
+      return it != rowOfState.end() ? it->second : rowOfState.size();
+    }
+    std::vector<std::pair<std::size_t, InfoNode*>> children;
+    children.reserve(node.childDegree());
+    for (InfoNode& child : node.children())
+      children.emplace_back(orderChildrenAsRows(child, rowOfState), &child);
+    std::stable_sort(children.begin(), children.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+    node.releaseChildren();
+    for (const auto& child : children)
+      node.addChild(child.second);
+    return children.front().first;
+  }
+
+  // restoreBestResult rebuilds the best trial with initTree from rows taken off its
+  // flow-sorted tree. initTree's two-level shortcut goes through initPartition, which
+  // creates the modules in node id order, so the restored tree came back unsorted and
+  // its module ids depended on the trial count (#1202). Put it back in the order the
+  // trial had. That is the flow order, ties included, which sorting on flow again
+  // would not promise. A deeper tree is already rebuilt in row order.
+  void orderTreeAsRows(InfoNode& root, const NodePaths& tree)
+  {
+    std::unordered_map<unsigned int, std::size_t> rowOfState;
+    rowOfState.reserve(tree.size());
+    for (std::size_t row = 0; row < tree.size(); ++row)
+      rowOfState.emplace(tree[row].first, row);
+    orderChildrenAsRows(root, rowOfState);
+  }
+
 } // namespace
 
 class InfomapBase::RunSession {
@@ -654,6 +688,7 @@ private:
       {
         auto timer = m_timing.scope("best_restore_s");
         m_infomap.initTree(result.bestTree);
+        orderTreeAsRows(m_infomap.root(), result.bestTree);
       }
       if (!m_infomap.noFinalOutput) {
         auto outputTimer = m_timing.scope("output_s");
