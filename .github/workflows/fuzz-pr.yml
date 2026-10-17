@@ -25,12 +25,15 @@ on:
       - "CMakeLists.txt"
       - "mk/test.mk"
       - ".github/workflows/fuzz-pr.yml"
+      - ".github/actions/restore-fuzz-corpus/**"
   workflow_dispatch:
 
 permissions:
   contents: read
   # dorny/paths-filter lists the PR's changed files through the API.
   pull-requests: read
+  # restore-fuzz-corpus finds the weekly corpus artifact.
+  actions: read
 
 concurrency:
   group: fuzz-pr-${{ github.event.pull_request.number || github.ref }}
@@ -62,6 +65,7 @@ jobs:
               - "CMakeLists.txt"
               - "mk/test.mk"
               - ".github/workflows/fuzz-pr.yml"
+              - ".github/actions/restore-fuzz-corpus/**"
             intake:
               - *shared
               - "src/io/**"
@@ -97,17 +101,14 @@ jobs:
           sudo apt-get update || echo "::warning::apt-get update reported errors; continuing to the install"
           sudo apt-get install -y clang libclang-rt-dev
 
-      # The weekly corpus, read only: restore it, never save it, so a PR cannot
-      # change what the weekly run starts from. With no cache the fuzzer starts
-      # from the seeds, as `make fuzz` does locally.
-      - name: Restore intake fuzz corpus
-        if: github.event_name != 'pull_request' || steps.filter.outputs.intake == 'true'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # The weekly corpus of all three targets, read only: this workflow never
+      # uploads one, so a PR cannot change what the weekly run starts from.
+      # With no artifact the fuzzers start from the seeds, as `make fuzz` does
+      # locally.
+      - name: Restore fuzz corpus
+        uses: ./.github/actions/restore-fuzz-corpus
         with:
-          path: build/fuzz/corpus
-          key: fuzz-corpus-${{ github.run_id }}
-          restore-keys: |
-            fuzz-corpus-
+          token: ${{ github.token }}
 
       - name: Fuzz the network intake
         if: github.event_name != 'pull_request' || steps.filter.outputs.intake == 'true'
@@ -117,29 +118,11 @@ jobs:
 
       # The steps below run even when an earlier target found something, so
       # one red step does not hide another.
-      - name: Restore run fuzz corpus
-        if: ${{ !cancelled() && (github.event_name != 'pull_request' || steps.filter.outputs.run == 'true') }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: build/fuzz/corpus-run
-          key: fuzz-run-corpus-${{ github.run_id }}
-          restore-keys: |
-            fuzz-run-corpus-
-
       - name: Fuzz full runs
         if: ${{ !cancelled() && (github.event_name != 'pull_request' || steps.filter.outputs.run == 'true') }}
         run: |
           mkdir -p build/fuzz-logs
           make fuzz FUZZ_TARGET=run FUZZ_SECONDS=60 2>&1 | tee build/fuzz-logs/run.log
-
-      - name: Restore cluster fuzz corpus
-        if: ${{ !cancelled() && (github.event_name != 'pull_request' || steps.filter.outputs.cluster == 'true') }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: build/fuzz/corpus-cluster
-          key: fuzz-cluster-corpus-${{ github.run_id }}
-          restore-keys: |
-            fuzz-cluster-corpus-
 
       - name: Fuzz cluster data
         if: ${{ !cancelled() && (github.event_name != 'pull_request' || steps.filter.outputs.cluster == 'true') }}
