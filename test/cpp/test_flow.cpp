@@ -360,6 +360,69 @@ TEST_CASE("Directed to-nodes teleportation keeps the expected coarse partition [
   CHECK(result.partition == std::vector<std::vector<unsigned int>>{{1, 2, 3}, {4, 5, 6}});
 }
 
+TEST_CASE("Node weights set through addNode reach the flow like weights from a file [fast][core][flow]")
+{
+  // postProcessInputData used to reset addNode(id, weight) to the physical node's
+  // default weight 1, so --to-nodes and --use-node-weights-as-flow saw uniform
+  // weights for a network built through the API (#1183). Node 9 has no links.
+  const std::string path = "api_node_weights.net";
+  {
+    std::ofstream out(path.c_str());
+    out << "*Vertices 4\n1 \"1\"\n2 \"2\"\n3 \"3\"\n9 \"9\" 3\n"
+        << "*Arcs\n1 2 1.5\n2 1 2\n2 3 1\n3 3 1\n";
+  }
+  auto addLinks = [](InfomapWrapper& im) {
+    im.addLink(1, 2, 1.5);
+    im.addLink(2, 1, 2.0);
+    im.addLink(2, 3, 1.0);
+    im.addLink(3, 3, 1.0);
+  };
+  auto leafFlows = [](InfomapWrapper& im) {
+    std::map<unsigned int, double> flows;
+    for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+      flows[it->physicalId] = it->data.flow;
+    }
+    return flows;
+  };
+
+  for (const std::string flags : { std::string("--directed --to-nodes --recorded-teleportation"),
+                                   std::string("--directed --use-node-weights-as-flow") }) {
+    CAPTURE(flags);
+    InfomapWrapper fromFile(infomap::test::defaultFlags(flags));
+    fromFile.readInputData(path);
+    fromFile.run();
+
+    InfomapWrapper fromApi(infomap::test::defaultFlags(flags));
+    fromApi.addNode(9, 3.0);
+    addLinks(fromApi);
+    fromApi.run();
+
+    const auto expected = leafFlows(fromFile);
+    const auto actual = leafFlows(fromApi);
+    REQUIRE(actual.size() == expected.size());
+    for (const auto& entry : expected) {
+      CHECK(actual.at(entry.first) == doctest::Approx(entry.second).epsilon(1e-12));
+    }
+    CHECK(fromApi.codelength() == doctest::Approx(fromFile.codelength()).epsilon(1e-12));
+  }
+
+  // --use-node-weights-as-flow gives node 9 its share of the weight directly.
+  InfomapWrapper asFlow(infomap::test::defaultFlags("--directed --use-node-weights-as-flow"));
+  asFlow.addNode(9, 3.0);
+  addLinks(asFlow);
+  asFlow.run();
+  CHECK(leafFlows(asFlow).at(9) == doctest::Approx(0.5));
+
+  // A weight read from a file after addNode replaces it: the last one given wins.
+  InfomapWrapper overridden(infomap::test::defaultFlags("--directed --use-node-weights-as-flow"));
+  overridden.addNode(9, 7.0);
+  overridden.readInputData(path, true);
+  overridden.run();
+  CHECK(leafFlows(overridden).at(9) == doctest::Approx(0.5));
+
+  std::remove(path.c_str());
+}
+
 TEST_CASE("Directed regularization remains numerically sane on the teleportation fixture [fast][core][flow]")
 {
   const auto result = runDirectedFixture("--regularized");

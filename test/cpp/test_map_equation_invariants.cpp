@@ -400,6 +400,34 @@ TEST_CASE("Super level never leaves the trial worse than its own two-level solut
   CHECK(std::abs(twoLevel - uncorrected) > 0.1);
 }
 
+// The tree has no self-links, but a node whose only out-link is a self-link is not dangling:
+// the flow follows the self-link, so the node teleports at rate alpha like any other and the
+// teleport flow sums to alpha. Without the self-link the node is dangling in both places (#1182).
+TEST_CASE("Recorded teleportation does not take a node with only a self-link for dangling [fast][core][mapeq]")
+{
+  for (const bool selfLink : { true, false }) {
+    INFO("selfLink=" << selfLink);
+    InfomapWrapper im(defaultFlags("--directed --recorded-teleportation --no-infomap"));
+    for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 2 }, { 2, 3 }, { 3, 1 }, { 3, 4 }, { 4, 5 }, { 5, 6 }, { 6, 4 }, { 6, 7 } })
+      im.addLink(link.first, link.second);
+    if (selfLink)
+      im.addLink(7, 7);
+    im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 }, { 7, 2 } });
+    im.run();
+
+    double sumTeleportFlow = 0.0;
+    for (const auto* leaf : im.leafNodes())
+      sumTeleportFlow += leaf->data.teleportFlow;
+    if (selfLink) {
+      CHECK(sumTeleportFlow == doctest::Approx(0.15).epsilon(1e-12));
+      checkApproxCodelength(im.codelength(), 2.033045821, 1e-9);
+    } else {
+      CHECK(sumTeleportFlow > 0.15);
+      checkApproxCodelength(im.codelength(), 2.637456030, 1e-9);
+    }
+  }
+}
+
 #if INFOMAP_CHECK_INVARIANTS
 // The flow invariants are compiled into debug, sanitizer and fuzz builds and run after
 // each phase (#1171). They hold on a real run, and they catch a module whose exit flow
