@@ -1,6 +1,7 @@
 #include "vendor/doctest.h"
 
 #include "Infomap.h"
+#include "io/ClusterMap.h"
 #include "io/InfomapError.h"
 #include "io/Output.h"
 
@@ -1874,6 +1875,108 @@ TEST_CASE("Aggregation stops at the first pass that merges nothing [fast][core][
 
   infomap::test::checkRunSanity(im);
   CHECK(im.numTopModules() > 1);
+}
+
+// Open bugs found by the fuzz_cluster target (#1171), stated as what should happen and
+// marked should_fail, so each turns red when its bug is fixed. When one is fixed, drop
+// its marker here and its entry in isKnownFinding() in test/fuzz/fuzz_cluster.cpp.
+
+// Nodes 1 and 10 of ninetriangles, in different triangles, as one hard module: a search
+// left free puts them in different modules.
+bool hardModuleKept(const infomap::InfomapBase::InitialPartition& partition)
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.clusterDataIsHard = true;
+  im.setInitialPartition(partition);
+  im.run();
+  std::map<unsigned int, const InfoNode*> parentOf;
+  for (auto& node : im.root().infomapTree()) {
+    if (node.isLeaf())
+      parentOf[node.stateId] = node.parent;
+  }
+  return parentOf.at(1) == parentOf.at(10);
+}
+
+TEST_CASE("Hard cluster-data keeps a hard module together [fast][core][partition]")
+{
+  infomap::InfomapBase::InitialPartition partition { { 1, 1 }, { 10, 1 } };
+  for (unsigned int node = 2; node <= 27; ++node) {
+    if (node != 10)
+      partition[node] = node;
+  }
+  CHECK(hardModuleKept(partition));
+}
+
+// initPartition passes `hard` on only when every node has a module. When the partition
+// leaves a node out, the rest is used as a soft seed and the search splits its modules.
+TEST_CASE("Fuzz finding: hard cluster-data that leaves nodes out keeps a hard module together [fast][core][partition]" * doctest::should_fail())
+{
+  CHECK(hardModuleKept({ { 1, 1 }, { 10, 1 } })); // the other 25 nodes left out
+}
+
+// The hard modules are leaves while the run scores the tree, and restoreHardPartition
+// then replaces each with its children without scoring the tree again. A module that
+// held a single hard module is left without that module's codebook. A hard module
+// directly under the root, as every one is under --no-infomap, is replaced by its nodes
+// there: the modules are gone, the tree is one level, and the reported codelength is the
+// index codebook of the hard modules alone. 2.320730357 is what the triangles {1,2,3}
+// and {4,5,6} score as soft cluster data under --no-infomap.
+TEST_CASE("Fuzz finding: hard cluster-data under --no-infomap keeps its modules and their codelength [fast][core][partition]" * doctest::should_fail())
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--no-infomap"));
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.clusterDataIsHard = true;
+  im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 } });
+  im.run();
+  CHECK(im.numTopModules() == 2); // 6 leaves under the root
+  CHECK(im.codelength() == doctest::Approx(2.320730357)); // 1 bit
+}
+
+TEST_CASE("Fuzz finding: a search over hard cluster-data reports the codelength of its tree [fast][core][partition]" * doctest::should_fail())
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.clusterDataIsHard = true;
+  // The search joins {4} and {5,6} and leaves {1,2,3} alone in its module.
+  im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 3 }, { 6, 3 } });
+  im.run();
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+  CHECK(im.codelength() == doctest::Approx(2.320730357)); // 1.256687717
+}
+
+// On a state network, a search from a tree it reshapes ends with states 1 and 4, both of
+// physical node 1, in one module. The run scores that module 1 bit from the memory map
+// equation's per-module physical-node bookkeeping, and calcCodelengthOnTree on the same
+// instance agrees; the tree read back with --no-infomap scores it 2/3 bit, as a module
+// that codes one physical node with flow 1/3 should be.
+TEST_CASE("Fuzz finding: a search on a state network from a tree seed reports the codelength of its tree [fast][core][partition]" * doctest::should_fail())
+{
+  const std::string tree = "fuzz_states_seed.tree";
+  {
+    std::ofstream out(tree);
+    out << "1:1:1 0 \"a\" 1\n";
+  }
+  InfomapWrapper im(infomap::test::defaultFlags("--seed 1 --cluster-data " + tree));
+  im.readInputData(infomap::test::repoPath("examples/networks/states.net"));
+  im.run();
+  std::remove(tree.c_str());
+  // States 1 and 4 together, every other state alone, scored with --no-infomap.
+  CHECK(im.codelength() == doctest::Approx(4.251629167)); // 4.584962501
+}
+
+// A tree row whose path does not start with a number (`x`, `:1`) is read as an empty
+// path, and initTree then reads its first element: a segfault in a release build.
+TEST_CASE("Fuzz finding: a tree row with no number in its path is rejected [fast][core][partition][parser]" * doctest::should_fail())
+{
+  const std::string tree = "fuzz_empty_path.tree";
+  {
+    std::ofstream out(tree);
+    out << "1:1 0.5 \"A\" 1\nx 0.5 \"B\" 2\n";
+  }
+  infomap::ClusterMap clusterMap;
+  CHECK_THROWS_AS(clusterMap.readClusterData(tree), std::runtime_error);
+  std::remove(tree.c_str());
 }
 
 } // namespace
