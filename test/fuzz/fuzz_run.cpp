@@ -188,9 +188,9 @@ NetworkShape networkShape(const infomap::Network& network)
 
 // Open bugs the target would otherwise report on every run. Each needs its options,
 // its kind of failure and, where it has one, its network shape, so an unrelated
-// failure under the same options is still reported. Each is pinned as a should_fail
-// case in test/cpp/test_map_equation_invariants.cpp ("Fuzz finding:") or by its
-// issue; drop the entry when the bug is fixed so the fuzzer guards the fix.
+// failure under the same options is still reported. Each names its issue and, except
+// #1175, is pinned as a should_fail case in test/cpp/test_map_equation_invariants.cpp
+// ("Fuzz finding:"); drop the entry when the bug is fixed so the fuzzer guards the fix.
 bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
 {
   using infomap::FlowModel;
@@ -204,33 +204,33 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // --regularized) leaves the teleport weights summing to less than 1.
   if (network.isBipartite() && (im.recordedTeleportation || im.regularized) && (negative || unbalanced))
     return true;
-  // --regularized with Markov time above 1, global or variable: negative module
+  // #1191: --regularized with Markov time above 1, global or variable: negative module
   // enter flow.
   if (im.regularized && (im.markovTime > 1.0 || im.variableMarkovTime) && negative)
     return true;
-  // --recorded-teleportation under the undirdir, outdirdir, rawdir and precomputed
+  // #1188: --recorded-teleportation under the undirdir, outdirdir, rawdir and precomputed
   // models: leaf exit and enter flow do not balance.
   if (im.recordedTeleportation && !im.regularized && model != FlowModel::undirected && model != FlowModel::directed && unbalanced && contains(message, "after the flow calculation"))
     return true;
-  // Recorded teleportation (also implied by --regularized) over a node flow that is not
+  // #1189: recorded teleportation (also implied by --regularized) over a node flow that is not
   // the coded walk's own, from undirdir, outdirdir, rawdir, precomputed flow or
   // --use-node-weights-as-flow: a module of modules in the finished tree does not balance.
   const bool foreignFlow = (model != FlowModel::undirected && model != FlowModel::directed) || im.useNodeWeightsAsFlow;
   if ((im.recordedTeleportation || im.regularized) && foreignFlow && unbalanced && contains(message, "after the finished tree"))
     return true;
-  // --regularized with --multilayer-relax-to-self: the relay also runs on a link
+  // #1191: --regularized with --multilayer-relax-to-self: the relay also runs on a link
   // between two states of one physical node, and gives a module negative enter flow.
   if (im.regularized && im.multilayerRelaxToSelf && shape.stateLinkWithinNode && negative)
     return true;
-  // Bipartite input with links inside one side (outside the *Bipartite section) and
+  // #1190: bipartite input with links inside one side (outside the *Bipartite section) and
   // directed --bipartite-teleportation: the flow diverges, so any check can fire.
   if (network.isBipartite() && im.bipartiteTeleportation && !im.isUndirectedClustering() && shape.linkInsideBipartiteSide)
     return true;
-  // --variable-markov-time with --use-node-weights-as-flow: negative enter flow when an
+  // #1191: --variable-markov-time with --use-node-weights-as-flow: negative enter flow when an
   // isolated node holds the largest flow.
   if (im.variableMarkovTime && im.useNodeWeightsAsFlow && shape.isolatedNode && negative)
     return true;
-  // --regularized with --use-node-weights-as-flow: negative enter flow where a node's
+  // #1191: --regularized with --use-node-weights-as-flow: negative enter flow where a node's
   // weight gives it less flow than its links carry.
   return im.regularized && im.useNodeWeightsAsFlow && negative;
 }
