@@ -188,11 +188,6 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // directly under the root (all of them under --no-infomap) is replaced by its nodes there.
   if (im.clusterDataIsHard && misreported)
     return true;
-  // #1209: on a state network, a search from a tree that it reshapes reports the codelength of
-  // the memory map equation's stale per-module physical-node bookkeeping, which
-  // calcCodelengthOnTree on the same instance repeats; a fresh instance scores less.
-  if (im.haveMemory() && !im.noInfomap && misreported && contains(message, "read back"))
-    return true;
   // #1210: under undirected flow with --recorded-teleportation, a tree of three or more levels
   // built by initTree (a .tree read as cluster data, or the deep seed of a search) gets
   // modules of modules whose enter and exit flow do not balance: the recorded-teleportation
