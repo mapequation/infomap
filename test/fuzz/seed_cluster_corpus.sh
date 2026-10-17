@@ -20,7 +20,7 @@ mkdir -p "$outdir"
 
 # name:byte0 flags:byte1:byte2, in octal. Byte 0 also takes the network
 # (bits 0-2) and the format (bits 3-4); byte 2 is the seed (0 here) and the
-# -F level (bits 6-7).
+# -F level (bits 6-7): 100 is -F, 200 is -FF ("keep all fast levels").
 headers="
 soft:000:000:000
 no-infomap:100:000:000
