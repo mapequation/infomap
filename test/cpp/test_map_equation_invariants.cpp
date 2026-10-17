@@ -1,4 +1,5 @@
 #include "TestUtils.h"
+#include "io/InfomapError.h"
 
 #include <cmath>
 #include <memory>
@@ -326,6 +327,23 @@ TEST_CASE("Super level never leaves the trial worse than its own two-level solut
   INFO("uncorrected two-level=" << uncorrected);
   CHECK(std::abs(twoLevel - uncorrected) > 0.1);
 }
+
+#if INFOMAP_CHECK_INVARIANTS
+// The flow invariants are compiled into debug, sanitizer and fuzz builds and run after
+// each phase (#1171). They hold on a real run, and they catch a module whose exit flow
+// no longer balances against its children's.
+TEST_CASE("Flow invariants hold after a run and catch an unbalanced module [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags());
+  im.readInputData(repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+  CHECK_NOTHROW(im.checkInvariants(im.root(), "a test"));
+
+  auto& module = *im.root().firstChild;
+  module.data.exitFlow += 0.01;
+  CHECK_THROWS_AS(im.checkInvariants(im.root(), "a test"), InfomapError);
+}
+#endif
 
 // Follow-ups (not reproduced here): #831 (two-level initPartition/consolidate
 // reentrancy corrupting the recomputed codelength after a prior multi-level

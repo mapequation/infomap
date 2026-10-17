@@ -52,6 +52,7 @@
 #include <numeric>
 #include <cmath>
 #include <exception>
+#include <functional>
 #include <mutex>
 
 #ifdef _OPENMP
@@ -926,6 +927,8 @@ private:
 
     if (std::abs(sumNodeFlow - 1.0) > 1e-10)
       Console::warn(0, "Total flow on nodes is {:g}, not 1. The reported codelength is scaled accordingly.", sumNodeFlow);
+
+    m_infomap.checkInvariants(m_infomap.root(), "the flow calculation");
   }
 
   // A visit rate and a boundary-crossing rate are probabilities, so a negative one leaves every
@@ -1189,6 +1192,7 @@ private:
       infomap.restoreHardPartition();
 
     checkNoNegativeModuleFlow(infomap.root());
+    infomap.checkInvariants(infomap.root(), "the finished tree");
   }
 
   void finishTrial(unsigned int trialIndex, Stopwatch& timer, Result& result)
@@ -2618,6 +2622,8 @@ void InfomapBase::partition()
     m_root.codelength = getIndexCodelength();
     m_hierarchicalCodelength = getCodelength();
   }
+
+  checkInvariants(m_root, "the two-level partition");
 }
 
 void InfomapBase::restoreHardPartition()
@@ -2806,6 +2812,85 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
   }
 }
 
+#if INFOMAP_CHECK_INVARIANTS
+// An oracle for debug, sanitizer and fuzz builds (#1171). Each check holds for any correct
+// flow and tree, whatever the objective:
+// - the walker is somewhere, so the leaf flow sums to 1 in the main instance -- unless the flow
+//   step says otherwise and warns: a link-free network has no flow, and neither an unconverged
+//   power iteration nor --skip-adjust-bipartite-flow is normalised;
+// - flow, enter flow and exit flow are rates, so none is negative;
+// - a module's flow is the flow of its children;
+// - a step that leaves a child of a module either enters a sibling or leaves the module, and a
+//   step that enters a child comes from a sibling or from outside, so the children's exit flow
+//   less the module's exit equals their enter flow less the module's enter;
+// - with undirected flow and nothing recorded but links, every node is entered as often as it
+//   is exited.
+// The balance is not checked at the root of a sub-instance, whose enter and exit flow belong
+// to the module it partitions.
+void InfomapBase::checkInvariants(const InfoNode& root, const char* phase) const
+{
+  // Far above the rounding of a sum of flows, far below any real error.
+  constexpr double tolerance = 1e-9;
+  const bool undirectedBalance = isUndirectedClustering() && !recordedTeleportation;
+
+  const auto fail = [this, phase](const std::string& what) {
+    throw InfomapError(ExitCode::InternalError,
+                       fmt::format(FMT_STRING("Flow invariant violated after {}{}: {}. This is a bug in Infomap."),
+                                   phase,
+                                   isMainInfomap() ? "" : " in a sub-partition",
+                                   what));
+  };
+
+  double sumLeafFlow = 0.0;
+  const std::function<void(const InfoNode&, unsigned int)> check = [&](const InfoNode& node, unsigned int depth) {
+    const auto& data = node.data;
+    // Worded like the run's own negative-flow guards, which only look at the finished tree, so a
+    // run they would refuse fails with the same message whichever check sees it first.
+    const char* negative = data.flow < -tolerance ? "flow" : data.enterFlow < -tolerance ? "enter flow"
+        : data.exitFlow < -tolerance                                                     ? "exit flow"
+                                                                                         : nullptr;
+    if (negative != nullptr) {
+      const auto where = node.isLeaf() ? fmt::format(FMT_STRING("node {}"), node.stateId) : fmt::format(FMT_STRING("a module at depth {} with {} children"), depth, node.childDegree());
+      fail(fmt::format(FMT_STRING("Negative {} on {}: flow {:g}, enter flow {:g}, exit flow {:g}"), negative, where, data.flow, data.enterFlow, data.exitFlow));
+    }
+    if (undirectedBalance && std::abs(data.enterFlow - data.exitFlow) > tolerance)
+      fail(fmt::format(FMT_STRING("undirected flow enters a node at depth {} at rate {:.12g} but exits it at {:.12g}"), depth, data.enterFlow, data.exitFlow));
+    if (node.isLeaf()) {
+      sumLeafFlow += data.flow;
+      return;
+    }
+    double sumFlow = 0.0;
+    double sumEnter = 0.0;
+    double sumExit = 0.0;
+    for (const InfoNode& child : node) {
+      check(child, depth + 1);
+      sumFlow += child.data.flow;
+      sumEnter += child.data.enterFlow;
+      sumExit += child.data.exitFlow;
+    }
+    if (std::abs(data.flow - sumFlow) > tolerance)
+      fail(fmt::format(FMT_STRING("a module at depth {} has flow {:.12g} but its {} children sum to {:.12g}"), depth, data.flow, node.childDegree(), sumFlow));
+    if (depth > 0 || isMainInfomap()) {
+      const double imbalance = (sumExit - data.exitFlow) - (sumEnter - data.enterFlow);
+      if (std::abs(imbalance) > tolerance)
+        fail(fmt::format(FMT_STRING("enter and exit flow do not balance at a module at depth {} with {} children: "
+                                    "children exit {:.12g} and enter {:.12g}, module exit {:.12g} and enter {:.12g}"),
+                         depth,
+                         node.childDegree(),
+                         sumExit,
+                         sumEnter,
+                         data.exitFlow,
+                         data.enterFlow));
+    }
+  };
+  check(root, 0);
+
+  const bool totalIsOne = m_network.numLinks() > 0 && !skipAdjustBipartiteFlow && !(m_network.haveFlowConvergence() && !m_network.flowConverged());
+  if (isMainInfomap() && totalIsOne && std::abs(sumLeafFlow - 1.0) > tolerance)
+    fail(fmt::format(FMT_STRING("the leaf flow sums to {:.12g}, not 1"), sumLeafFlow));
+}
+#endif
+
 double InfomapBase::calcCodelengthOnTree(InfoNode& root, bool includeRoot) const
 {
   double totalCodelength = 0.0;
@@ -2878,6 +2963,7 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
     // Consolidate modules
     bool replaceExistingModules = haveModules();
     consolidateModules(replaceExistingModules);
+    checkInvariants(m_root, "consolidating modules");
     ++numLevelsConsolidated;
     ++m_aggregationLevel;
   }

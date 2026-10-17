@@ -529,6 +529,16 @@ private:
 
   void init();
 
+  // Flow invariants of the tree under `root`: total flow, no negative flow, enter and exit
+  // flow that balance at every module, and module flow that equals the sum of its children.
+  // Throws InfomapError naming `phase` on the first violation. Compiled in only when
+  // INFOMAP_CHECK_INVARIANTS is set (debug, sanitizer and fuzz builds); a no-op otherwise.
+#if INFOMAP_CHECK_INVARIANTS
+  void checkInvariants(const InfoNode& root, const char* phase) const;
+#else
+  void checkInvariants(const InfoNode& /*root*/, const char* /*phase*/) const {}
+#endif
+
   void runPartition()
   {
     if (twoLevel)
