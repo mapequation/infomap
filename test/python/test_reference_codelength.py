@@ -418,11 +418,6 @@ def test_entropy_correction_and_preference_together(network):
 DEEP_TREE_SEEDS = range(1, 21)
 
 
-@pytest.mark.xfail(
-    reason="the recursive search reports a deep tree without the entropy correction of its "
-    "intermediate codebooks (#1176)",
-    strict=True,
-)
 def test_entropy_correction_on_deep_tree():
     options = {"entropy_corrected": True, "preferred_number_of_modules": 2}
     checked = 0
@@ -441,11 +436,6 @@ def test_entropy_correction_on_deep_tree():
     assert checked > 0
 
 
-@pytest.mark.xfail(
-    reason="the recursive search restarts from the index and module codelengths and drops "
-    "the |K - K_pref| cost of the module-count preference",
-    strict=True,
-)
 @pytest.mark.parametrize(
     "network",
     [EXAMPLES / "ninetriangles.net", NETWORKS / "unbalanced_hierarchy.net"],

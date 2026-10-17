@@ -1064,6 +1064,13 @@ TEST_CASE("A link-free network keeps its trivial zero-flow result [fast][core][f
   singleNode.addNode(1);
   singleNode.run();
   CHECK(singleNode.numLeafNodes() == 1);
+
+  // Variable Markov time has no links to rescale; its scale would be log2(0).
+  InfomapWrapper variableMarkovTime(infomap::test::defaultFlags("-N 1 --seed 7 --variable-markov-time"));
+  variableMarkovTime.addNode(1);
+  variableMarkovTime.addNode(2);
+  variableMarkovTime.run();
+  CHECK(variableMarkovTime.numLeafNodes() == 2);
 }
 
 TEST_CASE("Directed bipartite flow matches the same links without the bipartite declaration [fast][core][flow]")
