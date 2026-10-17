@@ -3314,7 +3314,19 @@ namespace detail {
     double leafCodelength = 0.0;
     double queueFlow = 0.0; // flow of the sub-queue spawned from this module
     std::vector<PartitionTaskRecord> children;
+    // An error from this module's sub-run. It must not escape the OpenMP task, so it is
+    // kept here and rethrown once the task graph has joined.
+    std::exception_ptr error;
   };
+
+  inline void rethrowFirstError(const std::vector<PartitionTaskRecord>& records)
+  {
+    for (const auto& record : records) {
+      if (record.error)
+        std::rethrow_exception(record.error);
+      rethrowFirstError(record.children);
+    }
+  }
 } // namespace detail
 
 unsigned int InfomapBase::recursivePartition()
@@ -3402,7 +3414,8 @@ unsigned int InfomapBase::recursivePartition()
     Log::setSilent(isSilent);
 
   // Tasks have joined: throwing here is safe (outside any OpenMP block) and
-  // aborts the recursion if a cancel was requested while tasks ran (#412).
+  // aborts the recursion if a sub-run failed or a cancel was requested while tasks ran (#412).
+  detail::rethrowFirstError(rootRecords);
   checkCancelled();
 
   // Aggregate the recorded statistics level by level, visiting the records in
@@ -3668,6 +3681,12 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
     module.disposeInfomap();
     module.codelength = oldModuleCodelength;
     record.leafCodelength = module.codelength;
+    return;
+  } catch (const std::exception&) {
+    module.disposeInfomap();
+    module.codelength = oldModuleCodelength;
+    record.leafCodelength = module.codelength;
+    record.error = std::current_exception();
     return;
   }
 
