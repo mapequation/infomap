@@ -966,8 +966,10 @@ private:
   {
     for (const auto* leafNode : m_infomap.leafNodes()) {
       const auto& data = leafNode->data;
-      // Unscaled: the leaves still hold the flow calculator's enter and exit flow here, and the
-      // Markov time is only applied to them later, in initEnterExitFlow().
+      // Unscaled: a leaf's enter and exit flow are only added up from non-negative terms -- link
+      // flow (scaled by the Markov time in initEnterExitFlow()) and teleportation -- so nothing of
+      // size t cancels, unlike in a module's, which subtracts the flow internal to it. Under
+      // --regularized they are the flow calculator's, which does not apply the Markov time.
       const char* quantity = negativeFlowQuantity(data, 1.0);
       if (quantity == nullptr)
         continue;
