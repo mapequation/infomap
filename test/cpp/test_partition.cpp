@@ -637,6 +637,53 @@ TEST_CASE("removeSubModules flattens a ragged tree whose shallow branch comes fi
   CHECK(numModules == 2);
 }
 
+TEST_CASE("Fast hierarchical fine-tuning survives a ragged cluster-data tree [fast][core][partition][tree]")
+{
+  // -F fine-tunes each module of leaf modules on its own. It picked those modules by
+  // their first child alone, so on a ragged tree it also took a module whose first child
+  // is a leaf module but whose other children are deeper modules or a lone leaf, sized
+  // its buffers from the children's degrees and wrote past them collecting the leaves
+  // (#1216). The deep-branch-first shape never reached that and is the control.
+  const std::string header = "# path flow name node_id\n";
+  const std::vector<std::pair<std::string, std::string>> shapes = {
+    { "ragged_branches", infomap::test::readTextFile(infomap::test::clusterFixturePath("twotriangles_ragged_branches.tree")) },
+    { "top_level_leaf_first", infomap::test::readTextFile(infomap::test::clusterFixturePath("twotriangles_top_level_leaf_first.tree")) },
+    { "deep_branch_first", header + "1:1:1 0.1 \"A\" 1\n1:1:2 0.1 \"B\" 2\n1:2:1 0.1 \"C\" 3\n2:1 0.1 \"D\" 4\n2:2 0.1 \"E\" 5\n2:3 0.1 \"F\" 6\n" },
+    { "two_bare_rows_first", header + "1 0.1 \"A\" 1\n2 0.1 \"B\" 2\n3:1:1 0.1 \"C\" 3\n3:1:2 0.1 \"D\" 4\n3:2:1 0.1 \"E\" 5\n3:2:2 0.1 \"F\" 6\n" },
+    { "four_levels_shallow_first", header + "1:1 0.1 \"A\" 1\n1:2 0.1 \"B\" 2\n2:1:1:1 0.1 \"C\" 3\n2:1:1:2 0.1 \"D\" 4\n2:2:1 0.1 \"E\" 5\n2:2:2 0.1 \"F\" 6\n" },
+    { "ragged_inside_top_module", header + "1:1:1 0.1 \"A\" 1\n1:1:2 0.1 \"B\" 2\n1:2:1:1 0.1 \"C\" 3\n1:2:1:2 0.1 \"D\" 4\n1:2:2:1 0.1 \"E\" 5\n2:1:1 0.1 \"F\" 6\n" },
+  };
+
+  for (const auto& shape : shapes) {
+    CAPTURE(shape.first);
+    const std::string seedPath = "fast_hierarchical_" + shape.first + ".tree";
+    const std::string resultPath = "fast_hierarchical_" + shape.first + "_result.tree";
+    {
+      std::ofstream out(seedPath.c_str());
+      out << shape.second;
+    }
+
+    double codelength = 0.0;
+    {
+      InfomapWrapper im(infomap::test::defaultFlags("--seed 1 -F --cluster-data " + seedPath));
+      im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+      im.run();
+      infomap::test::checkRunSanity(im);
+      codelength = im.codelength();
+      infomap::writeTree(im, im.network(), resultPath, false);
+    }
+
+    // The tree it returns has the codelength it reports.
+    InfomapWrapper reader(infomap::test::defaultFlags("--no-infomap --cluster-data " + resultPath));
+    reader.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    reader.run();
+    infomap::test::checkApproxCodelength(reader.codelength(), codelength, 1e-9);
+
+    std::remove(seedPath.c_str());
+    std::remove(resultPath.c_str());
+  }
+}
+
 TEST_CASE("An unknown node id in cluster data leaves the partition alone [fast][core][partition][parser]")
 {
   // std::map::operator[] inserted the unknown id with a default index of 0, so it
