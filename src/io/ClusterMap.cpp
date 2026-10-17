@@ -13,10 +13,45 @@
 #include "../utils/Console.h"
 #include "../utils/FileURI.h"
 #include "../utils/format.h"
+#include <algorithm>
+#include <limits>
 #include <sstream>
 #include "../utils/convert.h"
 
 namespace infomap {
+
+namespace {
+
+  // A tree path is positive integers separated by ':' (1-based, kept as written).
+  // Reading it with `>> unsigned` stopped at the first non-digit, so `x` and `:1` gave
+  // an empty path that initTree then indexed, and `1:x` or `1.2` were cut or misread
+  // without a word (#1208).
+  bool parseTreePath(const std::string& pathString, Path& path)
+  {
+    std::size_t start = 0;
+    while (true) {
+      const auto end = std::min(pathString.find(':', start), pathString.size());
+      if (end == start)
+        return false;
+      unsigned long long childNumber = 0;
+      for (auto i = start; i < end; ++i) {
+        const char c = pathString[i];
+        if (c < '0' || c > '9')
+          return false;
+        childNumber = childNumber * 10 + static_cast<unsigned int>(c - '0');
+        if (childNumber > std::numeric_limits<unsigned int>::max())
+          return false;
+      }
+      if (childNumber == 0)
+        return false;
+      path.push_back(static_cast<unsigned int>(childNumber));
+      if (end == pathString.size())
+        return true;
+      start = end + 1;
+    }
+  }
+
+} // namespace
 
 void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId)
 {
@@ -60,7 +95,6 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
   SafeInFile input(filename);
   std::string line;
   std::istringstream lineStream;
-  std::istringstream pathStream;
 
   unsigned int lineNr = 0;
 
@@ -88,6 +122,9 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     unsigned int layerId = 0;
     if (!(lineStream >> pathString))
       throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse tree path from line '{}'"), line));
+    Path path;
+    if (!parseTreePath(pathString, path))
+      throw std::runtime_error(fmt::format(FMT_STRING("Invalid tree path '{}' on line {} ('{}'). A path is positive integers separated by ':', such as 1:2:1."), pathString, lineNr, line));
     if (!(lineStream >> flow))
       throw std::runtime_error(fmt::format(FMT_STRING("Couldn't parse node flow from line '{}'"), line));
     // Everything between the first and the last quote, the same rule the network parser
@@ -150,18 +187,6 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
         // Skip rows whose layer/node combination is not present in the network
         continue;
       }
-    }
-
-    pathStream.clear();
-    pathStream.str(pathString);
-    unsigned int childNumber;
-
-    Path path;
-    while (pathStream >> childNumber) {
-      pathStream.get(); // Extract the delimiting character also
-      if (childNumber == 0)
-        throw std::runtime_error("There is a '0' in the tree path, lowest allowed integer is 1.");
-      path.push_back(childNumber); // Keep 1-based indexing in path
     }
 
     m_treePaths.push_back({ stateId, path, m_treeLeafIdType });
