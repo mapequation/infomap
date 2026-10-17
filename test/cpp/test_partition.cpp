@@ -2077,6 +2077,33 @@ TEST_CASE("A search over hard cluster-data ends no higher than its super-level t
   }
 }
 
+// With meta data the restored tree is scored by the meta map equation, which collects
+// the meta data from the leaves. A collapsed hard module has no meta data of its own,
+// only its nodes' collected, so this threw "A node is missing meta data".
+TEST_CASE("A search over hard cluster-data with meta data ends no higher than its super-level tree [fast][core][partition]")
+{
+  for (const bool complete : { false, true }) {
+    CAPTURE(complete);
+    infomap::InfomapBase::InitialPartition partition { { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 }, { 7, 3 }, { 8, 3 }, { 9, 3 } };
+    if (complete) {
+      for (unsigned int node = 10; node <= 27; ++node)
+        partition[node] = node;
+    }
+    auto run = [&](const std::string& extraFlags) {
+      InfomapWrapper im("--seed 1 --num-trials 1 --silent --meta-data-rate 1 " + extraFlags);
+      im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+      for (unsigned int node = 1; node <= 27; ++node)
+        im.addMetaData(node, static_cast<int>(node % 2));
+      im.clusterDataIsHard = true;
+      im.setInitialPartition(partition);
+      im.run();
+      return im.codelength();
+    };
+    const double superLevelCodelength = run("-FF");
+    CHECK(run("") <= superLevelCodelength + 1e-10);
+  }
+}
+
 // The hard modules are leaves while the run scores the tree, and restoreHardPartition
 // then replaces each with its children without scoring the tree again. A module that
 // held a single hard module is left without that module's codebook. A hard module
