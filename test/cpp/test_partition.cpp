@@ -2053,24 +2053,24 @@ TEST_CASE("A search over hard cluster-data returns every node once (#1206) [fast
 }
 
 // The hard modules are leaves while the run scores the tree, and restoreHardPartition
-// then replaces each with its children without scoring the tree again. A module that
-// held a single hard module is left without that module's codebook. A hard module
-// directly under the root, as every one is under --no-infomap, is replaced by its nodes
-// there: the modules are gone, the tree is one level, and the reported codelength is the
-// index codebook of the hard modules alone. 2.320730357 is what the triangles {1,2,3}
+// then gives them back their nodes, so the run scores the tree again after that. A hard
+// module directly under the root, as every one is under --no-infomap, stays a module.
+// It used to be replaced by its nodes there, which left a one-level tree reported at the
+// index codebook of the hard modules alone, and a module that held a single hard module
+// was reported without that module's codebook. 2.320730357 is what the triangles {1,2,3}
 // and {4,5,6} score as soft cluster data under --no-infomap.
-TEST_CASE("Fuzz finding: hard cluster-data under --no-infomap keeps its modules and their codelength (#1207) [fast][core][partition]" * doctest::should_fail())
+TEST_CASE("Hard cluster-data under --no-infomap keeps its modules and their codelength (#1207) [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--no-infomap"));
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
   im.clusterDataIsHard = true;
   im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 } });
   im.run();
-  CHECK(im.numTopModules() == 2); // 6 leaves under the root
-  CHECK(im.codelength() == doctest::Approx(2.320730357)); // 1 bit
+  CHECK(im.numTopModules() == 2); // was 6 leaves under the root
+  CHECK(im.codelength() == doctest::Approx(2.320730357)); // was 1 bit
 }
 
-TEST_CASE("Fuzz finding: a search over hard cluster-data reports the codelength of its tree (#1207) [fast][core][partition]" * doctest::should_fail())
+TEST_CASE("A search over hard cluster-data reports the codelength of its tree (#1207) [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -2079,7 +2079,7 @@ TEST_CASE("Fuzz finding: a search over hard cluster-data reports the codelength 
   im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 3 }, { 6, 3 } });
   im.run();
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
-  CHECK(im.codelength() == doctest::Approx(2.320730357)); // 1.256687717
+  CHECK(im.codelength() == doctest::Approx(2.320730357)); // was 1.256687717
 }
 
 // On a state network, a search from a tree it reshapes ends with states 1 and 4, both of
