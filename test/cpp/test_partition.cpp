@@ -473,6 +473,29 @@ TEST_CASE("The super consolidation log reports an index codelength [fast][core][
   CHECK(line.find(" = ") == std::string::npos);
 }
 
+TEST_CASE("A zero codelength prints 0% compression, not nan% [fast][core][partition][output]")
+{
+  // #1234: two disconnected directed pairs give codelength 0, and the recursive
+  // partition divided by it for the compression in its summary line, which read
+  // "Recursive nan% -> 2 levels". The sanitizer build traps on that division too.
+  std::ostringstream captured;
+  double codelength = -1;
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    InfomapWrapper im("--seed 123 --num-trials 1 --no-file-output --directed");
+    im.addLink(1, 2);
+    im.addLink(3, 4);
+    im.run();
+    codelength = im.codelength();
+  }
+
+  const std::string haystack = captured.str();
+  INFO(haystack);
+  CHECK(codelength == doctest::Approx(0.0));
+  CHECK(haystack.find("nan") == std::string::npos);
+  CHECK(std::regex_search(haystack, std::regex(R"(Recursive\s+0% )")));
+}
+
 TEST_CASE("Mixed-depth cluster data is rejected instead of crashing [fast][core][partition][parser]")
 {
   // A module with both a leaf and a sub-module as children used to segfault: the
