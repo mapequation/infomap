@@ -3,6 +3,6 @@
 #
 # Not a false positive: a zero codelength makes the recursive partition divide by
 # zero when it prints the compression ("Recursive nan%"). Only the printed
-# percentage is wrong. Suppressed so it does not stop the run before the rest of
-# the suite. Remove with the fix.
+# percentage is wrong (#1234). Suppressed so it does not stop the run before the rest of
+# the suite. Remove with the fix for #1234.
 float-divide-by-zero:infomap::InfomapBase::recursivePartition
