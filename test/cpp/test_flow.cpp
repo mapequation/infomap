@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <fstream>
 #include <map>
+#include <random>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -339,6 +340,50 @@ void checkInnerParallelPartitionCodelength(const std::string& extraFlags, const 
 
   infomap::test::checkApproxCodelength(check.codelength(), result.codelength, 1e-9);
   infomap::test::checkApproxCodelength(check.getIndexCodelength(), result.indexCodelength, 1e-9);
+}
+
+// --inner-parallelization only engages on an active network of at least
+// minNetworkSizeForInnerParallelization (10,000) nodes, so the fixtures above take
+// the serial path. This directed planted partition is exactly that large: groups
+// of 40 nodes, each node with four links inside its group and one to any node.
+void addInnerParallelThresholdNetwork(InfomapWrapper& im)
+{
+  const unsigned int groupSize = 40;
+  const unsigned int numNodes = 10000;
+  std::mt19937 rng(17);
+  for (unsigned int source = 0; source < numNodes; ++source) {
+    const unsigned int groupStart = source - source % groupSize;
+    for (unsigned int k = 0; k < 4; ++k) {
+      unsigned int target = groupStart + rng() % groupSize;
+      if (target != source)
+        im.addLink(source, target);
+    }
+    im.addLink(source, rng() % numNodes);
+  }
+}
+
+struct InnerParallelThresholdRun {
+  std::map<unsigned int, unsigned int> modules;
+  double codelength = 0.0;
+  double indexCodelength = 0.0;
+  unsigned long threadsUsed = 0;
+};
+
+InnerParallelThresholdRun runInnerParallelThresholdNetwork(const std::string& flags)
+{
+  const std::string reportPath = "inner_parallel_threshold_report.json";
+  std::remove(reportPath.c_str());
+  InfomapWrapper im(infomap::test::defaultFlags("--directed --two-level --no-file-output --timing-json " + reportPath + " " + flags));
+  addInnerParallelThresholdNetwork(im);
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  const auto report = infomap::test::readTextFile(reportPath);
+  std::remove(reportPath.c_str());
+  const std::string key = "\"threads_used\":";
+  const auto at = report.find(key);
+  REQUIRE(at != std::string::npos);
+  return { im.getModules(), im.codelength(), im.getIndexCodelength(), std::stoul(report.substr(at + key.size())) };
 }
 
 TEST_CASE("Recorded teleportation stays stable across trial counts for the directed fixture [fast][core][flow]")
@@ -743,6 +788,38 @@ TEST_CASE("Inner parallelization is deterministic for a fixed seed and thread co
   CHECK(first.partition == second.partition);
   CHECK(first.codelength == doctest::Approx(second.codelength));
   CHECK(first.indexCodelength == doctest::Approx(second.indexCodelength));
+}
+
+TEST_CASE("Inner parallelization above the size threshold reports the codelength of its partition [fast][core][flow][openmp]")
+{
+  // The commit phase rechecks conflicting moves with the non-hoisted move delta,
+  // which nothing else calls. #830/#904 was in the guard of that delta, so run
+  // with and without each term it switches on.
+  for (const std::string flags : {
+           "",
+           "--recorded-teleportation",
+           "--entropy-corrected",
+           "--preferred-number-of-modules 200",
+           "--entropy-corrected --preferred-number-of-modules 200",
+           "--recorded-teleportation --entropy-corrected --preferred-number-of-modules 200",
+       }) {
+    CAPTURE(flags);
+    const auto result = runInnerParallelThresholdNetwork("--inner-parallelization --num-threads 4 " + flags);
+#ifdef _OPENMP
+    CHECK(result.threadsUsed == 4);
+#else
+    CHECK(result.threadsUsed == 1);
+#endif
+
+    InfomapWrapper check(infomap::test::defaultFlags("--directed --two-level --no-infomap " + flags));
+    addInnerParallelThresholdNetwork(check);
+    check.setInitialPartition(result.modules);
+    check.run();
+
+    CHECK(check.getModules() == result.modules);
+    infomap::test::checkApproxCodelength(check.codelength(), result.codelength, 1e-9);
+    infomap::test::checkApproxCodelength(check.getIndexCodelength(), result.indexCodelength, 1e-9);
+  }
 }
 
 TEST_CASE("Inner parallelization with meta data falls back to stable serial optimization [fast][core][flow][openmp]")
