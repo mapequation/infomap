@@ -1,4 +1,5 @@
 #include "TestUtils.h"
+#include "io/InfomapError.h"
 
 #include <cmath>
 #include <memory>
@@ -326,6 +327,56 @@ TEST_CASE("Super level never leaves the trial worse than its own two-level solut
   INFO("uncorrected two-level=" << uncorrected);
   CHECK(std::abs(twoLevel - uncorrected) > 0.1);
 }
+
+#if INFOMAP_CHECK_INVARIANTS
+// The flow invariants are compiled into debug, sanitizer and fuzz builds and run after
+// each phase (#1171). They hold on a real run, and they catch a module whose exit flow
+// no longer balances against its children's.
+TEST_CASE("Flow invariants hold after a run and catch an unbalanced module [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags());
+  im.readInputData(repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+  CHECK_NOTHROW(im.checkInvariants(im.root(), "a test"));
+
+  auto& module = *im.root().firstChild;
+  module.data.exitFlow += 0.01;
+  CHECK_THROWS_AS(im.checkInvariants(im.root(), "a test"), InfomapError);
+}
+
+// Enter and exit flow scale with the Markov time, so they are checked relative to it. At
+// t = 1e7 the rounding of the boundary rates alone exceeds an absolute 1e-9.
+TEST_CASE("Flow invariants accept the boundary rates of a large Markov time [fast][core][mapeq]")
+{
+  // --directed is left out: at this Markov time the run's own negative-module-flow guard, which
+  // has an absolute tolerance, already refuses it.
+  for (const std::string flags : { "--flow-model rawdir", "" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(defaultFlags("--markov-time 1e7 -N 1 --seed 1 " + flags));
+    im.readInputData(repoPath("examples/networks/modular_wd.net"));
+    CHECK_NOTHROW(im.run());
+  }
+}
+
+// Whether the leaf flow must sum to 1 is decided per run. A link-free run after a linked one
+// on the same instance has zero flow, which is its correct result, not a violation.
+TEST_CASE("Flow invariants accept a link-free run on an instance that ran a linked network [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags("-N 1 --seed 7"));
+  im.addLink(1, 2);
+  im.addLink(2, 3);
+  im.addLink(3, 1);
+  CHECK_NOTHROW(im.run());
+  CHECK(im.m_flowSumsToOne);
+
+  im.network().clear();
+  im.addNode(1);
+  im.addNode(2);
+  CHECK_NOTHROW(im.run());
+  CHECK_FALSE(im.m_flowSumsToOne);
+  CHECK(im.numLeafNodes() == 2);
+}
+#endif
 
 // Follow-ups (not reproduced here): #831 (two-level initPartition/consolidate
 // reentrancy corrupting the recomputed codelength after a prior multi-level
