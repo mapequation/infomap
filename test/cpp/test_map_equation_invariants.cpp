@@ -1,4 +1,5 @@
 #include "TestUtils.h"
+#include "io/InfomapError.h"
 
 #include <cmath>
 #include <memory>
@@ -133,6 +134,38 @@ TEST_CASE("A module preference reaches a scored partition, not only the search [
   }
 }
 
+// The same term through the recursive search. recursivePartition rebuilt the total
+// from the top modules' terms, which do not hold the module-count term, so a deep
+// tree with K != K_pref top modules was reported |K - K_pref| short: 3.579251676 for
+// ninetriangles with -s 3 on macOS, against 4.579251676 for the same tree scored
+// with --no-infomap. Seeds reach different trees on different standard libraries
+// (std::uniform_int_distribution is implementation-defined), so this sweeps seeds
+// and requires that some run reaches the case.
+TEST_CASE("A module preference reaches a deep tree from the recursive search [fast][core][mapeq][biased]")
+{
+  const std::vector<std::string> networks {
+    networkFixturePath("unbalanced_hierarchy.net"),
+    repoPath("examples/networks/ninetriangles.net"),
+  };
+  unsigned int numDeepTreesOffPreference = 0;
+  for (const auto& network : networks) {
+    for (unsigned int seed = 1; seed <= 20; ++seed) {
+      InfomapWrapper im(defaultFlags("--preferred-number-of-modules 2 --seed " + std::to_string(seed)));
+      im.readInputData(network);
+      im.run();
+      if (im.numLevels() > 2 && im.numTopModules() != 2)
+        ++numDeepTreesOffPreference;
+
+      const double reported = im.codelength();
+      const double recomputed = im.calcCodelengthOnTree(im.root(), true);
+      INFO(network << " seed " << seed << ": " << im.numLevels() << " levels, " << im.numTopModules() << " top modules");
+      INFO("reported=" << reported << " recomputed=" << recomputed);
+      checkApproxCodelength(reported, recomputed);
+    }
+  }
+  REQUIRE(numDeepTreesOffPreference > 0);
+}
+
 TEST_CASE("MapEquation invariant: MemMapEquation (memory), tracked == recompute [fast][core][mapeq][mem]")
 {
   InfomapWrapper im(defaultFlags("--two-level"));
@@ -202,13 +235,51 @@ TEST_CASE("MapEquation invariant: RegularizedMultilayerMapEquation, tracked == r
 // childDegree free parameters where it has childDegree - 1 -- an index codebook
 // has no exit codeword. Deeper trees are not covered: there the recompute also
 // charges the intermediate module-of-modules codebooks that the tracked side
-// never sees, and #830 stays open for that half.
+// never sees. The reported codelength of a deep tree is covered by #1176 below.
 TEST_CASE("MapEquation invariant: entropy-corrected tracked == recompute (repro #830) [core][mapeq][entropy-corrected]")
 {
   InfomapWrapper im(defaultFlags("--two-level --entropy-corrected"));
   im.readInputData(networkFixturePath("lossy_benchmark.net"));
   im.run();
   checkTrackedMatchesRecompute(im);
+}
+
+// The recursive search builds a module of modules from a sub-Infomap, whose root
+// has no exit codeword, and used to keep that root's term. In the main tree the
+// module does have one, so under --entropy-corrected each module of modules below
+// the root was one free parameter short, in the reported codelength and in the
+// per-level table (#1176: 2.372190815 against 2.391846060 for unbalanced_hierarchy
+// with -s 4 on macOS). Swept over seeds, as the module-preference case above.
+TEST_CASE("Entropy correction charges every codebook of a deep tree (repro #1176) [fast][core][mapeq][entropy-corrected]")
+{
+  const std::vector<std::pair<std::string, std::string>> inputs {
+    { networkFixturePath("unbalanced_hierarchy.net"), "--entropy-corrected --preferred-number-of-modules 2" },
+    { repoPath("examples/networks/modular_w.net"), "--entropy-corrected -d" },
+  };
+  unsigned int numDeepTrees = 0;
+  for (const auto& input : inputs) {
+    for (unsigned int seed = 1; seed <= 20; ++seed) {
+      InfomapWrapper im(defaultFlags(input.second + " --seed " + std::to_string(seed)));
+      im.readInputData(input.first);
+      im.run();
+      if (im.numLevels() > 2)
+        ++numDeepTrees;
+
+      // The per-level table reads the node terms; the module-count term belongs to no node.
+      double sumOfNodeTerms = im.calcTreeCodelengthCost(im.numTopModules());
+      for (const auto& node : im.root().infomapTree()) {
+        if (!node.isLeaf())
+          sumOfNodeTerms += node.codelength;
+      }
+      const double reported = im.codelength();
+      const double recomputed = im.calcCodelengthOnTree(im.root(), true);
+      INFO(input.first << " " << input.second << " seed " << seed << ": " << im.numLevels() << " levels, " << im.numTopModules() << " top modules");
+      INFO("reported=" << reported << " node terms=" << sumOfNodeTerms << " recomputed=" << recomputed);
+      checkApproxCodelength(reported, recomputed);
+      checkApproxCodelength(sumOfNodeTerms, recomputed);
+    }
+  }
+  REQUIRE(numDeepTrees > 0);
 }
 
 // The size of the correction, on a partition pinned from a file so no search
@@ -326,6 +397,56 @@ TEST_CASE("Super level never leaves the trial worse than its own two-level solut
   INFO("uncorrected two-level=" << uncorrected);
   CHECK(std::abs(twoLevel - uncorrected) > 0.1);
 }
+
+#if INFOMAP_CHECK_INVARIANTS
+// The flow invariants are compiled into debug, sanitizer and fuzz builds and run after
+// each phase (#1171). They hold on a real run, and they catch a module whose exit flow
+// no longer balances against its children's.
+TEST_CASE("Flow invariants hold after a run and catch an unbalanced module [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags());
+  im.readInputData(repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+  CHECK_NOTHROW(im.checkInvariants(im.root(), "a test"));
+
+  auto& module = *im.root().firstChild;
+  module.data.exitFlow += 0.01;
+  CHECK_THROWS_AS(im.checkInvariants(im.root(), "a test"), InfomapError);
+}
+
+// Enter and exit flow scale with the Markov time, so they are checked relative to it. At
+// t = 1e7 the rounding of the boundary rates alone exceeds an absolute 1e-9.
+TEST_CASE("Flow invariants accept the boundary rates of a large Markov time [fast][core][mapeq]")
+{
+  // --directed is left out: at this Markov time the run's own negative-module-flow guard, which
+  // has an absolute tolerance, already refuses it.
+  for (const std::string flags : { "--flow-model rawdir", "" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(defaultFlags("--markov-time 1e7 -N 1 --seed 1 " + flags));
+    im.readInputData(repoPath("examples/networks/modular_wd.net"));
+    CHECK_NOTHROW(im.run());
+  }
+}
+
+// Whether the leaf flow must sum to 1 is decided per run. A link-free run after a linked one
+// on the same instance has zero flow, which is its correct result, not a violation.
+TEST_CASE("Flow invariants accept a link-free run on an instance that ran a linked network [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags("-N 1 --seed 7"));
+  im.addLink(1, 2);
+  im.addLink(2, 3);
+  im.addLink(3, 1);
+  CHECK_NOTHROW(im.run());
+  CHECK(im.m_flowSumsToOne);
+
+  im.network().clear();
+  im.addNode(1);
+  im.addNode(2);
+  CHECK_NOTHROW(im.run());
+  CHECK_FALSE(im.m_flowSumsToOne);
+  CHECK(im.numLeafNodes() == 2);
+}
+#endif
 
 // Follow-ups (not reproduced here): #831 (two-level initPartition/consolidate
 // reentrancy corrupting the recomputed codelength after a prior multi-level

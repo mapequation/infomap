@@ -529,6 +529,16 @@ private:
 
   void init();
 
+  // Flow invariants of the tree under `root`: total flow, no negative flow, enter and exit
+  // flow that balance at every module, and module flow that equals the sum of its children.
+  // Throws InfomapError naming `phase` on the first violation. Compiled in only when
+  // INFOMAP_CHECK_INVARIANTS is set (debug, sanitizer and fuzz builds); a no-op otherwise.
+#if INFOMAP_CHECK_INVARIANTS
+  void checkInvariants(const InfoNode& root, const char* phase) const;
+#else
+  void checkInvariants(const InfoNode& /*root*/, const char* /*phase*/) const {}
+#endif
+
   void runPartition()
   {
     if (twoLevel)
@@ -789,6 +799,9 @@ protected:
   bool m_objectiveTermsAreForLeafNetwork = false;
 
   double m_hierarchicalCodelength = 0.0;
+  // Whether the leaf flow of this run sums to 1, for checkInvariants(). Set by the run once the
+  // flow is calculated; false until then, which skips that one check.
+  bool m_flowSumsToOne = false;
   std::vector<double> m_codelengths;
   std::vector<unsigned int> m_numTopModules;
   double m_entropyRate = 0.0;

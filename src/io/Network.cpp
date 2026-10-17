@@ -570,14 +570,15 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
           continue;
         }
 
-        double linkWeightNormalizationFactor = relaxRate / sumOutWeightAllLayers;
-        if (isIntra) {
-          linkWeightNormalizationFactor += (1.0 - relaxRate) / sumOutLinkWeightLayer1;
-        }
         auto& targetLinks = network2.nodeLinkMap();
         auto& targetOutlinks = targetLinks[n1];
         if (targetOutlinks.empty()) {
           continue;
+        }
+        // After the empty check: a node without intra-layer out-links has sumOutLinkWeightLayer1 == 0.
+        double linkWeightNormalizationFactor = relaxRate / sumOutWeightAllLayers;
+        if (isIntra) {
+          linkWeightNormalizationFactor += (1.0 - relaxRate) / sumOutLinkWeightLayer1;
         }
         for (auto& outLink : targetOutlinks) {
           auto& n2 = outLink.first;
