@@ -204,10 +204,6 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // enter flow.
   if (im.regularized && (im.markovTime > 1.0 || im.variableMarkovTime) && negative)
     return true;
-  // #1188: --recorded-teleportation under the undirdir, outdirdir, rawdir and precomputed
-  // models: leaf exit and enter flow do not balance.
-  if (im.recordedTeleportation && !im.regularized && model != FlowModel::undirected && model != FlowModel::directed && unbalanced && contains(message, "after the flow calculation"))
-    return true;
   // #1189: recorded teleportation (also implied by --regularized) over a node flow that is not
   // the coded walk's own, from undirdir, outdirdir, rawdir, precomputed flow or
   // --use-node-weights-as-flow: a module of modules in the finished tree does not balance.

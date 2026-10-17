@@ -1527,7 +1527,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
         const auto sourceIndex = nodeIndexMap[node.id];
         const auto srcIdx = network.indexOfId(node.id);
         double danglingFlow = network.isDangling(srcIdx) ? node.flow : 0.0;
-        if (config.recordedTeleportation) {
+        if (config.recordsTeleportation()) {
           // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
           exitFlow[sourceIndex] += alpha * node.flow * (1.0 - node.weight);
           enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + (1 - alpha) * (sumDanglingFlow - danglingFlow)) * node.weight;
