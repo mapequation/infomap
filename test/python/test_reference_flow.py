@@ -392,8 +392,8 @@ def test_generated_unrecorded_at_teleportation_probability_one(tmp_path, variant
 @pytest.mark.parametrize("seed", [1, 2])
 @pytest.mark.parametrize("variant", DIRECTED_VARIANTS)
 def test_generated_directed_flow_with_self_link_only_node(tmp_path, variant, seed):
-    # The flow itself treats a self-link as an out-link; see the xfail below
-    # for what the optimizer does with such a node.
+    # The flow itself treats a self-link as an out-link; see
+    # test_recorded_teleportation_with_self_link_only_node for the optimizer.
     links, node_weights = _directed_network(seed, self_link_only=True)
     path = _write_pajek(tmp_path / "net.net", links, node_weights)
     options = {"flow_model": "directed", **DIRECTED_VARIANTS[variant]}
@@ -486,16 +486,11 @@ def test_bipartite_skip_adjust_is_the_plain_flow(
 # --- findings ----------------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    reason="recorded teleportation: a node whose only out-link is a self-link gets the flow "
-    "of a non-dangling node, but the optimizer drops self-links from the tree, takes the "
-    "node for dangling and gives it teleport flow p instead of alpha * p, so the reported "
-    "codelength is too high (#1182)",
-    strict=True,
-)
 @pytest.mark.parametrize("to_nodes", [False, True], ids=["to-links", "to-nodes"])
 @pytest.mark.parametrize("seed", [1, 2])
 def test_recorded_teleportation_with_self_link_only_node(tmp_path, seed, to_nodes):
+    # The optimizer drops self-links from the tree, but must not take the node
+    # for dangling: its teleport flow is alpha * p, not p (#1182).
     links, node_weights = _directed_network(seed, self_link_only=True)
     path = _write_pajek(tmp_path / "net.net", links, node_weights)
     options = {
