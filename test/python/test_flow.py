@@ -37,16 +37,6 @@ def test_skip_adjust_bipartite_flow_still_runs(example_network_path):
     assert result.codelength == pytest.approx(0.2776646519)
 
 
-_REGULARIZED_BIPARTITE_LEAF_FLOW = pytest.mark.xfail(
-    strict=True,
-    reason="#1175: with the teleport weights renormalised, the uncoded feature nodes' enter and "
-    "exit flow, which --regularized takes from their node flow of 0 while their links carry "
-    "flow, leave a module with negative enter flow. Fixed by link-based leaf flow under "
-    "--regularized.",
-)
-
-
-@_REGULARIZED_BIPARTITE_LEAF_FLOW
 def test_bipartite_flow_adjustment_leaves_no_negative_enter_flow(example_network_path):
     # The adjustment that moves flow off the feature nodes left their teleport flow and
     # weight behind, and the self-teleportation removed from enter/exit flow then ran past
@@ -55,17 +45,17 @@ def test_bipartite_flow_adjustment_leaves_no_negative_enter_flow(example_network
     # a negative enter flow, and the two-level index codelength evaluated to 1.1e-16 --
     # charging nothing at all for entering either of two modules (#957).
     #
-    # Asserted on the index term rather than on the total, because that is where the
-    # cancellation showed: the total stayed plausible while the index term vanished.
+    # The feature nodes then kept enter and exit flow 0 while their links carried flow, and
+    # the run reported two modules at 0.799 bits against a one-level codelength of 1.585.
+    # Their enter and exit flow now come from their links, as every node's does (#1175).
     net = infomap.Network.from_file(str(example_network_path("bipartite.net")))
     result = net.run(regularized=True, two_level=True, seed=7, num_trials=1)
 
-    assert len(set(result.modules().values())) == 2
-    assert result.index_codelength == pytest.approx(0.01551663112)
-    assert result.codelength == pytest.approx(0.7991539547)
+    leaves = [node for node in result.tree() if node.is_leaf]
+    assert all(node.data.enterFlow > 0 and node.data.exitFlow > 0 for node in leaves)
+    assert result.codelength == pytest.approx(1.584861701)
 
 
-@_REGULARIZED_BIPARTITE_LEAF_FLOW
 def test_bipartite_regularized_partition_scores_the_same_when_read_back(
     example_network_path,
 ):
@@ -87,49 +77,28 @@ def test_bipartite_regularized_partition_scores_the_same_when_read_back(
     assert rescored.codelength == pytest.approx(result.codelength)
 
 
-def test_negative_module_flow_is_an_error(network_fixture_path):
-    # One level up from the leaf check: a module's enter/exit flow is not the sum of its
-    # leaves', because the optimizer maintains it incrementally and removes the teleportation
-    # internal to the module. That removal can over-subtract even when every leaf is sound,
-    # and on this network under --regularized it leaves a module at enter/exit -0.00121 with
-    # a negative codelength. Before the check that surfaced only as a 0.0007 disagreement
-    # between two evaluations of the same partition (#958).
-    net = infomap.Network.from_file(str(network_fixture_path("bipartite_uneven.net")))
-
-    with pytest.raises(infomap.InfomapError, match=r"Negative enter flow on a module"):
-        net.run(regularized=True, two_level=True, seed=7, num_trials=1)
-
-
-def test_negative_module_flow_is_an_error_under_parallel_trials(network_fixture_path):
-    # The trial runs on a worker instance under --parallel-trials, so a check reading the main
-    # instance would walk an unpartitioned tree and pass every time. That is the path where a
-    # silent wrong codelength is worst -- it reported 0.9210660968 here -- so cover it
-    # separately from the serial one above.
-    net = infomap.Network.from_file(str(network_fixture_path("bipartite_uneven.net")))
-
-    with pytest.raises(infomap.InfomapError, match=r"Negative enter flow on a module"):
-        net.run(
-            regularized=True,
-            two_level=True,
-            seed=7,
-            num_trials=4,
-            parallel_trials=True,
-        )
-
-
-@pytest.mark.xfail(
-    strict=True,
-    reason="#958: module enter/exit flow still goes negative on bipartite input under "
-    "--regularized, so the run is refused rather than reporting a codelength built on it. "
-    "Drop this marker when the accumulation is fixed -- an unexpected pass means it is.",
+# A module's enter/exit flow is not the sum of its leaves', because the optimizer maintains
+# it incrementally and removes the teleportation internal to the module. On this network
+# under --regularized that removal left a module at enter/exit -0.00121 with a negative
+# codelength, which surfaced only as a 0.0007 disagreement between two evaluations of the
+# same partition (#958), and later as a refusal from the negative-flow guard. Under
+# --parallel-trials the trial runs on a worker instance, where a wrong codelength is worst:
+# it reported 0.9210660968 here. With the leaves' enter and exit flow taken from their
+# links (#1175) the module flow is sound on both paths.
+@pytest.mark.parametrize(
+    "trials",
+    [{"num_trials": 1}, {"num_trials": 4, "parallel_trials": True}],
+    ids=["serial", "parallel-trials"],
 )
-def test_bipartite_uneven_regularized_yields_a_codelength(network_fixture_path):
-    # Stated as what should happen rather than as the current error, so this turns red the
-    # moment #958 is fixed instead of having to be rewritten.
+def test_bipartite_uneven_regularized_yields_a_codelength(network_fixture_path, trials):
     net = infomap.Network.from_file(str(network_fixture_path("bipartite_uneven.net")))
-    result = net.run(regularized=True, two_level=True, seed=7, num_trials=1)
+    result = net.run(regularized=True, two_level=True, seed=7, **trials)
 
     assert result.codelength > 0.0
+    assert result.codelength <= result.one_level_codelength + 1e-12
+    for node in result.tree():
+        assert node.data.enterFlow > -1e-12
+        assert node.data.exitFlow > -1e-12
 
 
 def test_flow_convergence_is_visible_on_the_result():

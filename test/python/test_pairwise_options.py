@@ -793,16 +793,6 @@ def covers_flow(case: Case, exp: Expected) -> bool:
 # --- known issues ------------------------------------------------------------
 
 
-def _markov_above_one(o: Outcome) -> bool:
-    t = o.case.row["markov_time"]
-    return t == "variable" or float(t) > 1
-
-
-def _markov_below_one(o: Outcome) -> bool:
-    t = o.case.row["markov_time"]
-    return t != "variable" and float(t) < 1
-
-
 def _degenerate_with_node_weights(o: Outcome) -> bool:
     # The run that is refused as degenerate without --use-node-weights-as-flow.
     return (
@@ -817,31 +807,12 @@ def _negative_flow(o: Outcome) -> bool:
     return o.error is not None and "Negative" in o.error
 
 
-def _unbalanced_flow(o: Outcome) -> bool:
-    # Enter and exit flow that do not balance; caught by the debug invariant only.
-    return o.error is not None and "do not balance" in o.error
-
-
 # Open issues the sweep reaches, as check -> (issue, predicate). A failure of
 # that check on a run the predicate matches is put down to the issue. Some of
 # these depend on the search path, which differs between standard libraries
 # (#342), so a predicate may match runs that pass here.
 KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
     "runs": [
-        # --regularized with Markov time above 1, or variable Markov time.
-        (
-            "#1191",
-            lambda o: o.exp.regularized and _markov_above_one(o) and _negative_flow(o),
-        ),
-        # --regularized with --use-node-weights-as-flow.
-        (
-            "#1191",
-            lambda o: (
-                o.exp.regularized
-                and bool(o.case.row["node_weights"])
-                and _negative_flow(o)
-            ),
-        ),
         # --variable-markov-time with --use-node-weights-as-flow.
         (
             "#1191",
@@ -851,15 +822,6 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
                 and _negative_flow(o)
             ),
         ),
-        # Bipartite input under --regularized.
-        (
-            "#1175",
-            lambda o: (
-                o.case.net.kind == "bipartite"
-                and o.exp.regularized
-                and (_negative_flow(o) or _unbalanced_flow(o))
-            ),
-        ),
         # Node weights as flow get past the degenerate-flow refusal (see below).
         (
             "#1232",
@@ -867,17 +829,7 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
         ),
     ],
     "codelength": [
-        ("#1175", lambda o: o.case.net.kind == "bipartite" and o.exp.regularized),
         ("#1232", _degenerate_with_node_weights),
-        # --regularized with Markov time below 1 (see the pinned test below).
-        (
-            "#1231",
-            lambda o: o.exp.regularized and _markov_below_one(o),
-        ),
-        # --regularized with Markov time above 1 where the negative-flow guard does
-        # not fire, as under a hard partition: a wrong codelength, no error.
-        ("#1191", lambda o: o.exp.regularized and _markov_above_one(o)),
-        ("#1189", lambda o: o.exp.recorded and bool(o.case.row["node_weights"])),
         ("#1207", lambda o: o.case.row["cluster_data"] == "hard"),
         (
             "#1209",
@@ -887,20 +839,6 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
         ),
     ],
     "read back": [
-        ("#1175", lambda o: o.case.net.kind == "bipartite" and o.exp.regularized),
-        (
-            "#1231",
-            lambda o: o.exp.regularized and _markov_below_one(o),
-        ),
-        (
-            "#1191",
-            lambda o: (
-                o.exp.regularized
-                and _markov_above_one(o)
-                and "Negative" in o.failures["read back"]
-            ),
-        ),
-        ("#1189", lambda o: o.exp.recorded and bool(o.case.row["node_weights"])),
         ("#1207", lambda o: o.case.row["cluster_data"] == "hard"),
         (
             "#1209",
@@ -979,14 +917,9 @@ def test_pairwise_sweep(array, index, network, networks, tmp_path):
 # --- findings ----------------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    reason="--regularized with --markov-time below 1 takes leaf enter and exit flow from the "
-    "node flow, which Markov time does not scale, and subtracts the scaled internal link flow "
-    "when it builds a module, so a module keeps exit flow it does not have: one module over the "
-    "whole network costs more than the one-level codelength (#1231). The twin of #1191 "
-    "(above 1, negative flow)",
-    strict=True,
-)
+# --regularized with --markov-time below 1 took leaf enter and exit flow from the node
+# flow, which Markov time does not scale, so one module over the whole network cost
+# more than the one-level codelength (#1231).
 @pytest.mark.parametrize("directed", [False, True], ids=["undirected", "directed"])
 @pytest.mark.parametrize("markov_time", [0.5, 0.8])
 def test_regularized_markov_time_below_one(markov_time, directed):
