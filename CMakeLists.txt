@@ -5,7 +5,7 @@ option(INFOMAP_USE_OPENMP "Enable OpenMP support when available." ON)
 option(INFOMAP_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
 option(INFOMAP_ENABLE_TSAN "Enable the thread sanitizer (Clang only; excludes INFOMAP_ENABLE_SANITIZERS)." OFF)
 option(INFOMAP_FP_TRAPS "Trap invalid operations and division by zero in the C++ test runner." OFF)
-option(INFOMAP_BUILD_FUZZERS "Build libFuzzer harnesses for the network intake (Clang only)." OFF)
+option(INFOMAP_BUILD_FUZZERS "Build libFuzzer harnesses for the network intake and full runs (Clang only)." OFF)
 option(INFOMAP_CHECK_INVARIANTS "Compile in the flow invariant checks (InfomapBase::checkInvariants). Always on with sanitizers, fuzzers or INFOMAP_MODE=debug." OFF)
 option(INFOMAP_NATIVE_ARCH "Enable -march=native, LTO, and loop unrolling for the host CPU. Produces non-portable binaries; opt-in for local builds only." OFF)
 set(INFOMAP_MODE "release" CACHE STRING "Build mode shared with the Make-based native build policy.")
@@ -382,9 +382,10 @@ if(BUILD_TESTING)
     )
 endif()
 
-# libFuzzer harnesses for the network intake. Opt-in and Clang-only; kept out of
-# BUILD_TESTING / infomap_cpp_tests / ctest (not pass/fail unit tests). Run via
-# `make fuzz`. Configure with -DINFOMAP_BUILD_FUZZERS=ON -DINFOMAP_USE_OPENMP=OFF.
+# libFuzzer harnesses for the network intake and full runs. Opt-in and
+# Clang-only; kept out of BUILD_TESTING / infomap_cpp_tests / ctest (not
+# pass/fail unit tests). Run via `make fuzz` (FUZZ_TARGET=run for full runs).
+# Configure with -DINFOMAP_BUILD_FUZZERS=ON -DINFOMAP_USE_OPENMP=OFF.
 if(INFOMAP_BUILD_FUZZERS)
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         message(FATAL_ERROR "INFOMAP_BUILD_FUZZERS requires Clang (libFuzzer).")
@@ -400,9 +401,13 @@ if(INFOMAP_BUILD_FUZZERS)
     # block above.
     target_link_options(infomap_core PUBLIC -fsanitize=address,undefined)
 
-    add_executable(fuzz_intake test/fuzz/fuzz_intake.cpp)
-    target_link_libraries(fuzz_intake PRIVATE infomap_core)
-    target_compile_options(fuzz_intake
-        PRIVATE -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
-    target_link_options(fuzz_intake PRIVATE -fsanitize=fuzzer,address,undefined)
+    # fuzz_intake: the parsers only. fuzz_run: a full run with fuzzer-chosen
+    # options and the flow invariants on.
+    foreach(fuzz_target fuzz_intake fuzz_run)
+        add_executable(${fuzz_target} test/fuzz/${fuzz_target}.cpp)
+        target_link_libraries(${fuzz_target} PRIVATE infomap_core)
+        target_compile_options(${fuzz_target}
+            PRIVATE -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
+        target_link_options(${fuzz_target} PRIVATE -fsanitize=fuzzer,address,undefined)
+    endforeach()
 endif()

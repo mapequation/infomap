@@ -1,10 +1,11 @@
 name: Fuzz
 
 # Non-blocking early warning: fuzz the network intake for crashes / sanitizer
-# reports on malformed input. A separate workflow (nothing depends on it) so it
-# never gates PRs, but it goes RED when a reproducer is found. Mirrors the
-# non-blocking pattern of python-prerelease-check.yml -- do NOT add
-# continue-on-error, that would mask the alert.
+# reports on malformed input, and full runs for broken flow invariants. A
+# separate workflow (nothing depends on it) so it never gates PRs, but it goes
+# RED when a reproducer is found. Mirrors the non-blocking pattern of
+# python-prerelease-check.yml -- do NOT add continue-on-error, that would mask
+# the alert.
 on:
   schedule:
     - cron: "0 5 * * 2" # Tuesdays 05:00 UTC (clear of the Monday crons)
@@ -19,9 +20,9 @@ concurrency:
 
 jobs:
   fuzz-intake:
-    name: Fuzz network intake
+    name: Fuzz network intake and runs
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -63,16 +64,40 @@ jobs:
           path: build/fuzz/corpus
           key: fuzz-corpus-${{ github.run_id }}
 
+      # The full-run target: fuzzer-chosen options on a small network, with
+      # the flow invariants on. Its own corpus, cached separately. Runs even
+      # when the intake step found something, so one red step does not hide
+      # the other.
+      - name: Restore run fuzz corpus
+        if: ${{ !cancelled() }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/fuzz/corpus-run
+          key: fuzz-run-corpus-${{ github.run_id }}
+          restore-keys: |
+            fuzz-run-corpus-
+
+      - name: Build and run the full-run fuzzer
+        if: ${{ !cancelled() }}
+        run: make fuzz FUZZ_TARGET=run FUZZ_SECONDS=300
+
+      - name: Save run fuzz corpus
+        if: always() && hashFiles('build/fuzz/corpus-run/**') != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/fuzz/corpus-run
+          key: fuzz-run-corpus-${{ github.run_id }}
+
       - name: Upload findings
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: fuzz-findings
           path: |
-            build/fuzz/crash-*
-            build/fuzz/timeout-*
-            build/fuzz/leak-*
-            build/fuzz/oom-*
+            build/fuzz/*crash-*
+            build/fuzz/*timeout-*
+            build/fuzz/*leak-*
+            build/fuzz/*oom-*
           if-no-files-found: ignore
           retention-days: 14
 
