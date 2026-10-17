@@ -22,9 +22,9 @@ TSAN_OMP_NUM_THREADS ?= 4
 TSAN_SUPPRESSIONS ?= $(CURDIR)/test/tsan.supp
 # Archer (libarcher, from LLVM's openmp/tools/archer) tells TSan about OpenMP's
 # own synchronisation. Without it every barrier, reduction and task wait reads
-# as a race. Linux LLVM packages ship it next to libomp; Homebrew does not, see
-# test-tsan below.
-TSAN_ARCHER_LIB ?= $(shell p=$$($(TSAN_CXX) -print-file-name=libarcher.so 2>/dev/null); [ -f "$$p" ] && echo "$$p")
+# as a race. Linux LLVM packages ship it in the LLVM lib dir, two levels above
+# clang's resource dir; Homebrew does not ship it, see test-tsan below.
+TSAN_ARCHER_LIB ?= $(shell p=$$($(TSAN_CXX) -print-resource-dir 2>/dev/null)/../../libarcher.so; [ -f "$$p" ] && echo "$$p")
 FUZZ_BUILD_DIR ?= build/fuzz
 FUZZ_SECONDS ?= 60
 FUZZ_CXX ?= clang++
@@ -135,8 +135,9 @@ test-sanitizers:
 # while the stacks stay readable. Suppressions for reports from the
 # uninstrumented runtime live in test/tsan.supp.
 #
-# On Linux, install clang and the matching libomp-dev; Archer is found next to
-# libomp. On macOS, Homebrew's llvm/libomp do not ship Archer. Build it from
+# On Linux, install clang and the matching libomp-dev; Archer is found in the
+# LLVM lib dir (pass LDFLAGS="-L<that dir>" if -lomp does not resolve). On
+# macOS, Homebrew's llvm/libomp do not ship Archer. Build it from
 # the one source file for your LLVM version and pass the path:
 #   curl -fsSLO https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-<version>/openmp/tools/archer/ompt-tsan.cpp
 #   clang++ -std=c++17 -O2 -shared -fPIC -undefined dynamic_lookup \

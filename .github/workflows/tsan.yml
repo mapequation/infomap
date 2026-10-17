@@ -53,7 +53,16 @@ jobs:
         shell: bash
 
       - name: Build and test under TSan
-        run: make test-tsan CMAKE_GENERATOR=Ninja TSAN_CXX=clang++ TSAN_CMAKE_ARGS="-DPython3_EXECUTABLE=$(python -c 'from pathlib import Path; import sys; print(Path(sys.executable).as_posix())')"
+        # libomp.so and libarcher.so live in the LLVM lib dir (e.g.
+        # /usr/lib/llvm-18/lib), which is not on the default link path.
+        run: |
+          llvm_lib="$(clang++ -print-resource-dir)/../.."
+          llvm_lib="$(cd "$llvm_lib" && pwd)"
+          ls "$llvm_lib"/libomp.so "$llvm_lib"/libarcher.so
+          make test-tsan CMAKE_GENERATOR=Ninja TSAN_CXX=clang++ \
+            TSAN_ARCHER_LIB="$llvm_lib/libarcher.so" \
+            LDFLAGS="-L$llvm_lib -Wl,-rpath,$llvm_lib" \
+            TSAN_CMAKE_ARGS="-DPython3_EXECUTABLE=$(python -c 'from pathlib import Path; import sys; print(Path(sys.executable).as_posix())')"
         shell: bash
 
   # Surface a scheduled failure as a tracking issue so it is not lost in the
