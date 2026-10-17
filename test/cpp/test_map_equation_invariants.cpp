@@ -544,7 +544,7 @@ TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under preco
 
 // Under --regularized with outdirdir or rawdir flow, the finished tree can hold a module
 // that is exited but never entered, while its children balance. A release run then
-// reports the tree at 3.26 bits against a one-level codelength of 2.71. Found once in
+// reports the tree at 3.73 bits against a one-level codelength of 2.74. Found once in
 // about 670k fuzzed runs; it needs this search path (seed 1, one core loop).
 TEST_CASE("Fuzz finding: --regularized with outdirdir flow balances module flow in the finished tree [fast][core][mapeq]" * doctest::should_fail())
 {
