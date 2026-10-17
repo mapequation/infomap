@@ -448,6 +448,84 @@ TEST_CASE("Flow invariants accept a link-free run on an instance that ran a link
 }
 #endif
 
+// Open bugs found by the fuzz_run target (#1171), stated as what should happen and
+// marked should_fail, so each turns red when its bug is fixed. Release builds refuse
+// the first and third through the negative-flow guard; builds with the invariants
+// refuse all three. When one is fixed, drop its marker here and its entry in
+// isKnownFinding() in test/fuzz/fuzz_run.cpp.
+namespace {
+
+void checkLeafFlowBalances(InfomapWrapper& im)
+{
+  CHECK_NOTHROW(im.run());
+  double sumEnter = 0.0;
+  double sumExit = 0.0;
+  for (const auto& node : im.network().nodes()) {
+    sumEnter += node.second.enterFlow;
+    sumExit += node.second.exitFlow;
+  }
+  INFO("leaf enter flow " << sumEnter << ", exit flow " << sumExit);
+  CHECK(sumExit == doctest::Approx(sumEnter));
+}
+
+} // namespace
+
+// Markov time scales the link flow but not the node exit flow that the regularized
+// path sets, so above 1 a module's internal link flow outweighs its nodes' exit flow
+// and the module is left with negative enter and exit flow. --variable-markov-time
+// does the same wherever it scales a node's links up.
+TEST_CASE("Fuzz finding: --regularized with --markov-time above 1 keeps module flow non-negative [fast][core][mapeq]" * doctest::should_fail())
+{
+  InfomapWrapper im(defaultFlags("--regularized --markov-time 2"));
+  im.addLink(1, 2);
+  CHECK_NOTHROW(im.run());
+}
+
+TEST_CASE("Fuzz finding: --regularized with --variable-markov-time keeps module flow non-negative [fast][core][mapeq]" * doctest::should_fail())
+{
+  InfomapWrapper im(defaultFlags("--directed --regularized --variable-markov-time"));
+  im.readInputData(repoPath("examples/networks/modular_w.net"));
+  CHECK_NOTHROW(im.run());
+}
+
+// The recorded-teleportation enter and exit terms assume the directed model's
+// teleporting flow. Under undirdir, outdirdir and rawdir they come on top of link flow
+// that already sums to 1, so the leaves exit at a higher rate than they are entered. On
+// a single link a release run reports codelength 2 against a one-level codelength of 0.
+TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under undirdir [fast][core][mapeq]" * doctest::should_fail())
+{
+  InfomapWrapper im(defaultFlags("--flow-model undirdir --recorded-teleportation"));
+  im.addLink(1, 2);
+  checkLeafFlowBalances(im);
+}
+
+TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under outdirdir [fast][core][mapeq]" * doctest::should_fail())
+{
+  InfomapWrapper im(defaultFlags("--flow-model outdirdir --recorded-teleportation"));
+  im.addLink(1, 2);
+  checkLeafFlowBalances(im);
+}
+
+TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under rawdir [fast][core][mapeq]" * doctest::should_fail())
+{
+  InfomapWrapper im(defaultFlags("--flow-model rawdir --recorded-teleportation"));
+  im.addLink(1, 2);
+  checkLeafFlowBalances(im);
+}
+
+// --use-node-weights-as-flow replaces the node flow after the link flow is computed,
+// and the regularized path takes enter and exit flow from the node flow. Where a node's
+// weight gives it less flow than its links carry, enter flow goes negative, on the node
+// itself or on the module that holds it.
+TEST_CASE("Fuzz finding: --regularized with --use-node-weights-as-flow keeps flow non-negative [fast][core][mapeq]" * doctest::should_fail())
+{
+  InfomapWrapper im(defaultFlags("--regularized --use-node-weights-as-flow"));
+  // Unit node weights give each node a third of the flow; the links give node 7 a twentieth.
+  im.addLink(36, 10, 0.5);
+  im.addLink(7, 10, 0.05);
+  CHECK_NOTHROW(im.run());
+}
+
 // Follow-ups (not reproduced here): #831 (two-level initPartition/consolidate
 // reentrancy corrupting the recomputed codelength after a prior multi-level
 // trial) and #837 (hierarchical super-step degrading a two-level memory
