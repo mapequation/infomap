@@ -496,6 +496,47 @@ TEST_CASE("Fuzz finding: --variable-markov-time with --use-node-weights-as-flow 
   CHECK_NOTHROW(im.run());
 }
 
+// The relax-to-self relay in the flow calculation treats any link between two states of
+// one physical node as a layer switch and relays its flow onward, on state networks
+// too. Under --regularized that extra link flow leaves a module with negative enter flow.
+TEST_CASE("Fuzz finding: --regularized with --multilayer-relax-to-self keeps module flow non-negative on states [fast][core][mapeq]" * doctest::should_fail())
+{
+  InfomapWrapper im(defaultFlags("--regularized --multilayer-relax-to-self"));
+  im.addStateNode(1, 1);
+  im.addStateNode(2, 2);
+  im.addStateNode(3, 3);
+  im.addStateNode(4, 2);
+  im.addLink(2, 3, 1.0);
+  im.addLink(4, 2, 0.2);
+  CHECK_NOTHROW(im.run());
+}
+
+// Only the *Bipartite section is checked for links that cross the start id, so feature
+// nodes can still be linked to each other. Directed PageRank with
+// --bipartite-teleportation then diverges to a total node flow of 1.7e27. A release run
+// warns about it, searches with codelengths of that size, and is refused by the
+// negative-flow guard at the end.
+TEST_CASE("Fuzz finding: --bipartite-teleportation keeps directed flow normalized [fast][core][mapeq]" * doctest::should_fail())
+{
+  InfomapWrapper im(defaultFlags("--directed --bipartite-teleportation -N 1 --seed 1"));
+  im.setBipartiteStartId(4);
+  im.addLink(2, 4, 1.0);
+  im.addLink(4, 6, 3.0);
+  im.addLink(6, 7, 8.0);
+  im.addLink(6, 8, 5.0);
+  im.addLink(8, 10, 2.0);
+  im.addLink(7, 11, 3.0);
+  im.addLink(10, 33, 1.0);
+  im.addLink(33, 35, 1.0);
+  im.addLink(35, 36, 1.0);
+  im.addLink(36, 10, 0.5);
+  CHECK_NOTHROW(im.run());
+  double sumFlow = 0.0;
+  for (const auto& node : im.network().nodes())
+    sumFlow += node.second.flow;
+  CHECK(sumFlow == doctest::Approx(1.0));
+}
+
 // --use-node-weights-as-flow replaces the node flow after the link flow is computed,
 // and the regularized path takes enter and exit flow from the node flow. Where a node's
 // weight gives it less flow than its links carry, enter flow goes negative, on the node

@@ -182,6 +182,14 @@ bool isKnownFinding(const infomap::InfomapWrapper& im)
   // exited but never entered.
   if (im.regularized && (model == infomap::FlowModel::outdirdir || model == infomap::FlowModel::rawdir))
     return true;
+  // --regularized with --multilayer-relax-to-self: the relay also runs on state
+  // networks, and the extra link flow gives a module negative enter flow.
+  if (im.regularized && im.multilayerRelaxToSelf)
+    return true;
+  // Bipartite input with links between feature nodes (outside the *Bipartite section)
+  // and --bipartite-teleportation: directed flow diverges.
+  if (im.network().isBipartite() && im.bipartiteTeleportation && !im.isUndirectedClustering())
+    return true;
   // --variable-markov-time with --use-node-weights-as-flow: negative enter flow when an
   // isolated node holds the largest flow.
   if (im.variableMarkovTime && im.useNodeWeightsAsFlow)
