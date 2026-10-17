@@ -5,12 +5,13 @@ alone, without any of Infomap's flow code. ``test_reference_codelength`` takes
 the flow a run reports as given, so this closes the gap below it: a wrong flow
 with a right map equation over it is caught here (#1171).
 
-Flow does not depend on the seed, so it is compared directly, to 1e-10.
+Flow does not depend on the seed, so it is compared directly, to 1e-11.
 """
 
 from __future__ import annotations
 
 import ast
+import math
 from pathlib import Path
 
 import numpy as np
@@ -32,7 +33,7 @@ REPO = Path(__file__).resolve().parents[2]
 EXAMPLES = REPO / "examples" / "networks"
 NETWORKS = REPO / "test" / "fixtures" / "networks"
 
-REL = 1e-10
+REL = 1e-11
 ABS = 1e-12
 
 NETWORK_FILES = [
@@ -387,6 +388,55 @@ def test_generated_unrecorded_at_teleportation_probability_one(tmp_path, variant
     result = _run(path, **options)
     expected = _reference(result, "directed", options, node_weights)
     _assert_flow(result, expected)
+
+
+@pytest.mark.parametrize("seed", [1, 2])
+@pytest.mark.parametrize("variant", ["recorded-to-links", "recorded-to-nodes"])
+def test_generated_recorded_at_teleportation_probability_one(tmp_path, variant, seed):
+    # The walker never takes a link step, so recorded link flow is exactly 0.
+    # It was negative when the power iteration nudged alpha past 1 (#1184).
+    links, node_weights = _directed_network(seed)
+    path = _write_pajek(tmp_path / "net.net", links, node_weights)
+    options = {
+        "flow_model": "directed",
+        "teleportation_probability": 1.0,
+        **DIRECTED_VARIANTS[variant],
+    }
+    result = _run(path, **options)
+    assert [value for _, _, value in result.links("flow")] == [0.0] * len(links)
+    _assert_flow(result, _reference(result, "directed", options, node_weights))
+
+
+@pytest.mark.parametrize("min_flow_iterations", [50, 400])
+@pytest.mark.parametrize("network", NETWORK_FILES, ids=_id)
+def test_recorded_link_flow_follows_node_flow(network, min_flow_iterations):
+    # A walker at a node with out-links takes a link step with probability
+    # 1 - alpha, however long the power iteration runs (#1184).
+    result = _run(
+        network,
+        flow_model="directed",
+        recorded_teleportation=True,
+        min_flow_iterations=min_flow_iterations,
+    )
+    out_flow = {}
+    for source, _, value in result.links("flow"):
+        out_flow[source] = out_flow.get(source, 0.0) + value
+    leaves = _leaves(result)
+    for node_id, value in out_flow.items():
+        assert value == pytest.approx(0.85 * leaves[node_id].flow, rel=1e-13), node_id
+
+
+@pytest.mark.parametrize("min_flow_iterations", [50, 400])
+def test_recorded_link_flow_sums_to_one_minus_alpha(min_flow_iterations):
+    # No node is dangling, so the walker takes a link step at rate 1 - alpha.
+    result = _run(
+        NETWORKS / "lossy_benchmark_reciprocal.net",
+        flow_model="directed",
+        recorded_teleportation=True,
+        min_flow_iterations=min_flow_iterations,
+    )
+    total = math.fsum(value for _, _, value in result.links("flow"))
+    assert total == pytest.approx(0.85, rel=1e-15)
 
 
 @pytest.mark.parametrize("seed", [1, 2])

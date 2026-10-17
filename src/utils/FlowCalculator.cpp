@@ -397,9 +397,10 @@ struct IterationResult {
 };
 
 template <typename Iteration>
-IterationResult powerIterate(const Config& config, double alpha, Iteration&& iter)
+IterationResult powerIterate(const Config& config, const double teleportationProbability, Iteration&& iter)
 {
   unsigned int iterations = 0;
+  double alpha = teleportationProbability;
   double beta = 1.0 - alpha;
   double err = 0.0;
 
@@ -407,9 +408,9 @@ IterationResult powerIterate(const Config& config, double alpha, Iteration&& ite
     double oldErr = err;
     err = iter(iterations, alpha, beta);
 
-    // Perturb the system if equilibrium
+    // Perturb the system if equilibrium, but keep alpha a probability
     if (std::abs(err - oldErr) < 1e-17) {
-      alpha += 1.0e-12;
+      alpha = std::min(alpha + 1.0e-12, 1.0);
       beta = 1.0 - alpha;
     }
 
@@ -422,7 +423,9 @@ IterationResult powerIterate(const Config& config, double alpha, Iteration&& ite
     Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
   }
 
-  return { alpha, beta, iterations, err, converged };
+  // The perturbation only steers the iteration. Return the configured rate, which
+  // scales the recorded link flow.
+  return { teleportationProbability, 1.0 - teleportationProbability, iterations, err, converged };
 }
 
 double FlowCalculator::accumulateDanglingRank() const noexcept
