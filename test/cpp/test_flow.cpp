@@ -1013,6 +1013,22 @@ TEST_CASE("Degenerate flow reports an input error [fast][core][flow]")
   }
 }
 
+TEST_CASE("Node weights as flow do not hide a walk without flow [fast][core][flow]")
+{
+  // The node flow came from the weights, so the node-flow check passed, and the run reported
+  // 1.185 bits for a walk that takes no link steps and teleports into no node (#1232).
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --recorded-teleportation --use-node-weights-as-flow"));
+  addCanonicalBipartiteLinks(im);
+
+  try {
+    im.run();
+    FAIL("expected the walk without flow to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    CHECK(std::string(e.what()).find("Degenerate flow") != std::string::npos);
+  }
+}
+
 TEST_CASE("skip-adjust-bipartite-flow keeps its documented unnormalized flow [fast][core][flow]")
 {
   // The flag is documented as "Keep flow on bipartite nodes instead of
