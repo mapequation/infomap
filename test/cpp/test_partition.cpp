@@ -1411,7 +1411,7 @@ TEST_CASE("Invalid cluster-data fixtures fail deterministically [fast][core][par
       std::runtime_error);
   CHECK_THROWS_WITH_AS(
       im.initPartition(infomap::test::clusterFixturePath("invalid_zero_path.tree"), false, &im.network()),
-      "There is a '0' in the tree path, lowest allowed integer is 1.",
+      "Invalid tree path '0:1' on line 1 ('0:1 0.1 \"A\" 1'). A path is positive integers separated by ':', such as 1:2:1.",
       std::runtime_error);
 }
 
@@ -1447,7 +1447,7 @@ TEST_CASE("Invalid tree cluster-data failure does not poison later valid tree in
   im.initNetwork(im.network());
   CHECK_THROWS_WITH_AS(
       im.initPartition(infomap::test::clusterFixturePath("invalid_zero_path.tree"), false, &im.network()),
-      "There is a '0' in the tree path, lowest allowed integer is 1.",
+      "Invalid tree path '0:1' on line 1 ('0:1 0.1 \"A\" 1'). A path is positive integers separated by ':', such as 1:2:1.",
       std::runtime_error);
 
   im.initNetwork(im.network());
@@ -2005,18 +2005,45 @@ TEST_CASE("Fuzz finding: undirected --recorded-teleportation balances module flo
   CHECK(balanced);
 }
 
-// A tree row whose path does not start with a number (`x`, `:1`) is read as an empty
-// path, and initTree then reads its first element: a segfault in a release build.
-TEST_CASE("Fuzz finding: a tree row with no number in its path is rejected (#1208) [fast][core][partition][parser]" * doctest::should_fail())
+// A tree row whose path does not start with a number (`x`, `:1`) was read as an empty
+// path, and initTree then read its first element: a segfault in a release build. Other
+// malformed paths were cut short or misread without a word.
+TEST_CASE("A tree row whose path is not positive integers separated by ':' is rejected (#1208) [fast][core][partition][parser]")
 {
-  const std::string tree = "fuzz_empty_path.tree";
-  {
-    std::ofstream out(tree);
-    out << "1:1 0.5 \"A\" 1\nx 0.5 \"B\" 2\n";
+  for (const std::string ext : { "tree", "ftree" }) {
+    const std::string tree = "malformed_tree_path." + ext;
+    for (const std::string badPath : { "x", ":1", "1:", "1::2", "1:x", "1.2", "0", "1:0", "-1", "+1", "1:-2", "4294967296" }) {
+      CAPTURE(ext);
+      CAPTURE(badPath);
+      {
+        std::ofstream out(tree);
+        out << "# path flow name node_id\n1:1 0.5 \"A\" 1\n" << badPath << " 0.5 \"B\" 2\n";
+      }
+      infomap::ClusterMap clusterMap;
+      CHECK_THROWS_WITH_AS(clusterMap.readClusterData(tree),
+                           ("Invalid tree path '" + badPath + "' on line 3 ('" + badPath + " 0.5 \"B\" 2'). A path is positive integers separated by ':', such as 1:2:1.").c_str(),
+                           std::runtime_error);
+    }
+    {
+      std::ofstream out(tree);
+      out << "1:1 0.5 \"A\" 1\n2:10:4294967295 0.5 \"B\" 2\n";
+    }
+    infomap::ClusterMap clusterMap;
+    clusterMap.readClusterData(tree);
+    REQUIRE(clusterMap.treePaths().size() == 2);
+    CHECK(clusterMap.treePaths()[0].path == infomap::Path { 1, 1 });
+    CHECK(clusterMap.treePaths()[1].path == infomap::Path { 2, 10, 4294967295u });
+
+    // A multilayer row whose layer and node are not in the network is skipped, but
+    // its path is still checked.
+    {
+      std::ofstream out(tree);
+      out << "x 0.5 \"B\" 1 1 1\n";
+    }
+    const std::map<unsigned int, std::map<unsigned int, unsigned int>> noStates;
+    CHECK_THROWS_AS(clusterMap.readClusterData(tree, false, &noStates), std::runtime_error);
+    std::remove(tree.c_str());
   }
-  infomap::ClusterMap clusterMap;
-  CHECK_THROWS_AS(clusterMap.readClusterData(tree), std::runtime_error);
-  std::remove(tree.c_str());
 }
 
 } // namespace
