@@ -218,6 +218,32 @@ TEST_CASE("The input fingerprint covers the whole file [fast][core][output]")
   CHECK(infomap::inputIdentity("").known() == false);
 }
 
+TEST_CASE("The input fingerprint is XXH64 of the file content [fast][core][output]")
+{
+  // The value `xxhsum -H64` prints for the same file (#1167). The lengths cover
+  // the short-input path, a remainder of 8 + 4 + 3 bytes after whole stripes,
+  // and a file longer than one read chunk.
+  const auto alphabet = [](std::size_t length) {
+    std::string body(length, ' ');
+    for (std::size_t i = 0; i < length; ++i)
+      body[i] = static_cast<char>('a' + i % 26);
+    return body;
+  };
+  const std::vector<std::pair<std::string, std::string>> cases = {
+    { "", "ef46db3751d8e999" },
+    { "abc", "44bc2cf5ad770999" },
+    { alphabet(1007), "b9b71e9fae244e6d" },
+    { alphabet(70000), "7fe3374511863fe6" },
+  };
+  const std::string path = "fingerprint_xxh64.net";
+  for (const auto& c : cases) {
+    std::ofstream(path, std::ios::binary) << c.first;
+    CAPTURE(c.first.size());
+    CHECK(infomap::inputIdentity(path).hash == c.second);
+  }
+  std::remove(path.c_str());
+}
+
 TEST_CASE("A node name with a quote survives the tree and csv writers [fast][core][output][parser]")
 {
   // The writers emit the name between quotes with no escaping. The csv row then had one
