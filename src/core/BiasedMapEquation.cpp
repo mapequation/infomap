@@ -233,7 +233,8 @@ double BiasedMapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent
   // whole tree, so it also charges the intermediate module-of-modules codebooks,
   // one free parameter per non-root module-of-modules more. This side is the
   // correct one. The tracked side is left alone here because making it tree-aware
-  // changes what the search minimises, not what it reports.
+  // changes what the search minimises, not what it reports: the recursive search
+  // reports a deep tree from terms priced in that tree, as this function does (#1176).
   return L + bitsPerFreeParameter() * calcCodebookFreeParameters(parent);
 }
 
