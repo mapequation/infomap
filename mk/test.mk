@@ -30,6 +30,18 @@ FUZZ_SECONDS ?= 60
 FUZZ_CXX ?= clang++
 FUZZ_CC ?= clang
 FUZZ_SEED_DIRS ?= test/fixtures/networks test/fixtures/networks/json examples/networks
+# intake (the parsers) or run (a full run with fuzzer-chosen options).
+FUZZ_TARGET ?= intake
+FUZZ_ARGS ?=
+ifeq ($(FUZZ_TARGET),run)
+FUZZ_CORPUS_DIR ?= $(FUZZ_BUILD_DIR)/corpus-run
+FUZZ_ARTIFACT_PREFIX ?= $(FUZZ_BUILD_DIR)/run-
+FUZZ_MAX_LEN ?= 8192
+else
+FUZZ_CORPUS_DIR ?= $(FUZZ_BUILD_DIR)/corpus
+FUZZ_ARTIFACT_PREFIX ?= $(FUZZ_BUILD_DIR)/
+FUZZ_MAX_LEN ?= 1048576
+endif
 BENCHMARK_OUTPUT ?= build/benchmarks/python-benchmarks.json
 BENCHMARK_SUMMARY ?=
 NATIVE_BENCHMARK_TARGET ?= infomap_native_benchmark
@@ -167,12 +179,17 @@ test-tsan:
 		TSAN_OPTIONS="ignore_noninstrumented_modules=1 abort_on_error=0 second_deadlock_stack=1 suppressions=$(TSAN_SUPPRESSIONS)" \
 		"$(CTEST)" --test-dir $(TSAN_BUILD_DIR) --output-on-failure $(CTEST_ARGS)
 
-# Build and briefly run the libFuzzer harness for the network intake (Clang
-# only; opt-in via INFOMAP_BUILD_FUZZERS, kept out of the default build/ctest).
-# Feeds bytes through buildNetworkFromInput, which routes JSON vs Pajek, so the
-# single target covers both parsers. Seeds from the tracked fixtures; new inputs
-# and any findings (crash-*/timeout-*/leak-*) land under FUZZ_BUILD_DIR. Tune the
-# run length with FUZZ_SECONDS (CI uses a larger budget than the default smoke).
+# Build and briefly run a libFuzzer harness (Clang only; opt-in via
+# INFOMAP_BUILD_FUZZERS, kept out of the default build/ctest).
+# FUZZ_TARGET=intake (default) feeds bytes through buildNetworkFromInput, which
+# routes JSON vs Pajek, so the single target covers both parsers.
+# FUZZ_TARGET=run reads an option header and a network and runs Infomap with the
+# flow invariants on; its seeds are the same fixtures behind a few option
+# headers (test/fuzz/seed_run_corpus.sh). New inputs land in FUZZ_CORPUS_DIR,
+# findings (crash-*/timeout-*/leak-*, prefixed run- for the run target) under
+# FUZZ_BUILD_DIR. Tune the run length with FUZZ_SECONDS (CI uses a larger budget
+# than the default smoke) and pass extra libFuzzer flags in FUZZ_ARGS, e.g.
+# FUZZ_ARGS=-fork=4.
 fuzz:
 	@generator_args=""; \
 	if [ -n "$(CMAKE_GENERATOR)" ]; then generator_args="-G $(CMAKE_GENERATOR)"; fi; \
@@ -183,14 +200,17 @@ fuzz:
 		-DINFOMAP_MODE=debug \
 		-DCMAKE_CXX_COMPILER=$(FUZZ_CXX) \
 		-DCMAKE_C_COMPILER=$(FUZZ_CC)
-	@"$(CMAKE)" --build $(FUZZ_BUILD_DIR) --target fuzz_intake --parallel $(JOBS)
-	@mkdir -p $(FUZZ_BUILD_DIR)/corpus
+	@"$(CMAKE)" --build $(FUZZ_BUILD_DIR) --target fuzz_$(FUZZ_TARGET) --parallel $(JOBS)
+	@mkdir -p $(FUZZ_CORPUS_DIR)
+ifeq ($(FUZZ_TARGET),run)
+	@sh test/fuzz/seed_run_corpus.sh $(FUZZ_BUILD_DIR)/seeds-run $(foreach dir,$(FUZZ_SEED_DIRS),$(wildcard $(dir)/*.net $(dir)/*.json))
+endif
 	@ASAN_OPTIONS=strict_string_checks=1 UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 \
-		$(FUZZ_BUILD_DIR)/fuzz_intake \
-			-max_total_time=$(FUZZ_SECONDS) -max_len=1048576 -timeout=10 \
+		$(FUZZ_BUILD_DIR)/fuzz_$(FUZZ_TARGET) \
+			-max_total_time=$(FUZZ_SECONDS) -max_len=$(FUZZ_MAX_LEN) -timeout=10 \
 			-dict=test/fuzz/intake.dict \
-			-artifact_prefix=$(FUZZ_BUILD_DIR)/ -print_final_stats=1 \
-			$(FUZZ_BUILD_DIR)/corpus $(FUZZ_SEED_DIRS)
+			-artifact_prefix=$(FUZZ_ARTIFACT_PREFIX) -print_final_stats=1 $(FUZZ_ARGS) \
+			$(FUZZ_CORPUS_DIR) $(if $(filter run,$(FUZZ_TARGET)),$(FUZZ_BUILD_DIR)/seeds-run,$(FUZZ_SEED_DIRS))
 
 bench-python:
 	@mkdir -p $(dir $(BENCHMARK_OUTPUT))

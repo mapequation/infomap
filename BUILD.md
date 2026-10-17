@@ -375,17 +375,34 @@ make fuzz FUZZ_SECONDS=300
 make fuzz FUZZ_CXX=/opt/homebrew/opt/llvm/bin/clang++ FUZZ_CC=/opt/homebrew/opt/llvm/bin/clang
 ```
 
-A weekly non-blocking `.github/workflows/fuzz.yml` runs the same target on Linux.
+`make fuzz FUZZ_TARGET=run` builds and runs a second harness,
+`test/fuzz/fuzz_run.cpp`. Its first 8 input bytes choose the options (flow
+model, recorded teleportation, Markov time, two-level, module preference,
+entropy correction, regularization, multilayer relaxation, bipartite
+teleportation, meta data), the rest is a network. It runs one trial with a
+small budget, and the fuzz build checks the flow invariants after each phase.
+A broken invariant aborts, like a crash. Its seeds are the same fixtures
+behind a few option headers, and its corpus is `build/fuzz/corpus-run`. Pass
+extra libFuzzer flags with `FUZZ_ARGS`, e.g. `FUZZ_ARGS="-fork=3
+-ignore_crashes=1"` to keep going after a finding. Open bugs it would hit on
+every run are listed in `isKnownFinding()` and pinned as `should_fail` cases in
+`test/cpp/test_map_equation_invariants.cpp`.
+
+A weekly non-blocking `.github/workflows/fuzz.yml` runs both targets on Linux.
 The fuzzer writes findings under `build/fuzz/` as `crash-*` / `timeout-*` /
-`leak-*`; reproduce one with:
+`leak-*` (`run-crash-*` and so on for the run target); reproduce one with:
 
 ```bash
 build/fuzz/fuzz_intake build/fuzz/crash-<hash>
+build/fuzz/fuzz_run build/fuzz/run-crash-<hash>
 ```
+
+`fuzz_run` prints the options and any meta data of a finding, so the network
+(the input after its first 8 bytes) replays in a debug build of the CLI.
 
 macOS note: Apple Clang lacks libFuzzer (use Homebrew LLVM via `FUZZ_CXX`).
 A Homebrew-LLVM fuzzer binary can fail to *run* on macOS due to a libc++ ABI
-mismatch even though it builds. Run the fuzzer on Linux.
+mismatch even though it builds. If it does, run the fuzzer on Linux.
 
 Build source and wheel distributions locally when needed:
 
