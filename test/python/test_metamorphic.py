@@ -736,13 +736,23 @@ def test_parallel_trial_worker_runs_a_second_trial_alike(tmp_path, name, variant
     [{"num_trials": 2}, {"num_trials": 2, "parallel_trials": True}],
     ids=["serial", "parallel-trials"],
 )
-def test_restored_tree_is_sorted_on_flow(extra):
+def test_restored_tree_is_sorted_on_flow(tmp_path, extra):
     # A triangle on the first ids, bridged to a clique of six: the clique has
-    # more flow, so it is module 1 in a one-trial run.
+    # more flow, so it is module 1 in a one-trial run. Every trial starts from
+    # that partition, the optimum, so the trials tie and the first is restored
+    # whatever path the seed takes (a search from scratch can end in one module
+    # with some standard libraries).
     links = [(1, 2), (2, 3), (3, 1), (3, 4)]
     links += [(a, b) for a in range(4, 10) for b in range(a + 1, 10)]
-    one_trial = run(links, silent=True, two_level=True, num_trials=1, seed=1, **SERIAL)
-    result = run(links, silent=True, two_level=True, seed=1, **extra, **SERIAL)
+    path = Net(range(1, 10), [(s, t, 1.0) for s, t in links]).write(
+        tmp_path / "net.net"
+    )
+    clu = tmp_path / "modules.clu"
+    clu.write_text("".join(f"{n} {1 if n <= 3 else 2}\n" for n in range(1, 10)))
+    options = {"two_level": True, "cluster_data": str(clu), "seed": 1, **SERIAL}
+    one_trial = run(str(path), silent=True, num_trials=1, **options)
+    assert one_trial.num_top_modules == 2
+    result = run(str(path), silent=True, **options, **extra)
     flows = [node.flow for node in result.tree() if node.depth == 1]
     assert flows == sorted(flows, reverse=True)
     assert dict(result.modules()) == dict(one_trial.modules())
