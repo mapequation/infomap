@@ -412,34 +412,50 @@ def test_entropy_correction_and_preference_together(network):
     _assert_matches(result, partition)
 
 
-@pytest.mark.parametrize(
-    "seed",
-    [
-        3,
-        pytest.param(
-            2,
-            marks=pytest.mark.xfail(
-                reason="the same five-level tree is reported 7 free parameters short of "
-                "its codelength: the aggregate recursivePartition stores leaves out the "
-                "intermediate codebooks' entropy correction (#1176)",
-                strict=True,
-            ),
-        ),
-    ],
+# One trial per run: the recursive search reports its own aggregate codelength, while
+# a run with several trials can end on a recomputed one, and which trial does depends on
+# the platform's rounding. Many seeds, so the check does not hang on one search path.
+DEEP_TREE_SEEDS = range(1, 21)
+
+
+@pytest.mark.xfail(
+    reason="the recursive search reports a deep tree without the entropy correction of its "
+    "intermediate codebooks (#1176)",
+    strict=True,
 )
-def test_entropy_correction_on_deep_tree(seed):
-    # Seeds 2 and 3 end in the same tree; only the reported codelength differs.
-    options = {
-        "entropy_corrected": True,
-        "preferred_number_of_modules": 2,
-        "seed": seed,
-    }
-    result = _run(NETWORKS / "unbalanced_hierarchy.net", **options)
-    assert result.num_levels == 5
-    partition = _partition(
-        result, options, entropy_correction_strength=1.0, preferred_num_modules=2
-    )
-    _assert_matches(result, partition)
+def test_entropy_correction_on_deep_tree():
+    options = {"entropy_corrected": True, "preferred_number_of_modules": 2}
+    checked = 0
+    for seed in DEEP_TREE_SEEDS:
+        result = _run(
+            NETWORKS / "unbalanced_hierarchy.net", seed=seed, num_trials=1, **options
+        )
+        # Two top modules, so the preference costs nothing and only the correction is tested.
+        if result.num_levels < 3 or result.num_top_modules != 2:
+            continue
+        checked += 1
+        partition = _partition(
+            result, options, entropy_correction_strength=1.0, preferred_num_modules=2
+        )
+        _assert_matches(result, partition)
+    assert checked > 0
+
+
+@pytest.mark.xfail(
+    reason="the recursive search restarts from the index and module codelengths and drops "
+    "the |K - K_pref| cost of the module-count preference",
+    strict=True,
+)
+@pytest.mark.parametrize(
+    "network",
+    [EXAMPLES / "ninetriangles.net", NETWORKS / "unbalanced_hierarchy.net"],
+    ids=_id,
+)
+def test_preferred_number_of_modules_on_deep_tree(network):
+    options = {"preferred_number_of_modules": 2}
+    for seed in DEEP_TREE_SEEDS:
+        result = _run(network, seed=seed, num_trials=1, **options)
+        _assert_matches(result, _partition(result, options, preferred_num_modules=2))
 
 
 # --- scored partitions (--cluster-data with --no-infomap) --------------------

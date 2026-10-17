@@ -799,6 +799,9 @@ protected:
   bool m_objectiveTermsAreForLeafNetwork = false;
 
   double m_hierarchicalCodelength = 0.0;
+  // Whether the leaf flow of this run sums to 1, for checkInvariants(). Set by the run once the
+  // flow is calculated; false until then, which skips that one check.
+  bool m_flowSumsToOne = false;
   std::vector<double> m_codelengths;
   std::vector<unsigned int> m_numTopModules;
   double m_entropyRate = 0.0;

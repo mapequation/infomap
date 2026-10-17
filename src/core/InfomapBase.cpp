@@ -526,6 +526,7 @@ private:
       // Share the cancel flag so workers observe a cancel; they only read it and
       // unwind, caught by the per-trial handler below (issue #412).
       worker.inheritRuntimeContext(m_infomap);
+      worker.m_flowSumsToOne = m_infomap.m_flowSumsToOne;
 
       for (unsigned int trialIndex = static_cast<unsigned int>(workerIndex); trialIndex < m_numTrials; trialIndex += numWorkers) {
         try {
@@ -928,6 +929,10 @@ private:
     if (std::abs(sumNodeFlow - 1.0) > 1e-10)
       Console::warn(0, "Total flow on nodes is {:g}, not 1. The reported codelength is scaled accordingly.", sumNodeFlow);
 
+    // Normalised unless the flow step just warned otherwise: an unconverged power iteration and
+    // --skip-adjust-bipartite-flow are not. Decided here, from the network actually run, and
+    // handed to the parallel-trial workers, whose own network member stays empty.
+    m_infomap.m_flowSumsToOne = !m_infomap.skipAdjustBipartiteFlow && !(m_network.haveFlowConvergence() && !m_network.flowConverged());
     m_infomap.checkInvariants(m_infomap.root(), "the flow calculation");
   }
 
@@ -2817,8 +2822,8 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
 // flow and tree, whatever the objective:
 // - the walker is somewhere, so the leaf flow sums to 1 in the main instance -- unless the flow
 //   step says otherwise and warns: a link-free network has no flow, and neither an unconverged
-//   power iteration nor --skip-adjust-bipartite-flow is normalised;
-// - flow, enter flow and exit flow are rates, so none is negative;
+//   power iteration nor --skip-adjust-bipartite-flow is normalised (m_flowSumsToOne);
+// - flow, enter flow and exit flow are finite rates, so none is NaN, infinite or negative;
 // - a module's flow is the flow of its children;
 // - a step that leaves a child of a module either enters a sibling or leaves the module, and a
 //   step that enters a child comes from a sibling or from outside, so the children's exit flow
@@ -2844,6 +2849,8 @@ void InfomapBase::checkInvariants(const InfoNode& root, const char* phase) const
   double sumLeafFlow = 0.0;
   const std::function<void(const InfoNode&, unsigned int)> check = [&](const InfoNode& node, unsigned int depth) {
     const auto& data = node.data;
+    if (!std::isfinite(data.flow) || !std::isfinite(data.enterFlow) || !std::isfinite(data.exitFlow))
+      fail(fmt::format(FMT_STRING("non-finite flow on a node at depth {}: flow {:g}, enter flow {:g}, exit flow {:g}"), depth, data.flow, data.enterFlow, data.exitFlow));
     // Worded like the run's own negative-flow guards, which only look at the finished tree, so a
     // run they would refuse fails with the same message whichever check sees it first.
     const char* negative = data.flow < -tolerance ? "flow" : data.enterFlow < -tolerance ? "enter flow"
@@ -2885,8 +2892,7 @@ void InfomapBase::checkInvariants(const InfoNode& root, const char* phase) const
   };
   check(root, 0);
 
-  const bool totalIsOne = m_network.numLinks() > 0 && !skipAdjustBipartiteFlow && !(m_network.haveFlowConvergence() && !m_network.flowConverged());
-  if (isMainInfomap() && totalIsOne && std::abs(sumLeafFlow - 1.0) > tolerance)
+  if (isMainInfomap() && m_flowSumsToOne && std::abs(sumLeafFlow - 1.0) > tolerance)
     fail(fmt::format(FMT_STRING("the leaf flow sums to {:.12g}, not 1"), sumLeafFlow));
 }
 #endif
@@ -3006,6 +3012,7 @@ unsigned int InfomapBase::fineTune()
     // Delete existing modules and consolidate fine-tuned modules
     root().replaceChildrenWithGrandChildren();
     consolidateModules(false);
+    checkInvariants(m_root, "fine-tuning");
     Log(4).print("Fine-tune done in {} effective loops to codelength {} in {} modules.\n", numEffectiveLoops, io::stringify(*this), numTopModules());
   }
 
@@ -3090,6 +3097,7 @@ unsigned int InfomapBase::coarseTune()
   unsigned int numEffectiveLoops = optimizeActiveNetwork();
   Log(4).print("Tuned sub-modules in {} effective loops to codelength {} in {} modules.\n", numEffectiveLoops, io::stringify(*this), numActiveModules());
   consolidateModules(true);
+  checkInvariants(m_root, "coarse-tuning");
   Log(4).print("Consolidated tuned sub-modules to codelength {} in {} modules.\n", io::stringify(*this), numTopModules());
   return numEffectiveLoops;
 }
@@ -3221,6 +3229,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 
   // Calculate and store hierarchical codelengths
   m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+  checkInvariants(m_root, "the super-module search");
 
   return numLevelsCreated;
 }
@@ -3297,6 +3306,7 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
 
   // Calculate and store hierarchical codelengths
   m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+  checkInvariants(m_root, "the super-module search");
 
   return numLevelsCreated;
 }
@@ -3540,6 +3550,7 @@ unsigned int InfomapBase::recursivePartition()
 
   // Store resulting hierarchical codelength
   m_hierarchicalCodelength = hierarchicalCodelength;
+  checkInvariants(m_root, "the recursive search");
 
   progress.finish(fmt::format(FMT_STRING("{} {} {} levels, codelength {}"), compressionSummary(prettyCompression), Console::arrow(), level, io::toPrecision(hierarchicalCodelength)));
 

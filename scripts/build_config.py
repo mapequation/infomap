@@ -343,7 +343,16 @@ def resolve_build_config(
         + _split_flags(cppflags)
         + _split_flags(cxxflags)
     )
-    compile_flags = _dedupe(cmake_compile_flags + feature_compile_flags)
+    # The flow invariant checks (InfomapBase::checkInvariants) are on in debug builds. CMake
+    # sets the define itself, PUBLIC on infomap_core, so it is not in cmake_compile_flags.
+    debug_compile_flags = (
+        [_define_flag(compiler_family, "INFOMAP_CHECK_INVARIANTS")]
+        if mode == "debug"
+        else []
+    )
+    compile_flags = _dedupe(
+        cmake_compile_flags + feature_compile_flags + debug_compile_flags
+    )
     link_flags = _dedupe(
         platform_link_flags
         + native_link_flags
