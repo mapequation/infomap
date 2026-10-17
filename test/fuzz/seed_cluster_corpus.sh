@@ -18,19 +18,22 @@ shift
 rm -rf "$outdir"
 mkdir -p "$outdir"
 
-# name:byte0 flags:byte1, in octal. Byte 0 also takes the network (bits 0-2)
-# and the format (bits 3-4); byte 2, the seed, is 0.
+# name:byte0 flags:byte1:byte2, in octal. Byte 0 also takes the network
+# (bits 0-2) and the format (bits 3-4); byte 2 is the seed (0 here) and the
+# -F level (bits 6-7).
 headers="
-soft:000:000
-no-infomap:100:000
-two-level:200:000
-hard:040:000
-no-infomap-directed:100:001
-entropy:000:002
-no-infomap-regularized:100:004
-no-infomap-meta:100:012
-modules:000:006
-trials:000:040
+soft:000:000:000
+no-infomap:100:000:000
+two-level:200:000:000
+hard:040:000:000
+no-infomap-directed:100:001:000
+entropy:000:002:000
+no-infomap-regularized:100:004:000
+no-infomap-meta:100:012:000
+modules:000:006:000
+trials:000:040:000
+fast:000:000:100
+fast-keep-levels:000:000:200
 "
 
 for file in "$@"; do
@@ -53,9 +56,11 @@ for file in "$@"; do
       flags=${header#*:}
       byte0=$(printf '%03o' $((0${flags%%:*} | network | format << 3)))
       byte1=${flags#*:}
+      byte2=${byte1#*:}
+      byte1=${byte1%%:*}
       {
         # shellcheck disable=SC2059 # the format is the octal escapes
-        printf "\\$byte0\\$byte1\\000"
+        printf "\\$byte0\\$byte1\\$byte2"
         cat "$file"
       } >"$outdir/$network-$name-$base"
     done

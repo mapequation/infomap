@@ -5,7 +5,8 @@
 // format of the cluster file and the options; the rest is the cluster file, a
 // .clu, .tree or .ftree. The options are the ones that change how cluster data
 // is used: hard or soft partitions, --no-infomap scoring, two-level or
-// multilevel, directed flow, and a bounded set of objectives.
+// multilevel, --fast-hierarchical-solution, directed flow, and a bounded set
+// of objectives.
 //
 // The fuzz build defines INFOMAP_CHECK_INVARIANTS, so the run checks the flow
 // invariants after each phase. Contract:
@@ -133,8 +134,10 @@ Options optionsFromHeader(const uint8_t* h)
   if ((h[1] & 0x80) != 0)
     flags += " --core-level-limit 1";
 
-  // Byte 2: seed.
-  flags += " --seed " + std::to_string(1 + h[2]);
+  // Byte 2: seed (bits 0-5) and how many fast hierarchical levels (bits 6-7).
+  static const std::array<const char*, 4> fastLevels = { "", " -F", " -FF", " -FFF" };
+  flags += fastLevels[h[2] >> 6];
+  flags += " --seed " + std::to_string(1 + (h[2] & 0x3f));
   return options;
 }
 
