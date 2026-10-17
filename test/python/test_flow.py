@@ -17,6 +17,21 @@ def test_degenerate_flow_raises_instead_of_reporting_zero(example_network_path):
         net.run(directed=True, recorded_teleportation=True, seed=7, num_trials=1)
 
 
+def test_node_weights_as_flow_do_not_hide_degenerate_flow(example_network_path):
+    # The node flow comes from the weights, but the walk takes no link steps and
+    # teleports into no node, so there is still no codelength to report (#1232).
+    net = infomap.Network.from_file(str(example_network_path("bipartite.net")))
+
+    with pytest.raises(infomap.InfomapError, match="Degenerate flow"):
+        net.run(
+            directed=True,
+            recorded_teleportation=True,
+            use_node_weights_as_flow=True,
+            seed=7,
+            num_trials=1,
+        )
+
+
 def test_skip_adjust_bipartite_flow_still_runs(example_network_path):
     # The documented opt-out from distributing flow to the primary nodes: flow
     # deliberately sums to less than one, so the run must complete.
