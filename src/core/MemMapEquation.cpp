@@ -129,7 +129,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
       node.physicalNodes.emplace_back(zeroBasedIndex, node.data.flow);
     }
 
-    // If leaf nodes was not directly under root, make sure modules have
+    // If leaf nodes were not directly under root, make sure modules have
     // physical nodes defined also. Every module, not only the leaf modules:
     // removeSubModules makes a module of modules a leaf module, and
     // calcCodelengthOnModuleOfLeafNodes reads its physical nodes (#1209).
