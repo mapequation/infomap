@@ -859,6 +859,12 @@ private:
     }
 
     if (m_network.haveDirectedInput() && m_infomap.isUndirectedFlow()) {
+      // Only multilayer input with intra-layer links sets haveDirectedInput: the inter-layer links
+      // break the symmetry, so the intra-layer links are expanded to both directions and run with
+      // the directed model. That is the undirected multilayer flow, and undirdir was replaced by it
+      // with only the note below to show for it (#1233). outdirdir and rawdir are not replaced.
+      if (m_infomap.flowModel == FlowModel::undirdir)
+        Console::warn(0, "The undirdir flow model has no effect on multilayer input with intra-layer links: the links are expanded to both directions and run with the directed model, which is the flow of the default undirected model.");
       Console::note(1, "Directed input found, changing flow model from '{}' to '{}'.", m_infomap.flowModel, FlowModel(FlowModel::directed));
       m_infomap.flowModel = FlowModel::directed;
     }

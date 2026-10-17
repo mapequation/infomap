@@ -9,7 +9,9 @@
 #include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <functional>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -889,6 +891,51 @@ TEST_CASE("multilayer-relax-to-self matches spread on a single-node overlap [fas
   CHECK(spread.first == 2); // the two triangles
   CHECK(toself.first == spread.first);
   infomap::test::checkApproxCodelength(toself.second, spread.second, 1e-9);
+}
+
+// Multilayer input with intra-layer links expands them to both directions and runs the directed
+// model under undirected flow, and undirdir was replaced by that flow with only a -v note (#1233).
+// It now warns. outdirdir and rawdir compute their own flow, and *Multilayer input keeps undirdir.
+TEST_CASE("undirdir on multilayer input with intra-layer links warns that it has no effect (#1233) [fast][core][flow][multilayer]")
+{
+  const std::string warning = "The undirdir flow model has no effect on multilayer input with intra-layer links";
+  const auto run = [](const std::string& model, const std::function<void(InfomapWrapper&)>& addInput) {
+    std::ostringstream captured;
+    double codelength = 0;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      // Not defaultFlags: it carries --silent, which mutes the warning under test.
+      InfomapWrapper im("--seed 1 --num-trials 1 --no-file-output --flow-model " + model);
+      addInput(im);
+      im.run();
+      codelength = im.codelength();
+    }
+    return std::make_pair(captured.str(), codelength);
+  };
+  const auto readFile = [](const std::string& path) {
+    return [path](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath(path)); };
+  };
+  const auto intraLinks = [](InfomapWrapper& im) {
+    addMultilayerIntraLinks(im, { { 1, 1, 2, 1.0 }, { 1, 2, 3, 1.0 }, { 2, 3, 1, 1.0 }, { 2, 1, 2, 2.0 } });
+  };
+
+  const std::vector<std::pair<std::string, std::function<void(InfomapWrapper&)>>> intraInputs {
+    { "multilayer_intra_inter.net", readFile("examples/networks/multilayer_intra_inter.net") },
+    { "multilayer_intra.net", readFile("examples/networks/multilayer_intra.net") },
+    { "addMultilayerIntraLink", intraLinks },
+  };
+  for (const auto& input : intraInputs) {
+    CAPTURE(input.first);
+    const auto undirdir = run("undirdir", input.second);
+    CHECK(undirdir.first.find(warning) != std::string::npos);
+    CHECK(undirdir.second == run("undirected", input.second).second);
+    for (const char* model : { "undirected", "directed", "outdirdir", "rawdir" }) {
+      CAPTURE(model);
+      CHECK(run(model, input.second).first.find(warning) == std::string::npos);
+    }
+  }
+
+  CHECK(run("undirdir", readFile("examples/networks/multilayer.net")).first.find(warning) == std::string::npos);
 }
 
 // The canonical bipartite shape: every link runs primary -> feature, as in

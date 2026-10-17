@@ -220,7 +220,8 @@ void Network::generateStateNetworkFromMultilayer()
   // the symmetry is broken so we need directed links for inter-layer flow
   if (!m_networks.empty() && m_config.isUndirectedFlow()) {
     m_haveDirectedInput = true;
-    // TODO: Don't allow undirdir/outdirdir/rawdir?
+    // undirdir is replaced by the directed model here and warns in configureNetworkMode (#1233).
+    // outdirdir and rawdir are not undirected flow and keep the intra-layer links as given.
     // Expand each undirected intra-layer link to two opposite directed links
     Console::detail(1, "expanding undirected links to directed");
     for (auto& layerIt : m_networks) {
