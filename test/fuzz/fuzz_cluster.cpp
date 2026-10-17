@@ -179,21 +179,21 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // --regularized) leaves the teleport weights summing to less than 1.
   if (im.network().isBipartite() && (im.recordedTeleportation || im.regularized) && (negative || unbalanced))
     return true;
-  // Hard partitions are dropped when the clu file misses a node: initPartition passes
+  // #1206: hard partitions are dropped when the clu file misses a node: initPartition passes
   // `hard` on only when every node has a module.
   if (im.clusterDataIsHard && contains(message, "hard partition was split") && contains(message, "misses"))
     return true;
-  // The tree is not scored again after the hard partition is restored: a module that held
+  // #1207: the tree is not scored again after the hard partition is restored: a module that held
   // a single hard module is left without that module's codebook, and a hard module
   // directly under the root (all of them under --no-infomap) is replaced by its nodes there.
   if (im.clusterDataIsHard && misreported)
     return true;
-  // On a state network, a search from a tree that it reshapes reports the codelength of
+  // #1209: on a state network, a search from a tree that it reshapes reports the codelength of
   // the memory map equation's stale per-module physical-node bookkeeping, which
   // calcCodelengthOnTree on the same instance repeats; a fresh instance scores less.
   if (im.haveMemory() && !im.noInfomap && misreported && contains(message, "read back"))
     return true;
-  // Under undirected flow with --recorded-teleportation, a tree of three or more levels
+  // #1210: under undirected flow with --recorded-teleportation, a tree of three or more levels
   // built by initTree (a .tree read as cluster data, or the deep seed of a search) gets
   // modules of modules whose enter and exit flow do not balance: the recorded-teleportation
   // terms in aggregateFlowValuesFromLeafToRoot are added on top of undirected link flow.
@@ -388,8 +388,8 @@ bool rescore(const Options& options, const std::string& networkPath, const std::
   return true;
 }
 
-// A tree row whose path has no number in front is read as an empty path, which
-// initTree indexes: a crash the harness cannot catch, so it skips such input.
+// #1208: a tree row whose path has no number in front is read as an empty path,
+// which initTree indexes: a crash the harness cannot catch, so it skips such input.
 bool hasEmptyTreePath(const infomap::Network& network, const std::string& clusterPath)
 {
   infomap::ClusterMap clusterMap;
