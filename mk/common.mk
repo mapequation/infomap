@@ -176,6 +176,7 @@ help:
 		"  test-python-asan      Run the Python tests against an ASan/UBSan build of the extension." \
 		"  test-r-asan           Run the R tests and examples against an ASan/UBSan build." \
 		"  test-r-valgrind       Run the R tests and examples under valgrind (Linux)." \
+		"  coverage              Build a one-off llvm-cov coverage map of src/ (tests, CLI, fuzz)." \
 		"  bench-native          Run the native benchmark and memory baseline harness." \
 		"  bench-python          Run the nightly-style Python benchmark harness." \
 		"" \
