@@ -203,13 +203,46 @@ TEST_CASE("MapEquation invariant: RegularizedMultilayerMapEquation, tracked == r
 // childDegree free parameters where it has childDegree - 1 -- an index codebook
 // has no exit codeword. Deeper trees are not covered: there the recompute also
 // charges the intermediate module-of-modules codebooks that the tracked side
-// never sees, and #830 stays open for that half.
+// never sees. The reported codelength of a deep tree is covered by #1176 below.
 TEST_CASE("MapEquation invariant: entropy-corrected tracked == recompute (repro #830) [core][mapeq][entropy-corrected]")
 {
   InfomapWrapper im(defaultFlags("--two-level --entropy-corrected"));
   im.readInputData(networkFixturePath("lossy_benchmark.net"));
   im.run();
   checkTrackedMatchesRecompute(im);
+}
+
+// The recursive search builds a module of modules from a sub-Infomap, whose root
+// has no exit codeword, and used to keep that root's term. In the main tree the
+// module does have one, so under --entropy-corrected each module of modules below
+// the root was one free parameter short, in the reported codelength and in the
+// per-level table (#1176: 2.372190815 against 2.391846060 on the first input).
+// Both inputs end in a tree with modules of modules below the root, and the first
+// has K = K_pref so the module-count term stays zero.
+TEST_CASE("Entropy correction charges every codebook of a deep tree (repro #1176) [fast][core][mapeq][entropy-corrected]")
+{
+  const std::vector<std::pair<std::string, std::string>> runs {
+    { networkFixturePath("unbalanced_hierarchy.net"), "--entropy-corrected --preferred-number-of-modules 2 --seed 4" },
+    { repoPath("examples/networks/modular_w.net"), "--entropy-corrected -d --seed 2" },
+  };
+  for (const auto& run : runs) {
+    InfomapWrapper im(defaultFlags(run.second));
+    im.readInputData(run.first);
+    im.run();
+    INFO(run.first << " " << run.second << ": " << im.numLevels() << " levels, " << im.numTopModules() << " top modules");
+    REQUIRE(im.numLevels() > 2);
+
+    double sumOfNodeTerms = 0.0;
+    for (const auto& node : im.root().infomapTree()) {
+      if (!node.isLeaf())
+        sumOfNodeTerms += node.codelength;
+    }
+    const double reported = im.codelength();
+    const double recomputed = im.calcCodelengthOnTree(im.root(), true);
+    INFO("reported=" << reported << " node terms=" << sumOfNodeTerms << " recomputed=" << recomputed);
+    checkApproxCodelength(reported, recomputed);
+    checkApproxCodelength(sumOfNodeTerms, recomputed);
+  }
 }
 
 // The size of the correction, on a partition pinned from a file so no search

@@ -3817,7 +3817,6 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   // Improvement
   PartitionQueue subQueue;
   subInfomap.queueTopModules(subQueue);
-  record.indexCodelength = subIndexCodelength;
   record.moduleCodelength = subModuleCodelength;
   record.queueFlow = subQueue.flow;
 
@@ -3893,11 +3892,13 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
     for (InfoNode* newSubModule : materializedSubModules)
       module.addChild(newSubModule);
 
-    // module now plays the role the sub-Infomap root did under getInfomapRoot():
-    // its index codelength is the sub-partition's index codelength.
-    module.codelength = subInfomap.root().codelength;
+    // module now plays the role the sub-Infomap root did under getInfomapRoot(),
+    // but priced where it sits: the sub-Infomap root has no exit codeword, module
+    // does, and the entropy correction charges a free parameter for it (#1176).
     module.disposeInfomap();
+    module.codelength = calcCodelength(module);
   }
+  record.indexCodelength = module.codelength;
 
   // Spawn the largest sub-modules first so the dominant subtrees start immediately.
   // Children recurse into the materialized real nodes (disjoint subtrees, no shared
