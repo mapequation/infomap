@@ -886,6 +886,13 @@ private:
       // makes this a memory network does not enter the objective at all.
       Console::warn(0, "--meta-data takes precedence over higher-order input: the run optimizes the meta-data objective over state nodes, without the physical-node codebook of the higher-order map equation. The higher-order structure affects the network, not the objective.");
     }
+
+    // Recorded teleportation needs a walk that teleports (recordsTeleportation). Undirected flow
+    // has always ignored the option silently; the other models reported a wrong codelength
+    // instead (#1188), so they say that the option is now ignored.
+    const auto model = m_infomap.flowModel;
+    if (m_infomap.recordedTeleportation && !m_infomap.recordsTeleportation() && model != FlowModel::undirected)
+      Console::warn(0, "--recorded-teleportation has no effect with the {} flow model: it does not teleport, so there are no teleportation steps to record. The run optimizes and reports the codelength without them.", io::stringify(model));
   }
 
   // The map equation is defined on a visit-rate distribution, so a non-finite
@@ -2694,7 +2701,7 @@ void InfomapBase::initEnterExitFlow()
         edge.source->data.exitFlow += edge.data.flow;
         edge.target->data.enterFlow += edge.data.flow;
       }
-      if (recordedTeleportation) {
+      if (recordsTeleportation()) {
         // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
         node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
         node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
@@ -2806,7 +2813,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
       }
     }
   }
-  if (recordedTeleportation) {
+  if (recordsTeleportation()) {
     Console::detail(1, "aggregating enter/exit flow for recorded teleportation, sum teleFlow {:g}", m_root.data.teleportFlow);
 
     for (auto& node : m_root.infomapTree()) {
@@ -2843,7 +2850,7 @@ void InfomapBase::checkInvariants(const InfoNode& root, const char* phase) const
   constexpr double tolerance = 1e-9;
   const double rateScale = std::max(1.0, markovTime);
   const auto rateTolerance = [rateScale](double a, double b) { return tolerance * std::max({ rateScale, std::abs(a), std::abs(b) }); };
-  const bool undirectedBalance = isUndirectedClustering() && !recordedTeleportation;
+  const bool undirectedBalance = isUndirectedClustering() && !recordsTeleportation();
 
   const auto fail = [this, phase](const std::string& what) {
     throw InfomapError(ExitCode::InternalError,

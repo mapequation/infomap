@@ -420,36 +420,57 @@ TEST_CASE("Fuzz finding: --regularized with --variable-markov-time keeps module 
   CHECK_NOTHROW(im.run());
 }
 
-// The recorded-teleportation enter and exit terms assume the directed model's
-// teleporting flow. Under undirdir, outdirdir, rawdir and precomputed flow they come on
-// top of link flow that already sums to 1, so the leaves exit at a higher rate than they are entered. On
-// a single link a release run reports codelength 2 against a one-level codelength of 0.
-TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under undirdir (#1188) [fast][core][mapeq]" * doctest::should_fail())
+// The recorded-teleportation enter and exit terms assumed the directed model's
+// teleporting flow. Under undirdir, outdirdir, rawdir and precomputed flow they came on
+// top of link flow that already sums to 1, so the leaves exited at a higher rate than
+// they were entered. On a single link a release run reported codelength 2 against a
+// one-level codelength of 0. Undirected flow kept them out of the leaves, but the module
+// terms still came back when the best of several trials was restored. None of these
+// models teleport, so the option now has no effect on them: the run equals one without
+// it, over one trial and over several (#1188).
+namespace {
+
+template <typename AddInput>
+void checkRecordedTeleportationHasNoEffect(const std::string& flags, AddInput addInput)
 {
-  InfomapWrapper im(defaultFlags("--flow-model undirdir --recorded-teleportation"));
-  im.addLink(1, 2);
-  checkLeafFlowBalances(im);
+  for (const char* trials : { "--num-trials 1", "--num-trials 2" }) {
+    INFO(flags << " " << trials);
+    InfomapWrapper recorded(defaultFlags(flags + " " + trials + " --recorded-teleportation"));
+    addInput(recorded);
+    checkLeafFlowBalances(recorded);
+    InfomapWrapper unrecorded(defaultFlags(flags + " " + trials));
+    addInput(unrecorded);
+    CHECK_NOTHROW(unrecorded.run());
+    CHECK(recorded.codelength() == unrecorded.codelength());
+    CHECK(recorded.getOneLevelCodelength() == unrecorded.getOneLevelCodelength());
+    std::vector<std::pair<double, double>> recordedModules;
+    std::vector<std::pair<double, double>> unrecordedModules;
+    for (auto& node : recorded.root().infomapTree())
+      recordedModules.emplace_back(node.data.enterFlow, node.data.exitFlow);
+    for (auto& node : unrecorded.root().infomapTree())
+      unrecordedModules.emplace_back(node.data.enterFlow, node.data.exitFlow);
+    CHECK(recordedModules == unrecordedModules);
+  }
 }
 
-TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under outdirdir (#1188) [fast][core][mapeq]" * doctest::should_fail())
+} // namespace
+
+TEST_CASE("--recorded-teleportation has no effect under undirdir, outdirdir and rawdir (#1188) [fast][core][mapeq]")
 {
-  InfomapWrapper im(defaultFlags("--flow-model outdirdir --recorded-teleportation"));
-  im.addLink(1, 2);
-  checkLeafFlowBalances(im);
+  for (const char* model : { "undirdir", "outdirdir", "rawdir" }) {
+    checkRecordedTeleportationHasNoEffect(std::string("--flow-model ") + model, [](InfomapWrapper& im) { im.addLink(1, 2); });
+    checkRecordedTeleportationHasNoEffect(std::string("--flow-model ") + model, [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
+  }
 }
 
-TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under rawdir (#1188) [fast][core][mapeq]" * doctest::should_fail())
+TEST_CASE("--recorded-teleportation has no effect under precomputed flow (#1188) [fast][core][mapeq]")
 {
-  InfomapWrapper im(defaultFlags("--flow-model rawdir --recorded-teleportation"));
-  im.addLink(1, 2);
-  checkLeafFlowBalances(im);
+  checkRecordedTeleportationHasNoEffect("--flow-model precomputed", [](InfomapWrapper& im) { im.readInputData(networkFixturePath("twotriangles_flow.net")); });
 }
 
-TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under precomputed flow (#1188) [fast][core][mapeq]" * doctest::should_fail())
+TEST_CASE("--recorded-teleportation has no effect under undirected flow, over several trials (#1188) [fast][core][mapeq]")
 {
-  InfomapWrapper im(defaultFlags("--flow-model precomputed --recorded-teleportation"));
-  im.readInputData(networkFixturePath("twotriangles_flow.net"));
-  checkLeafFlowBalances(im);
+  checkRecordedTeleportationHasNoEffect("--flow-model undirected", [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
 }
 
 // Recorded teleportation over a node flow that is not the coded walk's own (undirdir,
