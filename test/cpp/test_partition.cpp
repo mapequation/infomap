@@ -1968,12 +1968,11 @@ TEST_CASE("Fuzz finding: a search on a state network from a tree seed reports th
 
 // Under undirected flow, --recorded-teleportation does not change what the search charges:
 // ninetriangles reports 3.371875026 with or without it. A tree of three or more levels
-// built by initTree -- a .tree read as cluster data, or the deep seed of a search -- has its
-// module enter and exit flow from aggregateFlowValuesFromLeafToRoot, which adds the
-// recorded-teleportation terms on top of the undirected link flow. A module of modules then
-// does not balance against its children, and Infomap's own tree read back with --no-infomap
-// scores 4.200546623. With -d both give 4.158639238.
-TEST_CASE("Fuzz finding: undirected --recorded-teleportation balances module flow in a tree read as cluster data (#1210) [fast][core][partition]" * doctest::should_fail())
+// built by initTree -- a .tree read as cluster data, or the deep seed of a search -- used to
+// get the recorded-teleportation terms on top of the undirected link flow, so a module of
+// modules did not balance and the tree read back scored 4.200546623 (#1210). #1194 made
+// recorded teleportation a no-op where nothing teleports.
+TEST_CASE("Fuzz finding: undirected --recorded-teleportation balances module flow in a tree read as cluster data (#1210) [fast][core][partition]")
 {
   const std::string tree = "fuzz_recorded_deep.tree";
   {
