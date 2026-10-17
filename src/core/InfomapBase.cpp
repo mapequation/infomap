@@ -2071,7 +2071,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
     }
   }
 
-  return initPartition(modules);
+  return initPartition(modules, hard);
 }
 
 InfomapBase& InfomapBase::initPartition(std::vector<std::vector<unsigned int>>& clusters, bool hard)

@@ -1909,9 +1909,10 @@ TEST_CASE("Hard cluster-data keeps a hard module together [fast][core][partition
   CHECK(hardModuleKept(partition));
 }
 
-// initPartition passes `hard` on only when every node has a module. When the partition
-// leaves a node out, the rest is used as a soft seed and the search splits its modules.
-TEST_CASE("Fuzz finding: hard cluster-data that leaves nodes out keeps a hard module together (#1206) [fast][core][partition]" * doctest::should_fail())
+// The nodes a hard partition leaves out get modules of their own, as in a soft one, and
+// the modules it names are kept whole. initPartition used to pass `hard` on only when every
+// node had a module, so the search split them.
+TEST_CASE("Hard cluster-data that leaves nodes out keeps a hard module together (#1206) [fast][core][partition]")
 {
   CHECK(hardModuleKept({ { 1, 1 }, { 10, 1 } })); // the other 25 nodes left out
 }

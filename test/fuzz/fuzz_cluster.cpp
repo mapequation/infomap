@@ -179,10 +179,6 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // --regularized) leaves the teleport weights summing to less than 1.
   if (im.network().isBipartite() && (im.recordedTeleportation || im.regularized) && (negative || unbalanced))
     return true;
-  // #1206: hard partitions are dropped when the clu file misses a node: initPartition passes
-  // `hard` on only when every node has a module.
-  if (im.clusterDataIsHard && contains(message, "hard partition was split") && contains(message, "misses"))
-    return true;
   // #1207: the tree is not scored again after the hard partition is restored: a module that held
   // a single hard module is left without that module's codebook, and a hard module
   // directly under the root (all of them under --no-infomap) is replaced by its nodes there.
