@@ -3,6 +3,8 @@
 
 #include <cmath>
 #include <memory>
+#include <utility>
+#include <vector>
 
 // Invariant tests for the map-equation objective family.
 //
@@ -450,9 +452,9 @@ TEST_CASE("Flow invariants accept a link-free run on an instance that ran a link
 
 // Open bugs found by the fuzz_run target (#1171), stated as what should happen and
 // marked should_fail, so each turns red when its bug is fixed. Release builds refuse
-// the first and third through the negative-flow guard; builds with the invariants
-// refuse all three. When one is fixed, drop its marker here and its entry in
-// isKnownFinding() in test/fuzz/fuzz_run.cpp.
+// some through the negative-flow guard and report a codelength for the others; builds
+// with the invariants refuse all of them. When one is fixed, drop its marker here and
+// its entry in isKnownFinding() in test/fuzz/fuzz_run.cpp.
 namespace {
 
 void checkLeafFlowBalances(InfomapWrapper& im)
@@ -466,6 +468,26 @@ void checkLeafFlowBalances(InfomapWrapper& im)
   }
   INFO("leaf enter flow " << sumEnter << ", exit flow " << sumExit);
   CHECK(sumExit == doctest::Approx(sumEnter));
+}
+
+// What steps leave the children of a module, less what leaves the module, is what
+// moves between its children; the same holds for what enters them.
+void checkModuleFlowBalances(InfomapWrapper& im)
+{
+  CHECK_NOTHROW(im.run());
+  for (auto& node : im.root().infomapTree()) {
+    if (node.isLeaf() || node.isRoot())
+      continue;
+    double sumEnter = 0.0;
+    double sumExit = 0.0;
+    for (const InfoNode& child : node) {
+      sumEnter += child.data.enterFlow;
+      sumExit += child.data.exitFlow;
+    }
+    INFO("module with " << node.childDegree() << " children: children exit " << sumExit << " and enter " << sumEnter
+                        << ", module exit " << node.data.exitFlow << " and enter " << node.data.enterFlow);
+    CHECK(sumExit - node.data.exitFlow == doctest::Approx(sumEnter - node.data.enterFlow));
+  }
 }
 
 } // namespace
@@ -489,8 +511,8 @@ TEST_CASE("Fuzz finding: --regularized with --variable-markov-time keeps module 
 }
 
 // The recorded-teleportation enter and exit terms assume the directed model's
-// teleporting flow. Under undirdir, outdirdir and rawdir they come on top of link flow
-// that already sums to 1, so the leaves exit at a higher rate than they are entered. On
+// teleporting flow. Under undirdir, outdirdir, rawdir and precomputed flow they come on
+// top of link flow that already sums to 1, so the leaves exit at a higher rate than they are entered. On
 // a single link a release run reports codelength 2 against a one-level codelength of 0.
 TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under undirdir [fast][core][mapeq]" * doctest::should_fail())
 {
@@ -511,6 +533,37 @@ TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under rawdi
   InfomapWrapper im(defaultFlags("--flow-model rawdir --recorded-teleportation"));
   im.addLink(1, 2);
   checkLeafFlowBalances(im);
+}
+
+TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under precomputed flow [fast][core][mapeq]" * doctest::should_fail())
+{
+  InfomapWrapper im(defaultFlags("--flow-model precomputed --recorded-teleportation"));
+  im.readInputData(networkFixturePath("twotriangles_flow.net"));
+  checkLeafFlowBalances(im);
+}
+
+// Under --regularized with outdirdir or rawdir flow, the finished tree can hold a module
+// that is exited but never entered, while its children balance. A release run then
+// reports the tree at 3.26 bits against a one-level codelength of 2.71. Found once in
+// about 670k fuzzed runs; it needs this search path (seed 1, one core loop).
+TEST_CASE("Fuzz finding: --regularized with outdirdir flow balances module flow in the finished tree [fast][core][mapeq]" * doctest::should_fail())
+{
+  InfomapWrapper im(defaultFlags("--flow-model outdirdir --regularized --seed 1 --core-loop-limit 1"));
+  for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 0, 2 }, { 1, 3 }, { 2, 3 }, { 4, 5 }, { 5, 6 }, { 7, 9 }, { 3, 7 } })
+    im.addLink(link.first, link.second);
+  im.addLink(5, 1, 0.8);
+  checkModuleFlowBalances(im);
+}
+
+// --variable-markov-time scales each link by the largest node flow over the local one.
+// With --use-node-weights-as-flow an isolated node can hold that largest flow, and the
+// run is refused with negative enter flow on a linked node.
+TEST_CASE("Fuzz finding: --variable-markov-time with --use-node-weights-as-flow keeps flow non-negative [fast][core][mapeq]" * doctest::should_fail())
+{
+  InfomapWrapper im(defaultFlags("--variable-markov-time --use-node-weights-as-flow"));
+  im.addNode(3);
+  im.addLink(1, 2);
+  CHECK_NOTHROW(im.run());
 }
 
 // --use-node-weights-as-flow replaces the node flow after the link flow is computed,
