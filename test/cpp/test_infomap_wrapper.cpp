@@ -1,6 +1,7 @@
 #include "vendor/doctest.h"
 
 #include "Infomap.h"
+#include "io/InfomapError.h"
 #include "io/OutputView.h"
 #include "utils/Log.h"
 
@@ -1316,6 +1317,19 @@ TEST_CASE("Higher-order subnetwork rebuild preserves state identities and intern
   CHECK(std::get<0>(secondRun) == std::get<0>(firstRun));
   CHECK(std::get<1>(secondRun) == doctest::Approx(std::get<1>(firstRun)));
   CHECK(std::get<2>(secondRun) == doctest::Approx(std::get<2>(firstRun)));
+}
+
+TEST_CASE("Meta data input with no records is rejected instead of crashing the run [fast][core][lifecycle][parser][crash]")
+{
+  // With no records there are no meta-data columns, so every node got an empty
+  // meta-data vector and MetaMapEquation read past its end. A directory reads as an
+  // empty stream on POSIX (on Windows it fails to open), so it took the same path.
+  for (const auto& noRecordsPath : { infomap::test::fixturePath("meta/no_records.meta"), infomap::test::fixturePath("meta") }) {
+    CAPTURE(noRecordsPath);
+    InfomapWrapper im(infomap::test::defaultFlags("--meta-data " + noRecordsPath));
+    im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    CHECK_THROWS_AS(im.run(), infomap::InfomapError);
+  }
 }
 
 TEST_CASE("Metadata-bearing subnetwork rebuild preserves leaf metadata [fast][core][lifecycle][subnetwork][parser]")

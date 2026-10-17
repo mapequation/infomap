@@ -2841,8 +2841,12 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
 // to the module it partitions.
 void InfomapBase::checkInvariants(const InfoNode& root, const char* phase) const
 {
-  // Far above the rounding of a sum of flows, far below any real error.
+  // Far above the rounding of a sum of flows, far below any real error. Flow is at most 1, but
+  // enter and exit flow scale with the Markov time and are built by adding and subtracting rates
+  // of that size, so their tolerance scales with it and with the rates compared.
   constexpr double tolerance = 1e-9;
+  const double rateScale = std::max(1.0, markovTime);
+  const auto rateTolerance = [rateScale](double a, double b) { return tolerance * std::max({ rateScale, std::abs(a), std::abs(b) }); };
   const bool undirectedBalance = isUndirectedClustering() && !recordedTeleportation;
 
   const auto fail = [this, phase](const std::string& what) {
@@ -2860,14 +2864,14 @@ void InfomapBase::checkInvariants(const InfoNode& root, const char* phase) const
       fail(fmt::format(FMT_STRING("non-finite flow on a node at depth {}: flow {:g}, enter flow {:g}, exit flow {:g}"), depth, data.flow, data.enterFlow, data.exitFlow));
     // Worded like the run's own negative-flow guards, which only look at the finished tree, so a
     // run they would refuse fails with the same message whichever check sees it first.
-    const char* negative = data.flow < -tolerance ? "flow" : data.enterFlow < -tolerance ? "enter flow"
-        : data.exitFlow < -tolerance                                                     ? "exit flow"
-                                                                                         : nullptr;
+    const char* negative = data.flow < -tolerance ? "flow" : data.enterFlow < -tolerance * rateScale ? "enter flow"
+        : data.exitFlow < -tolerance * rateScale                                                     ? "exit flow"
+                                                                                                     : nullptr;
     if (negative != nullptr) {
       const auto where = node.isLeaf() ? fmt::format(FMT_STRING("node {}"), node.stateId) : fmt::format(FMT_STRING("a module at depth {} with {} children"), depth, node.childDegree());
       fail(fmt::format(FMT_STRING("Negative {} on {}: flow {:g}, enter flow {:g}, exit flow {:g}"), negative, where, data.flow, data.enterFlow, data.exitFlow));
     }
-    if (undirectedBalance && std::abs(data.enterFlow - data.exitFlow) > tolerance)
+    if (undirectedBalance && std::abs(data.enterFlow - data.exitFlow) > rateTolerance(data.enterFlow, data.exitFlow))
       fail(fmt::format(FMT_STRING("undirected flow enters a node at depth {} at rate {:.12g} but exits it at {:.12g}"), depth, data.enterFlow, data.exitFlow));
     if (node.isLeaf()) {
       sumLeafFlow += data.flow;
@@ -2886,7 +2890,7 @@ void InfomapBase::checkInvariants(const InfoNode& root, const char* phase) const
       fail(fmt::format(FMT_STRING("a module at depth {} has flow {:.12g} but its {} children sum to {:.12g}"), depth, data.flow, node.childDegree(), sumFlow));
     if (depth > 0 || isMainInfomap()) {
       const double imbalance = (sumExit - data.exitFlow) - (sumEnter - data.enterFlow);
-      if (std::abs(imbalance) > tolerance)
+      if (std::abs(imbalance) > rateTolerance(sumExit + data.enterFlow, sumEnter + data.exitFlow))
         fail(fmt::format(FMT_STRING("enter and exit flow do not balance at a module at depth {} with {} children: "
                                     "children exit {:.12g} and enter {:.12g}, module exit {:.12g} and enter {:.12g}"),
                          depth,
@@ -3417,7 +3421,19 @@ namespace detail {
     double leafCodelength = 0.0;
     double queueFlow = 0.0; // flow of the sub-queue spawned from this module
     std::vector<PartitionTaskRecord> children;
+    // An error from this module's sub-run. It must not escape the OpenMP task, so it is
+    // kept here and rethrown once the task graph has joined.
+    std::exception_ptr error;
   };
+
+  inline void rethrowFirstError(const std::vector<PartitionTaskRecord>& records)
+  {
+    for (const auto& record : records) {
+      if (record.error)
+        std::rethrow_exception(record.error);
+      rethrowFirstError(record.children);
+    }
+  }
 } // namespace detail
 
 unsigned int InfomapBase::recursivePartition()
@@ -3505,7 +3521,8 @@ unsigned int InfomapBase::recursivePartition()
     Log::setSilent(isSilent);
 
   // Tasks have joined: throwing here is safe (outside any OpenMP block) and
-  // aborts the recursion if a cancel was requested while tasks ran (#412).
+  // aborts the recursion if a sub-run failed or a cancel was requested while tasks ran (#412).
+  detail::rethrowFirstError(rootRecords);
   checkCancelled();
 
   // Aggregate the recorded statistics level by level, visiting the records in
@@ -3772,6 +3789,12 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
     module.disposeInfomap();
     module.codelength = oldModuleCodelength;
     record.leafCodelength = module.codelength;
+    return;
+  } catch (const std::exception&) {
+    module.disposeInfomap();
+    module.codelength = oldModuleCodelength;
+    record.leafCodelength = module.codelength;
+    record.error = std::current_exception();
     return;
   }
 

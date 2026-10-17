@@ -372,6 +372,20 @@ TEST_CASE("Flow invariants hold after a run and catch an unbalanced module [fast
   CHECK_THROWS_AS(im.checkInvariants(im.root(), "a test"), InfomapError);
 }
 
+// Enter and exit flow scale with the Markov time, so they are checked relative to it. At
+// t = 1e7 the rounding of the boundary rates alone exceeds an absolute 1e-9.
+TEST_CASE("Flow invariants accept the boundary rates of a large Markov time [fast][core][mapeq]")
+{
+  // --directed is left out: at this Markov time the run's own negative-module-flow guard, which
+  // has an absolute tolerance, already refuses it.
+  for (const std::string flags : { "--flow-model rawdir", "" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(defaultFlags("--markov-time 1e7 -N 1 --seed 1 " + flags));
+    im.readInputData(repoPath("examples/networks/modular_wd.net"));
+    CHECK_NOTHROW(im.run());
+  }
+}
+
 // Whether the leaf flow must sum to 1 is decided per run. A link-free run after a linked one
 // on the same instance has zero flow, which is its correct result, not a violation.
 TEST_CASE("Flow invariants accept a link-free run on an instance that ran a linked network [fast][core][mapeq]")
