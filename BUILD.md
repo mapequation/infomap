@@ -422,6 +422,25 @@ macOS note: Apple Clang lacks libFuzzer (use Homebrew LLVM via `FUZZ_CXX`).
 A Homebrew-LLVM fuzzer binary can fail to *run* on macOS due to a libc++ ABI
 mismatch even though it builds. If it does, run the fuzzer on Linux.
 
+### Coverage
+
+`make coverage` builds a one-off coverage map of `src/` with Clang
+source-based coverage (`-DINFOMAP_ENABLE_COVERAGE=ON`, `llvm-profdata`,
+`llvm-cov`). It runs the C++ tests and CLI checks (ctest), then each fuzz target
+for `COVERAGE_FUZZ_SECONDS` (default 60, `0` skips them), and with
+`COVERAGE_PYTHON=1` the Python tests against an instrumented extension. It
+writes `build/coverage/report/index.html` and a per-file line and branch
+summary in `build/coverage/summary.txt`. It is not a gate: failing tests do not
+stop the report. `llvm-cov` warns about functions with mismatched data; those
+are header functions that the Python extension compiles with other defines.
+`COVERAGE_OPENMP=1` (with `COVERAGE_FUZZ_SECONDS=0`) covers the OpenMP paths.
+
+```bash
+make coverage COVERAGE_CXX=/opt/homebrew/opt/llvm/bin/clang++ COVERAGE_CC=/opt/homebrew/opt/llvm/bin/clang
+make coverage COVERAGE_FUZZ_SECONDS=0     # Apple Clang: no libFuzzer
+make coverage COVERAGE_PYTHON=1           # needs setuptools and the test extras
+```
+
 Build source and wheel distributions locally when needed:
 
 ```bash

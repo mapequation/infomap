@@ -637,6 +637,53 @@ TEST_CASE("removeSubModules flattens a ragged tree whose shallow branch comes fi
   CHECK(numModules == 2);
 }
 
+TEST_CASE("Fast hierarchical fine-tuning survives a ragged cluster-data tree [fast][core][partition][tree]")
+{
+  // -F fine-tunes each module of leaf modules on its own. It picked those modules by
+  // their first child alone, so on a ragged tree it also took a module whose first child
+  // is a leaf module but whose other children are deeper modules or a lone leaf, sized
+  // its buffers from the children's degrees and wrote past them collecting the leaves
+  // (#1216). The deep-branch-first shape never reached that and is the control.
+  const std::string header = "# path flow name node_id\n";
+  const std::vector<std::pair<std::string, std::string>> shapes = {
+    { "ragged_branches", infomap::test::readTextFile(infomap::test::clusterFixturePath("twotriangles_ragged_branches.tree")) },
+    { "top_level_leaf_first", infomap::test::readTextFile(infomap::test::clusterFixturePath("twotriangles_top_level_leaf_first.tree")) },
+    { "deep_branch_first", header + "1:1:1 0.1 \"A\" 1\n1:1:2 0.1 \"B\" 2\n1:2:1 0.1 \"C\" 3\n2:1 0.1 \"D\" 4\n2:2 0.1 \"E\" 5\n2:3 0.1 \"F\" 6\n" },
+    { "two_bare_rows_first", header + "1 0.1 \"A\" 1\n2 0.1 \"B\" 2\n3:1:1 0.1 \"C\" 3\n3:1:2 0.1 \"D\" 4\n3:2:1 0.1 \"E\" 5\n3:2:2 0.1 \"F\" 6\n" },
+    { "four_levels_shallow_first", header + "1:1 0.1 \"A\" 1\n1:2 0.1 \"B\" 2\n2:1:1:1 0.1 \"C\" 3\n2:1:1:2 0.1 \"D\" 4\n2:2:1 0.1 \"E\" 5\n2:2:2 0.1 \"F\" 6\n" },
+    { "ragged_inside_top_module", header + "1:1:1 0.1 \"A\" 1\n1:1:2 0.1 \"B\" 2\n1:2:1:1 0.1 \"C\" 3\n1:2:1:2 0.1 \"D\" 4\n1:2:2:1 0.1 \"E\" 5\n2:1:1 0.1 \"F\" 6\n" },
+  };
+
+  for (const auto& shape : shapes) {
+    CAPTURE(shape.first);
+    const std::string seedPath = "fast_hierarchical_" + shape.first + ".tree";
+    const std::string resultPath = "fast_hierarchical_" + shape.first + "_result.tree";
+    {
+      std::ofstream out(seedPath.c_str());
+      out << shape.second;
+    }
+
+    double codelength = 0.0;
+    {
+      InfomapWrapper im(infomap::test::defaultFlags("--seed 1 -F --cluster-data " + seedPath));
+      im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+      im.run();
+      infomap::test::checkRunSanity(im);
+      codelength = im.codelength();
+      infomap::writeTree(im, im.network(), resultPath, false);
+    }
+
+    // The tree it returns has the codelength it reports.
+    InfomapWrapper reader(infomap::test::defaultFlags("--no-infomap --cluster-data " + resultPath));
+    reader.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    reader.run();
+    infomap::test::checkApproxCodelength(reader.codelength(), codelength, 1e-9);
+
+    std::remove(seedPath.c_str());
+    std::remove(resultPath.c_str());
+  }
+}
+
 TEST_CASE("An unknown node id in cluster data leaves the partition alone [fast][core][partition][parser]")
 {
   // std::map::operator[] inserted the unknown id with a default index of 0, so it
@@ -1960,11 +2007,49 @@ TEST_CASE("Hard cluster-data keeps a hard module together [fast][core][partition
   CHECK(hardModuleKept(partition));
 }
 
-// initPartition passes `hard` on only when every node has a module. When the partition
-// leaves a node out, the rest is used as a soft seed and the search splits its modules.
-TEST_CASE("Fuzz finding: hard cluster-data that leaves nodes out keeps a hard module together (#1206) [fast][core][partition]" * doctest::should_fail())
+// The nodes a hard partition leaves out get modules of their own, as in a soft one, and
+// the modules it names are kept whole. initPartition used to pass `hard` on only when every
+// node had a module, so the search split them.
+TEST_CASE("Hard cluster-data that leaves nodes out keeps a hard module together (#1206) [fast][core][partition]")
 {
   CHECK(hardModuleKept({ { 1, 1 }, { 10, 1 } })); // the other 25 nodes left out
+}
+
+// With three triangles of ninetriangles as hard modules, the recursive search ends above
+// the super-level tree. Restoring that tree by node id under a hard partition, whose leaves
+// are the collapsed hard modules, gave a tree with a node 0 and without node 14, and a crash
+// at exit. The search keeps its own tree there instead.
+TEST_CASE("A search over hard cluster-data returns every node once (#1206) [fast][core][partition]")
+{
+  for (const bool complete : { false, true }) {
+    CAPTURE(complete);
+    infomap::InfomapBase::InitialPartition partition { { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 }, { 7, 3 }, { 8, 3 }, { 9, 3 } };
+    if (complete) {
+      for (unsigned int node = 10; node <= 27; ++node)
+        partition[node] = node;
+    }
+    InfomapWrapper im(infomap::test::defaultFlags());
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.clusterDataIsHard = true;
+    im.setInitialPartition(partition);
+    im.run();
+    std::map<unsigned int, const InfoNode*> parentOf;
+    unsigned int numLeaves = 0;
+    for (auto& node : im.root().infomapTree()) {
+      if (node.isLeaf()) {
+        parentOf[node.stateId] = node.parent;
+        ++numLeaves;
+      }
+    }
+    CHECK(numLeaves == 27);
+    REQUIRE(parentOf.size() == 27);
+    CHECK(parentOf.begin()->first == 1);
+    CHECK(parentOf.rbegin()->first == 27);
+    for (unsigned int first : { 1, 4, 7 }) {
+      CHECK(parentOf.at(first) == parentOf.at(first + 1));
+      CHECK(parentOf.at(first) == parentOf.at(first + 2));
+    }
+  }
 }
 
 // The hard modules are leaves while the run scores the tree, and restoreHardPartition
