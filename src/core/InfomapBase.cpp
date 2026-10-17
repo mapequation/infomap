@@ -2692,6 +2692,9 @@ void InfomapBase::initEnterExitFlow()
   for (auto* n : m_leafNodes) {
     n->data.enterFlow = n->data.exitFlow = 0.0;
   }
+  // Per run: a second run on this instance, or a --parallel-trials worker's next
+  // trial, would otherwise count the dangling flow again (#1201).
+  m_sumDanglingFlow = 0.0;
   if (!isUndirectedClustering()) {
     for (auto* n : m_leafNodes) {
       auto& node = *n;

@@ -414,6 +414,27 @@ TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][l
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
 }
 
+TEST_CASE("A rerun counts the dangling flow once under recorded teleportation [fast][core][lifecycle][flow]")
+{
+  // The dangling-flow sum behind the recorded teleportation enter flow was never
+  // reset, so a second run charged the dangling nodes twice: 2.9177 against 2.8237
+  // for the same two modules (#1201). Two cycles bridged by one arc, then the
+  // dangling path 6 -> 7 -> 8.
+  InfomapWrapper im(infomap::test::defaultFlags("--directed --recorded-teleportation --two-level --no-file-output"));
+  for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 2 }, { 2, 3 }, { 3, 1 }, { 3, 4 }, { 4, 5 }, { 5, 6 }, { 6, 4 }, { 6, 7 }, { 7, 8 } }) {
+    im.addLink(link.first, link.second);
+  }
+
+  im.run();
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules());
+  const auto firstCodelength = im.codelength();
+
+  im.run();
+
+  REQUIRE(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+}
+
 // A copy-constructible, seedable UniformRandomBitGenerator (a small LCG) that
 // records every seed value it receives and counts every draw — stands in for a
 // host RNG (igraph etc.) to exercise the pluggable-engine seam (issue #411).

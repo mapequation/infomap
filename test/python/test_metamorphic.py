@@ -635,17 +635,7 @@ def test_omp_num_threads_does_not_change_the_result(tmp_path):
 # Two directed cycles bridged by one arc, ending in a dangling path 6 -> 7 -> 8.
 SINK = [(1, 2), (2, 3), (3, 1), (3, 4), (4, 5), (5, 6), (6, 4), (6, 7), (7, 8)]
 
-_DANGLING_FLOW_LEAKS = pytest.mark.xfail(
-    reason="InfomapBase::initEnterExitFlow adds to m_sumDanglingFlow without resetting it, "
-    "so a second run on the same instance (an Infomap object run twice, or a --parallel-trials "
-    "worker running its second trial) charges every dangling node's flow twice in the recorded "
-    "teleportation enter flow",
-    strict=True,
-    raises=AssertionError,
-)
 
-
-@_DANGLING_FLOW_LEAKS
 @pytest.mark.parametrize("to_nodes", [False, True], ids=["to-links", "to-nodes"])
 def test_infomap_object_runs_twice_alike(to_nodes):
     with warnings.catch_warnings():
@@ -661,9 +651,11 @@ def test_infomap_object_runs_twice_alike(to_nodes):
         )
     im.add_links(SINK)
     first = im.run()
+    # Read the tree before the second run replaces it.
+    first_codelength, first_modules = first.codelength, _modules(first)
     second = im.run()
-    assert second.codelength == first.codelength
-    assert _modules(second) == _modules(first)
+    assert second.codelength == first_codelength
+    assert _modules(second) == first_modules
 
 
 @functools.cache
@@ -687,7 +679,6 @@ def _openmp() -> bool:
 @pytest.mark.skipif(
     not _openmp(), reason="--parallel-trials runs serially without OpenMP"
 )
-@_DANGLING_FLOW_LEAKS
 @pytest.mark.parametrize("variant", ["recorded", "recorded-to-nodes"])
 @pytest.mark.parametrize("name", ["sink", "ninetriangles.net"])
 def test_parallel_trial_worker_runs_a_second_trial_alike(tmp_path, name, variant):
