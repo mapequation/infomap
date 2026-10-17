@@ -6,6 +6,7 @@ option(INFOMAP_ENABLE_SANITIZERS "Enable address and undefined behavior sanitize
 option(INFOMAP_ENABLE_TSAN "Enable the thread sanitizer (Clang only; excludes INFOMAP_ENABLE_SANITIZERS)." OFF)
 option(INFOMAP_FP_TRAPS "Trap invalid operations and division by zero in the C++ test runner." OFF)
 option(INFOMAP_BUILD_FUZZERS "Build libFuzzer harnesses for the network intake and full runs (Clang only)." OFF)
+option(INFOMAP_ENABLE_COVERAGE "Instrument for Clang source-based coverage (llvm-cov). Run via make coverage." OFF)
 option(INFOMAP_CHECK_INVARIANTS "Compile in the flow invariant checks (InfomapBase::checkInvariants). Always on with sanitizers, fuzzers or INFOMAP_MODE=debug." OFF)
 option(INFOMAP_NATIVE_ARCH "Enable -march=native, LTO, and loop unrolling for the host CPU. Produces non-portable binaries; opt-in for local builds only." OFF)
 set(INFOMAP_MODE "release" CACHE STRING "Build mode shared with the Make-based native build policy.")
@@ -173,6 +174,14 @@ if(INFOMAP_FP_TRAPS AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # computes a division ahead of the branch that discards it. With the traps
     # on that is a false hit. GCC defaults to -ftrapping-math.
     target_compile_options(infomap_core PUBLIC -ffp-exception-behavior=maytrap)
+endif()
+
+if(INFOMAP_ENABLE_COVERAGE)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "INFOMAP_ENABLE_COVERAGE requires Clang.")
+    endif()
+    target_compile_options(infomap_core PUBLIC -fprofile-instr-generate -fcoverage-mapping)
+    target_link_options(infomap_core PUBLIC -fprofile-instr-generate)
 endif()
 
 add_executable(infomap_cli "${infomap_main_source}")

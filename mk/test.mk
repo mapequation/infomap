@@ -47,6 +47,21 @@ FUZZ_CORPUS_DIR ?= $(FUZZ_BUILD_DIR)/corpus
 FUZZ_ARTIFACT_PREFIX ?= $(FUZZ_BUILD_DIR)/
 FUZZ_MAX_LEN ?= 1048576
 endif
+COVERAGE_BUILD_DIR ?= build/coverage
+COVERAGE_CXX ?= clang++
+COVERAGE_CC ?= clang
+# The profile tools have to match the compiler's LLVM version, so ask it.
+LLVM_PROFDATA ?= $(shell $(COVERAGE_CXX) -print-prog-name=llvm-profdata 2>/dev/null)
+LLVM_COV ?= $(shell $(COVERAGE_CXX) -print-prog-name=llvm-cov 2>/dev/null)
+# Seconds of fuzzing per fuzz target; 0 skips them (they need libFuzzer).
+COVERAGE_FUZZ_SECONDS ?= 60
+COVERAGE_FUZZ_ARGS ?= -fork=2 -ignore_crashes=1 -ignore_timeouts=1 -ignore_ooms=1
+# 1 also runs test/python against an instrumented extension. The active Python
+# needs setuptools and the test extras.
+COVERAGE_PYTHON ?= 0
+# 1 builds with OpenMP, which the parallel trial and move paths need.
+COVERAGE_OPENMP ?= 0
+COVERAGE_FLAGS := -fprofile-instr-generate -fcoverage-mapping
 BENCHMARK_OUTPUT ?= build/benchmarks/python-benchmarks.json
 BENCHMARK_SUMMARY ?=
 NATIVE_BENCHMARK_TARGET ?= infomap_native_benchmark
@@ -68,7 +83,7 @@ define warn_cmake_build_type_mismatch
 	fi
 endef
 
-.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers test-tsan fuzz bench-python bench-native
+.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers test-tsan fuzz coverage bench-python bench-native
 
 configure-cpp-dev:
 	@generator_args=""; \
@@ -223,6 +238,77 @@ endif
 			-dict=test/fuzz/$(if $(filter cluster,$(FUZZ_TARGET)),cluster,intake).dict \
 			-artifact_prefix=$(FUZZ_ARTIFACT_PREFIX) -print_final_stats=1 $(FUZZ_ARGS) \
 			$(FUZZ_CORPUS_DIR) $(if $(filter run cluster,$(FUZZ_TARGET)),$(FUZZ_BUILD_DIR)/seeds-$(FUZZ_TARGET),$(FUZZ_SEED_DIRS))
+
+# A one-off coverage map (#1171): which branches no test, CLI check, Python
+# test or fuzz input reaches. Not a gate. Clang source-based coverage over a
+# debug build, without OpenMP unless COVERAGE_OPENMP=1 (the fuzz targets want
+# it off, so pair it with COVERAGE_FUZZ_SECONDS=0). The fuzz targets run for
+# COVERAGE_FUZZ_SECONDS each from the same seeds as make fuzz; with them on,
+# the build carries their ASan/UBSan too, so the tests run under the
+# sanitizers. Failing tests do not stop the report. Writes
+# $(COVERAGE_BUILD_DIR)/report/index.html and summary.txt (per file in src/).
+coverage:
+	@generator_args=""; \
+	if [ -n "$(CMAKE_GENERATOR)" ]; then generator_args="-G $(CMAKE_GENERATOR)"; fi; \
+	"$(CMAKE)" -S . -B $(COVERAGE_BUILD_DIR) $$generator_args \
+		-DCMAKE_BUILD_TYPE=Debug \
+		-DCMAKE_CXX_COMPILER=$(COVERAGE_CXX) \
+		-DCMAKE_C_COMPILER=$(COVERAGE_CC) \
+		-DINFOMAP_MODE=debug \
+		-DINFOMAP_USE_OPENMP=$(if $(filter 1,$(COVERAGE_OPENMP)),ON,OFF) \
+		-DINFOMAP_ENABLE_COVERAGE=ON \
+		-DINFOMAP_BUILD_FUZZERS=$(if $(filter-out 0,$(COVERAGE_FUZZ_SECONDS)),ON,OFF) \
+		$(TEST_CMAKE_ARGS)
+	@"$(CMAKE)" --build $(COVERAGE_BUILD_DIR) --target $(CMAKE_TEST_TARGET) \
+		$(if $(filter-out 0,$(COVERAGE_FUZZ_SECONDS)),fuzz_intake fuzz_run fuzz_cluster,) --parallel $(JOBS)
+	@rm -rf $(COVERAGE_BUILD_DIR)/profiles $(COVERAGE_BUILD_DIR)/report
+	@mkdir -p $(COVERAGE_BUILD_DIR)/profiles
+	@LLVM_PROFILE_FILE="$(CURDIR)/$(COVERAGE_BUILD_DIR)/profiles/ctest-%p.profraw" \
+		"$(CTEST)" --test-dir $(COVERAGE_BUILD_DIR) --output-on-failure $(CTEST_ARGS) \
+		|| printf "%s\n" "coverage: some tests failed; the report covers what ran."
+ifneq ($(COVERAGE_FUZZ_SECONDS),0)
+	@sh test/fuzz/seed_run_corpus.sh $(COVERAGE_BUILD_DIR)/seeds-run $(foreach dir,$(FUZZ_SEED_DIRS),$(wildcard $(dir)/*.net $(dir)/*.json))
+	@sh test/fuzz/seed_cluster_corpus.sh $(COVERAGE_BUILD_DIR)/seeds-cluster test/fuzz/cluster_seeds/* $(wildcard test/fixtures/clusters/*)
+	@for target in intake run cluster; do \
+		case $$target in \
+			intake) seeds="$(FUZZ_SEED_DIRS)"; dict=intake; max_len=1048576 ;; \
+			run) seeds=$(COVERAGE_BUILD_DIR)/seeds-run; dict=intake; max_len=8192 ;; \
+			cluster) seeds=$(COVERAGE_BUILD_DIR)/seeds-cluster; dict=cluster; max_len=4096 ;; \
+		esac; \
+		mkdir -p $(COVERAGE_BUILD_DIR)/corpus-$$target $(COVERAGE_BUILD_DIR)/artifacts; \
+		printf "%s\n" "coverage: fuzzing $$target for $(COVERAGE_FUZZ_SECONDS)s"; \
+		LLVM_PROFILE_FILE="$(CURDIR)/$(COVERAGE_BUILD_DIR)/profiles/fuzz-$$target-%p.profraw" \
+			$(COVERAGE_BUILD_DIR)/fuzz_$$target -max_total_time=$(COVERAGE_FUZZ_SECONDS) \
+			-max_len=$$max_len -timeout=10 -dict=test/fuzz/$$dict.dict \
+			-artifact_prefix=$(COVERAGE_BUILD_DIR)/artifacts/$$target- $(COVERAGE_FUZZ_ARGS) \
+			$(COVERAGE_BUILD_DIR)/corpus-$$target $$seeds > $(COVERAGE_BUILD_DIR)/fuzz-$$target.log 2>&1 \
+			|| printf "%s\n" "coverage: fuzz_$$target exited non-zero, see $(COVERAGE_BUILD_DIR)/fuzz-$$target.log"; \
+	done
+endif
+ifeq ($(COVERAGE_PYTHON),1)
+	@rm -rf $(COVERAGE_BUILD_DIR)/python && mkdir -p $(COVERAGE_BUILD_DIR)/python
+	@cp -R interfaces/python/src/infomap $(COVERAGE_BUILD_DIR)/python/
+	@rm -f $(COVERAGE_BUILD_DIR)/python/infomap/_infomap*.so
+	@CC="$(COVERAGE_CC)" CXX="$(COVERAGE_CXX)" MODE=debug OPENMP=$(COVERAGE_OPENMP) INFOMAP_BUILD_JOBS="$(JOBS)" \
+		CXXFLAGS="$(COVERAGE_FLAGS)" LDFLAGS="-fprofile-instr-generate" \
+		$(PYTHON) setup.py -q build_ext --build-lib $(COVERAGE_BUILD_DIR)/python --build-temp $(COVERAGE_BUILD_DIR)/python-obj
+	@PYTHONPATH="$(CURDIR)/$(COVERAGE_BUILD_DIR)/python" \
+		LLVM_PROFILE_FILE="$(CURDIR)/$(COVERAGE_BUILD_DIR)/profiles/python-%p.profraw" \
+		$(PYTEST) -q -p no:cacheprovider $(PYTEST_ARGS) $(PYTHON_TEST_DIR) \
+		|| printf "%s\n" "coverage: some Python tests failed; the report covers what ran."
+endif
+	@"$(LLVM_PROFDATA)" merge -sparse $(COVERAGE_BUILD_DIR)/profiles/*.profraw -o $(COVERAGE_BUILD_DIR)/coverage.profdata
+	@objects="$(COVERAGE_BUILD_DIR)/Infomap"; \
+	for f in $(COVERAGE_BUILD_DIR)/infomap_cpp_*_tests \
+		$(if $(filter-out 0,$(COVERAGE_FUZZ_SECONDS)),$(COVERAGE_BUILD_DIR)/fuzz_intake $(COVERAGE_BUILD_DIR)/fuzz_run $(COVERAGE_BUILD_DIR)/fuzz_cluster) \
+		$(if $(filter 1,$(COVERAGE_PYTHON)),$(COVERAGE_BUILD_DIR)/python/infomap/_infomap*.so); do \
+		if [ -f "$$f" ]; then objects="$$objects -object $$f"; fi; \
+	done; \
+	cov_args="$$objects -instr-profile=$(COVERAGE_BUILD_DIR)/coverage.profdata"; \
+	"$(LLVM_COV)" show $$cov_args -format=html -show-branches=count -output-dir=$(COVERAGE_BUILD_DIR)/report $(CURDIR)/src && \
+	"$(LLVM_COV)" report $$cov_args -show-branch-summary $(CURDIR)/src > $(COVERAGE_BUILD_DIR)/summary.txt && \
+	tail -n 1 $(COVERAGE_BUILD_DIR)/summary.txt && \
+	printf "%s\n" "coverage: $(COVERAGE_BUILD_DIR)/report/index.html and $(COVERAGE_BUILD_DIR)/summary.txt"
 
 bench-python:
 	@mkdir -p $(dir $(BENCHMARK_OUTPUT))
