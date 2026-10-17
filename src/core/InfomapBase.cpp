@@ -1585,6 +1585,10 @@ void InfomapBase::run(Network& network)
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
+  // Set here rather than in the constructor, which also builds the sub-Infomaps
+  // inside the parallel regions.
+  Log::precision(verboseNumberPrecision);
+
   // Stamp the owner thread (gates the callback) and clear any leftover cancel so
   // the instance is reusable after an interrupted run (issue #412). The team count
   // starts over for the same reason: it describes this run, not the instance.
