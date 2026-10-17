@@ -25,6 +25,9 @@ jobs:
     name: Fuzz network intake, runs and cluster data
     runs-on: ubuntu-24.04
     timeout-minutes: 40
+    permissions:
+      contents: read
+      actions: read # find the previous corpus artifact
 
     steps:
       - name: Checkout repository
@@ -43,76 +46,48 @@ jobs:
           sudo apt-get install -y clang libclang-rt-dev
 
       # The evolved corpus compounds across the weekly runs instead of
-      # restarting from the fixture seeds every time. Restore latest, save
-      # under a per-run key.
+      # restarting from the fixture seeds every time: restore the newest
+      # corpus artifact of a default-branch run, upload this run's at the end.
       - name: Restore fuzz corpus
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: ./.github/actions/restore-fuzz-corpus
         with:
-          path: build/fuzz/corpus
-          key: fuzz-corpus-${{ github.run_id }}
-          restore-keys: |
-            fuzz-corpus-
+          token: ${{ github.token }}
 
       - name: Build and run the intake fuzzer
         run: make fuzz FUZZ_SECONDS=300
 
-      # always(): a red run means the fuzzer found something -- exactly the
-      # corpus worth keeping. The hashFiles guard skips the save when the job
-      # failed before the corpus existed (e.g. a build failure).
-      - name: Save fuzz corpus
-        if: always() && hashFiles('build/fuzz/corpus/**') != ''
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: build/fuzz/corpus
-          key: fuzz-corpus-${{ github.run_id }}
-
       # The full-run target: fuzzer-chosen options on a small network, with
-      # the flow invariants on. Its own corpus, cached separately. Runs even
+      # the flow invariants on. Its own corpus directory. Runs even
       # when the intake step found something, so one red step does not hide
       # the other.
-      - name: Restore run fuzz corpus
-        if: ${{ !cancelled() }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: build/fuzz/corpus-run
-          key: fuzz-run-corpus-${{ github.run_id }}
-          restore-keys: |
-            fuzz-run-corpus-
-
       - name: Build and run the full-run fuzzer
         if: ${{ !cancelled() }}
         run: make fuzz FUZZ_TARGET=run FUZZ_SECONDS=300
 
-      - name: Save run fuzz corpus
-        if: always() && hashFiles('build/fuzz/corpus-run/**') != ''
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: build/fuzz/corpus-run
-          key: fuzz-run-corpus-${{ github.run_id }}
-
       # The cluster data target: .clu, .tree and .ftree input (--cluster-data)
       # on small fixed networks, with the flow invariants and codelength checks
-      # on. Its own corpus, cached separately, and it runs whatever the steps
+      # on. Its own corpus directory, and it runs whatever the steps
       # above found.
-      - name: Restore cluster fuzz corpus
-        if: ${{ !cancelled() }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: build/fuzz/corpus-cluster
-          key: fuzz-cluster-corpus-${{ github.run_id }}
-          restore-keys: |
-            fuzz-cluster-corpus-
-
       - name: Build and run the cluster data fuzzer
         if: ${{ !cancelled() }}
         run: make fuzz FUZZ_TARGET=cluster FUZZ_SECONDS=300
 
-      - name: Save cluster fuzz corpus
-        if: always() && hashFiles('build/fuzz/corpus-cluster/**') != ''
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # always(): a red run means the fuzzer found something -- exactly the
+      # corpus worth keeping. Nothing is uploaded when the job failed before
+      # any corpus existed (e.g. a build failure). Artifacts do not count
+      # toward the 10 GB Actions cache, so the corpus is not evicted between
+      # the weekly runs; 90 days covers a long gap.
+      - name: Save fuzz corpus
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          path: build/fuzz/corpus-cluster
-          key: fuzz-cluster-corpus-${{ github.run_id }}
+          name: fuzz-corpus
+          path: |
+            build/fuzz/corpus/
+            build/fuzz/corpus-run/
+            build/fuzz/corpus-cluster/
+          if-no-files-found: ignore
+          retention-days: 90
 
       - name: Upload findings
         if: failure()
