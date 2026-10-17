@@ -49,6 +49,9 @@ public:
   struct PhysNode {
     unsigned int physId = 0;
     double weight = 1.0;
+    // Whether the weight was given, as in a *Vertices record. Only then does it
+    // replace a weight already set on the state node (#1183).
+    bool hasWeight = false;
     PhysNode(unsigned int physId) : physId(physId) {}
     PhysNode(unsigned int physId, double weight) : physId(physId), weight(weight) {}
     PhysNode(double weight = 1.0) : weight(weight) {}

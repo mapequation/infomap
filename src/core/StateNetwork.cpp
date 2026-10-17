@@ -86,6 +86,7 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
 {
   auto& physNode = addPhysicalNode(physId);
   physNode.weight = weight;
+  physNode.hasWeight = true;
   m_sumNodeWeight += weight;
   return physNode;
 }
@@ -102,6 +103,7 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
 {
   auto& physNode = addPhysicalNode(physId);
   physNode.weight = weight;
+  physNode.hasWeight = true;
   m_sumNodeWeight += weight;
   m_names[physId] = name;
   return physNode;

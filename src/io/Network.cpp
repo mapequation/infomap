@@ -96,9 +96,16 @@ void Network::postProcessInputData()
   }
 
   if (!haveMemoryInput()) {
-    // If no memory input, add physical nodes as state nodes to not miss unconnected nodes
-    for (auto& it : m_physNodes) {
-      addNode(it.second.physId, it.second.weight);
+    // If no memory input, add physical nodes as state nodes to not miss unconnected nodes.
+    // Only a weight given for the physical node replaces the state node's, so a
+    // weight set through addNode(id, weight) survives (#1183).
+    for (const auto& it : m_physNodes) {
+      const auto& physNode = it.second;
+      if (physNode.hasWeight) {
+        addNode(physNode.physId, physNode.weight);
+      } else {
+        addNode(physNode.physId);
+      }
     }
     // The physical nodes now mirror the state nodes 1:1, and nothing reads
     // m_physNodes' contents past this point (only numPhysicalNodes(), which is
