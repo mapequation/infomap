@@ -1,0 +1,8 @@
+# Bipartite input with a link inside the feature side, given in a *Links section after
+# the *Bipartite section. Only the *Bipartite section was checked for links that cross
+# the start id; the run must refuse the input (#1190).
+*Bipartite 3
+1 3 1
+*Links
+3 4 1
+4 3 1

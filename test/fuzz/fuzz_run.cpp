@@ -164,22 +164,18 @@ MetaData applyMetaData(infomap::InfomapWrapper& im, uint8_t byte)
 struct NetworkShape {
   bool stateLinkWithinNode = false; // a link between two states of one physical node
   bool isolatedNode = false;
-  bool linkInsideBipartiteSide = false; // a link that does not cross the start id
 };
 
 NetworkShape networkShape(const infomap::Network& network)
 {
   NetworkShape shape;
   std::vector<bool> linked(network.numNodes(), false);
-  const unsigned int start = network.bipartiteStartId();
   network.forEachLink([&](unsigned int source, unsigned int target, double /*weight*/, double& /*flow*/) {
     linked[source] = linked[target] = true;
     const unsigned int sourceId = network.nodeId(source);
     const unsigned int targetId = network.nodeId(target);
     if (sourceId != targetId && network.nodes().at(sourceId).physicalId == network.nodes().at(targetId).physicalId)
       shape.stateLinkWithinNode = true;
-    if (network.isBipartite() && (sourceId < start) == (targetId < start))
-      shape.linkInsideBipartiteSide = true;
   });
   for (const bool isLinked : linked)
     shape.isolatedNode = shape.isolatedNode || !isLinked;
@@ -208,10 +204,6 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // enter flow.
   if (im.regularized && (im.markovTime > 1.0 || im.variableMarkovTime) && negative)
     return true;
-  // #1188: --recorded-teleportation under the undirdir, outdirdir, rawdir and precomputed
-  // models: leaf exit and enter flow do not balance.
-  if (im.recordedTeleportation && !im.regularized && model != FlowModel::undirected && model != FlowModel::directed && unbalanced && contains(message, "after the flow calculation"))
-    return true;
   // #1189: recorded teleportation (also implied by --regularized) over a node flow that is not
   // the coded walk's own, from undirdir, outdirdir, rawdir, precomputed flow or
   // --use-node-weights-as-flow: a module of modules in the finished tree does not balance.
@@ -221,10 +213,6 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // #1191: --regularized with --multilayer-relax-to-self: the relay also runs on a link
   // between two states of one physical node, and gives a module negative enter flow.
   if (im.regularized && im.multilayerRelaxToSelf && shape.stateLinkWithinNode && negative)
-    return true;
-  // #1190: bipartite input with links inside one side (outside the *Bipartite section) and
-  // directed --bipartite-teleportation: the flow diverges, so any check can fire.
-  if (network.isBipartite() && im.bipartiteTeleportation && !im.isUndirectedClustering() && shape.linkInsideBipartiteSide)
     return true;
   // #1191: --variable-markov-time with --use-node-weights-as-flow: negative enter flow when an
   // isolated node holds the largest flow.
