@@ -1911,7 +1911,7 @@ TEST_CASE("Hard cluster-data keeps a hard module together [fast][core][partition
 
 // initPartition passes `hard` on only when every node has a module. When the partition
 // leaves a node out, the rest is used as a soft seed and the search splits its modules.
-TEST_CASE("Fuzz finding: hard cluster-data that leaves nodes out keeps a hard module together [fast][core][partition]" * doctest::should_fail())
+TEST_CASE("Fuzz finding: hard cluster-data that leaves nodes out keeps a hard module together (#1206) [fast][core][partition]" * doctest::should_fail())
 {
   CHECK(hardModuleKept({ { 1, 1 }, { 10, 1 } })); // the other 25 nodes left out
 }
@@ -1923,7 +1923,7 @@ TEST_CASE("Fuzz finding: hard cluster-data that leaves nodes out keeps a hard mo
 // there: the modules are gone, the tree is one level, and the reported codelength is the
 // index codebook of the hard modules alone. 2.320730357 is what the triangles {1,2,3}
 // and {4,5,6} score as soft cluster data under --no-infomap.
-TEST_CASE("Fuzz finding: hard cluster-data under --no-infomap keeps its modules and their codelength [fast][core][partition]" * doctest::should_fail())
+TEST_CASE("Fuzz finding: hard cluster-data under --no-infomap keeps its modules and their codelength (#1207) [fast][core][partition]" * doctest::should_fail())
 {
   InfomapWrapper im(infomap::test::defaultFlags("--no-infomap"));
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -1934,7 +1934,7 @@ TEST_CASE("Fuzz finding: hard cluster-data under --no-infomap keeps its modules 
   CHECK(im.codelength() == doctest::Approx(2.320730357)); // 1 bit
 }
 
-TEST_CASE("Fuzz finding: a search over hard cluster-data reports the codelength of its tree [fast][core][partition]" * doctest::should_fail())
+TEST_CASE("Fuzz finding: a search over hard cluster-data reports the codelength of its tree (#1207) [fast][core][partition]" * doctest::should_fail())
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -1951,7 +1951,7 @@ TEST_CASE("Fuzz finding: a search over hard cluster-data reports the codelength 
 // equation's per-module physical-node bookkeeping, and calcCodelengthOnTree on the same
 // instance agrees; the tree read back with --no-infomap scores it 2/3 bit, as a module
 // that codes one physical node with flow 1/3 should be.
-TEST_CASE("Fuzz finding: a search on a state network from a tree seed reports the codelength of its tree [fast][core][partition]" * doctest::should_fail())
+TEST_CASE("Fuzz finding: a search on a state network from a tree seed reports the codelength of its tree (#1209) [fast][core][partition]" * doctest::should_fail())
 {
   const std::string tree = "fuzz_states_seed.tree";
   {
@@ -1973,7 +1973,7 @@ TEST_CASE("Fuzz finding: a search on a state network from a tree seed reports th
 // recorded-teleportation terms on top of the undirected link flow. A module of modules then
 // does not balance against its children, and Infomap's own tree read back with --no-infomap
 // scores 4.200546623. With -d both give 4.158639238.
-TEST_CASE("Fuzz finding: undirected --recorded-teleportation balances module flow in a tree read as cluster data [fast][core][partition]" * doctest::should_fail())
+TEST_CASE("Fuzz finding: undirected --recorded-teleportation balances module flow in a tree read as cluster data (#1210) [fast][core][partition]" * doctest::should_fail())
 {
   const std::string tree = "fuzz_recorded_deep.tree";
   {
@@ -2008,7 +2008,7 @@ TEST_CASE("Fuzz finding: undirected --recorded-teleportation balances module flo
 
 // A tree row whose path does not start with a number (`x`, `:1`) is read as an empty
 // path, and initTree then reads its first element: a segfault in a release build.
-TEST_CASE("Fuzz finding: a tree row with no number in its path is rejected [fast][core][partition][parser]" * doctest::should_fail())
+TEST_CASE("Fuzz finding: a tree row with no number in its path is rejected (#1208) [fast][core][partition][parser]" * doctest::should_fail())
 {
   const std::string tree = "fuzz_empty_path.tree";
   {
