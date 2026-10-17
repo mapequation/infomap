@@ -25,6 +25,10 @@ TSAN_SUPPRESSIONS ?= $(CURDIR)/test/tsan.supp
 # as a race. Linux LLVM packages ship it in the LLVM lib dir, two levels above
 # clang's resource dir; Homebrew does not ship it, see test-tsan below.
 TSAN_ARCHER_LIB ?= $(shell p=$$($(TSAN_CXX) -print-resource-dir 2>/dev/null)/../../libarcher.so; [ -f "$$p" ] && echo "$$p")
+PYTHON_ASAN_CXX ?= clang++
+PYTHON_ASAN_BUILD_DIR ?= build/python-asan
+PYTHON_ASAN_PYTEST_ARGS ?= test/python
+R_SANITIZER_CXX ?= clang++
 FUZZ_BUILD_DIR ?= build/fuzz
 FUZZ_SECONDS ?= 60
 FUZZ_CXX ?= clang++
@@ -83,7 +87,7 @@ define warn_cmake_build_type_mismatch
 	fi
 endef
 
-.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers test-tsan fuzz coverage bench-python bench-native
+.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers test-tsan test-python-asan test-r-asan test-r-valgrind fuzz coverage bench-python bench-native
 
 configure-cpp-dev:
 	@generator_args=""; \
@@ -198,6 +202,32 @@ test-tsan:
 	@OMP_TOOL_LIBRARIES="$(TSAN_ARCHER_LIB)" OMP_NUM_THREADS=$(TSAN_OMP_NUM_THREADS) \
 		TSAN_OPTIONS="ignore_noninstrumented_modules=1 abort_on_error=0 second_deadlock_stack=1 suppressions=$(TSAN_SUPPRESSIONS)" \
 		"$(CTEST)" --test-dir $(TSAN_BUILD_DIR) --output-on-failure $(CTEST_ARGS)
+
+# Run the Python tests against an extension built with ASan/UBSan (the flags of
+# test-sanitizers, OpenMP off), with the sanitizer runtime preloaded into the
+# interpreter. The build goes to PYTHON_ASAN_BUILD_DIR; the dev install is not
+# touched. Narrow the run with PYTHON_ASAN_PYTEST_ARGS, e.g.
+# PYTHON_ASAN_PYTEST_ARGS=test/python/test_binding_lifetimes.py.
+#
+# The interpreter must accept the preloaded runtime. Homebrew's framework Python
+# on macOS does not ("Interceptors are not working"); a uv-managed Python does:
+#   uv venv --python 3.12 && make test-python-asan PYTHON=.venv/bin/python
+# On Linux with GCC, pass PYTHON_ASAN_CXX=g++.
+test-python-asan:
+	@$(PYTHON) test/scripts/run_python_asan.py --cxx "$(PYTHON_ASAN_CXX)" \
+		--build-dir "$(PYTHON_ASAN_BUILD_DIR)" --jobs $(JOBS) -- $(PYTHON_ASAN_PYTEST_ARGS)
+
+# CRAN's additional checks, approximated without a sanitizer-built R: the R
+# package's tests, Rd examples and examples/R under ASan/UBSan (the package built
+# instrumented, the runtime preloaded into R), or under valgrind (Linux only).
+# Both install into build/R-<mode>/lib, not the user library.
+# On Linux, R_SANITIZER_CXX=g++ matches R's own compiler and CRAN's gcc-ASAN.
+test-r-asan:
+	@$(PYTHON) test/scripts/run_r_sanitizers.py --mode asan --cxx "$(R_SANITIZER_CXX)" \
+		--r "$(R)" --jobs $(JOBS)
+
+test-r-valgrind:
+	@$(PYTHON) test/scripts/run_r_sanitizers.py --mode valgrind --r "$(R)" --jobs $(JOBS)
 
 # Build and briefly run a libFuzzer harness (Clang only; opt-in via
 # INFOMAP_BUILD_FUZZERS, kept out of the default build/ctest).

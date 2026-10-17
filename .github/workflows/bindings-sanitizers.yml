@@ -1,0 +1,147 @@
+name: Bindings sanitizers
+
+# Non-blocking: the Python tests against an ASan/UBSan build of the extension
+# (make test-python-asan), and the R tests and examples under ASan/UBSan and
+# valgrind (make test-r-asan, make test-r-valgrind), close to CRAN's additional
+# checks (#662). The blocking sanitizer job in ci.yml covers only the C++ tests,
+# so this is the only run that sees the SWIG layers and how the bindings hold
+# on to core objects (#954, #1099). A separate workflow so it never gates PRs
+# while it settles in, but it goes RED on a report. Same pattern as fuzz.yml
+# and tsan.yml -- do NOT add continue-on-error, that would mask the alert.
+#
+# PRs run it when they touch the bindings or this setup, where lifetime bugs
+# come from. src/ changes are left to the weekly run: the blocking C++
+# sanitizer job already sees the core, and this one costs ~30 runner minutes.
+on:
+  pull_request:
+    paths:
+      - "interfaces/**"
+      - "!interfaces/js/**"
+      - "setup.py"
+      - "scripts/build_config.py"
+      - "scripts/stage_r_package.py"
+      - "test/scripts/run_python_asan.py"
+      - "test/scripts/run_r_sanitizers.py"
+      - "test/python-ubsan.supp"
+      - "mk/test.mk"
+      - ".github/workflows/bindings-sanitizers.yml"
+  schedule:
+    - cron: "0 5 * * 4" # Thursdays 05:00 UTC (clear of the Monday-Wednesday crons)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bindings-sanitizers-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-asan:
+    name: Python ASan/UBSan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install clang
+        # libclang-rt-dev ships the shared ASan runtime the extension links
+        # (-shared-libsan) and the interpreter preloads.
+        run: |
+          # A third-party repo in the runner image (azure-cli, chrome, ...) can
+          # 403, which fails `apt-get update` even when the Ubuntu archive we
+          # install from downloaded fine. The install is the real gate.
+          sudo apt-get update || echo "::warning::apt-get update reported errors; continuing to the install"
+          sudo apt-get install -y clang libclang-rt-dev
+        shell: bash
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+
+      - name: Install test dependencies
+        # The [test] extra's runtime libraries, without the lint and type-check
+        # tools. The package itself is not installed: the tests import the
+        # instrumented build.
+        run: |
+          uv pip install --system setuptools pytest numpy scipy pandas networkx igraph \
+            anndata pyarrow "jsonschema>=4.18" referencing pyyaml threadpoolctl
+        shell: bash
+
+      - name: Build and test under ASan/UBSan
+        run: make test-python-asan PYTHON_ASAN_CXX=clang++
+        shell: bash
+
+  r-sanitizers:
+    name: R ${{ matrix.mode }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [asan, valgrind]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install valgrind
+        if: matrix.mode == 'valgrind'
+        run: |
+          sudo apt-get update || echo "::warning::apt-get update reported errors; continuing to the install"
+          sudo apt-get install -y valgrind
+        shell: bash
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Set up Python (for the staging script)
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Install R package dependencies
+        uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
+        with:
+          working-directory: interfaces/R/infomap
+          extra-packages: |
+            any::testthat
+            any::igraph
+            any::withr
+
+      - name: Test under ${{ matrix.mode }}
+        # g++ is R's own compiler on Linux, and CRAN's gcc-ASAN check uses it.
+        run: make test-r-${{ matrix.mode }} R_SANITIZER_CXX=g++
+        shell: bash
+
+  # Surface a scheduled failure as a tracking issue so it is not lost in the
+  # Actions tab. Only fires for cron runs.
+  report-failure:
+    name: Report scheduled failure
+    needs: [python-asan, r-sanitizers]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Open or update the tracking issue
+        uses: ./.github/actions/report-cron-failure
+        with:
+          workflow-name: ${{ github.workflow }}
+          run-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          token: ${{ github.token }}
