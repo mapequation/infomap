@@ -1553,6 +1553,31 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
           enterFlow[targetIndex] += network.m_linkFlows[e];
         }
       }
+    } else if (config.usesRegularizedFlow() && !config.isMultilayerNetwork()) {
+      // The links plus the teleportation to and from other nodes, as
+      // InfomapBase::initEnterExitFlow() sets them on the leaves (#1189).
+      enterFlow.assign(numNodes, 0);
+      exitFlow.assign(numNodes, 0);
+      const bool undirectedLinks = config.isUndirectedClustering();
+      for (auto& nodeIt : network.m_nodes) {
+        auto& node = nodeIt.second;
+        const auto sourceIndex = nodeIndexMap[node.id];
+        const auto srcIdx = network.indexOfId(node.id);
+        exitFlow[sourceIndex] += node.teleFlow * (1.0 - node.weight);
+        enterFlow[sourceIndex] += (sumTeleFlow - node.teleFlow) * node.weight;
+        for (unsigned int e = network.m_linkOffsets[srcIdx]; e < network.m_linkOffsets[srcIdx + 1]; ++e) {
+          if (network.m_linkTargets[e] == srcIdx)
+            continue;
+          const auto targetIndex = nodeIndexMap[network.nodeId(network.m_linkTargets[e])];
+          const double flow = undirectedLinks ? network.m_linkFlows[e] / 2 : network.m_linkFlows[e];
+          exitFlow[sourceIndex] += flow;
+          enterFlow[targetIndex] += flow;
+          if (undirectedLinks) {
+            exitFlow[targetIndex] += flow;
+            enterFlow[sourceIndex] += flow;
+          }
+        }
+      }
     }
   }
 

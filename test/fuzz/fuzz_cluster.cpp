@@ -172,13 +172,7 @@ struct Finding : std::runtime_error {
 // reported. Drop the entry when the bug is fixed so the fuzzer guards the fix.
 bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
 {
-  const bool negative = contains(message, "Negative");
-  const bool unbalanced = contains(message, "do not balance");
   const bool misreported = contains(message, "reported codelength");
-  // #1175: bipartite input under --regularized: the uncoded feature nodes keep enter and
-  // exit flow 0 while their links carry flow.
-  if (im.network().isBipartite() && im.usesRegularizedFlow() && (negative || unbalanced))
-    return true;
   // #1207: the tree is not scored again after the hard partition is restored: a module that held
   // a single hard module is left without that module's codebook, and a hard module
   // directly under the root (all of them under --no-infomap) is replaced by its nodes there.
