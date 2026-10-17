@@ -1920,7 +1920,7 @@ TEST_CASE("Hard cluster-data that leaves nodes out keeps a hard module together 
 // With three triangles of ninetriangles as hard modules, the recursive search ends above
 // the super-level tree. Restoring that tree by node id under a hard partition, whose leaves
 // are the collapsed hard modules, gave a tree with a node 0 and without node 14, and a crash
-// at exit. The search keeps its own tree there instead.
+// at exit.
 TEST_CASE("A search over hard cluster-data returns every node once (#1206) [fast][core][partition]")
 {
   for (const bool complete : { false, true }) {
@@ -1951,6 +1951,31 @@ TEST_CASE("A search over hard cluster-data returns every node once (#1206) [fast
       CHECK(parentOf.at(first) == parentOf.at(first + 1));
       CHECK(parentOf.at(first) == parentOf.at(first + 2));
     }
+  }
+}
+
+// The same run must not end above the super-level tree, which -FF stops at with the same
+// seed. Without the super-level fallback under a hard partition it ended at 2.918 bits
+// with five top modules, above the super-level tree's 2.860 bits with three.
+TEST_CASE("A search over hard cluster-data ends no higher than its super-level tree [fast][core][partition]")
+{
+  for (const bool complete : { false, true }) {
+    CAPTURE(complete);
+    infomap::InfomapBase::InitialPartition partition { { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 }, { 7, 3 }, { 8, 3 }, { 9, 3 } };
+    if (complete) {
+      for (unsigned int node = 10; node <= 27; ++node)
+        partition[node] = node;
+    }
+    auto run = [&](const std::string& extraFlags) {
+      InfomapWrapper im(infomap::test::defaultFlags(extraFlags));
+      im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+      im.clusterDataIsHard = true;
+      im.setInitialPartition(partition);
+      im.run();
+      return im.codelength();
+    };
+    const double superLevelCodelength = run("-FF");
+    CHECK(run("") <= superLevelCodelength + 1e-10);
   }
 }
 
