@@ -464,7 +464,7 @@ def expected(row: Mapping[str, object], net: Net) -> Expected:
     if model in ("undirected", "undirdir") and net.directed_input:
         # Multilayer *Intra/*Inter input expands its links to both directions and
         # runs directed (Network::generateStateNetworkFromMultilayer), undirdir
-        # included, with a note at verbosity 1 only.
+        # included, with a note at verbosity 1 only (#1233).
         model = "directed"
     multilayer = net.kind == "multilayer"
     exp = Expected(flow_model=model, memory=net.kind in ("state", "multilayer"))
@@ -851,18 +851,18 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
                 and (_negative_flow(o) or _unbalanced_flow(o))
             ),
         ),
-        # Not filed yet: node weights as flow get past the degenerate-flow refusal (see below).
+        # Node weights as flow get past the degenerate-flow refusal (see below).
         (
-            "bipartite-node-weights-degenerate",
+            "#1232",
             lambda o: _degenerate_with_node_weights(o) and o.error is not None,
         ),
     ],
     "codelength": [
         ("#1175", lambda o: o.case.net.kind == "bipartite" and o.exp.recorded),
-        ("bipartite-node-weights-degenerate", _degenerate_with_node_weights),
-        # Not filed yet: --regularized with Markov time below 1 (see the pinned test below).
+        ("#1232", _degenerate_with_node_weights),
+        # --regularized with Markov time below 1 (see the pinned test below).
         (
-            "regularized-markov-time-below-1",
+            "#1231",
             lambda o: o.exp.regularized and _markov_below_one(o),
         ),
         ("#1189", lambda o: o.exp.recorded and bool(o.case.row["node_weights"])),
@@ -877,7 +877,7 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
     "read back": [
         ("#1175", lambda o: o.case.net.kind == "bipartite" and o.exp.recorded),
         (
-            "regularized-markov-time-below-1",
+            "#1231",
             lambda o: o.exp.regularized and _markov_below_one(o),
         ),
         (
@@ -971,8 +971,8 @@ def test_pairwise_sweep(array, index, network, networks, tmp_path):
     reason="--regularized with --markov-time below 1 takes leaf enter and exit flow from the "
     "node flow, which Markov time does not scale, and subtracts the scaled internal link flow "
     "when it builds a module, so a module keeps exit flow it does not have: one module over the "
-    "whole network costs more than the one-level codelength. The twin of #1191 (above 1, "
-    "negative flow); not filed yet",
+    "whole network costs more than the one-level codelength (#1231). The twin of #1191 "
+    "(above 1, negative flow)",
     strict=True,
 )
 @pytest.mark.parametrize("directed", [False, True], ids=["undirected", "directed"])
@@ -1014,7 +1014,7 @@ def _leaf_flow_balance(result) -> tuple[float, float]:
     reason="directed flow with recorded teleportation to links leaves bipartite input without "
     "flow, and the run is refused as degenerate, but --use-node-weights-as-flow gets past that "
     "check: the feature nodes take every teleport weight and are not coded (#1175), so the "
-    "primary nodes exit by teleportation and are never entered. Not filed yet",
+    "primary nodes exit by teleportation and are never entered (#1232)",
     strict=True,
 )
 @pytest.mark.parametrize(
