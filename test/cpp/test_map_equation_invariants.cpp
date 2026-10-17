@@ -136,28 +136,34 @@ TEST_CASE("A module preference reaches a scored partition, not only the search [
 
 // The same term through the recursive search. recursivePartition rebuilt the total
 // from the top modules' terms, which do not hold the module-count term, so a deep
-// tree with K != K_pref top modules was reported |K - K_pref| short: 2.257426125 on
-// the first input and 3.579251676 on the second, against 3.257426125 and
-// 4.579251676 for the same trees scored with --no-infomap.
+// tree with K != K_pref top modules was reported |K - K_pref| short: 3.579251676 for
+// ninetriangles with -s 3 on macOS, against 4.579251676 for the same tree scored
+// with --no-infomap. Seeds reach different trees on different standard libraries
+// (std::uniform_int_distribution is implementation-defined), so this sweeps seeds
+// and requires that some run reaches the case.
 TEST_CASE("A module preference reaches a deep tree from the recursive search [fast][core][mapeq][biased]")
 {
-  const std::vector<std::pair<std::string, std::string>> runs {
-    { networkFixturePath("unbalanced_hierarchy.net"), "--preferred-number-of-modules 2 --seed 2" },
-    { repoPath("examples/networks/ninetriangles.net"), "--preferred-number-of-modules 2 --seed 3" },
+  const std::vector<std::string> networks {
+    networkFixturePath("unbalanced_hierarchy.net"),
+    repoPath("examples/networks/ninetriangles.net"),
   };
-  for (const auto& run : runs) {
-    InfomapWrapper im(defaultFlags(run.second));
-    im.readInputData(run.first);
-    im.run();
-    INFO(run.first << " " << run.second << ": " << im.numLevels() << " levels, " << im.numTopModules() << " top modules");
-    REQUIRE(im.numLevels() > 2);
-    REQUIRE(im.numTopModules() != 2);
+  unsigned int numDeepTreesOffPreference = 0;
+  for (const auto& network : networks) {
+    for (unsigned int seed = 1; seed <= 20; ++seed) {
+      InfomapWrapper im(defaultFlags("--preferred-number-of-modules 2 --seed " + std::to_string(seed)));
+      im.readInputData(network);
+      im.run();
+      if (im.numLevels() > 2 && im.numTopModules() != 2)
+        ++numDeepTreesOffPreference;
 
-    const double reported = im.codelength();
-    const double recomputed = im.calcCodelengthOnTree(im.root(), true);
-    INFO("reported=" << reported << " recomputed=" << recomputed);
-    checkApproxCodelength(reported, recomputed);
+      const double reported = im.codelength();
+      const double recomputed = im.calcCodelengthOnTree(im.root(), true);
+      INFO(network << " seed " << seed << ": " << im.numLevels() << " levels, " << im.numTopModules() << " top modules");
+      INFO("reported=" << reported << " recomputed=" << recomputed);
+      checkApproxCodelength(reported, recomputed);
+    }
   }
+  REQUIRE(numDeepTreesOffPreference > 0);
 }
 
 TEST_CASE("MapEquation invariant: MemMapEquation (memory), tracked == recompute [fast][core][mapeq][mem]")
@@ -242,33 +248,38 @@ TEST_CASE("MapEquation invariant: entropy-corrected tracked == recompute (repro 
 // has no exit codeword, and used to keep that root's term. In the main tree the
 // module does have one, so under --entropy-corrected each module of modules below
 // the root was one free parameter short, in the reported codelength and in the
-// per-level table (#1176: 2.372190815 against 2.391846060 on the first input).
-// Both inputs end in a tree with modules of modules below the root, and the first
-// has K = K_pref so the module-count term stays zero.
+// per-level table (#1176: 2.372190815 against 2.391846060 for unbalanced_hierarchy
+// with -s 4 on macOS). Swept over seeds, as the module-preference case above.
 TEST_CASE("Entropy correction charges every codebook of a deep tree (repro #1176) [fast][core][mapeq][entropy-corrected]")
 {
-  const std::vector<std::pair<std::string, std::string>> runs {
-    { networkFixturePath("unbalanced_hierarchy.net"), "--entropy-corrected --preferred-number-of-modules 2 --seed 4" },
-    { repoPath("examples/networks/modular_w.net"), "--entropy-corrected -d --seed 2" },
+  const std::vector<std::pair<std::string, std::string>> inputs {
+    { networkFixturePath("unbalanced_hierarchy.net"), "--entropy-corrected --preferred-number-of-modules 2" },
+    { repoPath("examples/networks/modular_w.net"), "--entropy-corrected -d" },
   };
-  for (const auto& run : runs) {
-    InfomapWrapper im(defaultFlags(run.second));
-    im.readInputData(run.first);
-    im.run();
-    INFO(run.first << " " << run.second << ": " << im.numLevels() << " levels, " << im.numTopModules() << " top modules");
-    REQUIRE(im.numLevels() > 2);
+  unsigned int numDeepTrees = 0;
+  for (const auto& input : inputs) {
+    for (unsigned int seed = 1; seed <= 20; ++seed) {
+      InfomapWrapper im(defaultFlags(input.second + " --seed " + std::to_string(seed)));
+      im.readInputData(input.first);
+      im.run();
+      if (im.numLevels() > 2)
+        ++numDeepTrees;
 
-    double sumOfNodeTerms = 0.0;
-    for (const auto& node : im.root().infomapTree()) {
-      if (!node.isLeaf())
-        sumOfNodeTerms += node.codelength;
+      // The per-level table reads the node terms; the module-count term belongs to no node.
+      double sumOfNodeTerms = im.calcTreeCodelengthCost(im.numTopModules());
+      for (const auto& node : im.root().infomapTree()) {
+        if (!node.isLeaf())
+          sumOfNodeTerms += node.codelength;
+      }
+      const double reported = im.codelength();
+      const double recomputed = im.calcCodelengthOnTree(im.root(), true);
+      INFO(input.first << " " << input.second << " seed " << seed << ": " << im.numLevels() << " levels, " << im.numTopModules() << " top modules");
+      INFO("reported=" << reported << " node terms=" << sumOfNodeTerms << " recomputed=" << recomputed);
+      checkApproxCodelength(reported, recomputed);
+      checkApproxCodelength(sumOfNodeTerms, recomputed);
     }
-    const double reported = im.codelength();
-    const double recomputed = im.calcCodelengthOnTree(im.root(), true);
-    INFO("reported=" << reported << " node terms=" << sumOfNodeTerms << " recomputed=" << recomputed);
-    checkApproxCodelength(reported, recomputed);
-    checkApproxCodelength(sumOfNodeTerms, recomputed);
   }
+  REQUIRE(numDeepTrees > 0);
 }
 
 // The size of the correction, on a partition pinned from a file so no search
