@@ -219,17 +219,18 @@ def _directed(
     transition[dangling] = v
     p = stationary(transition)
 
+    # p_a w_ab / out_a; times beta this is the link-step rate r_ab. Unrecorded
+    # flow is normalised, so the common beta is left out there, which keeps
+    # alpha = 1 (no link steps at all) at its limit instead of 0 / 0.
     link = {
-        (source, target): beta
-        * p[net.ids[source]]
-        * step[net.ids[source], net.ids[target]]
+        (source, target): p[net.ids[source]] * step[net.ids[source], net.ids[target]]
         for source, target in net.weights
     }
     if recorded:
         teleport = np.where(dangling, p, alpha * p)
         return Flow(
             node=net.node_dict(p),
-            link=link,
+            link={key: beta * value for key, value in link.items()},
             teleport_flow=net.node_dict(teleport),
             teleport_weight=net.node_dict(v),
         )

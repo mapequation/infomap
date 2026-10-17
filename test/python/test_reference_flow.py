@@ -162,6 +162,20 @@ def test_reference_directed_by_hand():
     assert unrecorded.link == pytest.approx({(1, 2): 1.0}, rel=1e-14)
 
 
+def test_reference_unrecorded_flow_at_teleportation_probability_one():
+    # alpha = 1 is accepted. The walker never takes a link step, so the
+    # unrecorded flow is the limit alpha -> 1: one step from the teleport
+    # distribution. A two-node cycle stays at 1/2 everywhere.
+    cycle = flow(
+        [1, 2],
+        [(1, 2, 1.0), (2, 1, 1.0)],
+        "directed",
+        teleportation_probability=1.0,
+    )
+    assert cycle.node == pytest.approx({1: 0.5, 2: 0.5}, rel=1e-14)
+    assert cycle.link == pytest.approx({(1, 2): 0.5, (2, 1): 0.5}, rel=1e-14)
+
+
 def test_reference_undirected_flow_is_stationary():
     # The closed form p_a = s_a / sum(s) must be the stationary distribution of
     # the walk that leaves a node along each link end by weight.
@@ -358,6 +372,21 @@ def test_generated_directed(tmp_path, variant, alpha, seed):
     assert sorted(result.links("weight")) == sorted(links)
     _assert_flow(result, expected)
     _assert_leaf_enter_exit(result, expected, undirected=False)
+
+
+@pytest.mark.parametrize("seed", [1, 2])
+@pytest.mark.parametrize("variant", ["unrecorded-to-links", "unrecorded-to-nodes"])
+def test_generated_unrecorded_at_teleportation_probability_one(tmp_path, variant, seed):
+    links, node_weights = _directed_network(seed)
+    path = _write_pajek(tmp_path / "net.net", links, node_weights)
+    options = {
+        "flow_model": "directed",
+        "teleportation_probability": 1.0,
+        **DIRECTED_VARIANTS[variant],
+    }
+    result = _run(path, **options)
+    expected = _reference(result, "directed", options, node_weights)
+    _assert_flow(result, expected)
 
 
 @pytest.mark.parametrize("seed", [1, 2])
