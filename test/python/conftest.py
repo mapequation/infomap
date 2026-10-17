@@ -11,6 +11,24 @@ from infomap import Infomap
 from infomap._options import LEGACY_SURFACE_WARNING
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--run-slow",
+        action="store_true",
+        help="Also run the tests marked slow (left out of the default run).",
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    # A marker expression that names slow (-m slow) also selects them.
+    if config.getoption("--run-slow") or "slow" in (config.option.markexpr or ""):
+        return
+    skip = pytest.mark.skip(reason="slow; run with --run-slow")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip)
+
+
 @dataclass(frozen=True)
 class TestPaths:
     repo_root: Path
