@@ -184,11 +184,6 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // directly under the root (all of them under --no-infomap) is replaced by its nodes there.
   if (im.clusterDataIsHard && misreported)
     return true;
-  // #1209: on a state network, a search from a tree that it reshapes reports the codelength of
-  // the memory map equation's stale per-module physical-node bookkeeping, which
-  // calcCodelengthOnTree on the same instance repeats; a fresh instance scores less.
-  if (im.haveMemory() && !im.noInfomap && misreported && contains(message, "read back"))
-    return true;
   return false;
 }
 

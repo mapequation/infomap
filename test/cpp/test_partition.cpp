@@ -2082,12 +2082,13 @@ TEST_CASE("Fuzz finding: a search over hard cluster-data reports the codelength 
   CHECK(im.codelength() == doctest::Approx(2.320730357)); // 1.256687717
 }
 
-// On a state network, a search from a tree it reshapes ends with states 1 and 4, both of
-// physical node 1, in one module. The run scores that module 1 bit from the memory map
-// equation's per-module physical-node bookkeeping, and calcCodelengthOnTree on the same
-// instance agrees; the tree read back with --no-infomap scores it 2/3 bit, as a module
-// that codes one physical node with flow 1/3 should be.
-TEST_CASE("Fuzz finding: a search on a state network from a tree seed reports the codelength of its tree (#1209) [fast][core][partition]" * doctest::should_fail())
+// On a state network, a search from a three-level tree seed removes the sub-modules and
+// ends with states 1 and 4, both of physical node 1, in one module. That module was a
+// module of modules in the seed, and only leaf modules got their physical nodes, so the
+// run scored it 1 bit as if its states were separate nodes. The tree read back with
+// --no-infomap scores it 2/3 bit, as a module that codes one physical node with flow 1/3
+// should be (#1209).
+TEST_CASE("Fuzz finding: a search on a state network from a tree seed reports the codelength of its tree (#1209) [fast][core][partition]")
 {
   const std::string tree = "fuzz_states_seed.tree";
   {
@@ -2099,7 +2100,7 @@ TEST_CASE("Fuzz finding: a search on a state network from a tree seed reports th
   im.run();
   std::remove(tree.c_str());
   // States 1 and 4 together, every other state alone, scored with --no-infomap.
-  CHECK(im.codelength() == doctest::Approx(4.251629167)); // 4.584962501
+  CHECK(im.codelength() == doctest::Approx(4.251629167)); // was 4.584962501
 }
 
 // Under undirected flow, --recorded-teleportation does not change what the search charges:
