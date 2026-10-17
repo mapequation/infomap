@@ -176,8 +176,9 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   const bool unbalanced = contains(message, "do not balance");
   const bool misreported = contains(message, "reported codelength");
   // #1175: bipartite input with recorded teleportation (also implied by
-  // --regularized) leaves the teleport weights summing to less than 1.
-  if (im.network().isBipartite() && (im.recordedTeleportation || im.regularized) && (negative || unbalanced))
+  // --regularized) leaves the teleport weights summing to less than 1, so the
+  // reported codelength does not match the finished tree's either.
+  if (im.network().isBipartite() && (im.recordedTeleportation || im.regularized) && (negative || unbalanced || misreported))
     return true;
   // #1207: the tree is not scored again after the hard partition is restored: a module that held
   // a single hard module is left without that module's codebook, and a hard module

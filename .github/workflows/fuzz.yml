@@ -6,7 +6,8 @@ name: Fuzz
 # separate workflow (nothing depends on it) so it never gates PRs, but it goes
 # RED when a reproducer is found. Mirrors the non-blocking pattern of
 # python-prerelease-check.yml -- do NOT add continue-on-error, that would mask
-# the alert.
+# the alert. fuzz-pr.yml runs the same targets for 60 s on PRs that touch them,
+# from the corpus this workflow saves.
 on:
   schedule:
     - cron: "0 5 * * 2" # Tuesdays 05:00 UTC (clear of the Monday crons)
