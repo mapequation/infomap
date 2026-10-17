@@ -540,11 +540,11 @@ TEST_CASE("Fuzz finding: --regularized with --variable-markov-time keeps module 
 namespace {
 
 template <typename AddInput>
-void checkRecordedTeleportationHasNoEffect(const std::string& flags, AddInput addInput)
+void checkOptionHasNoEffect(const std::string& option, const std::string& flags, AddInput addInput)
 {
   for (const char* trials : { "--num-trials 1", "--num-trials 2" }) {
-    INFO(flags << " " << trials);
-    InfomapWrapper recorded(defaultFlags(flags + " " + trials + " --recorded-teleportation"));
+    INFO(option << " " << flags << " " << trials);
+    InfomapWrapper recorded(defaultFlags(flags + " " + trials + " " + option));
     addInput(recorded);
     checkLeafFlowBalances(recorded);
     InfomapWrapper unrecorded(defaultFlags(flags + " " + trials));
@@ -567,34 +567,69 @@ void checkRecordedTeleportationHasNoEffect(const std::string& flags, AddInput ad
 TEST_CASE("--recorded-teleportation has no effect under undirdir, outdirdir and rawdir (#1188) [fast][core][mapeq]")
 {
   for (const char* model : { "undirdir", "outdirdir", "rawdir" }) {
-    checkRecordedTeleportationHasNoEffect(std::string("--flow-model ") + model, [](InfomapWrapper& im) { im.addLink(1, 2); });
-    checkRecordedTeleportationHasNoEffect(std::string("--flow-model ") + model, [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
+    checkOptionHasNoEffect("--recorded-teleportation", std::string("--flow-model ") + model, [](InfomapWrapper& im) { im.addLink(1, 2); });
+    checkOptionHasNoEffect("--recorded-teleportation", std::string("--flow-model ") + model, [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
   }
 }
 
 TEST_CASE("--recorded-teleportation has no effect under precomputed flow (#1188) [fast][core][mapeq]")
 {
-  checkRecordedTeleportationHasNoEffect("--flow-model precomputed", [](InfomapWrapper& im) { im.readInputData(networkFixturePath("twotriangles_flow.net")); });
+  checkOptionHasNoEffect("--recorded-teleportation", "--flow-model precomputed", [](InfomapWrapper& im) { im.readInputData(networkFixturePath("twotriangles_flow.net")); });
 }
 
 TEST_CASE("--recorded-teleportation has no effect under undirected flow, over several trials (#1188) [fast][core][mapeq]")
 {
-  checkRecordedTeleportationHasNoEffect("--flow-model undirected", [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
+  checkOptionHasNoEffect("--recorded-teleportation", "--flow-model undirected", [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
 }
 
-// --regularized over a node flow that is not the coded walk's own (--use-node-weights-as-flow,
-// or undirdir, outdirdir and rawdir, whose flow ignores --regularized and leaves every teleport
-// weight at 0): the regularized flow step takes the leaves' enter and exit flow from the node
-// flow, not from the links and the recorded teleportation. The search prices a module from its
-// leaves' own flow, but a restored tree (initTree, for the super-level fallback, the best of
-// several trials, or cluster data) is priced from the links, which is what the reference
-// codelength (test/python/reference_codelength.py) does too. The restored tree then holds
-// modules whose flow does not balance against their children's, and a release run can report
-// a worse tree than the recursive search found: on the network below with --seed 1 (libc++),
-// 3.73 bits against 2.00 for the super-level tree it restored (#1189). Which seeds take that
-// path differs between standard libraries, so sweep them; the case after it does not depend
-// on it.
-TEST_CASE("Fuzz finding: --regularized over a foreign node flow balances module flow in the finished tree (#1189) [fast][core][mapeq]" * doctest::should_fail())
+// undirdir, outdirdir, rawdir and precomputed flow ignored --regularized and left every teleport
+// weight at 0, but the run still took the regularized path: the leaves' enter and exit flow came
+// from the node flow, not from the links, and teleportation left every module without entering
+// any. The search priced a module from its leaves' own flow, while a restored tree (initTree, for
+// the super-level fallback, the best of several trials, or cluster data) and the reference
+// codelength priced it from the links. A release run could then report a worse tree than the
+// recursive search found: on the network below with --seed 1 (libc++), 3.73 bits against 2.00
+// for the super-level tree it restored. These models now ignore --regularized altogether, so the
+// run equals one without it (#1189).
+namespace {
+
+void addRegularizedFindingLinks(InfomapWrapper& im)
+{
+  for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 0, 2 }, { 1, 3 }, { 2, 3 }, { 4, 5 }, { 5, 6 }, { 7, 9 }, { 3, 7 } })
+    im.addLink(link.first, link.second);
+  im.addLink(5, 1, 0.8);
+}
+
+// The tree the search found, rebuilt through initTree as a restore does, is priced as the
+// search priced it.
+void checkRestoredTreeKeepsCodelength(const std::string& network, const std::string& flags)
+{
+  CAPTURE(flags);
+  InfomapWrapper im(defaultFlags(flags));
+  im.readInputData(repoPath(network));
+  im.run();
+  REQUIRE(im.numLevels() > 2);
+  const double searched = im.getHierarchicalCodelength();
+  NodePaths tree;
+  for (auto it(im.iterLeafNodes()); !it.isEnd(); ++it)
+    tree.emplace_back(it->stateId, it.path());
+  im.initTree(tree);
+  checkApproxCodelength(im.getHierarchicalCodelength(), searched);
+}
+
+} // namespace
+
+TEST_CASE("--regularized has no effect under undirdir, outdirdir, rawdir and precomputed (#1189) [fast][core][mapeq]")
+{
+  for (const char* model : { "undirdir", "outdirdir", "rawdir" }) {
+    checkOptionHasNoEffect("--regularized", std::string("--flow-model ") + model, addRegularizedFindingLinks);
+    checkOptionHasNoEffect("--regularized", std::string("--flow-model ") + model, [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
+  }
+  checkOptionHasNoEffect("--regularized", "--flow-model precomputed", [](InfomapWrapper& im) { im.readInputData(networkFixturePath("twotriangles_flow.net")); });
+}
+
+// Which seeds take the restore path differs between standard libraries, so sweep them.
+TEST_CASE("--regularized under outdirdir balances module flow in the finished tree (#1189) [fast][core][mapeq]")
 {
   const auto moduleFlowBalances = [](InfomapWrapper& im) {
     try {
@@ -620,35 +655,24 @@ TEST_CASE("Fuzz finding: --regularized over a foreign node flow balances module 
   unsigned int numUnbalanced = 0;
   for (unsigned int seed = 1; seed <= 100; ++seed) {
     InfomapWrapper im(defaultFlags("--flow-model outdirdir --regularized --core-loop-limit 1 --seed " + std::to_string(seed)));
-    for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 0, 2 }, { 1, 3 }, { 2, 3 }, { 4, 5 }, { 5, 6 }, { 7, 9 }, { 3, 7 } })
-      im.addLink(link.first, link.second);
-    im.addLink(5, 1, 0.8);
+    addRegularizedFindingLinks(im);
     if (!moduleFlowBalances(im))
       ++numUnbalanced;
   }
   CHECK(numUnbalanced == 0);
 }
 
-// The same tree, rebuilt through initTree as a restore does, is priced as the search priced it.
-TEST_CASE("Fuzz finding: --regularized over a foreign node flow: a restored tree keeps the search's codelength (#1189) [fast][core][mapeq]" * doctest::should_fail())
+TEST_CASE("--regularized under outdirdir: a restored tree keeps the search's codelength (#1189) [fast][core][mapeq]")
 {
-  const std::vector<std::pair<std::string, std::string>> cases {
-    { "examples/networks/ninetriangles.net", "--flow-model outdirdir --regularized --seed 3" },
-    { "test/fixtures/networks/lossy_benchmark.net", "--regularized --use-node-weights-as-flow --seed 1" },
-  };
-  for (const auto& networkAndFlags : cases) {
-    CAPTURE(networkAndFlags.second);
-    InfomapWrapper im(defaultFlags(networkAndFlags.second));
-    im.readInputData(repoPath(networkAndFlags.first));
-    im.run();
-    REQUIRE(im.numLevels() > 2);
-    const double searched = im.getHierarchicalCodelength();
-    NodePaths tree;
-    for (auto it(im.iterLeafNodes()); !it.isEnd(); ++it)
-      tree.emplace_back(it->stateId, it.path());
-    im.initTree(tree);
-    checkApproxCodelength(im.getHierarchicalCodelength(), searched);
-  }
+  checkRestoredTreeKeepsCodelength("examples/networks/ninetriangles.net", "--flow-model outdirdir --regularized --seed 3");
+}
+
+// --regularized with --use-node-weights-as-flow has the same mismatch: the regularized flow step
+// takes the leaves' enter and exit flow from the node weights, while a restored tree is priced
+// from the links. Which of the two is right waits on a decision about link-based leaf flow (#1089).
+TEST_CASE("Fuzz finding: --regularized with --use-node-weights-as-flow: a restored tree keeps the search's codelength (#1189) [fast][core][mapeq]" * doctest::should_fail())
+{
+  checkRestoredTreeKeepsCodelength("test/fixtures/networks/lossy_benchmark.net", "--regularized --use-node-weights-as-flow --seed 1");
 }
 
 // --variable-markov-time scales each link by the largest node flow over the local one.
@@ -662,19 +686,37 @@ TEST_CASE("Fuzz finding: --variable-markov-time with --use-node-weights-as-flow 
   CHECK_NOTHROW(im.run());
 }
 
-// The relax-to-self relay in the flow calculation treats any link between two states of
-// one physical node as a layer switch and relays its flow onward, on state networks
-// too. Under --regularized that extra link flow leaves a module with negative enter flow.
-TEST_CASE("Fuzz finding: --regularized with --multilayer-relax-to-self keeps module flow non-negative on states (#1191) [fast][core][mapeq]" * doctest::should_fail())
+// The relax-to-self relay in the flow calculation treated any link between two states of
+// one physical node as a layer switch and relayed its flow onward, on state networks
+// too. Under --regularized that extra link flow left a module with negative enter flow.
+// The option is for multilayer input, so a state network now runs as without it (#1191).
+TEST_CASE("--multilayer-relax-to-self has no effect on state networks (#1191) [fast][core][mapeq]")
 {
-  InfomapWrapper im(defaultFlags("--regularized --multilayer-relax-to-self"));
-  im.addStateNode(1, 1);
-  im.addStateNode(2, 2);
-  im.addStateNode(3, 3);
-  im.addStateNode(4, 2);
-  im.addLink(2, 3, 1.0);
-  im.addLink(4, 2, 0.2);
-  CHECK_NOTHROW(im.run());
+  const auto addInput = [](InfomapWrapper& im) {
+    im.addStateNode(1, 1);
+    im.addStateNode(2, 2);
+    im.addStateNode(3, 3);
+    im.addStateNode(4, 2);
+    im.addLink(2, 3, 1.0);
+    im.addLink(4, 2, 0.2);
+  };
+  for (const char* flags : { "", "--directed", "--regularized", "--directed --regularized" }) {
+    INFO(flags);
+    InfomapWrapper relaxed(defaultFlags(std::string(flags) + " --multilayer-relax-to-self"));
+    addInput(relaxed);
+    CHECK_NOTHROW(relaxed.run());
+    InfomapWrapper plain(defaultFlags(flags));
+    addInput(plain);
+    CHECK_NOTHROW(plain.run());
+    CHECK(relaxed.codelength() == plain.codelength());
+    std::vector<std::pair<double, double>> relaxedModules;
+    std::vector<std::pair<double, double>> plainModules;
+    for (auto& node : relaxed.root().infomapTree())
+      relaxedModules.emplace_back(node.data.enterFlow, node.data.exitFlow);
+    for (auto& node : plain.root().infomapTree())
+      plainModules.emplace_back(node.data.enterFlow, node.data.exitFlow);
+    CHECK(relaxedModules == plainModules);
+  }
 }
 
 // Only the *Bipartite section was checked for links that cross the start id, so a

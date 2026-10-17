@@ -184,7 +184,7 @@ class Scorer:
         )
         self.links = [(s, t, v) for (s, t), v in self.flow.link.items()]
         self.undirected = not directed
-        self.total_degree = total_degree(links)
+        self.total_degree = total_degree(links, undirected=not directed)
         self.objective = objective
 
     def __call__(self, labels) -> float:

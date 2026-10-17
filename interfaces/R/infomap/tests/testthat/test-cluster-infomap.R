@@ -17,7 +17,8 @@ test_that("cluster_infomap accepts data.frame edge lists", {
   expect_equal(result$num_nodes, 6L)
   expect_equal(result$num_links, 7L)
   expect_equal(result$num_top_modules, 2L)
-  expect_named(result$modules, as.character(1:6))
+  # Names come in tree order, which is sorted on flow (#1202).
+  expect_setequal(names(result$modules), as.character(1:6))
   expect_true(is.numeric(result$codelength))
   expect_true(all(c("node_id", "module_id", "flow") %in% names(result$nodes)))
 })

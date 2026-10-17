@@ -1116,7 +1116,8 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   std::vector<unsigned int> k(N, 0);
   std::vector<double> s(N, 0);
   double sum_s = sumWeightedDegree;
-  unsigned int sum_k = network.sumDegree();
+  // The degree counts a pair listed as a b and b a once, as one listing of a b twice (#1203)
+  unsigned int sum_k = network.sumUndirectedDegree();
   if (sum_k == 0) {
     const auto uniformFlow = 1.0 / N;
     std::fill(nodeFlow.begin(), nodeFlow.end(), uniformFlow);
@@ -1126,11 +1127,13 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   }
   double average_weight = sum_s / sum_k;
 
+  // Undirected flow keeps the network's node order, so these are its CSR indices
   for (auto& link : flowLinks) {
-    k[link.source] += 1;
+    const bool countDegree = !network.isReverseOfLink(link.source, link.target);
+    k[link.source] += countDegree;
     s[link.source] += link.flow;
     if (link.source != link.target) {
-      k[link.target] += 1;
+      k[link.target] += countDegree;
       s[link.target] += link.flow;
     }
   }
@@ -1406,8 +1409,10 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   // is approximate only when those neighbours are cross-community (the relay then
   // charges a second crossing the one-hop spread model does not); reproducing that
   // exactly would need spread's O(L^2*k) links. (Same Markov-time-2 idea as the
-  // bipartite handling above.)
-  if (config.multilayerRelaxToSelf && !network.isBipartite()) {
+  // bipartite handling above.) Multilayer input only: on a state network a link between
+  // two states of one physical node is not a layer switch, and relaying its flow gave
+  // modules negative enter flow under --regularized (#1191).
+  if (config.multilayerRelaxToSelf && config.isMultilayerNetwork() && !network.isBipartite()) {
     std::vector<unsigned int> physId(numNodes, 0);
     for (const auto& nodeIt : network.nodes()) {
       physId[nodeIndexMap[nodeIt.second.id]] = nodeIt.second.physicalId;
@@ -1515,7 +1520,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
   // Enter/exit flow
   if (enterFlow.empty()) {
-    if (!config.isUndirectedClustering() && !config.regularized) {
+    if (!config.isUndirectedClustering() && !config.usesRegularizedFlow()) {
       enterFlow.assign(numNodes, 0);
       exitFlow.assign(numNodes, 0);
       double alpha = config.teleportationProbability;

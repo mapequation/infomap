@@ -20,7 +20,8 @@ test_that("Infomap clusters two triangles into two modules", {
   modules <- im$modules
   expect_equal(length(modules), 6L)
   expect_setequal(unique(modules), c(1L, 2L))
-  expect_named(modules, as.character(1:6))
+  # Names come in tree order, which is sorted on flow (#1202).
+  expect_setequal(names(modules), as.character(1:6))
 })
 
 test_that("add_links accepts matrix input through bulk path", {

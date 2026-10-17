@@ -173,6 +173,7 @@ help:
 		"  test-fast             Run the fast native + Python feedback suite." \
 		"  test-sanitizers       Run the C++ test suite under ASan/UBSan." \
 		"  test-tsan             Run the C++ tests and threaded CLI runs under TSan with OpenMP." \
+		"  coverage              Build a one-off llvm-cov coverage map of src/ (tests, CLI, fuzz)." \
 		"  bench-native          Run the native benchmark and memory baseline harness." \
 		"  bench-python          Run the nightly-style Python benchmark harness." \
 		"" \
