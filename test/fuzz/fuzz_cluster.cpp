@@ -193,6 +193,12 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // calcCodelengthOnTree on the same instance repeats; a fresh instance scores less.
   if (im.haveMemory() && !im.noInfomap && misreported && contains(message, "read back"))
     return true;
+  // Under undirected flow with --recorded-teleportation, a tree of three or more levels
+  // built by initTree (a .tree read as cluster data, or the deep seed of a search) gets
+  // modules of modules whose enter and exit flow do not balance: the recorded-teleportation
+  // terms in aggregateFlowValuesFromLeafToRoot are added on top of undirected link flow.
+  if (im.recordedTeleportation && !im.regularized && im.isUndirectedClustering() && unbalanced)
+    return true;
   // #1176: the recursive search leaves the entropy correction off the modules of
   // modules, and the |K - K_pref| term of --preferred-number-of-modules off the
   // total, so a searched tree is reported short of its own codelength (fixed by #1178).

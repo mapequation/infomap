@@ -8,6 +8,7 @@
 #include "TestUtils.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <limits>
 #include <map>
@@ -1963,6 +1964,46 @@ TEST_CASE("Fuzz finding: a search on a state network from a tree seed reports th
   std::remove(tree.c_str());
   // States 1 and 4 together, every other state alone, scored with --no-infomap.
   CHECK(im.codelength() == doctest::Approx(4.251629167)); // 4.584962501
+}
+
+// Under undirected flow, --recorded-teleportation does not change what the search charges:
+// ninetriangles reports 3.371875026 with or without it. A tree of three or more levels
+// built by initTree -- a .tree read as cluster data, or the deep seed of a search -- has its
+// module enter and exit flow from aggregateFlowValuesFromLeafToRoot, which adds the
+// recorded-teleportation terms on top of the undirected link flow. A module of modules then
+// does not balance against its children, and Infomap's own tree read back with --no-infomap
+// scores 4.200546623. With -d both give 4.158639238.
+TEST_CASE("Fuzz finding: undirected --recorded-teleportation balances module flow in a tree read as cluster data [fast][core][partition]" * doctest::should_fail())
+{
+  const std::string tree = "fuzz_recorded_deep.tree";
+  {
+    std::ofstream out(tree);
+    out << "1:1:1 0 \"A\" 1\n1:1:2 0 \"B\" 2\n1:1:3 0 \"C\" 3\n1:2:1 0 \"D\" 4\n1:2:2 0 \"E\" 5\n1:2:3 0 \"F\" 6\n";
+  }
+  InfomapWrapper im(infomap::test::defaultFlags("--no-infomap --recorded-teleportation --cluster-data " + tree));
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  bool balanced = true;
+  try {
+    im.run();
+  } catch (const infomap::InfomapError&) {
+    balanced = false; // the invariants, in builds that have them
+  }
+  std::remove(tree.c_str());
+  if (balanced) {
+    for (auto& node : im.root().infomapTree()) {
+      if (node.isLeaf() || node.isRoot())
+        continue;
+      double sumEnter = 0.0;
+      double sumExit = 0.0;
+      for (const InfoNode& child : node) {
+        sumEnter += child.data.enterFlow;
+        sumExit += child.data.exitFlow;
+      }
+      if (std::abs((sumExit - node.data.exitFlow) - (sumEnter - node.data.enterFlow)) > 1e-9)
+        balanced = false;
+    }
+  }
+  CHECK(balanced);
 }
 
 // A tree row whose path does not start with a number (`x`, `:1`) is read as an empty
