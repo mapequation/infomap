@@ -1585,6 +1585,10 @@ void InfomapBase::run(Network& network)
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
+  // Set here rather than in the constructor, which also builds the sub-Infomaps
+  // inside the parallel regions.
+  Log::precision(verboseNumberPrecision);
+
   // Stamp the owner thread (gates the callback) and clear any leftover cancel so
   // the instance is reusable after an interrupted run (issue #412). The team count
   // starts over for the same reason: it describes this run, not the instance.
@@ -2469,8 +2473,22 @@ void InfomapBase::hierarchicalPartition()
       double codelengthBefore = 0.0;
       double codelengthAfter = 0.0;
 
+      // Fine-tune only modules whose children are all leaf modules. Testing the first
+      // child is not enough on a ragged tree: a module with a leaf module first and a
+      // deeper module or a lone leaf next would size its buffers by the wrong leaf
+      // count and write past them (#1216).
+      const auto isModuleOfLeafModules = [](const InfoNode& module) {
+        if (module.isLeaf())
+          return false;
+        for (const InfoNode& child : module) {
+          if (!child.isLeafModule())
+            return false;
+        }
+        return true;
+      };
+
       for (InfoNode& module : m_root.infomapTree()) {
-        if (!module.isLeaf() && module.firstChild->isLeafModule()) {
+        if (isModuleOfLeafModules(module)) {
           codelengthBefore += module.codelength;
           auto numLeafs = 0;
           for (auto& leafModule : module) {
