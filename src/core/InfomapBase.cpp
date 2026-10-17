@@ -2260,9 +2260,9 @@ void InfomapBase::generateSubNetwork(Network& network)
   double minLocalScale = variableMarkovTimeMinLocalScale;
   double damping = variableMarkovTimeDamping;
 
-  double maxScale = infomath::linlog(maxFlow * totDegree, damping);
-
   if (variableMarkovTime) {
+    // Only computed here: with no links, maxFlow * totDegree is 0 and linlog(0) is log2(0).
+    double maxScale = infomath::linlog(maxFlow * totDegree, damping);
     if (damping < 0) {
       maxScale = infomath::linlog(pow(2.0, maxEntropy), -damping);
     }
