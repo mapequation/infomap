@@ -260,8 +260,12 @@ def _same(a: float, b: float):
     assert a == pytest.approx(b, rel=REL, abs=ABS)
 
 
-def _entropy_bits_per_parameter(net: Net, strength: float = 1.0) -> float:
-    return strength / (2 * total_degree(net.links) * math.log(2))
+def _entropy_bits_per_parameter(net: Net, options) -> float:
+    undirected = (
+        not options.get("directed")
+        and options.get("flow_model", "undirected") == "undirected"
+    )
+    return 1 / (2 * total_degree(net.links, undirected=undirected) * math.log(2))
 
 
 # --- permuting node ids and link order -----------------------------------------
@@ -346,8 +350,9 @@ def test_scaling_weights(tmp_path, name, variant, factor):
     scaled_plain = score(tmp_path, scaled, paths, plain_options).codelength
     _same(scaled_plain, plain)
     _same(
-        (result.codelength - scaled_plain) / _entropy_bits_per_parameter(scaled),
-        (original.codelength - plain) / _entropy_bits_per_parameter(net),
+        (result.codelength - scaled_plain)
+        / _entropy_bits_per_parameter(scaled, options),
+        (original.codelength - plain) / _entropy_bits_per_parameter(net, options),
     )
 
 
@@ -379,23 +384,14 @@ def test_splitting_a_link_into_duplicates(tmp_path, name, variant):
     )
 
 
-_REVERSE_SPLIT_COUNTS_LINKS = pytest.mark.xfail(
-    reason="undirected input sums duplicate links only when they have the same direction, "
-    "so a b plus b a counts as two links and a b twice as one, and the objectives that count "
-    "links (the regularized prior's degrees, the entropy correction's sample size) differ",
-    strict=True,
-    raises=AssertionError,
-)
-
-
 @pytest.mark.parametrize(
     "variant",
     [
         "undirected",
         "markov-time",
         "preferred",
-        pytest.param("entropy", marks=_REVERSE_SPLIT_COUNTS_LINKS),
-        pytest.param("regularized", marks=_REVERSE_SPLIT_COUNTS_LINKS),
+        "entropy",
+        "regularized",
     ],
 )
 @pytest.mark.parametrize(
@@ -457,8 +453,8 @@ def test_adding_an_isolated_node(tmp_path, name, variant, own_module):
         if own_module:
             expected += abs(top + 1 - preferred) - abs(top - preferred)
     if options.get("entropy_corrected"):
-        expected += (2 if own_module else 1) * _entropy_bits_per_parameter(net)
-        one_level += _entropy_bits_per_parameter(net)
+        expected += (2 if own_module else 1) * _entropy_bits_per_parameter(net, options)
+        one_level += _entropy_bits_per_parameter(net, options)
     _same(result.codelength, expected)
     _same(result.one_level_codelength, one_level)
 
@@ -541,8 +537,10 @@ def test_undirected_equals_both_directions(tmp_path, name, objective, model):
     plain_arcs = score(tmp_path, arcs, paths, plain_directed, tag="directed").codelength
     _same(plain_arcs, plain)
     _same(
-        (directed.codelength - plain_arcs) / _entropy_bits_per_parameter(arcs),
-        (undirected.codelength - plain) / _entropy_bits_per_parameter(net),
+        (directed.codelength - plain_arcs)
+        / _entropy_bits_per_parameter(arcs, directed_options),
+        (undirected.codelength - plain)
+        / _entropy_bits_per_parameter(net, undirected_options),
     )
 
 

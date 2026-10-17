@@ -473,6 +473,29 @@ unsigned int StateNetwork::indexOfId(unsigned int id) const
       std::lower_bound(m_nodeIds.begin(), m_nodeIds.end(), id) - m_nodeIds.begin());
 }
 
+bool StateNetwork::isReverseOfLink(unsigned int sourceIndex, unsigned int targetIndex) const
+{
+  if (sourceIndex <= targetIndex) {
+    return false;
+  }
+  ensureFinalized();
+  // Both CSR builds keep each row sorted on target index
+  const auto first = m_linkTargets.begin() + m_linkOffsets[targetIndex];
+  const auto last = m_linkTargets.begin() + m_linkOffsets[targetIndex + 1];
+  return std::binary_search(first, last, sourceIndex);
+}
+
+unsigned int StateNetwork::sumUndirectedDegree() const
+{
+  unsigned int numReverseLinks = 0;
+  forEachLink([&](unsigned int sourceIndex, unsigned int targetIndex, double, double&) {
+    if (isReverseOfLink(sourceIndex, targetIndex)) {
+      ++numReverseLinks;
+    }
+  });
+  return sumDegree() - 2 * numReverseLinks;
+}
+
 void StateNetwork::finalizeLinks()
 {
   // Idempotent: build the consumed CSR exactly once. A second call would rebuild
