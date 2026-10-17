@@ -403,7 +403,8 @@ its corpus is `build/fuzz/corpus-cluster`. Its open bugs are listed in its own
 `test/cpp/test_partition.cpp`.
 
 A weekly non-blocking `.github/workflows/fuzz.yml` runs all three targets on
-Linux. The fuzzer writes findings under `build/fuzz/` as `crash-*` /
+Linux, and `.github/workflows/fuzz-pr.yml` runs each target for 60 s on PRs
+that touch the code it covers, also non-blocking. The fuzzer writes findings under `build/fuzz/` as `crash-*` /
 `timeout-*` / `leak-*` (`run-crash-*` and `cluster-crash-*` and so on for the
 other targets); reproduce one with:
 

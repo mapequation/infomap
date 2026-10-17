@@ -176,8 +176,9 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   const bool unbalanced = contains(message, "do not balance");
   const bool misreported = contains(message, "reported codelength");
   // #1175: bipartite input under --regularized: the uncoded feature nodes keep enter and
-  // exit flow 0 while their links carry flow.
-  if (im.network().isBipartite() && im.usesRegularizedFlow() && (negative || unbalanced))
+  // exit flow 0 while their links carry flow, so the reported codelength does not match the
+  // finished tree's either.
+  if (im.network().isBipartite() && im.usesRegularizedFlow() && (negative || unbalanced || misreported))
     return true;
   // #1207: the tree is not scored again after the hard partition is restored: a module that held
   // a single hard module is left without that module's codebook, and a hard module

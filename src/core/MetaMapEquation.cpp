@@ -90,6 +90,9 @@ void MetaMapEquation::initMetaNodes(InfoNode& root)
           // TODO: Use flow here and move weightByFlow choice to metaCollection, using flowCount?
           double flow = weightByFlow ? node.data.flow : m_unweightedNodeFlow;
           node.parent->ensureMetaCollection().add(node.metaData()[0], flow);
+        } else if (node.hasMetaCollection()) {
+          // A collapsed hard module is a leaf with its nodes' meta data already collected.
+          node.parent->ensureMetaCollection().add(node.metaCollection());
         } else {
           throw std::length_error("A node is missing meta data using MetaMapEquation");
         }
