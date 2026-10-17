@@ -89,7 +89,7 @@ std::string optionsFromHeader(const uint8_t* h)
   if ((h[1] & 0x40) != 0)
     flags += " --use-node-weights-as-flow";
   if ((h[1] & 0x80) != 0)
-    flags += " --include-self-links";
+    flags += " --variable-markov-damping 0";
 
   // Byte 2: the number and depth of modules.
   const unsigned int preferredModules = h[2] & 0x7;
@@ -160,43 +160,79 @@ MetaData applyMetaData(infomap::InfomapWrapper& im, uint8_t byte)
   return metaData;
 }
 
-// Open bugs the target would otherwise report on every run. Each is pinned as a
-// should_fail case in test/cpp/test_map_equation_invariants.cpp ("Fuzz finding:")
-// or by its issue; drop the entry when the bug is fixed so the fuzzer guards the fix.
-bool isKnownFinding(const infomap::InfomapWrapper& im)
+// What the known findings below need from the network.
+struct NetworkShape {
+  bool stateLinkWithinNode = false; // a link between two states of one physical node
+  bool isolatedNode = false;
+  bool linkInsideBipartiteSide = false; // a link that does not cross the start id
+};
+
+NetworkShape networkShape(const infomap::Network& network)
 {
+  NetworkShape shape;
+  std::vector<bool> linked(network.numNodes(), false);
+  const unsigned int start = network.bipartiteStartId();
+  network.forEachLink([&](unsigned int source, unsigned int target, double /*weight*/, double& /*flow*/) {
+    linked[source] = linked[target] = true;
+    const unsigned int sourceId = network.nodeId(source);
+    const unsigned int targetId = network.nodeId(target);
+    if (sourceId != targetId && network.nodes().at(sourceId).physicalId == network.nodes().at(targetId).physicalId)
+      shape.stateLinkWithinNode = true;
+    if (network.isBipartite() && (sourceId < start) == (targetId < start))
+      shape.linkInsideBipartiteSide = true;
+  });
+  for (const bool isLinked : linked)
+    shape.isolatedNode = shape.isolatedNode || !isLinked;
+  return shape;
+}
+
+// Open bugs the target would otherwise report on every run. Each needs its options,
+// its kind of failure and, where it has one, its network shape, so an unrelated
+// failure under the same options is still reported. Each is pinned as a should_fail
+// case in test/cpp/test_map_equation_invariants.cpp ("Fuzz finding:") or by its
+// issue; drop the entry when the bug is fixed so the fuzzer guards the fix.
+bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
+{
+  using infomap::FlowModel;
+  const bool negative = contains(message, "Negative");
+  const bool unbalanced = contains(message, "do not balance");
+  const auto model = im.flowModel;
+  const auto shape = networkShape(im.network());
+  const auto& network = im.network();
+
   // #1175: bipartite input with recorded teleportation (also implied by
   // --regularized) leaves the teleport weights summing to less than 1.
-  if (im.network().isBipartite() && (im.recordedTeleportation || im.regularized))
+  if (network.isBipartite() && (im.recordedTeleportation || im.regularized) && (negative || unbalanced))
     return true;
   // --regularized with Markov time above 1, global or variable: negative module
   // enter flow.
-  if (im.regularized && (im.markovTime > 1.0 || im.variableMarkovTime))
+  if (im.regularized && (im.markovTime > 1.0 || im.variableMarkovTime) && negative)
     return true;
   // --recorded-teleportation under the undirdir, outdirdir, rawdir and precomputed
   // models: leaf exit and enter flow do not balance.
-  const auto model = im.flowModel;
-  if (im.recordedTeleportation && !im.regularized && model != infomap::FlowModel::undirected && model != infomap::FlowModel::directed)
+  if (im.recordedTeleportation && !im.regularized && model != FlowModel::undirected && model != FlowModel::directed && unbalanced && contains(message, "after the flow calculation"))
     return true;
-  // --regularized with outdirdir or rawdir flow: a module in the finished tree can be
-  // exited but never entered.
-  if (im.regularized && (model == infomap::FlowModel::outdirdir || model == infomap::FlowModel::rawdir))
+  // Recorded teleportation (also implied by --regularized) over a node flow that is not
+  // the coded walk's own, from undirdir, outdirdir, rawdir, precomputed flow or
+  // --use-node-weights-as-flow: a module of modules in the finished tree does not balance.
+  const bool foreignFlow = (model != FlowModel::undirected && model != FlowModel::directed) || im.useNodeWeightsAsFlow;
+  if ((im.recordedTeleportation || im.regularized) && foreignFlow && unbalanced && contains(message, "after the finished tree"))
     return true;
-  // --regularized with --multilayer-relax-to-self: the relay also runs on state
-  // networks, and the extra link flow gives a module negative enter flow.
-  if (im.regularized && im.multilayerRelaxToSelf)
+  // --regularized with --multilayer-relax-to-self: the relay also runs on a link
+  // between two states of one physical node, and gives a module negative enter flow.
+  if (im.regularized && im.multilayerRelaxToSelf && shape.stateLinkWithinNode && negative)
     return true;
-  // Bipartite input with links between feature nodes (outside the *Bipartite section)
-  // and --bipartite-teleportation: directed flow diverges.
-  if (im.network().isBipartite() && im.bipartiteTeleportation && !im.isUndirectedClustering())
+  // Bipartite input with links inside one side (outside the *Bipartite section) and
+  // directed --bipartite-teleportation: the flow diverges, so any check can fire.
+  if (network.isBipartite() && im.bipartiteTeleportation && !im.isUndirectedClustering() && shape.linkInsideBipartiteSide)
     return true;
   // --variable-markov-time with --use-node-weights-as-flow: negative enter flow when an
   // isolated node holds the largest flow.
-  if (im.variableMarkovTime && im.useNodeWeightsAsFlow)
+  if (im.variableMarkovTime && im.useNodeWeightsAsFlow && shape.isolatedNode && negative)
     return true;
   // --regularized with --use-node-weights-as-flow: negative enter flow where a node's
   // weight gives it less flow than its links carry.
-  return im.regularized && im.useNodeWeightsAsFlow;
+  return im.regularized && im.useNodeWeightsAsFlow && negative;
 }
 
 // Prints what the CLI needs to replay the finding: the options, and the meta
@@ -252,7 +288,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     metaData = applyMetaData(*im, data[5]);
     im->run();
   } catch (const infomap::InfomapError& e) {
-    if (isBug(e.what()) && !isKnownFinding(*im))
+    if (isBug(e.what()) && !isKnownFinding(*im, e.what()))
       reportBug(flags, metaData, e.what());
     // Otherwise an expected rejection of the input or the options.
   } catch (const std::runtime_error&) { // NOLINT(bugprone-empty-catch)
