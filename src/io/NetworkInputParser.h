@@ -556,6 +556,11 @@ namespace input {
       numMetaDataColumns = std::max<unsigned int>(numMetaDataColumns, metaData.size());
       ++numMetaDataRows;
     }
+    // No records means no meta-data columns, and the run would then give every node
+    // an empty meta-data vector that MetaMapEquation indexes into. A directory
+    // opens as an empty stream on POSIX, so it ends up here too.
+    if (numMetaDataRows == 0)
+      throw std::runtime_error(fmt::format(FMT_STRING("Can't parse any meta data from '{}'. Check that the path points to a meta-data file with lines 'node_id meta_category'."), filename));
     Console::detail(1, "parsed {} columns of meta data for {} nodes", numMetaDataColumns, numMetaDataRows);
   }
 
