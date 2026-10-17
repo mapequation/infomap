@@ -355,7 +355,8 @@ endif()
 
 # libFuzzer harnesses for the network intake and full runs. Opt-in and
 # Clang-only; kept out of BUILD_TESTING / infomap_cpp_tests / ctest (not
-# pass/fail unit tests). Run via `make fuzz` (FUZZ_TARGET=run for full runs).
+# pass/fail unit tests). Run via `make fuzz` (FUZZ_TARGET=run for full runs,
+# FUZZ_TARGET=cluster for cluster data).
 # Configure with -DINFOMAP_BUILD_FUZZERS=ON -DINFOMAP_USE_OPENMP=OFF.
 if(INFOMAP_BUILD_FUZZERS)
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -373,12 +374,16 @@ if(INFOMAP_BUILD_FUZZERS)
     target_link_options(infomap_core PUBLIC -fsanitize=address,undefined)
 
     # fuzz_intake: the parsers only. fuzz_run: a full run with fuzzer-chosen
-    # options and the flow invariants on.
-    foreach(fuzz_target fuzz_intake fuzz_run)
+    # options and the flow invariants on. fuzz_cluster: cluster data input
+    # (--cluster-data) on small fixed networks.
+    foreach(fuzz_target fuzz_intake fuzz_run fuzz_cluster)
         add_executable(${fuzz_target} test/fuzz/${fuzz_target}.cpp)
         target_link_libraries(${fuzz_target} PRIVATE infomap_core)
         target_compile_options(${fuzz_target}
             PRIVATE -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
         target_link_options(${fuzz_target} PRIVATE -fsanitize=fuzzer,address,undefined)
     endforeach()
+    # Reaches the private calcCodelengthOnTree and normalizeTreePaths to check the
+    # finished tree, as the invariant tests do.
+    target_compile_options(fuzz_cluster PRIVATE -fno-access-control)
 endif()

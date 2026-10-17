@@ -20,13 +20,18 @@ FUZZ_SECONDS ?= 60
 FUZZ_CXX ?= clang++
 FUZZ_CC ?= clang
 FUZZ_SEED_DIRS ?= test/fixtures/networks test/fixtures/networks/json examples/networks
-# intake (the parsers) or run (a full run with fuzzer-chosen options).
+# intake (the parsers), run (a full run with fuzzer-chosen options) or cluster
+# (cluster data input on small fixed networks).
 FUZZ_TARGET ?= intake
 FUZZ_ARGS ?=
 ifeq ($(FUZZ_TARGET),run)
 FUZZ_CORPUS_DIR ?= $(FUZZ_BUILD_DIR)/corpus-run
 FUZZ_ARTIFACT_PREFIX ?= $(FUZZ_BUILD_DIR)/run-
 FUZZ_MAX_LEN ?= 8192
+else ifeq ($(FUZZ_TARGET),cluster)
+FUZZ_CORPUS_DIR ?= $(FUZZ_BUILD_DIR)/corpus-cluster
+FUZZ_ARTIFACT_PREFIX ?= $(FUZZ_BUILD_DIR)/cluster-
+FUZZ_MAX_LEN ?= 4096
 else
 FUZZ_CORPUS_DIR ?= $(FUZZ_BUILD_DIR)/corpus
 FUZZ_ARTIFACT_PREFIX ?= $(FUZZ_BUILD_DIR)/
@@ -137,8 +142,12 @@ test-sanitizers:
 # routes JSON vs Pajek, so the single target covers both parsers.
 # FUZZ_TARGET=run reads an option header and a network and runs Infomap with the
 # flow invariants on; its seeds are the same fixtures behind a few option
-# headers (test/fuzz/seed_run_corpus.sh). New inputs land in FUZZ_CORPUS_DIR,
-# findings (crash-*/timeout-*/leak-*, prefixed run- for the run target) under
+# headers (test/fuzz/seed_run_corpus.sh).
+# FUZZ_TARGET=cluster reads an option header and a .clu, .tree or .ftree file and
+# runs it on one of a few fixed networks; its seeds are the cluster fixtures and
+# Infomap's own output for those networks (test/fuzz/seed_cluster_corpus.sh).
+# New inputs land in FUZZ_CORPUS_DIR,
+# findings (crash-*/timeout-*/leak-*, prefixed run- or cluster- for those targets) under
 # FUZZ_BUILD_DIR. Tune the run length with FUZZ_SECONDS (CI uses a larger budget
 # than the default smoke) and pass extra libFuzzer flags in FUZZ_ARGS, e.g.
 # FUZZ_ARGS=-fork=4.
@@ -157,12 +166,15 @@ fuzz:
 ifeq ($(FUZZ_TARGET),run)
 	@sh test/fuzz/seed_run_corpus.sh $(FUZZ_BUILD_DIR)/seeds-run $(foreach dir,$(FUZZ_SEED_DIRS),$(wildcard $(dir)/*.net $(dir)/*.json))
 endif
+ifeq ($(FUZZ_TARGET),cluster)
+	@sh test/fuzz/seed_cluster_corpus.sh $(FUZZ_BUILD_DIR)/seeds-cluster test/fuzz/cluster_seeds/* $(wildcard test/fixtures/clusters/*)
+endif
 	@ASAN_OPTIONS=strict_string_checks=1 UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 \
 		$(FUZZ_BUILD_DIR)/fuzz_$(FUZZ_TARGET) \
 			-max_total_time=$(FUZZ_SECONDS) -max_len=$(FUZZ_MAX_LEN) -timeout=10 \
-			-dict=test/fuzz/intake.dict \
+			-dict=test/fuzz/$(if $(filter cluster,$(FUZZ_TARGET)),cluster,intake).dict \
 			-artifact_prefix=$(FUZZ_ARTIFACT_PREFIX) -print_final_stats=1 $(FUZZ_ARGS) \
-			$(FUZZ_CORPUS_DIR) $(if $(filter run,$(FUZZ_TARGET)),$(FUZZ_BUILD_DIR)/seeds-run,$(FUZZ_SEED_DIRS))
+			$(FUZZ_CORPUS_DIR) $(if $(filter run cluster,$(FUZZ_TARGET)),$(FUZZ_BUILD_DIR)/seeds-$(FUZZ_TARGET),$(FUZZ_SEED_DIRS))
 
 bench-python:
 	@mkdir -p $(dir $(BENCHMARK_OUTPUT))
