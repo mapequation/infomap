@@ -318,6 +318,11 @@ struct Config {
   bool isBipartite() const { return bipartite; }
 #ifndef SWIG
   bool isRegularizedMultilayerFlow() const { return isMultilayerNetwork() && regularized; }
+
+  // Whether the coded walk has teleportation steps to record. Only the directed model and the
+  // regularized prior teleport; under the other flow models the link flow already sums to 1, and
+  // the recorded-teleportation terms would add exit flow with no enter flow to match (#1188).
+  bool recordsTeleportation() const { return recordedTeleportation && (flowModel == FlowModel::directed || regularized); }
 #endif
 
   bool haveMemory() const { return stateInput; }
