@@ -2371,11 +2371,28 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   // exact first chunks remove it. Module nodes allocated later still ramp from
   // kInitialChunk, which stays tight for the tiny refined modules.
   m_nodePool.reserve(numNodes);
+
+  // Decide whether a link stays inside the module from the module's own node
+  // list, never from the neighbour's parent pointer. In the recursive partition,
+  // the task that owns a neighbouring module reparents its nodes while this one
+  // runs, so reading the neighbour's parent would be a data race.
+  std::vector<const InfoNode*> ownNodes;
+  ownNodes.reserve(numNodes);
+  for (const InfoNode& node : parent)
+    ownNodes.push_back(&node);
+  std::sort(ownNodes.begin(), ownNodes.end(), std::less<const InfoNode*>());
+  auto isOwnNode = [&ownNodes](const InfoNode* node) {
+    return std::binary_search(ownNodes.begin(), ownNodes.end(), node, std::less<const InfoNode*>());
+  };
+
+  // One flag per out-link, in iteration order, so each link is looked up once.
+  std::vector<char> isInternalEdge;
   unsigned int numInternalEdges = 0;
   for (InfoNode& node : parent) {
     for (InfoEdge* e : node.outEdges()) {
-      if (e->target->parent == &parent)
-        ++numInternalEdges;
+      const bool isInternal = isOwnNode(e->target);
+      isInternalEdge.push_back(isInternal);
+      numInternalEdges += isInternal;
     }
   }
   m_edgePool.reserve(numInternalEdges);
@@ -2392,13 +2409,13 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
     ++childIndex;
   }
 
-  InfoNode* parentPtr = &parent;
   // Clone edges
+  std::size_t edgeIndex = 0;
   for (InfoNode& node : parent) {
     for (InfoEdge* e : node.outEdges()) {
       InfoEdge& edge = *e;
       // If neighbour node is within the same module, add the link to this subnetwork.
-      if (edge.target->parent == parentPtr) {
+      if (isInternalEdge[edgeIndex++]) {
         m_leafNodes[edge.source->index]->addOutEdge(*m_leafNodes[edge.target->index], edge.data.weight, edge.data.flow);
       }
     }
