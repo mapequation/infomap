@@ -3455,7 +3455,9 @@ unsigned int InfomapBase::recursivePartition()
     double moduleCodelength = 0.0;
     for (auto& module : m_root)
       moduleCodelength += module.codelength;
-    hierarchicalCodelength = indexCodelength + moduleCodelength;
+    // The tree-level term, as calcCodelengthOnTree adds it: no node holds it, and
+    // without it a tree with K != K_pref top modules was reported |K - K_pref| short.
+    hierarchicalCodelength = indexCodelength + moduleCodelength + calcTreeCodelengthCost(numTopModules());
   }
   Console::detail(1, "recursive: from {}, codelength {:g} + {:g} = {}", queueSource, indexCodelength, hierarchicalCodelength - indexCodelength, io::toPrecision(hierarchicalCodelength));
 

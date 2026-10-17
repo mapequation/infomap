@@ -134,6 +134,32 @@ TEST_CASE("A module preference reaches a scored partition, not only the search [
   }
 }
 
+// The same term through the recursive search. recursivePartition rebuilt the total
+// from the top modules' terms, which do not hold the module-count term, so a deep
+// tree with K != K_pref top modules was reported |K - K_pref| short: 2.257426125 on
+// the first input and 3.579251676 on the second, against 3.257426125 and
+// 4.579251676 for the same trees scored with --no-infomap.
+TEST_CASE("A module preference reaches a deep tree from the recursive search [fast][core][mapeq][biased]")
+{
+  const std::vector<std::pair<std::string, std::string>> runs {
+    { networkFixturePath("unbalanced_hierarchy.net"), "--preferred-number-of-modules 2 --seed 2" },
+    { repoPath("examples/networks/ninetriangles.net"), "--preferred-number-of-modules 2 --seed 3" },
+  };
+  for (const auto& run : runs) {
+    InfomapWrapper im(defaultFlags(run.second));
+    im.readInputData(run.first);
+    im.run();
+    INFO(run.first << " " << run.second << ": " << im.numLevels() << " levels, " << im.numTopModules() << " top modules");
+    REQUIRE(im.numLevels() > 2);
+    REQUIRE(im.numTopModules() != 2);
+
+    const double reported = im.codelength();
+    const double recomputed = im.calcCodelengthOnTree(im.root(), true);
+    INFO("reported=" << reported << " recomputed=" << recomputed);
+    checkApproxCodelength(reported, recomputed);
+  }
+}
+
 TEST_CASE("MapEquation invariant: MemMapEquation (memory), tracked == recompute [fast][core][mapeq][mem]")
 {
   InfomapWrapper im(defaultFlags("--two-level"));
