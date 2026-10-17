@@ -2469,8 +2469,22 @@ void InfomapBase::hierarchicalPartition()
       double codelengthBefore = 0.0;
       double codelengthAfter = 0.0;
 
+      // Fine-tune only modules whose children are all leaf modules. Testing the first
+      // child is not enough on a ragged tree: a module with a leaf module first and a
+      // deeper module or a lone leaf next would size its buffers by the wrong leaf
+      // count and write past them (#1216).
+      const auto isModuleOfLeafModules = [](const InfoNode& module) {
+        if (module.isLeaf())
+          return false;
+        for (const InfoNode& child : module) {
+          if (!child.isLeafModule())
+            return false;
+        }
+        return true;
+      };
+
       for (InfoNode& module : m_root.infomapTree()) {
-        if (!module.isLeaf() && module.firstChild->isLeafModule()) {
+        if (isModuleOfLeafModules(module)) {
           codelengthBefore += module.codelength;
           auto numLeafs = 0;
           for (auto& leafModule : module) {
