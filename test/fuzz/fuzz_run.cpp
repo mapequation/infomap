@@ -204,11 +204,11 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // enter flow.
   if (im.regularized && (im.markovTime > 1.0 || im.variableMarkovTime) && negative)
     return true;
-  // #1189: recorded teleportation (also implied by --regularized) over a node flow that is not
-  // the coded walk's own, from undirdir, outdirdir, rawdir, precomputed flow or
-  // --use-node-weights-as-flow: a module of modules in the finished tree does not balance.
+  // #1189: --regularized over a node flow that is not the coded walk's own, from undirdir,
+  // outdirdir, rawdir or --use-node-weights-as-flow: the leaves' enter and exit flow comes
+  // from the node flow, so a restored tree does not balance against its leaves.
   const bool foreignFlow = (model != FlowModel::undirected && model != FlowModel::directed) || im.useNodeWeightsAsFlow;
-  if ((im.recordedTeleportation || im.regularized) && foreignFlow && unbalanced && contains(message, "after the finished tree"))
+  if (im.regularized && foreignFlow && unbalanced && contains(message, "after the finished tree"))
     return true;
   // #1191: --regularized with --multilayer-relax-to-self: the relay also runs on a link
   // between two states of one physical node, and gives a module negative enter flow.
