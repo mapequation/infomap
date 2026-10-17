@@ -684,6 +684,32 @@ TEST_CASE("Fast hierarchical fine-tuning survives a ragged cluster-data tree [fa
   }
 }
 
+TEST_CASE("Fast hierarchical search reports the codelength of the tree it returns [fast][core][partition][tree]")
+{
+  // -F fine-tunes the modules of leaf modules and starts the recursion from the seed
+  // tree's codelength and its leaf modules' terms. The fine-tuned sub modules had no term
+  // yet, so the recursion summed to 5.09 bits for a tree of 3.37. Only a dissolve in the
+  // prune step re-scored the tree, and here nothing is dissolved.
+  const std::string resultPath = "fast_hierarchical_ninetriangles_result.tree";
+  double codelength = 0.0;
+  {
+    InfomapWrapper im(infomap::test::defaultFlags("-F --cluster-data " + infomap::test::clusterFixturePath("ninetriangles_ragged_three_level.tree")));
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    infomap::test::checkRunSanity(im);
+    codelength = im.codelength();
+    infomap::writeTree(im, im.network(), resultPath, false);
+  }
+
+  InfomapWrapper reader(infomap::test::defaultFlags("--no-infomap --cluster-data " + resultPath));
+  reader.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  reader.run();
+  infomap::test::checkApproxCodelength(reader.codelength(), codelength, 1e-9);
+  infomap::test::checkApproxCodelength(codelength, 3.371875026, 1e-9);
+
+  std::remove(resultPath.c_str());
+}
+
 TEST_CASE("An unknown node id in cluster data leaves the partition alone [fast][core][partition][parser]")
 {
   // std::map::operator[] inserted the unknown id with a default index of 0, so it
