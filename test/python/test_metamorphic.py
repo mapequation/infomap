@@ -500,16 +500,6 @@ BOTH_DIRECTION_MODELS = {
 }
 
 
-_DIRECTED_DEGREE_SUM_COUNTS_SELF_LINKS_ONCE = pytest.mark.xfail(
-    reason="StateNetwork::sumWeightedDegree and sumDegree count a self-link once, as an "
-    "undirected link end; the directed regularized prior takes its average weight from them "
-    "but counts a self-link as both an out-link and an in-link, so with a self-link the "
-    "directed prior on a symmetric network is not the undirected one",
-    strict=True,
-    raises=AssertionError,
-)
-
-
 def _both_direction_cases():
     for name in NETWORK_IDS:
         for objective in (
@@ -520,20 +510,11 @@ def _both_direction_cases():
             "regularized",
         ):
             for model in BOTH_DIRECTION_MODELS:
-                marks = ()
-                if objective == "regularized":
-                    # --regularized is defined for undirected and directed flow only (#1189).
-                    if model != "directed":
-                        continue
-                    # The generated networks have a self-link.
-                    if name.startswith("generated"):
-                        marks = _DIRECTED_DEGREE_SUM_COUNTS_SELF_LINKS_ONCE
+                # --regularized is defined for undirected and directed flow only (#1189).
+                if objective == "regularized" and model != "directed":
+                    continue
                 yield pytest.param(
-                    name,
-                    objective,
-                    model,
-                    marks=marks,
-                    id=f"{name}-{objective}-{model}",
+                    name, objective, model, id=f"{name}-{objective}-{model}"
                 )
 
 
