@@ -173,10 +173,18 @@ bool isKnownFinding(const infomap::InfomapWrapper& im)
   // enter flow.
   if (im.regularized && (im.markovTime > 1.0 || im.variableMarkovTime))
     return true;
-  // --recorded-teleportation under the undirdir, outdirdir and rawdir models: leaf
-  // exit and enter flow do not balance.
+  // --recorded-teleportation under the undirdir, outdirdir, rawdir and precomputed
+  // models: leaf exit and enter flow do not balance.
   const auto model = im.flowModel;
-  if (im.recordedTeleportation && !im.regularized && (model == infomap::FlowModel::undirdir || model == infomap::FlowModel::outdirdir || model == infomap::FlowModel::rawdir))
+  if (im.recordedTeleportation && !im.regularized && model != infomap::FlowModel::undirected && model != infomap::FlowModel::directed)
+    return true;
+  // --regularized with outdirdir or rawdir flow: a module in the finished tree can be
+  // exited but never entered.
+  if (im.regularized && (model == infomap::FlowModel::outdirdir || model == infomap::FlowModel::rawdir))
+    return true;
+  // --variable-markov-time with --use-node-weights-as-flow: negative enter flow when an
+  // isolated node holds the largest flow.
+  if (im.variableMarkovTime && im.useNodeWeightsAsFlow)
     return true;
   // --regularized with --use-node-weights-as-flow: negative enter flow where a node's
   // weight gives it less flow than its links carry.
