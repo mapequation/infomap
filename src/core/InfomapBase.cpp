@@ -2184,6 +2184,11 @@ void InfomapBase::generateSubNetwork(Network& network)
     node->data.teleportFlow = networkNode.teleFlow;
     node->data.exitFlow = networkNode.exitFlow;
     node->data.enterFlow = networkNode.enterFlow;
+    // The tree drops self-links below, so a node whose only out-link is a self-link has
+    // no out-edges there, but the flow calculation did not take it for dangling (#1182).
+    // Keep the network's classification for initEnterExitFlow.
+    if (network.isDangling(network.indexOfId(networkNode.id)))
+      node->data.danglingFlow = networkNode.flow;
     // Only regularized-multilayer flow consumes layerTeleFlowData; populating it
     // unconditionally would allocate an InfoNodeExtras for every node and defeat
     // the out-of-line shrink (extras must stay null in the common case).
@@ -2680,9 +2685,9 @@ void InfomapBase::initEnterExitFlow()
       auto& node = *n;
       node.data.teleportFlow = alpha * node.data.flow;
       node.data.teleportSourceFlow = node.data.flow;
-      if (node.isDangling()) {
+      // Set by generateSubNetwork from the network, which still has the self-links
+      if (node.data.danglingFlow > 0.0) {
         node.data.teleportFlow = node.data.flow;
-        node.data.danglingFlow = node.data.flow;
         m_sumDanglingFlow += node.data.flow;
       }
     }
@@ -2705,9 +2710,8 @@ void InfomapBase::initEnterExitFlow()
       auto& node = *n;
       node.data.teleportFlow = alpha * node.data.flow;
       node.data.teleportSourceFlow = node.data.flow;
-      if (node.isDangling()) {
+      if (node.data.danglingFlow > 0.0) {
         node.data.teleportFlow = node.data.flow;
-        node.data.danglingFlow = node.data.flow;
       }
       for (InfoEdge* e : node.outEdges()) {
         InfoEdge& edge = *e;
