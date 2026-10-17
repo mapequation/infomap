@@ -41,9 +41,13 @@ TEST_CASE("Lossy: rejects unsupported configurations [fast][core][lossy]")
   throws("--lossy --recorded-teleportation");
   throws("--lossy --variable-markov-time");
   throws("--lossy --markov-time 2");
+  // The noise credit is derived against the standard map equation: it hands back
+  // sum_leaf plogp(f) at coefficient 1, which is the rate scoreStackBase charges it
+  // at, while L* charges nrLeafCodebookRate >= 1. See #1011 / F38.
+  throws("--lossy --non-redundant");
 }
 
-TEST_CASE("Lossy: rejects unsupported input detected after parsing [fast][core][lossy]")
+TEST_CASE("Lossy: rejects unsupported input detected after parsing [fast][core][lossy][columnar-contract]")
 {
   // Config validation runs before the input file is parsed; state input flips
   // haveMemory() afterwards, so the optimizer dispatch must re-validate.
@@ -186,7 +190,7 @@ TEST_CASE("Lossy: lambda -> infinity reproduces the standard two-level map equat
   CHECK(canonicalPartition(lossy.getModules(1, false)) == canonicalPartition(plain.getModules(1, false)));
 }
 
-TEST_CASE("Lossy: paper benchmark partition gives the published code lengths at lambda 2 [fast][core][lossy]")
+TEST_CASE("Lossy: paper benchmark partition gives the published code lengths at lambda 2 [fast][core][lossy][columnar-contract]")
 {
   InfomapWrapper im(defaultFlags("--lossy --lambda 2 --no-infomap --cluster-data " + clusterFixturePath("lossy_benchmark.clu")));
   im.readInputData(networkFixturePath("lossy_benchmark.net"));
@@ -207,7 +211,7 @@ TEST_CASE("Lossy: paper benchmark partition gives the published code lengths at 
   CHECK(plain.codelength() - im.getLossyRate() == doctest::Approx(0.3947947117880925).epsilon(1e-9));
 }
 
-TEST_CASE("Lossy: direct optimization at lambda 2 finds cliques standard and chain as one noise module [fast][core][lossy]")
+TEST_CASE("Lossy: direct optimization at lambda 2 finds cliques standard and chain as one noise module [fast][core][lossy][columnar-contract]")
 {
   InfomapWrapper im(defaultFlags("--lossy --lambda 2"));
   im.readInputData(networkFixturePath("lossy_benchmark.net"));
@@ -219,7 +223,7 @@ TEST_CASE("Lossy: direct optimization at lambda 2 finds cliques standard and cha
   CHECK(im.getLossyDistortion() == doctest::Approx(0.15384615384615385).epsilon(1e-9));
 }
 
-TEST_CASE("Lossy: lambda -> 0 lumps everything into one noise module [fast][core][lossy]")
+TEST_CASE("Lossy: lambda -> 0 lumps everything into one noise module [fast][core][lossy][columnar-contract]")
 {
   InfomapWrapper im(defaultFlags("--lossy --lambda 0.001"));
   im.readInputData(networkFixturePath("lossy_benchmark.net"));
@@ -230,7 +234,7 @@ TEST_CASE("Lossy: lambda -> 0 lumps everything into one noise module [fast][core
   CHECK(im.getLossyDistortion() == doctest::Approx(1.9005561812175085).epsilon(1e-9));
 }
 
-TEST_CASE("Lossy: reported codelength equals rate plus lambda times distortion [fast][core][lossy]")
+TEST_CASE("Lossy: reported codelength equals rate plus lambda times distortion [fast][core][lossy][columnar-contract]")
 {
   // Regression guard: the tree codelength is summed per module via calcCodelength,
   // which must not subtract a correction for the root index level. On this network
@@ -244,7 +248,7 @@ TEST_CASE("Lossy: reported codelength equals rate plus lambda times distortion [
   }
 }
 
-TEST_CASE("Lossy: rerun on the same instance preserves partition and codelength [fast][core][lossy][lifecycle]")
+TEST_CASE("Lossy: rerun on the same instance preserves partition and codelength [fast][core][lossy][lifecycle][columnar-contract]")
 {
   InfomapWrapper im(defaultFlags("--lossy --lambda 2"));
   im.readInputData(networkFixturePath("lossy_benchmark.net"));
@@ -263,7 +267,7 @@ TEST_CASE("Lossy: rerun on the same instance preserves partition and codelength 
   CHECK(canonicalPartition(im.getModules(1, false)) == firstPartition);
 }
 
-TEST_CASE("Lossy: tree output header reports lambda, rate and distortion [fast][core][lossy][output]")
+TEST_CASE("Lossy: tree output header reports lambda, rate and distortion [fast][core][lossy][output][columnar-contract]")
 {
   InfomapWrapper im(defaultFlags("--lossy --lambda 2"));
   im.readInputData(networkFixturePath("lossy_benchmark.net"));
@@ -280,7 +284,7 @@ TEST_CASE("Lossy: tree output header reports lambda, rate and distortion [fast][
   std::remove(treePath.c_str());
 }
 
-TEST_CASE("Lossy: reciprocal link listing gives identical results to single listing [fast][core][lossy]")
+TEST_CASE("Lossy: reciprocal link listing gives identical results to single listing [fast][core][lossy][columnar-contract]")
 {
   // h_alpha is the transition entropy over distinct neighbours, so an undirected
   // edge written in both directions (as the demo app and many .net files do) must
@@ -300,7 +304,7 @@ TEST_CASE("Lossy: reciprocal link listing gives identical results to single list
   CHECK(canonicalPartition(reciprocal.getModules(1, false)) == canonicalPartition(single.getModules(1, false)));
 }
 
-TEST_CASE("Lossy: reported one-level reference is the lambda-independent lossless L1 [fast][core][lossy]")
+TEST_CASE("Lossy: reported one-level reference is the lambda-independent lossless L1 [fast][core][lossy][columnar-contract]")
 {
   // The one-level reference must be the lossless L1 = H(p_alpha) (paper sec 2.5),
   // not the lambda-dependent noise-corrected one-module objective.
@@ -321,7 +325,7 @@ TEST_CASE("Lossy: reported one-level reference is the lambda-independent lossles
   }
 }
 
-TEST_CASE("Lossy: noiseTopModules reports which top modules are noise [fast][core][lossy]")
+TEST_CASE("Lossy: noiseTopModules reports which top modules are noise [fast][core][lossy][columnar-contract]")
 {
   // At lambda 2 only the chain is noise; toward the standard map equation none are;
   // at lambda -> 0 the single all-network module is noise.

@@ -1,0 +1,10 @@
+# path flow name state_id
+# states_ragged_branches.tree made rectangular by hand, with module 1's states wrapped
+# in a single-child pass-through. The independent reference for the padding the L*
+# evaluation does itself; see twotriangles_ragged_branches_padded.tree.
+1:1:1 0.1 "a" 1
+1:1:2 0.1 "d" 4
+1:1:3 0.1 "b" 2
+2:1:1 0.1 "c" 3
+2:1:2 0.1 "e" 5
+2:2:1 0.1 "f" 6
