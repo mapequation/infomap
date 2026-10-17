@@ -400,26 +400,6 @@ void checkLeafFlowBalances(InfomapWrapper& im)
   CHECK(sumExit == doctest::Approx(sumEnter));
 }
 
-// What steps leave the children of a module, less what leaves the module, is what
-// moves between its children; the same holds for what enters them.
-void checkModuleFlowBalances(InfomapWrapper& im)
-{
-  CHECK_NOTHROW(im.run());
-  for (auto& node : im.root().infomapTree()) {
-    if (node.isLeaf() || node.isRoot())
-      continue;
-    double sumEnter = 0.0;
-    double sumExit = 0.0;
-    for (const InfoNode& child : node) {
-      sumEnter += child.data.enterFlow;
-      sumExit += child.data.exitFlow;
-    }
-    INFO("module with " << node.childDegree() << " children: children exit " << sumExit << " and enter " << sumEnter
-                        << ", module exit " << node.data.exitFlow << " and enter " << node.data.enterFlow);
-    CHECK(sumExit - node.data.exitFlow == doctest::Approx(sumEnter - node.data.enterFlow));
-  }
-}
-
 } // namespace
 
 // Markov time scales the link flow but not the node exit flow that the regularized
@@ -472,17 +452,52 @@ TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under preco
   checkLeafFlowBalances(im);
 }
 
-// Under --regularized with outdirdir or rawdir flow, the finished tree can hold a module
-// that is exited but never entered, while its children balance. A release run then
-// reports the tree at 3.73 bits against a one-level codelength of 2.74. Found once in
-// about 670k fuzzed runs; it needs this search path (seed 1, one core loop).
-TEST_CASE("Fuzz finding: --regularized with outdirdir flow balances module flow in the finished tree [fast][core][mapeq]" * doctest::should_fail())
+// Recorded teleportation over a node flow that is not the coded walk's own (undirdir,
+// outdirdir or rawdir under --regularized, or --use-node-weights-as-flow): the finished tree can hold
+// a module of modules whose enter and exit flow do not balance against its children's.
+// A release run then reports a worse tree than the recursive search found, e.g.
+// ninetriangles.net with --recorded-teleportation --use-node-weights-as-flow --seed 46
+// (libc++): 4.32 bits, against 3.64 after the recursive step. It needs particular
+// search paths, and the seeds that hit differ between standard libraries, so sweep them.
+TEST_CASE("Fuzz finding: recorded teleportation over a foreign node flow balances module flow in the finished tree [fast][core][mapeq]" * doctest::should_fail())
 {
-  InfomapWrapper im(defaultFlags("--flow-model outdirdir --regularized --seed 1 --core-loop-limit 1"));
-  for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 0, 2 }, { 1, 3 }, { 2, 3 }, { 4, 5 }, { 5, 6 }, { 7, 9 }, { 3, 7 } })
-    im.addLink(link.first, link.second);
-  im.addLink(5, 1, 0.8);
-  checkModuleFlowBalances(im);
+  const auto moduleFlowBalances = [](InfomapWrapper& im) {
+    try {
+      im.run();
+    } catch (const InfomapError&) {
+      return false; // the invariants, in builds that have them
+    }
+    for (auto& node : im.root().infomapTree()) {
+      if (node.isLeaf() || node.isRoot())
+        continue;
+      double sumEnter = 0.0;
+      double sumExit = 0.0;
+      for (const InfoNode& child : node) {
+        sumEnter += child.data.enterFlow;
+        sumExit += child.data.exitFlow;
+      }
+      if (std::abs((sumExit - node.data.exitFlow) - (sumEnter - node.data.enterFlow)) > 1e-9)
+        return false;
+    }
+    return true;
+  };
+
+  unsigned int numUnbalanced = 0;
+  for (unsigned int seed = 1; seed <= 200; ++seed) {
+    InfomapWrapper im(defaultFlags("--recorded-teleportation --use-node-weights-as-flow --seed " + std::to_string(seed)));
+    im.readInputData(repoPath("examples/networks/ninetriangles.net"));
+    if (!moduleFlowBalances(im))
+      ++numUnbalanced;
+  }
+  for (unsigned int seed = 1; seed <= 100; ++seed) {
+    InfomapWrapper im(defaultFlags("--flow-model outdirdir --regularized --core-loop-limit 1 --seed " + std::to_string(seed)));
+    for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 0, 2 }, { 1, 3 }, { 2, 3 }, { 4, 5 }, { 5, 6 }, { 7, 9 }, { 3, 7 } })
+      im.addLink(link.first, link.second);
+    im.addLink(5, 1, 0.8);
+    if (!moduleFlowBalances(im))
+      ++numUnbalanced;
+  }
+  CHECK(numUnbalanced == 0);
 }
 
 // --variable-markov-time scales each link by the largest node flow over the local one.
