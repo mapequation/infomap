@@ -199,10 +199,7 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // terms in aggregateFlowValuesFromLeafToRoot are added on top of undirected link flow.
   if (im.recordedTeleportation && !im.regularized && im.isUndirectedClustering() && unbalanced)
     return true;
-  // #1176: the recursive search leaves the entropy correction off the modules of
-  // modules, and the |K - K_pref| term of --preferred-number-of-modules off the
-  // total, so a searched tree is reported short of its own codelength (fixed by #1178).
-  return misreported && !im.noInfomap && (im.entropyBiasCorrection || im.preferredNumberOfModules != 0);
+  return false;
 }
 
 std::string writeTemp(const char* prefix, const char* suffix, const char* data, size_t size)
