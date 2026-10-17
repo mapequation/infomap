@@ -244,6 +244,12 @@ public:
       for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e)
         fn(s, m_linkTargets[e], m_linkWeights[e], m_linkFlows[e]);
   }
+  // Duplicate links are summed only when they have the same direction, so a pair listed
+  // as a b and b a stays two links here, though it is one link of an undirected network
+  // (#1203). Whether a link is the second listing of such a pair (counted at the lower
+  // source index), and the degree sum of an undirected network that counts it once.
+  bool isReverseOfLink(unsigned int sourceIndex, unsigned int targetIndex) const;
+  unsigned int sumUndirectedDegree() const;
 #endif
 
   // Mode A (first-order and the main multilayer network) defers dedup to
@@ -284,12 +290,6 @@ public:
   // Use convention of counting self-links only once, treating them as directed
   double sumWeightedDegree() const { return 2 * sumLinkWeight() - sumSelfLinkWeight(); }
   unsigned int sumDegree() const { return 2 * numLinks() - numSelfLinks(); }
-  // Duplicate links are summed only when they have the same direction, so a pair listed
-  // as a b and b a stays two links here, though it is one link of an undirected network
-  // (#1203). Whether a link is the second listing of such a pair (counted at the lower
-  // source index), and the degree sum of an undirected network that counts it once.
-  bool isReverseOfLink(unsigned int sourceIndex, unsigned int targetIndex) const;
-  unsigned int sumUndirectedDegree() const;
   std::map<unsigned int, double>& outWeights()
   {
 #ifndef SWIG
