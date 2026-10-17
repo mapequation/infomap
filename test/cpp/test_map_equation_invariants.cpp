@@ -343,6 +343,25 @@ TEST_CASE("Flow invariants hold after a run and catch an unbalanced module [fast
   module.data.exitFlow += 0.01;
   CHECK_THROWS_AS(im.checkInvariants(im.root(), "a test"), InfomapError);
 }
+
+// Whether the leaf flow must sum to 1 is decided per run. A link-free run after a linked one
+// on the same instance has zero flow, which is its correct result, not a violation.
+TEST_CASE("Flow invariants accept a link-free run on an instance that ran a linked network [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags("-N 1 --seed 7"));
+  im.addLink(1, 2);
+  im.addLink(2, 3);
+  im.addLink(3, 1);
+  CHECK_NOTHROW(im.run());
+  CHECK(im.m_flowSumsToOne);
+
+  im.network().clear();
+  im.addNode(1);
+  im.addNode(2);
+  CHECK_NOTHROW(im.run());
+  CHECK_FALSE(im.m_flowSumsToOne);
+  CHECK(im.numLeafNodes() == 2);
+}
 #endif
 
 // Follow-ups (not reproduced here): #831 (two-level initPartition/consolidate

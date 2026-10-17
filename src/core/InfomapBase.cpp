@@ -912,6 +912,13 @@ private:
     // total is only degenerate when there were links to carry flow.
     const bool zeroFlowIsExpected = m_network.numLinks() == 0;
 
+    // Normalised unless the flow step says otherwise: a link-free network has no flow, and an
+    // unconverged power iteration and --skip-adjust-bipartite-flow are not normalised. Decided
+    // on every run, before the link-free return, so a reused instance never keeps a stale value,
+    // and from the network actually run. The parallel-trial workers, whose own network member
+    // stays empty, are handed the same value.
+    m_infomap.m_flowSumsToOne = !zeroFlowIsExpected && !m_infomap.skipAdjustBipartiteFlow && !(m_network.haveFlowConvergence() && !m_network.flowConverged());
+
     if (!std::isfinite(sumNodeFlow) || (sumNodeFlow <= 0 && !zeroFlowIsExpected))
       throw InfomapError(ExitCode::InputError,
                          fmt::format(FMT_STRING("Degenerate flow: total flow on nodes is {:g} for a network with {} links, so no "
@@ -929,10 +936,6 @@ private:
     if (std::abs(sumNodeFlow - 1.0) > 1e-10)
       Console::warn(0, "Total flow on nodes is {:g}, not 1. The reported codelength is scaled accordingly.", sumNodeFlow);
 
-    // Normalised unless the flow step just warned otherwise: an unconverged power iteration and
-    // --skip-adjust-bipartite-flow are not. Decided here, from the network actually run, and
-    // handed to the parallel-trial workers, whose own network member stays empty.
-    m_infomap.m_flowSumsToOne = !m_infomap.skipAdjustBipartiteFlow && !(m_network.haveFlowConvergence() && !m_network.flowConverged());
     m_infomap.checkInvariants(m_infomap.root(), "the flow calculation");
   }
 
