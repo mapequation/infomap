@@ -461,7 +461,7 @@ def test_bipartite_skip_adjust_is_the_plain_flow(
     reason="recorded teleportation: a node whose only out-link is a self-link gets the flow "
     "of a non-dangling node, but the optimizer drops self-links from the tree, takes the "
     "node for dangling and gives it teleport flow p instead of alpha * p, so the reported "
-    "codelength is too high",
+    "codelength is too high (#1182)",
     strict=True,
 )
 @pytest.mark.parametrize("to_nodes", [False, True], ids=["to-links", "to-nodes"])
@@ -500,7 +500,7 @@ def test_recorded_teleportation_with_self_link_only_node(tmp_path, seed, to_node
 @pytest.mark.xfail(
     reason="node weights set through the API (add_node with a weight) are reset to the "
     "physical node's default weight 1 by Network::postProcessInputData, so teleportation "
-    "to nodes ignores them; the same weights from a Pajek file are used",
+    "to nodes ignores them; the same weights from a Pajek file are used (#1183)",
     strict=True,
 )
 def test_api_node_weights_reach_teleportation():
