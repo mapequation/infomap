@@ -62,6 +62,7 @@ examples/cpp/Infomap-igraph-interface-library/lib/
 !test/fixtures/clusters/*.clu
 !test/fixtures/clusters/*.tree
 *.ftree
+!test/fuzz/cluster_seeds/*
 *.nwk
 *.csv
 !examples/notebooks/data/benchmark-results.csv

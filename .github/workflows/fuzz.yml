@@ -1,7 +1,8 @@
 name: Fuzz
 
 # Non-blocking early warning: fuzz the network intake for crashes / sanitizer
-# reports on malformed input, and full runs for broken flow invariants. A
+# reports on malformed input, and full runs and cluster data input for broken
+# flow invariants. A
 # separate workflow (nothing depends on it) so it never gates PRs, but it goes
 # RED when a reproducer is found. Mirrors the non-blocking pattern of
 # python-prerelease-check.yml -- do NOT add continue-on-error, that would mask
@@ -20,9 +21,9 @@ concurrency:
 
 jobs:
   fuzz-intake:
-    name: Fuzz network intake and runs
+    name: Fuzz network intake, runs and cluster data
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       - name: Checkout repository
@@ -87,6 +88,30 @@ jobs:
         with:
           path: build/fuzz/corpus-run
           key: fuzz-run-corpus-${{ github.run_id }}
+
+      # The cluster data target: .clu, .tree and .ftree input (--cluster-data)
+      # on small fixed networks, with the flow invariants and codelength checks
+      # on. Its own corpus, cached separately, and it runs whatever the steps
+      # above found.
+      - name: Restore cluster fuzz corpus
+        if: ${{ !cancelled() }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/fuzz/corpus-cluster
+          key: fuzz-cluster-corpus-${{ github.run_id }}
+          restore-keys: |
+            fuzz-cluster-corpus-
+
+      - name: Build and run the cluster data fuzzer
+        if: ${{ !cancelled() }}
+        run: make fuzz FUZZ_TARGET=cluster FUZZ_SECONDS=300
+
+      - name: Save cluster fuzz corpus
+        if: always() && hashFiles('build/fuzz/corpus-cluster/**') != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/fuzz/corpus-cluster
+          key: fuzz-cluster-corpus-${{ github.run_id }}
 
       - name: Upload findings
         if: failure()

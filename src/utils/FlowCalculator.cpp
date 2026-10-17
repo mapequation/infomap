@@ -148,8 +148,22 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   // internal index (the directed model reorders dangling nodes first).
   network.forEachLink([&](unsigned int srcIdx, unsigned int tgtIdx, double linkWeight, double&) {
     const auto sourceId = network.nodeId(srcIdx);
+    const auto targetId = network.nodeId(tgtIdx);
     const auto sourceIndex = nodeIndexMap[sourceId];
-    const auto targetIndex = nodeIndexMap[network.nodeId(tgtIdx)];
+    const auto targetIndex = nodeIndexMap[targetId];
+
+    // The parser checks this for the *Bipartite section only, so links from a *Links
+    // section or the API reach here unchecked. A link inside one side breaks the flow
+    // below, which takes every link to cross: directed --bipartite-teleportation
+    // diverged to a total node flow of 1.7e27 (#1190).
+    if (network.isBipartite() && (sourceId >= network.bipartiteStartId()) == (targetId >= network.bipartiteStartId())) {
+      throw InfomapError(ExitCode::InputError,
+                         fmt::format(FMT_STRING("Link {} -> {} does not cross bipartite start id {}. In a bipartite network every "
+                                                "link connects a node below the start id to a node at or above it."),
+                                     sourceId,
+                                     targetId,
+                                     network.bipartiteStartId()));
+    }
 
     ++nodeOutDegree[sourceIndex];
     sumLinkOutWeight[sourceIndex] += linkWeight;
@@ -669,8 +683,11 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   std::vector<unsigned int> k_in(N, 0);
   std::vector<double> s_out(N, 0);
   std::vector<double> s_in(N, 0);
-  double sum_s = sumWeightedDegree;
-  unsigned int sum_k = network.sumDegree();
+  // Average link weight sum(s_in + s_out) / sum(k_in + k_out) (Eq. 13 in Smiljanić et al. 2021).
+  // Every link is one out-link and one in-link, a self-link too, as in u_out and u_in below,
+  // so this is sumLinkWeight / numLinks, not the undirected sumWeightedDegree / sumDegree (#1204).
+  double sum_s = sumLinkWeight;
+  unsigned int sum_k = network.numLinks();
   if (sum_k == 0) {
     const auto uniformFlow = 1.0 / N;
     std::fill(nodeFlow.begin(), nodeFlow.end(), uniformFlow);
@@ -1516,7 +1533,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
         const auto sourceIndex = nodeIndexMap[node.id];
         const auto srcIdx = network.indexOfId(node.id);
         double danglingFlow = network.isDangling(srcIdx) ? node.flow : 0.0;
-        if (config.recordedTeleportation) {
+        if (config.recordsTeleportation()) {
           // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
           exitFlow[sourceIndex] += alpha * node.flow * (1.0 - node.weight);
           enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + (1 - alpha) * (sumDanglingFlow - danglingFlow)) * node.weight;

@@ -388,17 +388,34 @@ extra libFuzzer flags with `FUZZ_ARGS`, e.g. `FUZZ_ARGS="-fork=3
 every run are listed in `isKnownFinding()` and pinned as `should_fail` cases in
 `test/cpp/test_map_equation_invariants.cpp`.
 
-A weekly non-blocking `.github/workflows/fuzz.yml` runs both targets on Linux.
-The fuzzer writes findings under `build/fuzz/` as `crash-*` / `timeout-*` /
-`leak-*` (`run-crash-*` and so on for the run target); reproduce one with:
+`make fuzz FUZZ_TARGET=cluster` builds and runs a third harness,
+`test/fuzz/fuzz_cluster.cpp`, for cluster data (`--cluster-data`). Its first 3
+input bytes choose one of a few small fixed networks, the file format (`.clu`,
+`.tree` or `.ftree`) and the options (hard or soft partition, `--no-infomap`,
+two-level, directed, a few objectives); the rest is the cluster file. Besides
+the flow invariants it checks that the reported codelength is the codelength
+of the finished tree, also when that tree is read back by a fresh run with
+`--no-infomap`, that `--no-infomap` keeps the partition it was given, and that
+a hard partition is not split. Its seeds are the cluster fixtures and
+Infomap's own output for the fixed networks (`test/fuzz/cluster_seeds/`), and
+its corpus is `build/fuzz/corpus-cluster`. Its open bugs are listed in its own
+`isKnownFinding()` and pinned as `should_fail` cases in
+`test/cpp/test_partition.cpp`.
+
+A weekly non-blocking `.github/workflows/fuzz.yml` runs all three targets on
+Linux. The fuzzer writes findings under `build/fuzz/` as `crash-*` /
+`timeout-*` / `leak-*` (`run-crash-*` and `cluster-crash-*` and so on for the
+other targets); reproduce one with:
 
 ```bash
 build/fuzz/fuzz_intake build/fuzz/crash-<hash>
 build/fuzz/fuzz_run build/fuzz/run-crash-<hash>
+build/fuzz/fuzz_cluster build/fuzz/cluster-crash-<hash>
 ```
 
 `fuzz_run` prints the options and any meta data of a finding, so the network
 (the input after its first 8 bytes) replays in a debug build of the CLI.
+`fuzz_cluster` prints the network, the options and the cluster file.
 
 macOS note: Apple Clang lacks libFuzzer (use Homebrew LLVM via `FUZZ_CXX`).
 A Homebrew-LLVM fuzzer binary can fail to *run* on macOS due to a libc++ ABI

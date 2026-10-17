@@ -448,9 +448,7 @@ TEST_CASE("Flow invariants hold after a run and catch an unbalanced module [fast
 // t = 1e7 the rounding of the boundary rates alone exceeds an absolute 1e-9.
 TEST_CASE("Flow invariants accept the boundary rates of a large Markov time [fast][core][mapeq]")
 {
-  // --directed is left out: at this Markov time the run's own negative-module-flow guard, which
-  // has an absolute tolerance, already refuses it.
-  for (const std::string flags : { "--flow-model rawdir", "" }) {
+  for (const std::string flags : { "--directed", "--flow-model rawdir", "" }) {
     CAPTURE(flags);
     InfomapWrapper im(defaultFlags("--markov-time 1e7 -N 1 --seed 1 " + flags));
     im.readInputData(repoPath("examples/networks/modular_wd.net"));
@@ -477,6 +475,19 @@ TEST_CASE("Flow invariants accept a link-free run on an instance that ran a link
   CHECK(im.numLeafNodes() == 2);
 }
 #endif
+
+// The run's own negative-module-flow guard, which every build has, scales the same way. Module
+// enter and exit flow carry rounding residues of about t * 1e-16, which an absolute -1e-10 refused
+// from t = 1e7 on (#1192).
+TEST_CASE("The negative module flow guard accepts the boundary rates of a large Markov time (#1192) [fast][core][mapeq]")
+{
+  for (const std::string flags : { "--directed --markov-time 1e7", "--flow-model rawdir --markov-time 3e7", "--flow-model rawdir --markov-time 1e8", "--flow-model undirdir --markov-time 1e8" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(defaultFlags("-N 1 --seed 1 " + flags));
+    im.readInputData(repoPath("examples/networks/modular_wd.net"));
+    CHECK_NOTHROW(im.run());
+  }
+}
 
 // Open bugs found by the fuzz_run target (#1171), stated as what should happen and
 // marked should_fail, so each turns red when its bug is fixed. Release builds refuse
@@ -518,36 +529,57 @@ TEST_CASE("Fuzz finding: --regularized with --variable-markov-time keeps module 
   CHECK_NOTHROW(im.run());
 }
 
-// The recorded-teleportation enter and exit terms assume the directed model's
-// teleporting flow. Under undirdir, outdirdir, rawdir and precomputed flow they come on
-// top of link flow that already sums to 1, so the leaves exit at a higher rate than they are entered. On
-// a single link a release run reports codelength 2 against a one-level codelength of 0.
-TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under undirdir (#1188) [fast][core][mapeq]" * doctest::should_fail())
+// The recorded-teleportation enter and exit terms assumed the directed model's
+// teleporting flow. Under undirdir, outdirdir, rawdir and precomputed flow they came on
+// top of link flow that already sums to 1, so the leaves exited at a higher rate than
+// they were entered. On a single link a release run reported codelength 2 against a
+// one-level codelength of 0. Undirected flow kept them out of the leaves, but the module
+// terms still came back when the best of several trials was restored. None of these
+// models teleport, so the option now has no effect on them: the run equals one without
+// it, over one trial and over several (#1188).
+namespace {
+
+template <typename AddInput>
+void checkRecordedTeleportationHasNoEffect(const std::string& flags, AddInput addInput)
 {
-  InfomapWrapper im(defaultFlags("--flow-model undirdir --recorded-teleportation"));
-  im.addLink(1, 2);
-  checkLeafFlowBalances(im);
+  for (const char* trials : { "--num-trials 1", "--num-trials 2" }) {
+    INFO(flags << " " << trials);
+    InfomapWrapper recorded(defaultFlags(flags + " " + trials + " --recorded-teleportation"));
+    addInput(recorded);
+    checkLeafFlowBalances(recorded);
+    InfomapWrapper unrecorded(defaultFlags(flags + " " + trials));
+    addInput(unrecorded);
+    CHECK_NOTHROW(unrecorded.run());
+    CHECK(recorded.codelength() == unrecorded.codelength());
+    CHECK(recorded.getOneLevelCodelength() == unrecorded.getOneLevelCodelength());
+    std::vector<std::pair<double, double>> recordedModules;
+    std::vector<std::pair<double, double>> unrecordedModules;
+    for (auto& node : recorded.root().infomapTree())
+      recordedModules.emplace_back(node.data.enterFlow, node.data.exitFlow);
+    for (auto& node : unrecorded.root().infomapTree())
+      unrecordedModules.emplace_back(node.data.enterFlow, node.data.exitFlow);
+    CHECK(recordedModules == unrecordedModules);
+  }
 }
 
-TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under outdirdir (#1188) [fast][core][mapeq]" * doctest::should_fail())
+} // namespace
+
+TEST_CASE("--recorded-teleportation has no effect under undirdir, outdirdir and rawdir (#1188) [fast][core][mapeq]")
 {
-  InfomapWrapper im(defaultFlags("--flow-model outdirdir --recorded-teleportation"));
-  im.addLink(1, 2);
-  checkLeafFlowBalances(im);
+  for (const char* model : { "undirdir", "outdirdir", "rawdir" }) {
+    checkRecordedTeleportationHasNoEffect(std::string("--flow-model ") + model, [](InfomapWrapper& im) { im.addLink(1, 2); });
+    checkRecordedTeleportationHasNoEffect(std::string("--flow-model ") + model, [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
+  }
 }
 
-TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under rawdir (#1188) [fast][core][mapeq]" * doctest::should_fail())
+TEST_CASE("--recorded-teleportation has no effect under precomputed flow (#1188) [fast][core][mapeq]")
 {
-  InfomapWrapper im(defaultFlags("--flow-model rawdir --recorded-teleportation"));
-  im.addLink(1, 2);
-  checkLeafFlowBalances(im);
+  checkRecordedTeleportationHasNoEffect("--flow-model precomputed", [](InfomapWrapper& im) { im.readInputData(networkFixturePath("twotriangles_flow.net")); });
 }
 
-TEST_CASE("Fuzz finding: --recorded-teleportation balances leaf flow under precomputed flow (#1188) [fast][core][mapeq]" * doctest::should_fail())
+TEST_CASE("--recorded-teleportation has no effect under undirected flow, over several trials (#1188) [fast][core][mapeq]")
 {
-  InfomapWrapper im(defaultFlags("--flow-model precomputed --recorded-teleportation"));
-  im.readInputData(networkFixturePath("twotriangles_flow.net"));
-  checkLeafFlowBalances(im);
+  checkRecordedTeleportationHasNoEffect("--flow-model undirected", [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
 }
 
 // Recorded teleportation over a node flow that is not the coded walk's own (undirdir,
@@ -624,30 +656,56 @@ TEST_CASE("Fuzz finding: --regularized with --multilayer-relax-to-self keeps mod
   CHECK_NOTHROW(im.run());
 }
 
-// Only the *Bipartite section is checked for links that cross the start id, so feature
-// nodes can still be linked to each other. Directed PageRank with
-// --bipartite-teleportation then diverges to a total node flow of 1.7e27. A release run
-// warns about it, searches with codelengths of that size, and is refused by the
-// negative-flow guard at the end.
-TEST_CASE("Fuzz finding: --bipartite-teleportation keeps directed flow normalized (#1190) [fast][core][mapeq]" * doctest::should_fail())
+// Only the *Bipartite section was checked for links that cross the start id, so a
+// *Links section or the API could still link feature nodes to each other. Directed
+// PageRank with --bipartite-teleportation then diverged to a total node flow of 1.7e27,
+// and the other flow models silently uncoded primary nodes. Such links are now refused
+// as input on every path (#1190).
+namespace {
+
+void checkRefusesLinkInsideBipartiteSide(InfomapWrapper& im, const std::string& link)
 {
-  InfomapWrapper im(defaultFlags("--directed --bipartite-teleportation -N 1 --seed 1"));
-  im.setBipartiteStartId(4);
-  im.addLink(2, 4, 1.0);
-  im.addLink(4, 6, 3.0);
-  im.addLink(6, 7, 8.0);
-  im.addLink(6, 8, 5.0);
-  im.addLink(8, 10, 2.0);
-  im.addLink(7, 11, 3.0);
-  im.addLink(10, 33, 1.0);
-  im.addLink(33, 35, 1.0);
-  im.addLink(35, 36, 1.0);
-  im.addLink(36, 10, 0.5);
-  CHECK_NOTHROW(im.run());
-  double sumFlow = 0.0;
-  for (const auto& node : im.network().nodes())
-    sumFlow += node.second.flow;
-  CHECK(sumFlow == doctest::Approx(1.0));
+  try {
+    im.run();
+    FAIL("expected a bipartite link inside one side to be refused");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    const std::string message(e.what());
+    INFO(message);
+    CHECK(message.find("Link " + link + " does not cross bipartite start id") != std::string::npos);
+  }
+}
+
+} // namespace
+
+TEST_CASE("Bipartite input refuses links inside one side (#1190) [fast][core][mapeq]")
+{
+  for (const char* flags : { "", "--directed", "--directed --bipartite-teleportation -N 1 --seed 1" }) {
+    INFO(flags);
+    InfomapWrapper im(defaultFlags(flags));
+    im.setBipartiteStartId(4);
+    im.addLink(2, 4, 1.0);
+    im.addLink(4, 6, 3.0);
+    im.addLink(6, 7, 8.0);
+    im.addLink(6, 8, 5.0);
+    im.addLink(8, 10, 2.0);
+    im.addLink(7, 11, 3.0);
+    im.addLink(10, 33, 1.0);
+    im.addLink(33, 35, 1.0);
+    im.addLink(35, 36, 1.0);
+    im.addLink(36, 10, 0.5);
+    checkRefusesLinkInsideBipartiteSide(im, "4 -> 6");
+  }
+  // Links added before the start id is set are checked too.
+  InfomapWrapper late(defaultFlags());
+  late.addLink(1, 3);
+  late.addLink(1, 2);
+  late.setBipartiteStartId(3);
+  checkRefusesLinkInsideBipartiteSide(late, "1 -> 2");
+  // A *Links section after the *Bipartite section.
+  InfomapWrapper file(defaultFlags("--directed --bipartite-teleportation"));
+  file.readInputData(networkFixturePath("bipartite_link_inside_side.net"));
+  checkRefusesLinkInsideBipartiteSide(file, "3 -> 4");
 }
 
 // --use-node-weights-as-flow replaces the node flow after the link flow is computed,
