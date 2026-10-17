@@ -620,19 +620,37 @@ TEST_CASE("Fuzz finding: --variable-markov-time with --use-node-weights-as-flow 
   CHECK_NOTHROW(im.run());
 }
 
-// The relax-to-self relay in the flow calculation treats any link between two states of
-// one physical node as a layer switch and relays its flow onward, on state networks
-// too. Under --regularized that extra link flow leaves a module with negative enter flow.
-TEST_CASE("Fuzz finding: --regularized with --multilayer-relax-to-self keeps module flow non-negative on states (#1191) [fast][core][mapeq]" * doctest::should_fail())
+// The relax-to-self relay in the flow calculation treated any link between two states of
+// one physical node as a layer switch and relayed its flow onward, on state networks
+// too. Under --regularized that extra link flow left a module with negative enter flow.
+// The option is for multilayer input, so a state network now runs as without it (#1191).
+TEST_CASE("--multilayer-relax-to-self has no effect on state networks (#1191) [fast][core][mapeq]")
 {
-  InfomapWrapper im(defaultFlags("--regularized --multilayer-relax-to-self"));
-  im.addStateNode(1, 1);
-  im.addStateNode(2, 2);
-  im.addStateNode(3, 3);
-  im.addStateNode(4, 2);
-  im.addLink(2, 3, 1.0);
-  im.addLink(4, 2, 0.2);
-  CHECK_NOTHROW(im.run());
+  const auto addInput = [](InfomapWrapper& im) {
+    im.addStateNode(1, 1);
+    im.addStateNode(2, 2);
+    im.addStateNode(3, 3);
+    im.addStateNode(4, 2);
+    im.addLink(2, 3, 1.0);
+    im.addLink(4, 2, 0.2);
+  };
+  for (const char* flags : { "", "--directed", "--regularized", "--directed --regularized" }) {
+    INFO(flags);
+    InfomapWrapper relaxed(defaultFlags(std::string(flags) + " --multilayer-relax-to-self"));
+    addInput(relaxed);
+    CHECK_NOTHROW(relaxed.run());
+    InfomapWrapper plain(defaultFlags(flags));
+    addInput(plain);
+    CHECK_NOTHROW(plain.run());
+    CHECK(relaxed.codelength() == plain.codelength());
+    std::vector<std::pair<double, double>> relaxedModules;
+    std::vector<std::pair<double, double>> plainModules;
+    for (auto& node : relaxed.root().infomapTree())
+      relaxedModules.emplace_back(node.data.enterFlow, node.data.exitFlow);
+    for (auto& node : plain.root().infomapTree())
+      plainModules.emplace_back(node.data.enterFlow, node.data.exitFlow);
+    CHECK(relaxedModules == plainModules);
+  }
 }
 
 // Only the *Bipartite section was checked for links that cross the start id, so a
