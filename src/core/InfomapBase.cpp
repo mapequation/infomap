@@ -241,6 +241,40 @@ namespace {
     }
   }
 
+  // Order every node's children as they come in the tree rows: a leaf by its own row,
+  // a module by its first leaf. Returns the row of the first leaf under node.
+  std::size_t orderChildrenAsRows(InfoNode& node, const std::unordered_map<unsigned int, std::size_t>& rowOfState)
+  {
+    if (node.isLeaf()) {
+      const auto it = rowOfState.find(node.stateId);
+      return it != rowOfState.end() ? it->second : rowOfState.size();
+    }
+    std::vector<std::pair<std::size_t, InfoNode*>> children;
+    children.reserve(node.childDegree());
+    for (InfoNode& child : node.children())
+      children.emplace_back(orderChildrenAsRows(child, rowOfState), &child);
+    std::stable_sort(children.begin(), children.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+    node.releaseChildren();
+    for (const auto& child : children)
+      node.addChild(child.second);
+    return children.front().first;
+  }
+
+  // restoreBestResult rebuilds the best trial with initTree from rows taken off its
+  // flow-sorted tree. initTree's two-level shortcut goes through initPartition, which
+  // creates the modules in node id order, so the restored tree came back unsorted and
+  // its module ids depended on the trial count (#1202). Put it back in the order the
+  // trial had. That is the flow order, ties included, which sorting on flow again
+  // would not promise. A deeper tree is already rebuilt in row order.
+  void orderTreeAsRows(InfoNode& root, const NodePaths& tree)
+  {
+    std::unordered_map<unsigned int, std::size_t> rowOfState;
+    rowOfState.reserve(tree.size());
+    for (std::size_t row = 0; row < tree.size(); ++row)
+      rowOfState.emplace(tree[row].first, row);
+    orderChildrenAsRows(root, rowOfState);
+  }
+
 } // namespace
 
 class InfomapBase::RunSession {
@@ -654,6 +688,7 @@ private:
       {
         auto timer = m_timing.scope("best_restore_s");
         m_infomap.initTree(result.bestTree);
+        orderTreeAsRows(m_infomap.root(), result.bestTree);
       }
       if (!m_infomap.noFinalOutput) {
         auto outputTimer = m_timing.scope("output_s");
@@ -889,9 +924,12 @@ private:
 
     // Recorded teleportation needs a walk that teleports (recordsTeleportation). Undirected flow
     // has always ignored the option silently; the other models reported a wrong codelength
-    // instead (#1188), so they say that the option is now ignored.
+    // instead (#1188), so they say that the option is now ignored. The same models ignore
+    // --regularized, which sets the option itself, so that warning covers both (#1189).
     const auto model = m_infomap.flowModel;
-    if (m_infomap.recordedTeleportation && !m_infomap.recordsTeleportation() && model != FlowModel::undirected)
+    if (m_infomap.regularized && !m_infomap.usesRegularizedFlow())
+      Console::warn(0, "--regularized has no effect with the {} flow model: the regularized flow is implemented for the directed and undirected models only. The run uses the {} flow and reports the codelength without the prior.", io::stringify(model), io::stringify(model));
+    else if (m_infomap.recordedTeleportation && !m_infomap.recordsTeleportation() && model != FlowModel::undirected)
       Console::warn(0, "--recorded-teleportation has no effect with the {} flow model: it does not teleport, so there are no teleportation steps to record. The run optimizes and reports the codelength without them.", io::stringify(model));
   }
 
@@ -1551,6 +1589,10 @@ void InfomapBase::run(Network& network)
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
+  // Set here rather than in the constructor, which also builds the sub-Infomaps
+  // inside the parallel regions.
+  Log::precision(verboseNumberPrecision);
+
   // Stamp the owner thread (gates the callback) and clear any leftover cancel so
   // the instance is reusable after an interrupted run (issue #412). The team count
   // starts over for the same reason: it describes this run, not the instance.
@@ -2087,7 +2129,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
     }
   }
 
-  return initPartition(modules);
+  return initPartition(modules, hard);
 }
 
 InfomapBase& InfomapBase::initPartition(std::vector<std::vector<unsigned int>>& clusters, bool hard)
@@ -2228,7 +2270,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   m_root.data.flow = sumNodeFlow;
   m_root.data.teleportFlow = sumTeleFlow;
   // m_calculateEnterExitFlow = true; //TODO: Implement always in flow calculation
-  if (!this->regularized) {
+  if (!usesRegularizedFlow()) {
     m_calculateEnterExitFlow = true;
   }
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
@@ -2337,11 +2379,28 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   // exact first chunks remove it. Module nodes allocated later still ramp from
   // kInitialChunk, which stays tight for the tiny refined modules.
   m_nodePool.reserve(numNodes);
+
+  // Decide whether a link stays inside the module from the module's own node
+  // list, never from the neighbour's parent pointer. In the recursive partition,
+  // the task that owns a neighbouring module reparents its nodes while this one
+  // runs, so reading the neighbour's parent would be a data race.
+  std::vector<const InfoNode*> ownNodes;
+  ownNodes.reserve(numNodes);
+  for (const InfoNode& node : parent)
+    ownNodes.push_back(&node);
+  std::sort(ownNodes.begin(), ownNodes.end(), std::less<const InfoNode*>());
+  auto isOwnNode = [&ownNodes](const InfoNode* node) {
+    return std::binary_search(ownNodes.begin(), ownNodes.end(), node, std::less<const InfoNode*>());
+  };
+
+  // One flag per out-link, in iteration order, so each link is looked up once.
+  std::vector<char> isInternalEdge;
   unsigned int numInternalEdges = 0;
   for (InfoNode& node : parent) {
     for (InfoEdge* e : node.outEdges()) {
-      if (e->target->parent == &parent)
-        ++numInternalEdges;
+      const bool isInternal = isOwnNode(e->target);
+      isInternalEdge.push_back(isInternal);
+      numInternalEdges += isInternal;
     }
   }
   m_edgePool.reserve(numInternalEdges);
@@ -2358,13 +2417,13 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
     ++childIndex;
   }
 
-  InfoNode* parentPtr = &parent;
   // Clone edges
+  std::size_t edgeIndex = 0;
   for (InfoNode& node : parent) {
     for (InfoEdge* e : node.outEdges()) {
       InfoEdge& edge = *e;
       // If neighbour node is within the same module, add the link to this subnetwork.
-      if (edge.target->parent == parentPtr) {
+      if (isInternalEdge[edgeIndex++]) {
         m_leafNodes[edge.source->index]->addOutEdge(*m_leafNodes[edge.target->index], edge.data.weight, edge.data.flow);
       }
     }
@@ -2435,8 +2494,22 @@ void InfomapBase::hierarchicalPartition()
       double codelengthBefore = 0.0;
       double codelengthAfter = 0.0;
 
+      // Fine-tune only modules whose children are all leaf modules. Testing the first
+      // child is not enough on a ragged tree: a module with a leaf module first and a
+      // deeper module or a lone leaf next would size its buffers by the wrong leaf
+      // count and write past them (#1216).
+      const auto isModuleOfLeafModules = [](const InfoNode& module) {
+        if (module.isLeaf())
+          return false;
+        for (const InfoNode& child : module) {
+          if (!child.isLeafModule())
+            return false;
+        }
+        return true;
+      };
+
       for (InfoNode& module : m_root.infomapTree()) {
-        if (!module.isLeaf() && module.firstChild->isLeafModule()) {
+        if (isModuleOfLeafModules(module)) {
           codelengthBefore += module.codelength;
           auto numLeafs = 0;
           for (auto& leafModule : module) {
@@ -2532,13 +2605,17 @@ void InfomapBase::hierarchicalPartition()
 
   // The recursive search below starts over from the super modules and can end above the
   // super-level tree it threw away (#837). Keep that tree and its codelength to fall back on.
+  // Not under a hard partition: the leaves are then the collapsed hard modules, which have
+  // no node ids, and initTree cannot rebuild the tree from them.
   NodePaths superLevelTree;
   double superLevelCodelength = 0.0;
   if (fastHierarchicalSolution == 0) {
     superLevelCodelength = m_hierarchicalCodelength;
-    superLevelTree.reserve(numLeafNodes());
-    for (auto it(iterLeafNodes()); !it.isEnd(); ++it)
-      superLevelTree.emplace_back(it->stateId, it.path());
+    if (!haveHardPartition()) {
+      superLevelTree.reserve(numLeafNodes());
+      for (auto it(iterLeafNodes()); !it.isEnd(); ++it)
+        superLevelTree.emplace_back(it->stateId, it.path());
+    }
     removeSubModules(true);
     m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
   }
@@ -2617,7 +2694,7 @@ void InfomapBase::partition()
   if (m_numNonTrivialTopModules != numTopModules())
     nonTrivialSummary = fmt::format(FMT_STRING(" ({} non-trivial)"), m_numNonTrivialTopModules);
   progress.finish(fmt::format(FMT_STRING("{} {} codelength {}, {} modules{}"), compressionSummary(prettyCompression), Console::arrow(), io::toPrecision(getCodelength()), numTopModules(), nonTrivialSummary));
-  const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
+  const bool regularizedPriorOnly = usesRegularizedFlow() && network().numLinks() == 0;
   if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > getOneLevelCodelength()) {
     Console::detail(1, "worse codelength than one-level, putting all nodes in one module");
 

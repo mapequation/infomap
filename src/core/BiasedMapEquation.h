@@ -186,6 +186,7 @@ private:
   double moduleEntropyBiasCorrection = 0;
   double m_totalDegree = 1;
   unsigned int m_numNodes = 0;
+  bool m_undirectedLinks = false;
 
 public:
   void setNetworkProperties(const StateNetwork& network);

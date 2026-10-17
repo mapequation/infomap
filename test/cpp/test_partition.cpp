@@ -637,6 +637,53 @@ TEST_CASE("removeSubModules flattens a ragged tree whose shallow branch comes fi
   CHECK(numModules == 2);
 }
 
+TEST_CASE("Fast hierarchical fine-tuning survives a ragged cluster-data tree [fast][core][partition][tree]")
+{
+  // -F fine-tunes each module of leaf modules on its own. It picked those modules by
+  // their first child alone, so on a ragged tree it also took a module whose first child
+  // is a leaf module but whose other children are deeper modules or a lone leaf, sized
+  // its buffers from the children's degrees and wrote past them collecting the leaves
+  // (#1216). The deep-branch-first shape never reached that and is the control.
+  const std::string header = "# path flow name node_id\n";
+  const std::vector<std::pair<std::string, std::string>> shapes = {
+    { "ragged_branches", infomap::test::readTextFile(infomap::test::clusterFixturePath("twotriangles_ragged_branches.tree")) },
+    { "top_level_leaf_first", infomap::test::readTextFile(infomap::test::clusterFixturePath("twotriangles_top_level_leaf_first.tree")) },
+    { "deep_branch_first", header + "1:1:1 0.1 \"A\" 1\n1:1:2 0.1 \"B\" 2\n1:2:1 0.1 \"C\" 3\n2:1 0.1 \"D\" 4\n2:2 0.1 \"E\" 5\n2:3 0.1 \"F\" 6\n" },
+    { "two_bare_rows_first", header + "1 0.1 \"A\" 1\n2 0.1 \"B\" 2\n3:1:1 0.1 \"C\" 3\n3:1:2 0.1 \"D\" 4\n3:2:1 0.1 \"E\" 5\n3:2:2 0.1 \"F\" 6\n" },
+    { "four_levels_shallow_first", header + "1:1 0.1 \"A\" 1\n1:2 0.1 \"B\" 2\n2:1:1:1 0.1 \"C\" 3\n2:1:1:2 0.1 \"D\" 4\n2:2:1 0.1 \"E\" 5\n2:2:2 0.1 \"F\" 6\n" },
+    { "ragged_inside_top_module", header + "1:1:1 0.1 \"A\" 1\n1:1:2 0.1 \"B\" 2\n1:2:1:1 0.1 \"C\" 3\n1:2:1:2 0.1 \"D\" 4\n1:2:2:1 0.1 \"E\" 5\n2:1:1 0.1 \"F\" 6\n" },
+  };
+
+  for (const auto& shape : shapes) {
+    CAPTURE(shape.first);
+    const std::string seedPath = "fast_hierarchical_" + shape.first + ".tree";
+    const std::string resultPath = "fast_hierarchical_" + shape.first + "_result.tree";
+    {
+      std::ofstream out(seedPath.c_str());
+      out << shape.second;
+    }
+
+    double codelength = 0.0;
+    {
+      InfomapWrapper im(infomap::test::defaultFlags("--seed 1 -F --cluster-data " + seedPath));
+      im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+      im.run();
+      infomap::test::checkRunSanity(im);
+      codelength = im.codelength();
+      infomap::writeTree(im, im.network(), resultPath, false);
+    }
+
+    // The tree it returns has the codelength it reports.
+    InfomapWrapper reader(infomap::test::defaultFlags("--no-infomap --cluster-data " + resultPath));
+    reader.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    reader.run();
+    infomap::test::checkApproxCodelength(reader.codelength(), codelength, 1e-9);
+
+    std::remove(seedPath.c_str());
+    std::remove(resultPath.c_str());
+  }
+}
+
 TEST_CASE("An unknown node id in cluster data leaves the partition alone [fast][core][partition][parser]")
 {
   // std::map::operator[] inserted the unknown id with a default index of 0, so it
@@ -793,6 +840,57 @@ TEST_CASE("A restored flat best-of-N winner keeps its module codelengths [fast][
   // Root plus nine module nodes.
   CHECK(numScoredModules(im.root()) == 10);
   CHECK(sumModuleCodelengths(im.root()) == doctest::Approx(im.codelength()));
+}
+
+TEST_CASE("A restored best-of-N winner keeps the tree order of its trial [fast][core][partition][lifecycle]")
+{
+  // #1202: restoreBestResult rebuilds a two-level winner through initPartition, which
+  // creates the modules in node id order, so module 1 was the triangle on the lowest
+  // ids and not the clique with the most flow. Every trial starts from that partition,
+  // the optimum, so the trials tie, trial 1 is restored, and the tree must be the
+  // one-trial tree. A search from scratch can end in one module with some standard
+  // libraries.
+  const std::string clu = "restored_order.clu";
+  {
+    std::ofstream out(clu);
+    out << "# node_id module\n1 1\n2 1\n3 1\n4 2\n5 2\n6 2\n7 2\n8 2\n9 2\n";
+  }
+
+  using Leaves = std::vector<std::pair<unsigned int, std::vector<unsigned int>>>;
+  const auto run = [&clu](const std::string& flags, bool hard) {
+    InfomapWrapper im("--seed 1 --silent --two-level --no-file-output --cluster-data " + clu + " " + flags);
+    im.clusterDataIsHard = hard;
+    im.addLink(1, 2);
+    im.addLink(2, 3);
+    im.addLink(3, 1);
+    im.addLink(3, 4);
+    for (unsigned int a = 4; a < 10; ++a)
+      for (unsigned int b = a + 1; b < 10; ++b)
+        im.addLink(a, b);
+    im.run();
+    double lastFlow = 1.0;
+    for (const auto& module : im.root().children()) {
+      CHECK(module.data.flow <= lastFlow);
+      lastFlow = module.data.flow;
+    }
+    Leaves leaves;
+    for (auto it(im.iterLeafNodes()); !it.isEnd(); ++it) {
+      const auto& path = it.path();
+      leaves.emplace_back(it->stateId, std::vector<unsigned int>(path.begin(), path.end()));
+    }
+    return leaves;
+  };
+
+  for (const bool hard : { false, true }) {
+    CAPTURE(hard);
+    const auto oneTrial = run("--num-trials 1", hard);
+    CHECK(oneTrial.front().first == 4); // the clique is module 1
+    CHECK(oneTrial.back().second.front() == 2);
+    CHECK(run("--num-trials 2", hard) == oneTrial);
+    CHECK(run("--num-trials 2 --parallel-trials", hard) == oneTrial);
+  }
+
+  std::remove(clu.c_str());
 }
 
 TEST_CASE("Pretty per-level codelength renders a structured levels table [fast][core][partition][output]")
@@ -1411,7 +1509,7 @@ TEST_CASE("Invalid cluster-data fixtures fail deterministically [fast][core][par
       std::runtime_error);
   CHECK_THROWS_WITH_AS(
       im.initPartition(infomap::test::clusterFixturePath("invalid_zero_path.tree"), false, &im.network()),
-      "There is a '0' in the tree path, lowest allowed integer is 1.",
+      "Invalid tree path '0:1' on line 1 ('0:1 0.1 \"A\" 1'). A path is positive integers separated by ':', such as 1:2:1.",
       std::runtime_error);
 }
 
@@ -1447,7 +1545,7 @@ TEST_CASE("Invalid tree cluster-data failure does not poison later valid tree in
   im.initNetwork(im.network());
   CHECK_THROWS_WITH_AS(
       im.initPartition(infomap::test::clusterFixturePath("invalid_zero_path.tree"), false, &im.network()),
-      "There is a '0' in the tree path, lowest allowed integer is 1.",
+      "Invalid tree path '0:1' on line 1 ('0:1 0.1 \"A\" 1'). A path is positive integers separated by ':', such as 1:2:1.",
       std::runtime_error);
 
   im.initNetwork(im.network());
@@ -1909,11 +2007,49 @@ TEST_CASE("Hard cluster-data keeps a hard module together [fast][core][partition
   CHECK(hardModuleKept(partition));
 }
 
-// initPartition passes `hard` on only when every node has a module. When the partition
-// leaves a node out, the rest is used as a soft seed and the search splits its modules.
-TEST_CASE("Fuzz finding: hard cluster-data that leaves nodes out keeps a hard module together (#1206) [fast][core][partition]" * doctest::should_fail())
+// The nodes a hard partition leaves out get modules of their own, as in a soft one, and
+// the modules it names are kept whole. initPartition used to pass `hard` on only when every
+// node had a module, so the search split them.
+TEST_CASE("Hard cluster-data that leaves nodes out keeps a hard module together (#1206) [fast][core][partition]")
 {
   CHECK(hardModuleKept({ { 1, 1 }, { 10, 1 } })); // the other 25 nodes left out
+}
+
+// With three triangles of ninetriangles as hard modules, the recursive search ends above
+// the super-level tree. Restoring that tree by node id under a hard partition, whose leaves
+// are the collapsed hard modules, gave a tree with a node 0 and without node 14, and a crash
+// at exit. The search keeps its own tree there instead.
+TEST_CASE("A search over hard cluster-data returns every node once (#1206) [fast][core][partition]")
+{
+  for (const bool complete : { false, true }) {
+    CAPTURE(complete);
+    infomap::InfomapBase::InitialPartition partition { { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 }, { 7, 3 }, { 8, 3 }, { 9, 3 } };
+    if (complete) {
+      for (unsigned int node = 10; node <= 27; ++node)
+        partition[node] = node;
+    }
+    InfomapWrapper im(infomap::test::defaultFlags());
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.clusterDataIsHard = true;
+    im.setInitialPartition(partition);
+    im.run();
+    std::map<unsigned int, const InfoNode*> parentOf;
+    unsigned int numLeaves = 0;
+    for (auto& node : im.root().infomapTree()) {
+      if (node.isLeaf()) {
+        parentOf[node.stateId] = node.parent;
+        ++numLeaves;
+      }
+    }
+    CHECK(numLeaves == 27);
+    REQUIRE(parentOf.size() == 27);
+    CHECK(parentOf.begin()->first == 1);
+    CHECK(parentOf.rbegin()->first == 27);
+    for (unsigned int first : { 1, 4, 7 }) {
+      CHECK(parentOf.at(first) == parentOf.at(first + 1));
+      CHECK(parentOf.at(first) == parentOf.at(first + 2));
+    }
+  }
 }
 
 // The hard modules are leaves while the run scores the tree, and restoreHardPartition
@@ -2005,18 +2141,45 @@ TEST_CASE("Fuzz finding: undirected --recorded-teleportation balances module flo
   CHECK(balanced);
 }
 
-// A tree row whose path does not start with a number (`x`, `:1`) is read as an empty
-// path, and initTree then reads its first element: a segfault in a release build.
-TEST_CASE("Fuzz finding: a tree row with no number in its path is rejected (#1208) [fast][core][partition][parser]" * doctest::should_fail())
+// A tree row whose path does not start with a number (`x`, `:1`) was read as an empty
+// path, and initTree then read its first element: a segfault in a release build. Other
+// malformed paths were cut short or misread without a word.
+TEST_CASE("A tree row whose path is not positive integers separated by ':' is rejected (#1208) [fast][core][partition][parser]")
 {
-  const std::string tree = "fuzz_empty_path.tree";
-  {
-    std::ofstream out(tree);
-    out << "1:1 0.5 \"A\" 1\nx 0.5 \"B\" 2\n";
+  for (const std::string ext : { "tree", "ftree" }) {
+    const std::string tree = "malformed_tree_path." + ext;
+    for (const std::string badPath : { "x", ":1", "1:", "1::2", "1:x", "1.2", "0", "1:0", "-1", "+1", "1:-2", "4294967296" }) {
+      CAPTURE(ext);
+      CAPTURE(badPath);
+      {
+        std::ofstream out(tree);
+        out << "# path flow name node_id\n1:1 0.5 \"A\" 1\n" << badPath << " 0.5 \"B\" 2\n";
+      }
+      infomap::ClusterMap clusterMap;
+      CHECK_THROWS_WITH_AS(clusterMap.readClusterData(tree),
+                           ("Invalid tree path '" + badPath + "' on line 3 ('" + badPath + " 0.5 \"B\" 2'). A path is positive integers separated by ':', such as 1:2:1.").c_str(),
+                           std::runtime_error);
+    }
+    {
+      std::ofstream out(tree);
+      out << "1:1 0.5 \"A\" 1\n2:10:4294967295 0.5 \"B\" 2\n";
+    }
+    infomap::ClusterMap clusterMap;
+    clusterMap.readClusterData(tree);
+    REQUIRE(clusterMap.treePaths().size() == 2);
+    CHECK(clusterMap.treePaths()[0].path == infomap::Path { 1, 1 });
+    CHECK(clusterMap.treePaths()[1].path == infomap::Path { 2, 10, 4294967295u });
+
+    // A multilayer row whose layer and node are not in the network is skipped, but
+    // its path is still checked.
+    {
+      std::ofstream out(tree);
+      out << "x 0.5 \"B\" 1 1 1\n";
+    }
+    const std::map<unsigned int, std::map<unsigned int, unsigned int>> noStates;
+    CHECK_THROWS_AS(clusterMap.readClusterData(tree, false, &noStates), std::runtime_error);
+    std::remove(tree.c_str());
   }
-  infomap::ClusterMap clusterMap;
-  CHECK_THROWS_AS(clusterMap.readClusterData(tree), std::runtime_error);
-  std::remove(tree.c_str());
 }
 
 } // namespace

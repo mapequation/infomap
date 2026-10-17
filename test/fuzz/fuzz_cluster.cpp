@@ -179,10 +179,6 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   // --regularized) leaves the teleport weights summing to less than 1.
   if (im.network().isBipartite() && (im.recordedTeleportation || im.regularized) && (negative || unbalanced))
     return true;
-  // #1206: hard partitions are dropped when the clu file misses a node: initPartition passes
-  // `hard` on only when every node has a module.
-  if (im.clusterDataIsHard && contains(message, "hard partition was split") && contains(message, "misses"))
-    return true;
   // #1209: on a state network, a search from a tree that it reshapes reports the codelength of
   // the memory map equation's stale per-module physical-node bookkeeping, which
   // calcCodelengthOnTree on the same instance repeats; a fresh instance scores less.
@@ -377,22 +373,6 @@ bool rescore(const Options& options, const std::string& networkPath, const std::
   return true;
 }
 
-// #1208: a tree row whose path has no number in front is read as an empty path,
-// which initTree indexes: a crash the harness cannot catch, so it skips such input.
-bool hasEmptyTreePath(const infomap::Network& network, const std::string& clusterPath)
-{
-  infomap::ClusterMap clusterMap;
-  try {
-    if (network.isMultilayerNetwork())
-      clusterMap.readClusterData(clusterPath, false, &network.layerNodeToStateId());
-    else
-      clusterMap.readClusterData(clusterPath);
-  } catch (const std::exception&) {
-    return false; // rejected, and the run rejects it the same way
-  }
-  return std::any_of(clusterMap.treePaths().begin(), clusterMap.treePaths().end(), [](const auto& treePath) { return treePath.path.empty(); });
-}
-
 // Prints what the CLI needs to replay the finding, then aborts.
 [[noreturn]] void reportBug(const Options& options, const std::string& clusterText, const char* message)
 {
@@ -429,8 +409,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     return 0;
   }
   auto& im = *owner;
-  if (hasEmptyTreePath(im.network(), clusterFile.path))
-    return 0;
 
   try {
     applyMetaData(im, options.metaData);
