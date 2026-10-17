@@ -231,6 +231,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
   if (size < kHeaderSize)
     return 0;
   const std::string flags = optionsFromHeader(data);
+  if (size > kHeaderSize + 40)
+    reportBug(flags, MetaData{}, "planted crash to test fuzz-pr.yml");
 
   char path[] = "/tmp/infomap_fuzz_run_XXXXXX";
   const int fd = mkstemp(path);
