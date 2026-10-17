@@ -2570,6 +2570,11 @@ void InfomapBase::hierarchicalPartition()
 
       const double diffCodelength = codelengthBefore - codelengthAfter;
       Console::detail(1, "fine-tune bottom modules: improvement {:g}% {} codelength {}", (diffCodelength / codelengthBefore) * 100, Console::arrow(), io::toPrecision(codelengthAfter));
+
+      // The recursion below starts from m_hierarchicalCodelength and the leaf modules'
+      // codelength terms. Both still describe the seed tree, and the new sub modules have
+      // no term at all, so re-score the fine-tuned tree.
+      m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
     }
 
     recursivePartition();
