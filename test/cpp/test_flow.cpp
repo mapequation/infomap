@@ -1196,6 +1196,33 @@ TEST_CASE("Unrecorded bipartite teleportation normalizes node flow with a dangli
   }
 }
 
+TEST_CASE("Bipartite teleportation teleports from a feature without links back (#1311) [fast][core][flow]")
+{
+  // Node 1 links to features 3 and 4, node 2 to feature 3, and 3 links back to 2 only.
+  // Feature 4 has no links back, so the walker that reaches it teleports, to nodes 1 and 2
+  // in equal parts with --to-nodes. Then p1 = alpha/2 + (beta * p1/2)/2, so p1 = 0.075 /
+  // 0.7875 = 2/21 and p2 = 19/21. Feature 3 gets beta * (p1/2 + p2) = 17/21. Doubled for
+  // Markov time 2, 1 -> 3 and 1 -> 4 carry 2 * beta * p1/2 = 1.7/21, 2 -> 3 carries
+  // 2 * beta * p2 = 32.3/21 and 3 -> 2 carries 34/21. The flow stuck at 4 was dropped and
+  // the rest renormalized, which gave p1 = 0.0776.
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --bipartite-teleportation --recorded-teleportation --to-nodes"));
+  im.network().setBipartiteStartId(3);
+  im.addLink(1, 3);
+  im.addLink(1, 4);
+  im.addLink(2, 3);
+  im.addLink(3, 2);
+  im.run();
+
+  const auto nodes = networkNodeFlows(im);
+  CHECK(nodes.at(1) == doctest::Approx(2.0 / 21).epsilon(1e-10));
+  CHECK(nodes.at(2) == doctest::Approx(19.0 / 21).epsilon(1e-10));
+  const auto links = networkLinkFlows(im);
+  CHECK(links.at({ 1, 3 }) == doctest::Approx(1.7 / 21).epsilon(1e-10));
+  CHECK(links.at({ 1, 4 }) == doctest::Approx(1.7 / 21).epsilon(1e-10));
+  CHECK(links.at({ 2, 3 }) == doctest::Approx(32.3 / 21).epsilon(1e-10));
+  CHECK(links.at({ 3, 2 }) == doctest::Approx(34.0 / 21).epsilon(1e-10));
+}
+
 TEST_CASE("Reaching tolerance on the last allowed iteration counts as converged [fast][core][flow]")
 {
   // converged used to mean "the loop stopped before the iteration limit", so a run whose
