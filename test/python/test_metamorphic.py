@@ -102,8 +102,9 @@ ABS = 1e-12
 # How far apart the best codelengths of two seed sweeps may be.
 SEARCH_NOISE = 0.01
 # The networks are tiny, so starting threads costs more than the run; the
-# thread count has its own tests at the end.
-SERIAL = {"num_threads": 1}
+# thread count has its own tests at the end. The weekly thread job
+# (make test-python-threads) sets INFOMAP_NUM_THREADS to run them threaded.
+THREADS = {"num_threads": int(os.environ.get("INFOMAP_NUM_THREADS", "1"))}
 
 FILES = [
     EXAMPLES / "twotriangles.net",
@@ -186,7 +187,7 @@ def _vertex_weights(path: Path) -> dict[int, float]:
 
 def _read(path: Path) -> Net:
     # Infomap parses the file; the links come back as given (duplicates summed).
-    result = run(str(path), silent=True, no_infomap=True, directed=True, **SERIAL)
+    result = run(str(path), silent=True, no_infomap=True, directed=True, **THREADS)
     nodes = sorted(node.node_id for node in result.tree() if node.is_leaf)
     weights = _vertex_weights(path)
     return Net(nodes, result.links("weight"), {n: weights.get(n, 1.0) for n in nodes})
@@ -234,7 +235,9 @@ def _tree(result) -> dict[int, tuple[int, ...]]:
 def found_tree(tmp_path, net: Net, options) -> dict[int, tuple[int, ...]]:
     """A tree to score: the one a short search finds on ``net``."""
     path = net.write(tmp_path / "search.net")
-    return _tree(run(str(path), silent=True, num_trials=2, seed=3, **options, **SERIAL))
+    return _tree(
+        run(str(path), silent=True, num_trials=2, seed=3, **options, **THREADS)
+    )
 
 
 def score(tmp_path, net: Net, paths, options, tag="scored"):
@@ -247,14 +250,14 @@ def score(tmp_path, net: Net, paths, options, tag="scored"):
         cluster_data=str(tree_path),
         no_infomap=True,
         **options,
-        **SERIAL,
+        **THREADS,
     )
 
 
 def best_of_seeds(tmp_path, net: Net, options, seeds=range(1, 7), tag="sweep"):
     path = net.write(tmp_path / f"{tag}.net")
     results = [
-        run(str(path), silent=True, num_trials=1, seed=seed, **options, **SERIAL)
+        run(str(path), silent=True, num_trials=1, seed=seed, **options, **THREADS)
         for seed in seeds
     ]
     return min(results, key=lambda r: r.codelength)
@@ -704,8 +707,10 @@ def test_thread_count_does_not_change_the_result(tmp_path, name, variant):
         )
         # A worker rebuilds the network for each trial, so a sum can come out in
         # the last bit.
-        assert parallel.codelengths == pytest.approx(serial.codelengths, rel=1e-14)
-        assert parallel.codelength == pytest.approx(serial.codelength, rel=1e-14)
+        assert parallel.codelengths == pytest.approx(
+            serial.codelengths, rel=1e-14, abs=0
+        )
+        assert parallel.codelength == pytest.approx(serial.codelength, rel=1e-14, abs=0)
         # The same tree, though not always in the same order (see below).
         assert _modules(parallel) == _modules(serial), threads
 
@@ -721,7 +726,9 @@ def test_omp_num_threads_does_not_change_the_result(tmp_path):
     outputs = []
     for threads in ("1", "4"):
         env = {**os.environ, "OMP_NUM_THREADS": threads}
+        # Both outrank OMP_NUM_THREADS in the thread budget.
         env.pop("INFOMAP_NUM_THREADS", None)
+        env.pop("SLURM_CPUS_PER_TASK", None)
         outputs.append(
             subprocess.run(
                 [sys.executable, "-c", script, str(path)],
@@ -818,7 +825,7 @@ def test_restored_tree_is_sorted_on_flow(tmp_path, extra):
     )
     clu = tmp_path / "modules.clu"
     clu.write_text("".join(f"{n} {1 if n <= 3 else 2}\n" for n in range(1, 10)))
-    options = {"two_level": True, "cluster_data": str(clu), "seed": 1, **SERIAL}
+    options = {"two_level": True, "cluster_data": str(clu), "seed": 1, **THREADS}
     one_trial = run(str(path), silent=True, num_trials=1, **options)
     assert one_trial.num_top_modules == 2
     result = run(str(path), silent=True, **options, **extra)

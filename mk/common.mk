@@ -174,6 +174,7 @@ help:
 		"  test-sanitizers       Run the C++ test suite under ASan/UBSan." \
 		"  test-tsan             Run the C++ tests and threaded CLI runs under TSan with OpenMP." \
 		"  test-python-asan      Run the Python tests against an ASan/UBSan build of the extension." \
+		"  test-python-threads   Run the oracle-backed Python tests and the thread comparison with 4 threads." \
 		"  test-r-asan           Run the R tests and examples against an ASan/UBSan build." \
 		"  test-r-valgrind       Run the R tests and examples under valgrind (Linux)." \
 		"  coverage              Build a one-off llvm-cov coverage map of src/ (tests, CLI, fuzz)." \
