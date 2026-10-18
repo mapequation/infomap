@@ -583,6 +583,11 @@ private:
 
   void aggregateFlowValuesFromLeafToRoot();
 
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  // Exit flow of one module holding every leaf node, as the regularized multilayer objective prices it (#1285)
+  double calcRegularizedMultilayerOneModuleExitFlow() const;
+#endif
+
   // Init terms that is constant for the whole network
   void initTree() { return m_optimizer->initTree(); }
 
@@ -594,6 +599,14 @@ private:
   {
     m_optimizer->initNetwork();
     m_objectiveTermsAreForLeafNetwork = m_root.firstChild != nullptr && m_root.firstChild->isLeaf();
+  }
+
+  // Re-init the network-level terms for the leaf network if they describe a module network.
+  // Call it with the leaves as root's children, after removeModules().
+  void restoreLeafNetworkTerms()
+  {
+    if (!m_objectiveTermsAreForLeafNetwork)
+      initNetwork();
   }
 
   void initSuperNetwork()
