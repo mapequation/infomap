@@ -91,6 +91,8 @@ _PARSE_MESSAGE_PREFIXES = (
     "Missing node id from line",
     "Mixed state and physical tree ids",
     "Input cluster data from file",
+    # FileURI's malformed-name error; it only checks input file names.
+    "Filename '",
 )
 _PARSE_MESSAGE_SUBSTRINGS = (
     # SafeFile's read-side open error ("... read permissions."); the
