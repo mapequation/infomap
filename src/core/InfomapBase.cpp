@@ -4171,9 +4171,6 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   double subModuleCodelength = subCodelength - subIndexCodelength;
   InfoNode& subRoot = *module.getInfomapRoot();
   unsigned int numSubModules = subRoot.childDegree();
-#if INFOMAP_CHECK_INVARIANTS
-  const double subTreeCodelengthCost = subInfomap.calcTreeCodelengthCost(numSubModules);
-#endif
   bool trivialSubPartition = numSubModules == 1 || numSubModules == module.childDegree();
   // #308: bias the refinement accept test by the local recursion depth (level + 1).
   const double subPrefBias = twoLevel
@@ -4259,16 +4256,16 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   // The sub-partition was kept on subCodelength, so the subtree now in its place must price
   // to it (#1279). Only the sub-module terms compare like with like. The index term moved from
   // the sub-Infomap root to module, which prices the same codewords except under the entropy
-  // correction: the root has no exit codeword and module does (#1176). The sub-Infomap's
-  // tree-level term charges its module count against --preferred-number-of-modules, which the
-  // parent tree charges at the top level only (#1292), so it is left out too.
+  // correction: the root has no exit codeword and module does (#1176). The rest of the
+  // sub-Infomap's codelength is compared whole, so a tree-level term the parent tree does not
+  // charge, such as a module-count preference leaking into the sub-search (#1292), fails here.
   // oldModuleCodelength is calcCodelength(module) by construction above.
   {
     double pricedSubModuleCodelength = 0.0;
     for (const InfoNode* subModule : materializedSubModules)
       pricedSubModuleCodelength += calcCodelength(*subModule);
     try {
-      checkCodelength(subModuleCodelength - subTreeCodelengthCost, pricedSubModuleCodelength, "keeping a sub-partition");
+      checkCodelength(subModuleCodelength, pricedSubModuleCodelength, "keeping a sub-partition");
     } catch (const std::exception&) {
       // Inside an OpenMP task: record it, recursivePartition rethrows after the region.
       record.error = std::current_exception();

@@ -2,7 +2,10 @@
 #include "io/InfomapError.h"
 
 #include <cmath>
+#include <cstdio>
+#include <filesystem>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -166,6 +169,34 @@ TEST_CASE("A module preference reaches a deep tree from the recursive search [fa
     }
   }
   REQUIRE(numDeepTreesOffPreference > 0);
+}
+
+// The preference counts the top modules only. A sub-search used to carry it and charge
+// |K_sub - K_pref| on its own module count, a term the tree does not have, so the subtree it
+// kept priced one bit below the sub-search: from this seed tree with --seed 1, 1.18 bits
+// against 2.18. Builds with INFOMAP_CHECK_INVARIANTS throw on that when keeping a
+// sub-partition (#1292). Seeds reach different trees on different standard libraries, so
+// this sweeps them.
+TEST_CASE("Sub-searches from a seed tree do not charge the module preference (#1292) [fast][core][mapeq][biased]")
+{
+  const std::string network = networkFixturePath("unbalanced_hierarchy.net");
+  const std::string treePath = (std::filesystem::temp_directory_path() / "infomap_1292_seed.tree").string();
+  for (unsigned int seed = 1; seed <= 5; ++seed) {
+    InfomapWrapper seedRun(defaultFlags("--seed " + std::to_string(seed)));
+    seedRun.readInputData(network);
+    seedRun.run();
+    REQUIRE(seedRun.numLevels() > 2);
+    seedRun.writeTree(treePath);
+
+    InfomapWrapper im(defaultFlags("--preferred-number-of-modules 2 --seed " + std::to_string(seed) + " --cluster-data " + treePath));
+    im.readInputData(network);
+    im.run();
+    const double reported = im.codelength();
+    const double recomputed = im.calcCodelengthOnTree(im.root(), true);
+    INFO("seed " << seed << ": reported=" << reported << " recomputed=" << recomputed);
+    checkApproxCodelength(reported, recomputed);
+  }
+  std::remove(treePath.c_str());
 }
 
 TEST_CASE("MapEquation invariant: MemMapEquation (memory), tracked == recompute [fast][core][mapeq][mem]")
