@@ -138,11 +138,16 @@ def test_missing_nodes_in_three_level_tree(tmp_path, assign):
 
 
 def _subprocess_run(tree):
+    # A refusal of the file is caught in the child, so only a native failure
+    # gives a non-zero exit. A sanitizer failure can also exit 1.
     script = textwrap.dedent(
         f"""
-        from infomap import run
-        run({str(TWOTRIANGLES)!r}, cluster_data={str(tree)!r}, no_infomap=True,
-            num_trials=1, silent=True)
+        from infomap import InfomapError, run
+        try:
+            run({str(TWOTRIANGLES)!r}, cluster_data={str(tree)!r}, no_infomap=True,
+                num_trials=1, silent=True)
+        except InfomapError:
+            pass
         """
     )
     return subprocess.run(
@@ -168,6 +173,4 @@ def test_repeated_state_row_does_not_crash(tmp_path):
         tmp_path / "seed.tree", THREE_LEVEL + [(3, (2, 2, 2))], state_ids=True
     )
     completed = _subprocess_run(tree)
-    # 0 if the file is read, 1 if it is refused with an exception. A crash is
-    # a negative code on POSIX and a large positive one on Windows.
-    assert completed.returncode in (0, 1), completed.stderr
+    assert completed.returncode == 0, completed.stderr
