@@ -70,7 +70,7 @@ jobs:
         # tools. The package itself is not installed: the tests import the
         # instrumented build.
         run: |
-          uv pip install --system setuptools pytest numpy scipy pandas networkx igraph \
+          uv pip install --system setuptools pytest hypothesis numpy scipy pandas networkx igraph \
             anndata pyarrow "jsonschema>=4.18" referencing pyyaml threadpoolctl
         shell: bash
 
