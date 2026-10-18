@@ -49,7 +49,9 @@ as the one without the option:
 - ``--recorded-teleportation`` under the same models (#1194);
 - ``--entropy-corrected`` and ``--preferred-number-of-modules`` under any
   objective but the ordinary map equation: state, multilayer and meta-data
-  input (#904).
+  input (#904);
+- ``undirdir`` on multilayer ``*Intra``/``*Inter`` input, which runs the
+  undirected multilayer flow (#1233).
 
 A combination the run refuses with an input error cannot be combined with
 anything else, so its pair is left out of the array and checked on its own
@@ -457,16 +459,18 @@ WARN_RECORDED = "--recorded-teleportation has no effect"
 WARN_ENTROPY = "--entropy-corrected has no effect"
 WARN_PREFERRED = "--preferred-number-of-modules has no effect"
 WARN_NORMALISED = "Node flow sums to"
+WARN_UNDIRDIR = "The undirdir flow model has no effect on multilayer input"
 # Warned about, but not an option the run ignores; see the module docstring.
 TOLERATED = ("PageRank calculation did not converge",)
 
 
 def expected(row: Mapping[str, object], net: Net) -> Expected:
     model = str(row["flow_model"])
+    replaced_undirdir = model == "undirdir" and net.directed_input
     if model in ("undirected", "undirdir") and net.directed_input:
         # Multilayer *Intra/*Inter input expands its links to both directions and
         # runs directed (Network::generateStateNetworkFromMultilayer), undirdir
-        # included, with a note at verbosity 1 only (#1233).
+        # included, which warns that it has no effect (#1233).
         model = "directed"
     multilayer = net.kind == "multilayer"
     exp = Expected(flow_model=model, memory=net.kind in ("state", "multilayer"))
@@ -481,6 +485,8 @@ def expected(row: Mapping[str, object], net: Net) -> Expected:
         exp.warnings.add(WARN_REGULARIZED)
     elif asked_recorded and not exp.recorded and model != "undirected":
         exp.warnings.add(WARN_RECORDED)
+    if replaced_undirdir:
+        exp.warnings.add(WARN_UNDIRDIR)
     if not exp.biased and row["entropy"]:
         exp.warnings.add(WARN_ENTROPY)
     if not exp.biased and row["preferred"]:
@@ -491,7 +497,6 @@ def expected(row: Mapping[str, object], net: Net) -> Expected:
         and exp.recorded
         and not exp.regularized
         and row["teleport_to"] == "links"
-        and not row["node_weights"]
     ):
         exp.error = "Degenerate flow"
     if model == "precomputed":
@@ -803,15 +808,6 @@ def _markov_below_one(o: Outcome) -> bool:
     return t != "variable" and float(t) < 1
 
 
-def _degenerate_with_node_weights(o: Outcome) -> bool:
-    # The run that is refused as degenerate without --use-node-weights-as-flow.
-    return (
-        o.case.row["node_weights"]
-        and expected({**o.case.row, "node_weights": False}, o.case.net).error
-        == "Degenerate flow"
-    )
-
-
 def _negative_flow(o: Outcome) -> bool:
     # The release guard (#963) and the debug invariant word it the same way.
     return o.error is not None and "Negative" in o.error
@@ -860,15 +856,9 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
                 and (_negative_flow(o) or _unbalanced_flow(o))
             ),
         ),
-        # Node weights as flow get past the degenerate-flow refusal (see below).
-        (
-            "#1232",
-            lambda o: _degenerate_with_node_weights(o) and o.error is not None,
-        ),
     ],
     "codelength": [
         ("#1175", lambda o: o.case.net.kind == "bipartite" and o.exp.regularized),
-        ("#1232", _degenerate_with_node_weights),
         # --regularized with Markov time below 1 (see the pinned test below).
         (
             "#1231",
@@ -1013,49 +1003,26 @@ def test_regularized_markov_time_below_one(markov_time, directed):
     )
 
 
-def _leaf_flow_balance(result) -> tuple[float, float]:
-    enter = exit_ = 0.0
-    for node in result.tree():
-        if node.is_leaf:
-            enter += node.data.enterFlow
-            exit_ += node.data.exitFlow
-    return enter, exit_
-
-
-@pytest.mark.xfail(
-    reason="directed flow with recorded teleportation to links leaves bipartite input without "
-    "flow, and the run is refused as degenerate, but --use-node-weights-as-flow gets past that "
-    "check: the feature nodes take every teleport weight and are not coded (#1175), so the "
-    "primary nodes exit by teleportation and are never entered (#1232)",
-    strict=True,
-)
 @pytest.mark.parametrize(
     "network",
     [EXAMPLES / "bipartite.net", NETWORKS / "bipartite_uneven.net"],
     ids=lambda p: p.stem,
 )
-def test_bipartite_recorded_teleportation_with_node_weights_as_flow(network):
+@pytest.mark.parametrize("node_weights", [False, True])
+def test_bipartite_recorded_teleportation_with_node_weights_as_flow(
+    network, node_weights
+):
+    # Directed flow with recorded teleportation to links leaves bipartite input
+    # without flow: the feature nodes take every teleport weight and are not
+    # coded (#1175). Node weights as flow give the nodes a visit rate but the
+    # walk still takes no steps, so the run is refused either way (#1232).
     opts = {
         "silent": True,
         "num_trials": 1,
         "directed": True,
         "recorded_teleportation": True,
-        "use_node_weights_as_flow": True,
+        "use_node_weights_as_flow": node_weights,
         "two_level": True,
     }
-    # Without the option the run is refused, which is what the test is about.
     with pytest.raises(InfomapError, match="Degenerate flow"):
-        _run(
-            Net(network.stem, "bipartite", network),
-            {**opts, "use_node_weights_as_flow": False},
-        )
-    # A flow invariant violation in invariant builds; a wrong codelength in release.
-    # Refusing it as without the option is a fix too.
-    try:
-        result, _ = _run(Net(network.stem, "bipartite", network), opts)
-    except InfomapError as error:
-        if "Degenerate flow" in str(error):
-            return
-        raise
-    enter, exit_ = _leaf_flow_balance(result)
-    assert enter == pytest.approx(exit_, rel=REL, abs=ABS)
+        _run(Net(network.stem, "bipartite", network), opts)

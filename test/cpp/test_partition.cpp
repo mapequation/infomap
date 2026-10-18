@@ -473,6 +473,29 @@ TEST_CASE("The super consolidation log reports an index codelength [fast][core][
   CHECK(line.find(" = ") == std::string::npos);
 }
 
+TEST_CASE("A zero codelength prints 0% compression, not nan% [fast][core][partition][output]")
+{
+  // #1234: two disconnected directed pairs give codelength 0, and the recursive
+  // partition divided by it for the compression in its summary line, which read
+  // "Recursive nan% -> 2 levels". The sanitizer build traps on that division too.
+  std::ostringstream captured;
+  double codelength = -1;
+  {
+    infomap::test::ScopedLogCapture capture(captured);
+    InfomapWrapper im("--seed 123 --num-trials 1 --no-file-output --directed");
+    im.addLink(1, 2);
+    im.addLink(3, 4);
+    im.run();
+    codelength = im.codelength();
+  }
+
+  const std::string haystack = captured.str();
+  INFO(haystack);
+  CHECK(codelength == doctest::Approx(0.0));
+  CHECK(haystack.find("nan") == std::string::npos);
+  CHECK(std::regex_search(haystack, std::regex(R"(Recursive\s+0% )")));
+}
+
 TEST_CASE("Mixed-depth cluster data is rejected instead of crashing [fast][core][partition][parser]")
 {
   // A module with both a leaf and a sub-module as children used to segfault: the
@@ -682,6 +705,32 @@ TEST_CASE("Fast hierarchical fine-tuning survives a ragged cluster-data tree [fa
     std::remove(seedPath.c_str());
     std::remove(resultPath.c_str());
   }
+}
+
+TEST_CASE("Fast hierarchical search reports the codelength of the tree it returns [fast][core][partition][tree]")
+{
+  // -F fine-tunes the modules of leaf modules and starts the recursion from the seed
+  // tree's codelength and its leaf modules' terms. The fine-tuned sub modules had no term
+  // yet, so the recursion summed to 5.09 bits for a tree of 3.37. Only a dissolve in the
+  // prune step re-scored the tree, and here nothing is dissolved.
+  const std::string resultPath = "fast_hierarchical_ninetriangles_result.tree";
+  double codelength = 0.0;
+  {
+    InfomapWrapper im(infomap::test::defaultFlags("-F --cluster-data " + infomap::test::clusterFixturePath("ninetriangles_ragged_three_level.tree")));
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    infomap::test::checkRunSanity(im);
+    codelength = im.codelength();
+    infomap::writeTree(im, im.network(), resultPath, false);
+  }
+
+  InfomapWrapper reader(infomap::test::defaultFlags("--no-infomap --cluster-data " + resultPath));
+  reader.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  reader.run();
+  infomap::test::checkApproxCodelength(reader.codelength(), codelength, 1e-9);
+  infomap::test::checkApproxCodelength(codelength, 3.371875026, 1e-9);
+
+  std::remove(resultPath.c_str());
 }
 
 TEST_CASE("An unknown node id in cluster data leaves the partition alone [fast][core][partition][parser]")
@@ -2105,24 +2154,24 @@ TEST_CASE("A search over hard cluster-data with meta data ends no higher than it
 }
 
 // The hard modules are leaves while the run scores the tree, and restoreHardPartition
-// then replaces each with its children without scoring the tree again. A module that
-// held a single hard module is left without that module's codebook. A hard module
-// directly under the root, as every one is under --no-infomap, is replaced by its nodes
-// there: the modules are gone, the tree is one level, and the reported codelength is the
-// index codebook of the hard modules alone. 2.320730357 is what the triangles {1,2,3}
+// then gives them back their nodes, so the run scores the tree again after that. A hard
+// module directly under the root, as every one is under --no-infomap, stays a module.
+// It used to be replaced by its nodes there, which left a one-level tree reported at the
+// index codebook of the hard modules alone, and a module that held a single hard module
+// was reported without that module's codebook. 2.320730357 is what the triangles {1,2,3}
 // and {4,5,6} score as soft cluster data under --no-infomap.
-TEST_CASE("Fuzz finding: hard cluster-data under --no-infomap keeps its modules and their codelength (#1207) [fast][core][partition]" * doctest::should_fail())
+TEST_CASE("Hard cluster-data under --no-infomap keeps its modules and their codelength (#1207) [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--no-infomap"));
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
   im.clusterDataIsHard = true;
   im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 } });
   im.run();
-  CHECK(im.numTopModules() == 2); // 6 leaves under the root
-  CHECK(im.codelength() == doctest::Approx(2.320730357)); // 1 bit
+  CHECK(im.numTopModules() == 2); // was 6 leaves under the root
+  CHECK(im.codelength() == doctest::Approx(2.320730357)); // was 1 bit
 }
 
-TEST_CASE("Fuzz finding: a search over hard cluster-data reports the codelength of its tree (#1207) [fast][core][partition]" * doctest::should_fail())
+TEST_CASE("A search over hard cluster-data reports the codelength of its tree (#1207) [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -2131,7 +2180,7 @@ TEST_CASE("Fuzz finding: a search over hard cluster-data reports the codelength 
   im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 3 }, { 6, 3 } });
   im.run();
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
-  CHECK(im.codelength() == doctest::Approx(2.320730357)); // 1.256687717
+  CHECK(im.codelength() == doctest::Approx(2.320730357)); // was 1.256687717
 }
 
 // On a state network, a search from a tree it reshapes ends with states 1 and 4, both of
