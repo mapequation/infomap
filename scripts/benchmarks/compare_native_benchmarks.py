@@ -383,7 +383,8 @@ def render_markdown(result: dict[str, object]) -> str:
                 f"**Output changed** on {', '.join(changed)}: the module count, level "
                 "count or codelength differs from base, or a case is missing. If that "
                 "is intended, add a line `Output-change: <reason>` to the PR "
-                "description and re-run this job."
+                "description and re-run this job, and add a row to "
+                "`RESULT_CHANGES.csv`."
             )
 
     counts = result["counts"]

@@ -101,7 +101,8 @@ External resources
 - `PyPI project <https://pypi.org/project/infomap/>`_
 - `GitHub repository <https://github.com/mapequation/infomap>`_ for
   source, issues, and discussions.
-- `CHANGELOG <https://github.com/mapequation/infomap/blob/master/CHANGELOG.md>`_
+- `CHANGELOG <https://github.com/mapequation/infomap/blob/master/CHANGELOG.md>`_,
+  and :doc:`result-changes` for the fixes that change results on purpose.
 
 .. toctree::
    :hidden:
@@ -126,4 +127,5 @@ External resources
    examples/index
    references
    citing
+   result-changes
    article-companion/index
