@@ -1,4 +1,5 @@
 #include "TestUtils.h"
+#include "core/MapEquation.h"
 #include "io/InfomapError.h"
 
 #include <cmath>
@@ -875,6 +876,30 @@ TEST_CASE("Bipartite input renormalises the teleport weights of the coded nodes 
   for (const auto& node : im.network().nodes())
     sumWeight += node.second.weight;
   CHECK(sumWeight == doctest::Approx(1.0));
+}
+
+// On bipartite input the feature nodes are not coded, so a module of them has no flow,
+// yet the walker enters its children. The search priced that index codebook from its
+// running terms, while calcCodelength returned 0 for any module without flow, so a
+// sub-search kept 0.667 bits for a tree that priced to 0 (#1290).
+TEST_CASE("A module without flow prices the entry of its children as the search does (#1290) [fast][core][mapeq]")
+{
+  InfoNode module;
+  std::vector<InfoNode*> subModules;
+  for (int i = 0; i < 2; ++i) {
+    FlowData data;
+    data.enterFlow = 1.0 / 3;
+    auto* subModule = new InfoNode(data);
+    subModule->addChild(new InfoNode());
+    module.addChild(subModule);
+    subModules.push_back(subModule);
+  }
+  MapEquation<> objective;
+  objective.initSubNetwork(module);
+  objective.initPartition(subModules);
+  // Two codewords used at a third each: plogp(2/3) - 2 plogp(1/3) = 2/3 bits.
+  CHECK(objective.indexCodelength == doctest::Approx(2.0 / 3));
+  CHECK(objective.calcCodelength(module) == doctest::Approx(2.0 / 3));
 }
 
 // --use-node-weights-as-flow replaces the node flow after the link flow is computed, and

@@ -3255,11 +3255,8 @@ void InfomapBase::checkPartitionCodelength() const
   // Known gaps, each skipped until its fix:
   // - a sub-search of a memory network has no exit codeword in its index codebook (#1282);
   // - an entropy-corrected sub- or super-search charges the parameters of the whole network (#1283);
-  // - a trial after a restored tree starts from the module network's terms (#1284);
-  // - a network with zero flow, entered all the same, is priced at zero (#1290).
+  // - a trial after a restored tree starts from the module network's terms (#1284).
   if (!isMainInfomap() && (haveMemory() || entropyBiasCorrection))
-    return;
-  if (m_root.data.flow < 1e-16)
     return;
   if (isMainInfomap() && !m_objectiveTermsAreForLeafNetwork)
     return;
