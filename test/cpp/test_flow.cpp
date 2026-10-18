@@ -872,7 +872,7 @@ TEST_CASE("Precomputed flow rejects first-order input without vertex flows [fast
   CHECK_THROWS_WITH_AS(
       im.run(),
       "Missing node flow in input data. Should be passed as a third field under a *Vertices section.",
-      std::runtime_error);
+      infomap::InfomapError);
 }
 
 TEST_CASE("Precomputed flow rejects higher-order input without state flows [fast][core][flow][parser]")
@@ -883,7 +883,7 @@ TEST_CASE("Precomputed flow rejects higher-order input without state flows [fast
   CHECK_THROWS_WITH_AS(
       im.run(),
       "Missing node flow in input data. Should be passed as a third field under a *States section.",
-      std::runtime_error);
+      infomap::InfomapError);
 }
 
 TEST_CASE("Precomputed flow fixture remains runnable in C++ tests [fast][core][flow]")

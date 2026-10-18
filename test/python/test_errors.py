@@ -126,6 +126,26 @@ def test_run_time_input_failure_raises_network_parse_error(make_infomap):
         im.run()
 
 
+@pytest.mark.parametrize(
+    ("filename", "content", "message"),
+    [
+        ("bad.clu", "1 1\nx\n", "Couldn't parse node key and cluster id"),
+        ("bad.tree", '# path flow name node\n1:x 0.5 "1" 1\n', "Invalid tree path"),
+    ],
+)
+def test_malformed_cluster_data_raises_network_parse_error(
+    make_infomap, tmp_path, filename, content, message
+):
+    # #1263: a cluster file that cannot be parsed is input, like a missing one.
+    path = tmp_path / filename
+    path.write_text(content, encoding="utf-8")
+    im = make_infomap(cluster_data=str(path))
+    im.add_link(1, 2)
+
+    with pytest.raises(NetworkParseError, match=message):
+        im.run()
+
+
 def test_writer_failure_raises_infomap_error_not_parse_error(make_infomap):
     im = make_infomap()
     im.add_link(1, 2)
