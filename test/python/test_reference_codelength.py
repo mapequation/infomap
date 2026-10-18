@@ -355,6 +355,33 @@ def test_meta_data(network, meta_file, rate, unweighted, two_level):
     _assert_matches(result, partition)
 
 
+@pytest.mark.parametrize(
+    "unweighted", [False, True], ids=["flow-weighted", "unweighted"]
+)
+def test_meta_data_scored_tree(tmp_path, unweighted):
+    # Re-scoring a multilevel tree read with cluster data weighed each node
+    # 1/(top modules) instead of 1/N under unweighted meta data (#1271).
+    network = EXAMPLES / "ninetriangles.net"
+    meta_file = META / "ninetriangles_crossing.meta"
+    options = {
+        "meta_data": str(meta_file),
+        "meta_data_unweighted": unweighted,
+    }
+    searched = _run(network, **options)
+    assert searched.num_levels > 2
+    tree = tmp_path / "searched.tree"
+    searched.write_tree(str(tree))
+
+    options |= {"cluster_data": str(tree), "no_infomap": True}
+    result = _run(network, **options)
+    assert result.codelength == pytest.approx(searched.codelength, rel=REL, abs=ABS)
+    partition = _partition(result, options, meta_rate=1.0, meta_unweighted=unweighted)
+    meta = _read_meta(meta_file)
+    for node_id, leaf in partition.leaves.items():
+        leaf.meta = meta.get(node_id, -1)
+    _assert_matches(result, partition)
+
+
 # --- module-count preference and entropy correction --------------------------
 
 OBJECTIVE_NETWORKS = [
