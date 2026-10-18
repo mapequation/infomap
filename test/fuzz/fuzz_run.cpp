@@ -162,9 +162,11 @@ MetaData applyMetaData(infomap::InfomapWrapper& im, uint8_t byte)
 
 // Open bugs the target would otherwise report on every run. Each needs its options,
 // its kind of failure and, where it has one, its network shape, so an unrelated
-// failure under the same options is still reported. Each names its issue and is pinned
-// as a should_fail case in test/cpp/test_map_equation_invariants.cpp ("Fuzz finding:");
-// drop the entry when the bug is fixed so the fuzzer guards the fix.
+// failure under the same options is still reported. Each names its issue as "#N" in a
+// comment and is pinned as a should_fail case with "(#N)" in its name in
+// test/cpp/test_map_equation_invariants.cpp ("Fuzz finding:");
+// test/python/test_known_findings.py checks the pairing. Drop the entry when the bug
+// is fixed so the fuzzer guards the fix.
 bool isKnownFinding(const infomap::InfomapWrapper& /*im*/, const char* /*message*/)
 {
   return false;

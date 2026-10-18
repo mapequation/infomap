@@ -79,8 +79,10 @@ groups, like the generated state network.
 Known issues
 ------------
 Where a known issue breaks an oracle for a whole class of runs, that check is
-left out for that class and the issue is named in ``KNOWN``. The minimised
-repros of new findings are pinned as strict xfails at the end of the file.
+left out for that class and the issue is named in ``KNOWN``, with a repro that
+must still fail that check (``test_known_issue_still_fails``): when the issue is
+fixed, that test fails until the entry is removed. The minimised repros of new
+findings are pinned as strict xfails at the end of the file.
 """
 
 from __future__ import annotations
@@ -822,11 +824,27 @@ def covers_flow(case: Case, exp: Expected) -> bool:
 # --- known issues ------------------------------------------------------------
 
 
-# Open issues the sweep reaches, as check -> (issue, predicate). A failure of
-# that check on a run the predicate matches is put down to the issue. Some of
-# these depend on the search path, which differs between standard libraries
-# (#342), so a predicate may match runs that pass here.
-KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
+@dataclass(frozen=True)
+class Known:
+    """An open issue that breaks a check for the runs ``applies`` matches.
+
+    ``repro`` sets the factors that differ from the first level of each, on
+    network ``network`` of that kind, with ``seed``. It must fail the check, and
+    ``applies`` must match it, on every platform the tests run on.
+    """
+
+    issue: str
+    applies: Callable[[Outcome], bool]
+    repro: Mapping[str, object]
+    network: int = 0
+    seed: int = 1
+
+
+# Open issues the sweep reaches, as check -> entries. A failure of that check on
+# a run an entry matches is put down to its issue. Some of these depend on the
+# search path, which differs between standard libraries (#342), so a predicate
+# may match runs that pass here; the repro must not be one of them.
+KNOWN: dict[str, list[Known]] = {
     "runs": [],
     "codelength": [],
     "read back": [],
@@ -834,9 +852,9 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
 
 
 def known(outcome: Outcome, check: str) -> str | None:
-    for issue, applies in KNOWN.get(check, []):
-        if applies(outcome):
-            return issue
+    for entry in KNOWN.get(check, []):
+        if entry.applies(outcome):
+            return entry.issue
     return None
 
 
@@ -895,6 +913,21 @@ def test_pairwise_sweep(array, index, network, networks, tmp_path):
     row = SWEEP_ARRAYS[array][index]
     for seed in (1, 2):
         assert_case(Case(row, networks[row["network"]][network], seed), tmp_path)
+
+
+@pytest.mark.parametrize(
+    ("check", "entry"),
+    [(check, entry) for check, entries in KNOWN.items() for entry in entries],
+    ids=lambda v: v.issue if isinstance(v, Known) else v,
+)
+def test_known_issue_still_fails(check, entry, networks, tmp_path):
+    row = {name: levels[0] for name, levels in FACTORS.items()} | dict(entry.repro)
+    case = Case(row, networks[row["network"]][entry.network], entry.seed)
+    outcome = evaluate(case, tmp_path)
+    assert check in outcome.failures and entry.applies(outcome), (
+        f"{entry.issue} no longer fails {check!r} on its repro: if it is fixed, "
+        "remove its entry from KNOWN"
+    )
 
 
 # --- findings ----------------------------------------------------------------
