@@ -497,7 +497,6 @@ def expected(row: Mapping[str, object], net: Net) -> Expected:
         and exp.recorded
         and not exp.regularized
         and row["teleport_to"] == "links"
-        and not row["node_weights"]
     ):
         exp.error = "Degenerate flow"
     if model == "precomputed":
@@ -809,15 +808,6 @@ def _markov_below_one(o: Outcome) -> bool:
     return t != "variable" and float(t) < 1
 
 
-def _degenerate_with_node_weights(o: Outcome) -> bool:
-    # The run that is refused as degenerate without --use-node-weights-as-flow.
-    return (
-        o.case.row["node_weights"]
-        and expected({**o.case.row, "node_weights": False}, o.case.net).error
-        == "Degenerate flow"
-    )
-
-
 def _negative_flow(o: Outcome) -> bool:
     # The release guard (#963) and the debug invariant word it the same way.
     return o.error is not None and "Negative" in o.error
@@ -866,15 +856,9 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
                 and (_negative_flow(o) or _unbalanced_flow(o))
             ),
         ),
-        # Node weights as flow get past the degenerate-flow refusal (see below).
-        (
-            "#1232",
-            lambda o: _degenerate_with_node_weights(o) and o.error is not None,
-        ),
     ],
     "codelength": [
         ("#1175", lambda o: o.case.net.kind == "bipartite" and o.exp.recorded),
-        ("#1232", _degenerate_with_node_weights),
         # --regularized with Markov time below 1 (see the pinned test below).
         (
             "#1231",
@@ -1019,49 +1003,26 @@ def test_regularized_markov_time_below_one(markov_time, directed):
     )
 
 
-def _leaf_flow_balance(result) -> tuple[float, float]:
-    enter = exit_ = 0.0
-    for node in result.tree():
-        if node.is_leaf:
-            enter += node.data.enterFlow
-            exit_ += node.data.exitFlow
-    return enter, exit_
-
-
-@pytest.mark.xfail(
-    reason="directed flow with recorded teleportation to links leaves bipartite input without "
-    "flow, and the run is refused as degenerate, but --use-node-weights-as-flow gets past that "
-    "check: the feature nodes take every teleport weight and are not coded (#1175), so the "
-    "primary nodes exit by teleportation and are never entered (#1232)",
-    strict=True,
-)
 @pytest.mark.parametrize(
     "network",
     [EXAMPLES / "bipartite.net", NETWORKS / "bipartite_uneven.net"],
     ids=lambda p: p.stem,
 )
-def test_bipartite_recorded_teleportation_with_node_weights_as_flow(network):
+@pytest.mark.parametrize("node_weights", [False, True])
+def test_bipartite_recorded_teleportation_with_node_weights_as_flow(
+    network, node_weights
+):
+    # Directed flow with recorded teleportation to links leaves bipartite input
+    # without flow: the feature nodes take every teleport weight and are not
+    # coded (#1175). Node weights as flow give the nodes a visit rate but the
+    # walk still takes no steps, so the run is refused either way (#1232).
     opts = {
         "silent": True,
         "num_trials": 1,
         "directed": True,
         "recorded_teleportation": True,
-        "use_node_weights_as_flow": True,
+        "use_node_weights_as_flow": node_weights,
         "two_level": True,
     }
-    # Without the option the run is refused, which is what the test is about.
     with pytest.raises(InfomapError, match="Degenerate flow"):
-        _run(
-            Net(network.stem, "bipartite", network),
-            {**opts, "use_node_weights_as_flow": False},
-        )
-    # A flow invariant violation in invariant builds; a wrong codelength in release.
-    # Refusing it as without the option is a fix too.
-    try:
-        result, _ = _run(Net(network.stem, "bipartite", network), opts)
-    except InfomapError as error:
-        if "Degenerate flow" in str(error):
-            return
-        raise
-    enter, exit_ = _leaf_flow_balance(result)
-    assert enter == pytest.approx(exit_, rel=REL, abs=ABS)
+        _run(Net(network.stem, "bipartite", network), opts)
