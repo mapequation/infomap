@@ -474,14 +474,14 @@ std::map<std::pair<unsigned int, unsigned int>, unsigned int> linksPerLayerPair(
   return counts;
 }
 
-// The same three nodes in two layers whose ids are six apart.
-void addGappedLayers(Network& network)
+// The same three nodes in layer 1 and a layer whose id is further away.
+void addGappedLayers(Network& network, unsigned int topLayer = 7)
 {
-  for (unsigned int layer : { 1u, 7u }) {
+  for (unsigned int layer : { 1u, topLayer }) {
     network.addMultilayerIntraLink(layer, 1, 2, 1.0);
     network.addMultilayerIntraLink(layer, 2, 1, 1.0);
     network.addMultilayerIntraLink(layer, 2, 3, 1.0);
-    network.addMultilayerIntraLink(layer, 3, layer == 1 ? 2 : 1, 1.0);
+    network.addMultilayerIntraLink(layer, 3, layer == 1u ? 2u : 1u, 1.0);
   }
 }
 
@@ -498,6 +498,13 @@ TEST_CASE("simulated relaxation without a limit couples layers with gapped ids [
 
   using Counts = std::map<std::pair<unsigned int, unsigned int>, unsigned int>;
   CHECK(linksPerLayerPair(network) == Counts { { { 1, 1 }, 4 }, { { 1, 7 }, 4 }, { { 7, 1 }, 4 }, { { 7, 7 }, 4 } });
+
+  // Further apart than the largest int
+  const unsigned int farLayer = 2147483649u;
+  Network farNetwork(Config("--silent --directed", false));
+  addGappedLayers(farNetwork, farLayer);
+  farNetwork.postProcessInputData();
+  CHECK(linksPerLayerPair(farNetwork) == Counts { { { 1, 1 }, 4 }, { { 1, farLayer }, 4 }, { { farLayer, 1 }, 4 }, { { farLayer, farLayer }, 4 } });
 }
 
 TEST_CASE("a one-sided relax limit leaves the other direction unlimited across gapped ids [fast][core][multilayer]")
