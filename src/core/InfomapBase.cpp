@@ -2573,6 +2573,11 @@ void InfomapBase::hierarchicalPartition()
 
       const double diffCodelength = codelengthBefore - codelengthAfter;
       Console::detail(1, "fine-tune bottom modules: improvement {:g}% {} codelength {}", (codelengthBefore < 1e-16 ? 0.0 : diffCodelength / codelengthBefore * 100), Console::arrow(), io::toPrecision(codelengthAfter));
+
+      // The recursion below starts from m_hierarchicalCodelength and the leaf modules'
+      // codelength terms. Both still describe the seed tree, and the new sub modules have
+      // no term at all, so re-score the fine-tuned tree.
+      m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
     }
 
     recursivePartition();
@@ -2996,6 +3001,17 @@ void InfomapBase::checkInvariants(const InfoNode& root, const char* phase) const
 
   if (isMainInfomap() && m_flowSumsToOne && std::abs(sumLeafFlow - 1.0) > tolerance)
     fail(fmt::format(FMT_STRING("the leaf flow sums to {:.12g}, not 1"), sumLeafFlow));
+}
+
+void InfomapBase::failMoveDelta(const char* where, double predictedDelta, double actualDelta) const
+{
+  throw InfomapError(ExitCode::InternalError,
+                     fmt::format(FMT_STRING("Move invariant violated in {}{}: the move was chosen on a codelength change of {:.12g} "
+                                            "but changed the codelength by {:.12g}. This is a bug in Infomap."),
+                                 where,
+                                 isMainInfomap() ? "" : " in a sub-partition",
+                                 predictedDelta,
+                                 actualDelta));
 }
 #endif
 
