@@ -884,7 +884,7 @@ TEST_CASE("Regularized multilayer one-module fallback reports the codelength of 
   };
   const std::vector<Case> cases = {
     { "--regularized", 2, 2.667330579 }, // was 2.284010969 with 1 module
-    { "--regularized --directed", 1, 2.851861954 }, // the fallback still runs
+    { "--regularized --directed", 1, 2.851861954 }, // the search itself ends at one module
   };
   const std::string resultPath = "regularized_multilayer_one_module_result.tree";
   for (const auto& c : cases) {
