@@ -405,13 +405,6 @@ void checkFaultReachesCaller(InfomapWrapper& im, infomap::faultinjection::Site s
   infomap::test::checkRunSanity(im);
 }
 
-TEST_CASE("A throw while setting up a parallel-trials worker reaches the caller [fast][core][lifecycle][crash]")
-{
-  InfomapWrapper im("--silent --seed 1 --num-trials 4 --parallel-trials --no-file-output");
-  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
-  checkFaultReachesCaller(im, infomap::faultinjection::Site::ParallelTrialWorkerSetup);
-}
-
 TEST_CASE("A throw while building a recursive task's sub-network reaches the caller [fast][core][lifecycle][crash]")
 {
   InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
@@ -428,6 +421,14 @@ TEST_CASE("A throw while materializing a recursive task's sub-modules reaches th
 }
 
 #ifdef _OPENMP
+// Without OpenMP, --parallel-trials runs the trials serially.
+TEST_CASE("A throw while setting up a parallel-trials worker reaches the caller [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im("--silent --seed 1 --num-trials 4 --parallel-trials --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  checkFaultReachesCaller(im, infomap::faultinjection::Site::ParallelTrialWorkerSetup);
+}
+
 TEST_CASE("A throw in the inner-parallel move loop reaches the caller [fast][core][lifecycle][crash]")
 {
   // The parallel sweep needs two threads and minNetworkSizeForInnerParallelization nodes.
