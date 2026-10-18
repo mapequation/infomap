@@ -2300,6 +2300,50 @@ TEST_CASE("A search over hard cluster-data with meta data ends no higher than it
   }
 }
 
+// Restoring the super-level tree re-initialises the objective's network-level terms for the
+// top modules. The next trial started from the leaves on those terms, so its search tracked
+// a codelength off by a constant: on this 60-node cycle trial 2 started at 3.571 bits instead
+// of 7.907 and ended its two-level search at -0.509 bits. Every trial starts from the same
+// singleton partition, so each must start where the first trial, fresh from init(), did.
+// Trial 2 must also track what a run of its seed alone does (#1284).
+TEST_CASE("A trial after a restored super-level tree tracks the leaf network's codelength (#1284) [fast][core][partition]")
+{
+  const auto runCycle = [](const std::string& flags) {
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      InfomapWrapper im("--no-file-output -vv " + flags);
+      for (unsigned int node = 0; node < 60; ++node)
+        im.addLink(node, (node + 1) % 60);
+      im.run();
+    }
+    return captured.str();
+  };
+  // The tracked codelength before and after the first pass of each trial.
+  const auto firstPasses = [](const std::string& log) {
+    std::vector<std::pair<double, double>> passes;
+    const std::regex pass(R"(iter 1: codelength [^=]*= ([0-9.e+-]+) -> [^=]*= ([0-9.e+-]+),)");
+    for (std::sregex_iterator it(log.begin(), log.end(), pass), end; it != end; ++it)
+      passes.emplace_back(std::stod((*it)[1].str()), std::stod((*it)[2].str()));
+    return passes;
+  };
+
+  const std::string log = runCycle("--seed 3 --num-trials 2");
+  INFO(log);
+  const auto trial2 = log.find("Trial 2/2");
+  REQUIRE(trial2 != std::string::npos);
+  REQUIRE(log.rfind("restoring it", trial2) != std::string::npos); // trial 1 fell back (#837)
+
+  const auto passes = firstPasses(log);
+  REQUIRE(passes.size() == 2);
+  CHECK(passes[1].first == doctest::Approx(passes[0].first).epsilon(1e-9));
+
+  // Trial seeds are the base seed plus the trial index.
+  const auto alone = firstPasses(runCycle("--seed 4 --num-trials 1"));
+  REQUIRE(alone.size() == 1);
+  CHECK(passes[1].second == doctest::Approx(alone[0].second).epsilon(1e-9));
+}
+
 // The hard modules are leaves while the run scores the tree, and restoreHardPartition
 // then gives them back their nodes, so the run scores the tree again after that. A hard
 // module directly under the root, as every one is under --no-infomap, stays a module.
