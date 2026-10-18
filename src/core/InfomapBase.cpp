@@ -982,6 +982,26 @@ private:
     if (zeroFlowIsExpected)
       return;
 
+    // The node flow can come from somewhere else than the walk: --use-node-weights-as-flow
+    // replaces it with the node weights after the flow model has run. The case above then
+    // passed with a walk that takes no link steps and teleports into no node, and the run
+    // reported a codelength for it (#1232). Check the walk itself as well.
+    double sumLinkFlow = 0.0;
+    m_network.forEachLink([&](unsigned int, unsigned int, double, double& flow) { sumLinkFlow += flow; });
+    double sumTeleportWeight = 0.0;
+    for (const auto& nodeIt : m_network.nodes())
+      sumTeleportWeight += nodeIt.second.weight;
+    if (sumLinkFlow <= 0 && sumTeleportWeight <= 0)
+      throw InfomapError(ExitCode::InputError,
+                         fmt::format(FMT_STRING("Degenerate flow: the {} links carry no flow and no node is reached by "
+                                                "teleportation, so the walk takes no steps and no codelength is defined. "
+                                                "Node weights used as flow set the visit rates but not the steps between "
+                                                "nodes. This happens when the flow model cannot distribute flow over the "
+                                                "network -- for example a directed flow model with recorded teleportation "
+                                                "on a bipartite network whose links all point from the primary side to the "
+                                                "feature side."),
+                                     m_network.numLinks()));
+
     checkNoNegativeFlow();
 
     if (std::abs(sumNodeFlow - 1.0) > 1e-10)
@@ -1252,8 +1272,12 @@ private:
     else
       infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
 
-    if (infomap.haveHardPartition())
+    if (infomap.haveHardPartition()) {
       infomap.restoreHardPartition();
+      // The hard modules were leaves while the run scored the tree, so their own codebooks
+      // were not in its codelength. Score the tree that is returned (#1207).
+      infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
+    }
 
     checkNoNegativeModuleFlow(infomap.root());
     infomap.checkInvariants(infomap.root(), "the finished tree");
@@ -2755,7 +2779,10 @@ void InfomapBase::restoreHardPartition()
   for (InfoNode* node : leafNodes) {
     ++numExpandedNodes;
     numExpandedChildren += node->expandChildren();
-    node->replaceWithChildren();
+    // A hard module directly under the root, as every one is under --no-infomap, stays a
+    // module. Replaced by its nodes there, the partition it was part of would be lost.
+    if (!node->parent->isRoot())
+      node->replaceWithChildren();
   }
 
   // Swap back original leaf nodes
