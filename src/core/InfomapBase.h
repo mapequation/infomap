@@ -596,6 +596,14 @@ private:
     m_objectiveTermsAreForLeafNetwork = m_root.firstChild != nullptr && m_root.firstChild->isLeaf();
   }
 
+  // Re-init the network-level terms for the leaf network if they describe a module network.
+  // Call it with the leaves as root's children, after removeModules().
+  void restoreLeafNetworkTerms()
+  {
+    if (!m_objectiveTermsAreForLeafNetwork)
+      initNetwork();
+  }
+
   void initSuperNetwork()
   {
     m_optimizer->initSuperNetwork();
