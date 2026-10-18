@@ -16,7 +16,7 @@
 #include "../utils/format.h"
 #include <algorithm>
 #include <limits>
-#include <set>
+#include <unordered_set>
 #include <sstream>
 #include "../utils/convert.h"
 
@@ -111,7 +111,7 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
   std::istringstream lineStream;
 
   unsigned int lineNr = 0;
-  std::set<unsigned int> seenStateIds;
+  std::unordered_set<unsigned int> seenStateIds;
 
   while (!std::getline(input, line).fail()) {
     ++lineNr;
