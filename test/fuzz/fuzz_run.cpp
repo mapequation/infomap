@@ -189,9 +189,9 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   const auto shape = networkShape(im.network());
   const auto& network = im.network();
 
-  // #1175: bipartite input with recorded teleportation (also implied by
-  // --regularized) leaves the teleport weights summing to less than 1.
-  if (network.isBipartite() && (im.recordedTeleportation || im.regularized) && (negative || unbalanced))
+  // #1175: bipartite input under --regularized: the uncoded feature nodes keep enter and
+  // exit flow 0 while their links carry flow.
+  if (network.isBipartite() && im.usesRegularizedFlow() && (negative || unbalanced))
     return true;
   // #1191: --regularized with Markov time above 1, global or variable: negative module
   // enter flow.

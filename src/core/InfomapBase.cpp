@@ -522,6 +522,10 @@ private:
     unsigned int firstErrorTrial = 0;
     std::string firstError;
     std::mutex bestResultMutex;
+    // result.bestHierarchicalCodelength, readable without the lock so a trial that
+    // cannot win skips building its tree (#996). Written under bestResultMutex;
+    // +inf until the first trial lands, so that trial always builds.
+    std::atomic<double> bestCodelengthSoFar(std::numeric_limits<double>::infinity());
     std::mutex errorMutex;
     std::mutex outputMutex;
 
@@ -589,12 +593,21 @@ private:
           worker.root().sortChildrenOnFlow();
 
           trialNumLevels = printPerLevelCodelength(worker.root(), trialStatistics);
-          trialTree.reserve(worker.numLeafNodes());
-          for (auto it(worker.iterLeafNodes()); !it.isEnd(); ++it) {
-            trialTree.emplace_back(it->stateId, it.path());
-          }
+          const auto collectTrialTree = [&]() {
+            trialTree.reserve(worker.numLeafNodes());
+            for (auto it(worker.iterLeafNodes()); !it.isEnd(); ++it) {
+              trialTree.emplace_back(it->stateId, it.path());
+            }
+          };
 
           const auto trialCodelength = worker.m_hierarchicalCodelength;
+          // The best only moves down, so a stale read is at or above the true best:
+          // a trial that is neither better nor tied against it cannot win under the
+          // lock either, and skipping its leaf walk loses nothing. Tied counts, to
+          // keep isEarlierTie's lower-index rule.
+          const auto mayBeBest = trialCodelength < bestCodelengthSoFar.load(std::memory_order_relaxed) + 1e-10;
+          if (mayBeBest)
+            collectTrialTree();
           const auto trialTopModules = worker.numTopModules();
           const auto trialTime = trialTimer.getElapsedTimeInSec();
           codelengths[trialIndex] = trialCodelength;
@@ -618,12 +631,17 @@ private:
           const auto isBetter = trialCodelength < result.bestHierarchicalCodelength - 1e-10;
           const auto isEarlierTie = std::abs(trialCodelength - result.bestHierarchicalCodelength) < 1e-10 && trialIndex < result.bestTrialIndex;
           if (bestIndexMissing || isBetter || isEarlierTie) {
+            // Backstop for the gate: an earlier tie can nudge the best up by under
+            // 1e-10, and a chain of them can carry it past a stale read.
+            if (!mayBeBest)
+              collectTrialTree();
             result.bestSolutionStatistics.clear();
             result.bestSolutionStatistics.str(trialStatistics.str());
             result.bestNumLevels = trialNumLevels;
             result.bestHierarchicalCodelength = trialCodelength;
             result.bestTrialIndex = trialIndex;
             result.bestTree = std::move(trialTree);
+            bestCodelengthSoFar.store(trialCodelength, std::memory_order_relaxed);
           }
         } catch (const std::exception& e) {
           std::lock_guard<std::mutex> lock(errorMutex);
