@@ -375,68 +375,72 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLa
   Log(1) << std::flush;
   double relaxRate = m_config.multilayerRelaxRate;
 
-  // TODO: Add relax limits
-  // int maxRelaxLimit = m_networks.size();
-  // int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
-  // int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
-  // int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
-  // auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
+  // A negative limit means no limit, also across gaps in the layer ids
+  int maxRelaxLimit = std::numeric_limits<int>::max();
+  int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
+  int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
+  int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
+  auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
 
   Console::detail(1, "{} networks", m_networks.size());
   Console::detail(1, "relax rate: {:g}", relaxRate);
-  // if (haveUpOrDownLimit) {
-  //   Log(1) << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
-  //   Log(1) << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
-  // } else if (m_config.multilayerRelaxLimit >= 0) {
-  //   Log(1) << "-> Relax limit: " << m_config.multilayerRelaxLimit << "\n";
-  // }
+  if (haveUpOrDownLimit) {
+    Console::detail(1, "relax limit up: {}", relaxLimitUp == maxRelaxLimit ? "no limit" : std::to_string(relaxLimitUp));
+    Console::detail(1, "relax limit down: {}", relaxLimitDown == maxRelaxLimit ? "no limit" : std::to_string(relaxLimitDown));
+  } else if (m_config.multilayerRelaxLimit >= 0) {
+    Console::detail(1, "relax limit: {}", m_config.multilayerRelaxLimit);
+  }
 
-  // auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](auto& layer1, auto& layer2) {
-  //   int diff = layer1 - layer2;
-  //   return layer1 >= layer2 ? diff <= relaxLimitDown : -diff <= relaxLimitUp;
-  // };
+  // Whether a state in layer1 may relax to layer2. The limits are non-negative here;
+  // compare unsigned so far apart ids cannot overflow. A layer is always within reach
+  // of itself, so the intra-layer links are kept with limit 0.
+  auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](unsigned int layer1, unsigned int layer2) {
+    return layer1 >= layer2 ? layer1 - layer2 <= static_cast<unsigned int>(relaxLimitDown) : layer2 - layer1 <= static_cast<unsigned int>(relaxLimitUp);
+  };
 
   if (m_config.multilayerRelaxByJensenShannonDivergence) {
     Console::detail(1, "using Jensen-Shannon divergence");
 
     for (unsigned int nodeId = 0; nodeId <= m_maxNodeIdInIntraLayerNetworks; ++nodeId) {
-      unsigned int layer2from = 0;
-
       // Calculate Jensen-Shannon similarity between all layers such that layer1 >= layer2,
-      // and then use its symmetry for layer2 > layer1
+      // and then use its symmetry for layer2 > layer1. Keep only the directions within
+      // the relax limits.
       std::map<unsigned int, std::map<unsigned int, double>> jsRelaxWeights;
       std::map<unsigned int, double> jsTotWeight;
 
-      for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1) {
-        unsigned int layer2to = layer1 + 1;
-        // Limit possible jumps to close by layers
-        if (m_config.multilayerRelaxLimit >= 0) {
-          layer2from = ((int)layer1 - m_config.multilayerRelaxLimit) < 0 ? 0 : layer1 - m_config.multilayerRelaxLimit;
-        }
-
-        auto& layer1LinkMap = m_networks[layer1].nodeLinkMap();
-        auto& layer1OutLinks = layer1LinkMap[nodeId];
+      for (auto& layer1It : m_networks) {
+        unsigned int layer1 = layer1It.first;
+        auto& layer1OutLinks = layer1It.second.nodeLinkMap()[nodeId];
         // Skip dangling nodes, because they have no information to calculate similarity
         if (layer1OutLinks.empty())
           continue;
 
-        double sumOutLinkWeightLayer1 = m_networks[layer1].outWeights()[nodeId];
+        double sumOutLinkWeightLayer1 = layer1It.second.outWeights()[nodeId];
 
-        for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2) {
-          auto& layer2LinkMap = m_networks[layer2].nodeLinkMap();
-          auto& layer2OutLinks = layer2LinkMap[nodeId];
+        for (auto& layer2It : m_networks) {
+          unsigned int layer2 = layer2It.first;
+          if (layer2 > layer1)
+            break;
+          bool down = withinRelaxLimit(layer1, layer2);
+          bool up = withinRelaxLimit(layer2, layer1);
+          if (!down && !up)
+            continue;
+
+          auto& layer2OutLinks = layer2It.second.nodeLinkMap()[nodeId];
           if (layer2OutLinks.empty())
             continue;
 
-          double sumOutLinkWeightLayer2 = m_networks[layer2].outWeights()[nodeId];
+          double sumOutLinkWeightLayer2 = layer2It.second.outWeights()[nodeId];
 
           bool intersect;
           double div = calculateJensenShannonDivergence(intersect, layer1OutLinks, sumOutLinkWeightLayer1, layer2OutLinks, sumOutLinkWeightLayer2);
           double jsWeight = 1.0 - div;
           if (intersect && (jsWeight >= m_config.multilayerJSRelaxLimit)) {
-            jsTotWeight[layer1] += jsWeight;
-            jsRelaxWeights[layer1][layer2] = jsWeight;
-            if (layer1 != layer2) {
+            if (down) {
+              jsTotWeight[layer1] += jsWeight;
+              jsRelaxWeights[layer1][layer2] = jsWeight;
+            }
+            if (up && layer1 != layer2) {
               jsTotWeight[layer2] += jsWeight;
               jsRelaxWeights[layer2][layer1] = jsWeight;
             }
@@ -444,55 +448,42 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLa
         }
       }
 
-      // Second loop over all pairs of layers
-      unsigned int layer2to = m_networks.size();
-
-      for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1) {
-        // Limit possible jumps to close by layers
-        if (m_config.multilayerRelaxLimit >= 0) {
-          layer2from = ((int)layer1 - m_config.multilayerRelaxLimit) < 0 ? 0 : layer1 - m_config.multilayerRelaxLimit;
-          layer2to = (layer1 + m_config.multilayerRelaxLimit) > m_networks.size() ? m_networks.size() : layer1 + m_config.multilayerRelaxLimit;
-        }
-
+      // Second loop over the pairs of layers within the relax limits
+      for (auto& jsRelaxWeightsLayer1It : jsRelaxWeights) {
+        unsigned int layer1 = jsRelaxWeightsLayer1It.first;
         double sumOutLinkWeightLayer1 = m_networks[layer1].outWeights()[nodeId];
-
-        auto jsRelaxWeightsLayer1It = jsRelaxWeights.find(layer1);
-        auto jsTotWeightIt = jsTotWeight.find(layer1);
+        double jsTotWeightLayer1 = jsTotWeight[layer1];
 
         // Create inter-links to the intra-connected nodes in other layers
-        for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2) {
-          if (jsRelaxWeightsLayer1It != jsRelaxWeights.end()) {
-            auto jsRelaxWeightsIt = jsRelaxWeightsLayer1It->second.find(layer2);
-            if (jsRelaxWeightsIt != jsRelaxWeightsLayer1It->second.end()) {
-              bool isIntra = layer2 == layer1;
+        for (auto& jsRelaxWeightsIt : jsRelaxWeightsLayer1It.second) {
+          unsigned int layer2 = jsRelaxWeightsIt.first;
+          bool isIntra = layer2 == layer1;
 
-              // Create inter-links to the outgoing nodes in the target layer
-              double linkWeightNormalizationFactor;
-              if (isIntra) {
-                linkWeightNormalizationFactor = 1;
-              } else {
-                linkWeightNormalizationFactor = jsRelaxWeightsIt->second * relaxRate / (1.0 - relaxRate) * sumOutLinkWeightLayer1 / jsTotWeightIt->second;
-              }
+          // Create inter-links to the outgoing nodes in the target layer
+          double linkWeightNormalizationFactor;
+          if (isIntra) {
+            linkWeightNormalizationFactor = 1;
+          } else {
+            linkWeightNormalizationFactor = jsRelaxWeightsIt.second * relaxRate / (1.0 - relaxRate) * sumOutLinkWeightLayer1 / jsTotWeightLayer1;
+          }
 
-              auto& targetLinks = m_networks[layer2].nodeLinkMap();
-              auto& targetOutlinks = targetLinks[nodeId];
-              if (targetOutlinks.empty()) {
-                continue;
-              }
-              for (auto& outLink : targetOutlinks) {
-                auto& n2 = outLink.first;
-                auto& linkData = outLink.second;
-                double intraWeight = linkData.weight;
-                // Add intra link weight as teleport weight to source node
-                // TODO: Why, and only first intra link that sets the teleport weight?
-                unsigned int stateId1 = addMultilayerNode(layer1, nodeId, intraWeight);
-                unsigned int stateId2i = addMultilayerNode(layer2, n2, 0.0);
+          auto& targetLinks = m_networks[layer2].nodeLinkMap();
+          auto& targetOutlinks = targetLinks[nodeId];
+          if (targetOutlinks.empty()) {
+            continue;
+          }
+          for (auto& outLink : targetOutlinks) {
+            auto& n2 = outLink.first;
+            auto& linkData = outLink.second;
+            double intraWeight = linkData.weight;
+            // Add intra link weight as teleport weight to source node
+            // TODO: Why, and only first intra link that sets the teleport weight?
+            unsigned int stateId1 = addMultilayerNode(layer1, nodeId, intraWeight);
+            unsigned int stateId2i = addMultilayerNode(layer2, n2, 0.0);
 
-                double weight = intraWeight == 0.0 ? 0.0 : linkWeightNormalizationFactor * intraWeight;
-                addLink(stateId1, stateId2i, weight);
-                ++m_numInterLayerLinks;
-              }
-            }
+            double weight = intraWeight == 0.0 ? 0.0 : linkWeightNormalizationFactor * intraWeight;
+            addLink(stateId1, stateId2i, weight);
+            ++m_numInterLayerLinks;
           }
         }
       }

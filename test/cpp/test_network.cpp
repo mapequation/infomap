@@ -9,6 +9,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <limits>
 #include <map>
@@ -454,6 +455,92 @@ TEST_CASE("multilayer-relax-to-self adds reverse diagonal inter link for undirec
   CHECK(out[sid(2, 1)].at(sid(1, 1)) == doctest::Approx(0.5));
   // Never spread to neighbours.
   CHECK(out[sid(1, 1)].count(sid(2, 2)) == 0);
+}
+
+namespace {
+
+// Number of state links from each layer to each layer.
+std::map<std::pair<unsigned int, unsigned int>, unsigned int> linksPerLayerPair(const Network& network)
+{
+  std::map<unsigned int, unsigned int> layerOf;
+  for (const auto& layerIt : network.layerNodeToStateId()) {
+    for (const auto& nodeIt : layerIt.second) {
+      layerOf[nodeIt.second] = layerIt.first;
+    }
+  }
+  std::map<std::pair<unsigned int, unsigned int>, unsigned int> counts;
+  network.forEachLink([&](unsigned int s, unsigned int t, double, double) {
+    ++counts[{ layerOf.at(network.nodeId(s)), layerOf.at(network.nodeId(t)) }];
+  });
+  return counts;
+}
+
+// The same directed triangle in every layer, so every pair of layers is equally
+// similar and couples. A state links to its node's single out-neighbour in each
+// layer within reach, three links for each pair of layers.
+std::map<std::pair<unsigned int, unsigned int>, unsigned int> jsdLinksPerLayerPair(const std::string& flags, const std::vector<unsigned int>& layers)
+{
+  Network network(Config("--silent --directed --multilayer-relax-by-jsd " + flags, false));
+  for (unsigned int layer : layers) {
+    network.addMultilayerIntraLink(layer, 1, 2, 1.0);
+    network.addMultilayerIntraLink(layer, 2, 3, 1.0);
+    network.addMultilayerIntraLink(layer, 3, 1, 1.0);
+  }
+  network.postProcessInputData();
+  return linksPerLayerPair(network);
+}
+
+// Three links for each pair (source layer, target layer) for which within holds.
+template <typename Within>
+std::map<std::pair<unsigned int, unsigned int>, unsigned int> expectedJsdLinks(const std::vector<unsigned int>& layers, Within within)
+{
+  std::map<std::pair<unsigned int, unsigned int>, unsigned int> counts;
+  for (unsigned int a : layers) {
+    for (unsigned int b : layers) {
+      if (within(static_cast<int>(a), static_cast<int>(b))) {
+        counts[{ a, b }] = 3;
+      }
+    }
+  }
+  return counts;
+}
+
+} // namespace
+
+TEST_CASE("relax by JSD applies the relax limit in each direction [fast][core][multilayer]")
+{
+  // #1323: the limit reached limit layers down but limit - 1 up, and limit 0
+  // dropped the intra-layer links too.
+  const std::vector<unsigned int> layers { 1, 2, 3, 4 };
+  for (int limit : { 0, 1, 2, 3 }) {
+    CAPTURE(limit);
+    CHECK(jsdLinksPerLayerPair("--multilayer-relax-limit " + std::to_string(limit), layers)
+          == expectedJsdLinks(layers, [limit](int a, int b) { return std::abs(a - b) <= limit; }));
+  }
+  CHECK(jsdLinksPerLayerPair("", layers) == expectedJsdLinks(layers, [](int, int) { return true; }));
+}
+
+TEST_CASE("relax by JSD applies the one-sided relax limits [fast][core][multilayer]")
+{
+  // #1323: --multilayer-relax-limit-up and -down were ignored.
+  const std::vector<unsigned int> layers { 1, 2, 3, 4 };
+  CHECK(jsdLinksPerLayerPair("--multilayer-relax-limit-up 0", layers)
+        == expectedJsdLinks(layers, [](int a, int b) { return b <= a; }));
+  CHECK(jsdLinksPerLayerPair("--multilayer-relax-limit-down 0", layers)
+        == expectedJsdLinks(layers, [](int a, int b) { return b >= a; }));
+  CHECK(jsdLinksPerLayerPair("--multilayer-relax-limit-up 1 --multilayer-relax-limit-down 2", layers)
+        == expectedJsdLinks(layers, [](int a, int b) { return b <= a ? a - b <= 2 : b - a <= 1; }));
+  // The tighter of the symmetric and the one-sided limit applies.
+  CHECK(jsdLinksPerLayerPair("--multilayer-relax-limit 1 --multilayer-relax-limit-down 0", layers)
+        == expectedJsdLinks(layers, [](int a, int b) { return b >= a && b - a <= 1; }));
+}
+
+TEST_CASE("relax by JSD compares layer ids, gaps included [fast][core][multilayer]")
+{
+  const std::vector<unsigned int> layers { 1, 3, 7 };
+  CHECK(jsdLinksPerLayerPair("", layers) == expectedJsdLinks(layers, [](int, int) { return true; }));
+  CHECK(jsdLinksPerLayerPair("--multilayer-relax-limit 2", layers)
+        == expectedJsdLinks(layers, [](int a, int b) { return std::abs(a - b) <= 2; }));
 }
 
 TEST_CASE("NetworkBuilder validates bipartite intake while building Network state [fast][core][parser]")
