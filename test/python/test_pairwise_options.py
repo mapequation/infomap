@@ -869,12 +869,6 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
         ("#1191", lambda o: o.exp.regularized and _markov_above_one(o)),
         ("#1189", lambda o: o.exp.recorded and bool(o.case.row["node_weights"])),
         ("#1207", lambda o: o.case.row["cluster_data"] == "hard"),
-        (
-            "#1209",
-            lambda o: (
-                o.case.net.kind == "state" and o.case.row["cluster_data"] != "none"
-            ),
-        ),
     ],
     "read back": [
         ("#1175", lambda o: o.case.net.kind == "bipartite" and o.exp.recorded),
@@ -892,12 +886,6 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
         ),
         ("#1189", lambda o: o.exp.recorded and bool(o.case.row["node_weights"])),
         ("#1207", lambda o: o.case.row["cluster_data"] == "hard"),
-        (
-            "#1209",
-            lambda o: (
-                o.case.net.kind == "state" and o.case.row["cluster_data"] != "none"
-            ),
-        ),
     ],
 }
 
