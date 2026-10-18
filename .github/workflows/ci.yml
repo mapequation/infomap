@@ -326,6 +326,14 @@ jobs:
         with:
           key-prefix: differential-frontends
 
+      # uv installs the Python package without extras (".[]"), which pip refuses
+      # for an editable install.
+      - name: Set up uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+
       - name: Set up JavaScript build
         uses: ./.github/actions/setup-js-build
 
@@ -351,7 +359,7 @@ jobs:
         run: |
           set -euo pipefail
           make -j build-native OPENMP=0
-          make dev-python-install OPENMP=0 PYTHON_DEV_EXTRAS=
+          UV_SYSTEM_PYTHON=1 make dev-python-install OPENMP=0 PIP="uv pip" PYTHON_DEV_EXTRAS=
           make dev-r-install
           make -j build-js
 
