@@ -325,7 +325,17 @@ private:
   bool isFullNetwork() const { return m_isMain && m_aggregationLevel == 0; }
   bool isFirstLoop() const { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
-  InfomapBase* getNewInfomapInstance() const { return new InfomapBase(getConfig()); }
+  // A sub-Infomap partitions one module, and its modules are never the tree's top modules, so it
+  // runs without --preferred-number-of-modules. The tree charges that term once, on its top
+  // modules (calcCodelengthOnTree); a sub-search charging it on its own module count kept or
+  // rejected splits on a cost the tree does not have (#1292). The objective reads the
+  // preference when the instance is built, so it is cleared here, not in cloneAsNonMain.
+  InfomapBase* getNewInfomapInstance() const
+  {
+    Config subConfig = getConfig();
+    subConfig.preferredNumberOfModules = 0;
+    return new InfomapBase(subConfig);
+  }
   InfomapBase* getNewInfomapInstanceWithoutMemory() const
   {
     auto im = new InfomapBase();
