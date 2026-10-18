@@ -25,7 +25,8 @@ PINS = {
 }
 
 ISSUE = re.compile(r"#(\d+)")
-TEST_CASE = re.compile(r'TEST_CASE\(\s*"([^"]*)"([^\n]*)')
+# A string literal may hold escaped quotes.
+TEST_CASE = re.compile(r'TEST_CASE\(\s*"((?:[^"\\\n]|\\.)*)"([^\n]*)')
 
 
 def _read(relative: str) -> str:
@@ -47,11 +48,35 @@ def known_issues(source: str) -> set[str]:
     raise AssertionError("isKnownFinding() has no closing brace")
 
 
+def without_comments(source: str) -> str:
+    """The C++ source with its comments blanked out and its string literals kept."""
+    out = []
+    i, n = 0, len(source)
+    while i < n:
+        if source[i] in "\"'":
+            end = i + 1
+            while end < n and source[end] not in source[i] + "\n":
+                end += 2 if source[end] == "\\" else 1
+            out.append(source[i : end + 1])
+            i = end + 1
+        elif source.startswith("//", i):
+            end = source.find("\n", i)
+            i = n if end < 0 else end
+        elif source.startswith("/*", i):
+            end = source.find("*/", i + 2)
+            i = n if end < 0 else end + 2
+            out.append(" ")
+        else:
+            out.append(source[i])
+            i += 1
+    return "".join(out)
+
+
 def pinned_issues(source: str) -> set[str]:
-    """The issues named by the TEST_CASEs marked should_fail."""
+    """The issues named by the TEST_CASEs marked should_fail, outside comments."""
     return {
         issue
-        for name, rest in TEST_CASE.findall(source)
+        for name, rest in TEST_CASE.findall(without_comments(source))
         if "should_fail" in rest
         for issue in ISSUE.findall(name)
     }
@@ -79,9 +104,14 @@ bool isKnownFinding(const InfomapWrapper& im, const char* message)
 }
 // #1300 is outside the function.
 """
-    tests = """
+    tests = r"""
 TEST_CASE("Fuzz finding: one (#1207) [fast]" * doctest::should_fail())
 TEST_CASE("Fixed (#1209) [fast]")
+// TEST_CASE("Commented out (#1210) [fast]" * doctest::should_fail())
+TEST_CASE("Marker commented out (#1211) [fast]") // * doctest::should_fail()
+TEST_CASE("Marker in a block comment (#1212) [fast]" /* * doctest::should_fail() */)
+/* TEST_CASE("Block (#1213)" * doctest::should_fail()) */
+TEST_CASE("A // in the name, \"quoted\" (#1214) [fast]" * doctest::should_fail())
 """
     assert known_issues(fuzz) == {"1207", "1209"}
-    assert pinned_issues(tests) == {"1207"}
+    assert pinned_issues(tests) == {"1207", "1214"}
