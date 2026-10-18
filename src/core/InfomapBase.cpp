@@ -1249,6 +1249,12 @@ private:
   {
     seedTrial(trialIndex);
     m_infomap.removeModules();
+    // A previous trial can leave the objective's network-level terms for a module network,
+    // as the restore of its super-level tree does (#837). A trial without an initial
+    // partition starts from the leaves on them, tracking a codelength off by a constant
+    // that the one-level comparison in partition() reads. Restore them here, as init()
+    // set them for the first trial (#1284).
+    m_infomap.restoreLeafNetworkTerms();
     auto startDate = Date();
     Stopwatch timer(true);
 
@@ -2287,8 +2293,7 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
   // initNetwork() reads. Skip it when the terms already describe the leaf network: the
   // walk is over every leaf through the sibling chain, and paying it per trial costs
   // web-NotreDame --two-level --columnar ~2.5% for nothing.
-  if (!m_objectiveTermsAreForLeafNetwork)
-    initNetwork();
+  restoreLeafNetworkTerms();
   initPartition(); // TODO: confusing same name, should be able to init default without arguments here too
   moveActiveNodesToPredefinedModules(modules);
   consolidateModules(false);
