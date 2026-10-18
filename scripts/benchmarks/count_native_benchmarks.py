@@ -2,16 +2,19 @@
 
 Wall time on a shared runner varies by a few percent between runs of one binary, so
 the wall-time gate in compare_native_benchmarks.py can only call changes of about
-15% and up. Both quantities here are close to deterministic for a fixed input and
-seed: Valgrind runs the program on one simulated CPU, so neither machine load nor
-the runner's hardware reaches them. That makes changes of a percent or two visible.
+15% and up. The two counts here are close to deterministic for a fixed input and
+seed, so changes of a percent or two show:
+
+- instructions, from Valgrind's cachegrind, which runs the program on a simulated
+  CPU that neither machine load nor the runner's hardware reaches;
+- peak live heap, from heap_counter.c preloaded into a normal run, which counts
+  what the allocator hands out rather than what the kernel maps.
 
 Instructions miss memory-bound effects (a change in data layout can cost wall time
 at the same instruction count), so this complements the wall-time gate rather than
 replacing it.
 
-Each binary runs once per case under each tool. Runs are independent of machine
-load, so they run in parallel, one per core.
+Neither count depends on machine load, so the runs go in parallel, one per core.
 """
 
 from __future__ import annotations
@@ -23,12 +26,14 @@ import statistics
 import subprocess
 import sys
 import tempfile
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR))
 
-from run_native_benchmarks import (
+from run_native_benchmarks import (  # noqa: E402
     benchmark_command,
     generate_multilayer_block_network,
     generate_ring_of_cliques,
@@ -36,19 +41,19 @@ from run_native_benchmarks import (
     generate_state_block_network,
 )
 
-# Reported, not gated: see the perf-pr workflow for why. Above these the summary
-# marks a case and the job prints a warning.
+# Reported, not gated: see the perf-pr workflow for why. At or above these the
+# summary marks a case and the job prints a warning.
 INSTRUCTIONS_RELATIVE_THRESHOLD = 0.01
 HEAP_RELATIVE_THRESHOLD = 0.01
 # A few allocations more or less are not worth a warning on a case whose peak is
 # tens of megabytes.
 HEAP_ABSOLUTE_THRESHOLD_BYTES = 64 * 1024
 
-TOOLS = ("cachegrind", "dhat")
+METRICS = ("instructions", "peak_heap_bytes")
 
 
 def build_count_cases(generated_dir: Path) -> list[dict[str, str | Path]]:
-    """Cases of 10k to 50k nodes: big enough that start-up is a small part of the
+    """Cases of 20k to 40k nodes: big enough that start-up is a small part of the
     count, small enough for Valgrind. They cover the two-level and multilevel
     search, directed flow, and memory and multilayer input."""
     sparse_20k = generated_dir / "sparse_20k.net"
@@ -72,100 +77,111 @@ def build_count_cases(generated_dir: Path) -> list[dict[str, str | Path]]:
     ]
 
 
-def valgrind_command(
-    valgrind: str, tool: str, out_file: Path, command: list[str]
-) -> list[str]:
-    if tool == "cachegrind":
-        # Without the cache simulation, cachegrind only counts instructions, which is
-        # all that is used and several times faster.
-        options = ["--cache-sim=no", f"--cachegrind-out-file={out_file}"]
-    elif tool == "dhat":
-        options = [f"--dhat-out-file={out_file}"]
-    else:
-        raise ValueError(f"unknown tool: {tool}")
-    return [valgrind, f"--tool={tool}", "--quiet", *options, *command]
+def compile_heap_counter(out_dir: Path, compiler: str) -> Path:
+    library = out_dir / "heap_counter.so"
+    subprocess.run(
+        [
+            compiler,
+            "-O2",
+            "-shared",
+            "-fPIC",
+            "-o",
+            str(library),
+            str(SCRIPT_DIR / "heap_counter.c"),
+        ],
+        check=True,
+    )
+    return library
 
 
-def parse_cachegrind(text: str) -> dict[str, int]:
+def cachegrind_command(valgrind: str, out_file: Path, command: list[str]) -> list[str]:
+    # Without the cache simulation, cachegrind only counts instructions, which is
+    # all that is used and several times faster.
+    return [
+        valgrind,
+        "--tool=cachegrind",
+        "--quiet",
+        "--cache-sim=no",
+        f"--cachegrind-out-file={out_file}",
+        *command,
+    ]
+
+
+def parse_cachegrind(text: str) -> int:
     """Total instructions from a cachegrind output file's `summary:` line."""
     events: list[str] = []
     for line in text.splitlines():
         if line.startswith("events:"):
             events = line.split()[1:]
         elif line.startswith("summary:"):
-            totals = dict(
-                zip(events, (int(value) for value in line.split()[1:]), strict=True)
-            )
-            return {"instructions": totals["Ir"]}
+            values = (int(value) for value in line.split()[1:])
+            return dict(zip(events, values, strict=True))["Ir"]
     raise ValueError("no summary line in cachegrind output")
 
 
-def parse_dhat(text: str) -> dict[str, int]:
-    """Instructions and peak live heap from a DHAT JSON output file.
-
-    DHAT measures time in instructions executed (`tu` is "instrs"), so `te`, the
-    time at exit, is the instruction count. Each program point's `gb` is the bytes
-    it held live at the global peak; their sum is the peak live heap.
-    """
-    data = json.loads(text)
-    if data.get("tu") != "instrs":
-        raise ValueError(f"DHAT time unit is {data.get('tu')!r}, not instructions")
+def parse_heap_counter(text: str) -> dict[str, int]:
+    values = dict(line.split() for line in text.splitlines() if line.strip())
     return {
-        "instructions": int(data["te"]),
-        "peak_heap_bytes": sum(int(point["gb"]) for point in data["pps"]),
-        "peak_heap_blocks": sum(int(point["gbk"]) for point in data["pps"]),
-        "total_heap_bytes": sum(int(point["tb"]) for point in data["pps"]),
-        "total_heap_blocks": sum(int(point["tbk"]) for point in data["pps"]),
+        "peak_heap_bytes": int(values["peak_heap_bytes"]),
+        "allocations": int(values["allocations"]),
     }
 
 
-PARSERS = {"cachegrind": parse_cachegrind, "dhat": parse_dhat}
-
-
-def measure(
-    valgrind: str,
-    tool: str,
+def run_sample(
+    metric: str,
     command: list[str],
     out_file: Path,
+    valgrind: str,
+    heap_counter: Path,
     timeout_sec: float | None,
 ) -> dict[str, object]:
-    full_command = valgrind_command(valgrind, tool, out_file, command)
+    env = None
+    if metric == "instructions":
+        command = cachegrind_command(valgrind, out_file, command)
+    else:
+        env = {
+            **os.environ,
+            "LD_PRELOAD": str(heap_counter),
+            "HEAP_COUNTER_OUT": str(out_file),
+        }
+    start = time.monotonic()
     completed = subprocess.run(
-        full_command, check=True, capture_output=True, text=True, timeout=timeout_sec
+        command,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=timeout_sec,
+        env=env,
     )
+    elapsed_sec = time.monotonic() - start
     output = json.loads(completed.stdout)
-    counts = PARSERS[tool](out_file.read_text(encoding="utf-8"))
+    text = out_file.read_text(encoding="utf-8")
+    counts = (
+        {"instructions": parse_cachegrind(text)}
+        if metric == "instructions"
+        else parse_heap_counter(text)
+    )
     return {
         **counts,
-        # The benchmark's own timer, here only to show what Valgrind costs.
-        "valgrind_total_sec": float(output["total_sec"]),
+        "elapsed_sec": elapsed_sec,
         "num_top_modules": output["num_top_modules"],
+        "num_levels": output["num_levels"],
         "codelength": output["codelength"],
-    }
-
-
-def spread(values: list[int]) -> dict[str, float]:
-    mean_value = statistics.mean(values)
-    return {
-        "min": min(values),
-        "max": max(values),
-        "relative_range": (max(values) - min(values)) / mean_value
-        if mean_value
-        else 0.0,
     }
 
 
 def run_counts(
     binaries: dict[str, Path],
     cases: list[dict[str, str | Path]],
-    tools: list[str],
     repeats: int,
     flags: str,
     valgrind: str,
+    heap_counter: Path,
     work_dir: Path,
     jobs: int,
     timeout_sec: float | None,
-) -> dict[str, object]:
+) -> dict[str, dict[str, dict[str, list[dict[str, object]]]]]:
+    """Samples as results[case][label][metric], one dict per repeat."""
     tasks = []
     for case in cases:
         case_flags = " ".join(part for part in (flags, str(case["flags"])) if part)
@@ -173,43 +189,49 @@ def run_counts(
             command = benchmark_command(
                 binary, str(case["name"]), Path(case["path"]), 1, case_flags
             )
-            for tool in tools:
+            for metric in METRICS:
                 for repeat in range(repeats):
-                    out_file = work_dir / f"{label}.{case['name']}.{tool}.{repeat}.out"
-                    tasks.append((str(case["name"]), label, tool, command, out_file))
+                    out_file = work_dir / f"{label}.{case['name']}.{metric}.{repeat}"
+                    tasks.append((str(case["name"]), label, metric, command, out_file))
 
     with ThreadPoolExecutor(max_workers=jobs) as pool:
         futures = [
-            pool.submit(measure, valgrind, tool, command, out_file, timeout_sec)
-            for (_, _, tool, command, out_file) in tasks
+            pool.submit(
+                run_sample,
+                metric,
+                command,
+                out_file,
+                valgrind,
+                heap_counter,
+                timeout_sec,
+            )
+            for (_, _, metric, command, out_file) in tasks
         ]
         samples = [future.result() for future in futures]
 
     results: dict[str, dict[str, dict[str, list[dict[str, object]]]]] = {}
-    for (name, label, tool, _, _), sample in zip(tasks, samples, strict=True):
-        results.setdefault(name, {}).setdefault(label, {}).setdefault(tool, []).append(
-            sample
-        )
+    for (name, label, metric, _, _), sample in zip(tasks, samples, strict=True):
+        per_label = results.setdefault(name, {}).setdefault(label, {})
+        per_label.setdefault(metric, []).append(sample)
     return results
+
+
+def relative_range(values: list[int]) -> float:
+    mean_value = statistics.mean(values)
+    return (max(values) - min(values)) / mean_value if mean_value else 0.0
 
 
 def summarize(
     results: dict[str, dict[str, dict[str, list[dict[str, object]]]]],
 ) -> list[dict[str, object]]:
-    """One row per case: base and head medians, deltas, and the spread of repeats."""
+    """One row per case: base and head medians, the delta, and the spread of
+    repeats, which is zero when a count is deterministic."""
     rows = []
     for name, per_label in results.items():
         row: dict[str, object] = {"name": name}
-        for metric, tool in (
-            ("instructions", "cachegrind"),
-            ("dhat_instructions", "dhat"),
-            ("peak_heap_bytes", "dhat"),
-        ):
-            source_key = "instructions" if metric == "dhat_instructions" else metric
-            if any(tool not in per_label[label] for label in ("base", "head")):
-                continue
+        for metric in METRICS:
             values = {
-                label: [int(s[source_key]) for s in per_label[label][tool]]
+                label: [int(sample[metric]) for sample in per_label[label][metric]]
                 for label in ("base", "head")
             }
             base_value = statistics.median(values["base"])
@@ -221,38 +243,34 @@ def summarize(
                 "delta_pct": (head_value - base_value) / base_value
                 if base_value
                 else 0.0,
-                "base_spread": spread(values["base"]),
-                "head_spread": spread(values["head"]),
+                "base_relative_range": relative_range(values["base"]),
+                "head_relative_range": relative_range(values["head"]),
+                "max_elapsed_sec": max(
+                    float(sample["elapsed_sec"])
+                    for label in ("base", "head")
+                    for sample in per_label[label][metric]
+                ),
             }
-        row["valgrind_sec"] = {
-            tool: statistics.median(
-                float(s["valgrind_total_sec"])
-                for label in per_label
-                for s in per_label[label].get(tool, [])
-            )
-            for tool in TOOLS
-            if all(tool in per_label[label] for label in per_label)
-        }
         row["status"] = classify(row)
         rows.append(row)
     return rows
 
 
 def classify(row: dict[str, object]) -> str:
-    flags = []
-    instructions = row.get("instructions") or row.get("dhat_instructions")
+    marks = []
+    instructions = row.get("instructions")
     if instructions is not None:
         if instructions["delta_pct"] >= INSTRUCTIONS_RELATIVE_THRESHOLD:
-            flags.append("more instructions")
+            marks.append("more instructions")
         elif instructions["delta_pct"] <= -INSTRUCTIONS_RELATIVE_THRESHOLD:
-            flags.append("fewer instructions")
+            marks.append("fewer instructions")
     heap = row.get("peak_heap_bytes")
     if heap is not None and abs(heap["delta"]) >= HEAP_ABSOLUTE_THRESHOLD_BYTES:
         if heap["delta_pct"] >= HEAP_RELATIVE_THRESHOLD:
-            flags.append("more heap")
+            marks.append("more heap")
         elif heap["delta_pct"] <= -HEAP_RELATIVE_THRESHOLD:
-            flags.append("less heap")
-    return ", ".join(flags) or "ok"
+            marks.append("less heap")
+    return ", ".join(marks) or "ok"
 
 
 def render_markdown(rows: list[dict[str, object]], repeats: int) -> str:
@@ -260,7 +278,8 @@ def render_markdown(rows: list[dict[str, object]], repeats: int) -> str:
         "## PR Instruction and Heap Counts",
         "",
         (
-            "Counted under Valgrind, single-threaded. Reported only; this does not "
+            "Instructions counted under cachegrind and peak live heap by a preloaded "
+            "allocator counter, both single-threaded. Reported only; this does not "
             "fail the job."
         ),
         "",
@@ -268,25 +287,18 @@ def render_markdown(rows: list[dict[str, object]], repeats: int) -> str:
         "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in rows:
-        instructions = row.get("instructions") or row.get("dhat_instructions")
-        heap = row.get("peak_heap_bytes")
-        cells = [str(row["name"]), str(row["status"])]
-        if instructions is None:
-            cells += ["n/a"] * 3
-        else:
-            cells += [
-                f"{instructions['base']:,.0f}",
-                f"{instructions['head']:,.0f}",
-                f"{instructions['delta_pct'] * 100:+.3f}",
-            ]
-        if heap is None:
-            cells += ["n/a"] * 3
-        else:
-            cells += [
-                f"{heap['base'] / (1024 * 1024):.3f}",
-                f"{heap['head'] / (1024 * 1024):.3f}",
-                f"{heap['delta_pct'] * 100:+.3f}",
-            ]
+        instructions = row["instructions"]
+        heap = row["peak_heap_bytes"]
+        cells = [
+            str(row["name"]),
+            str(row["status"]),
+            f"{instructions['base']:,.0f}",
+            f"{instructions['head']:,.0f}",
+            f"{instructions['delta_pct'] * 100:+.3f}",
+            f"{heap['base'] / (1024 * 1024):.3f}",
+            f"{heap['head'] / (1024 * 1024):.3f}",
+            f"{heap['delta_pct'] * 100:+.3f}",
+        ]
         lines.append("| " + " | ".join(cells) + " |")
     lines += [
         "",
@@ -299,24 +311,22 @@ def render_markdown(rows: list[dict[str, object]], repeats: int) -> str:
     ]
     if repeats > 1:
         lines += [
-            f"Spread over {repeats} repeats of each binary (max - min, relative):",
+            f"Spread over {repeats} runs of each binary, (max - min) / mean:",
             "",
-            "| Case | Metric | Base | Head | Valgrind time (s) |",
-            "| --- | --- | ---: | ---: | --- |",
+            "| Case | Base instructions | Head instructions | Base heap | Head heap | Slowest cachegrind run (s) |",
+            "| --- | ---: | ---: | ---: | ---: | ---: |",
         ]
         for row in rows:
-            for metric in ("instructions", "dhat_instructions", "peak_heap_bytes"):
-                if metric not in row:
-                    continue
-                lines.append(
-                    f"| {row['name']} | {metric} | "
-                    f"{row[metric]['base_spread']['relative_range'] * 100:.4f}% | "
-                    f"{row[metric]['head_spread']['relative_range'] * 100:.4f}% | "
-                    + ", ".join(
-                        f"{tool} {sec:.1f}" for tool, sec in row["valgrind_sec"].items()
-                    )
-                    + " |"
-                )
+            instructions = row["instructions"]
+            heap = row["peak_heap_bytes"]
+            lines.append(
+                f"| {row['name']} "
+                f"| {instructions['base_relative_range']:.2e} "
+                f"| {instructions['head_relative_range']:.2e} "
+                f"| {heap['base_relative_range']:.2e} "
+                f"| {heap['head_relative_range']:.2e} "
+                f"| {instructions['max_elapsed_sec']:.1f} |"
+            )
         lines.append("")
     return "\n".join(lines)
 
@@ -325,7 +335,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Count instructions and peak live heap of a base and a head native "
-            "benchmark binary under Valgrind."
+            "benchmark binary."
         )
     )
     parser.add_argument("--base-binary", type=Path, required=True)
@@ -338,17 +348,17 @@ def main() -> int:
         help="Infomap flags forwarded to the native benchmark executable.",
     )
     parser.add_argument(
-        "--tools",
-        default="dhat",
-        help=f"Comma-separated Valgrind tools to run, from {', '.join(TOOLS)}.",
-    )
-    parser.add_argument(
         "--repeats",
         type=int,
         default=1,
-        help="Runs per binary, case and tool. More than one measures the spread.",
+        help="Runs per binary, case and count. More than one measures the spread.",
     )
     parser.add_argument("--valgrind", default="valgrind")
+    parser.add_argument(
+        "--compiler",
+        default=os.environ.get("CC", "cc"),
+        help="C compiler for heap_counter.c.",
+    )
     parser.add_argument(
         "--jobs", type=int, default=os.cpu_count() or 1, help="Parallel runs."
     )
@@ -357,14 +367,10 @@ def main() -> int:
         "--timeout-sec",
         type=float,
         default=None,
-        help="Kill a single Valgrind run that takes longer than this.",
+        help="Kill a single run that takes longer than this.",
     )
     args = parser.parse_args()
 
-    tools = [tool.strip() for tool in args.tools.split(",") if tool.strip()]
-    unknown = sorted(set(tools) - set(TOOLS))
-    if unknown or not tools:
-        parser.error(f"--tools must name some of {', '.join(TOOLS)}")
     if args.repeats < 1:
         parser.error("--repeats must be at least 1")
     for binary in (args.base_binary, args.head_binary):
@@ -376,14 +382,14 @@ def main() -> int:
         work_dir = Path(temp_dir)
         generated_dir = args.generated_dir or work_dir
         generated_dir.mkdir(parents=True, exist_ok=True)
-        cases = build_count_cases(generated_dir)
+        heap_counter = compile_heap_counter(work_dir, args.compiler)
         results = run_counts(
             binaries,
-            cases,
-            tools,
+            build_count_cases(generated_dir),
             args.repeats,
             args.flags,
             args.valgrind,
+            heap_counter,
             work_dir,
             max(1, args.jobs),
             args.timeout_sec,
@@ -396,25 +402,18 @@ def main() -> int:
         args.markdown_out.write_text(markdown, encoding="utf-8")
     if args.json_out is not None:
         args.json_out.parent.mkdir(parents=True, exist_ok=True)
-        args.json_out.write_text(
-            json.dumps(
-                {
-                    "flags": args.flags,
-                    "tools": tools,
-                    "repeats": args.repeats,
-                    "thresholds": {
-                        "instructions_relative": INSTRUCTIONS_RELATIVE_THRESHOLD,
-                        "heap_relative": HEAP_RELATIVE_THRESHOLD,
-                        "heap_absolute_bytes": HEAP_ABSOLUTE_THRESHOLD_BYTES,
-                    },
-                    "cases": rows,
-                    "samples": results,
-                },
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
+        report = {
+            "flags": args.flags,
+            "repeats": args.repeats,
+            "thresholds": {
+                "instructions_relative": INSTRUCTIONS_RELATIVE_THRESHOLD,
+                "heap_relative": HEAP_RELATIVE_THRESHOLD,
+                "heap_absolute_bytes": HEAP_ABSOLUTE_THRESHOLD_BYTES,
+            },
+            "cases": rows,
+            "samples": results,
+        }
+        args.json_out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(markdown)
     for row in rows:
         if row["status"] != "ok":

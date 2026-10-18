@@ -16,6 +16,7 @@ on:
       - "src/**"
       - "test/bench/**"
       - "test/fixtures/meta/**"
+      - "test/python/test_count_native_benchmarks.py"
       - "test/python/test_native_benchmark_script.py"
 
 permissions:
@@ -135,9 +136,8 @@ jobs:
           python "$GITHUB_WORKSPACE/head/scripts/benchmarks/count_native_benchmarks.py" \
             --base-binary "$GITHUB_WORKSPACE/base/build/cmake/infomap_native_benchmark" \
             --head-binary "$GITHUB_WORKSPACE/head/build/cmake/infomap_native_benchmark" \
-            --tools cachegrind,dhat \
             --repeats 3 \
-            --timeout-sec 900 \
+            --timeout-sec 600 \
             --json-out "$GITHUB_WORKSPACE/artifacts/counts.json" \
             --markdown-out "$GITHUB_WORKSPACE/artifacts/counts-summary.md"
           cat "$GITHUB_WORKSPACE/artifacts/counts-summary.md" >> "$GITHUB_STEP_SUMMARY"
