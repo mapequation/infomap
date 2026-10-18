@@ -878,7 +878,6 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
         # not fire, as under a hard partition: a wrong codelength, no error.
         ("#1191", lambda o: o.exp.regularized and _markov_above_one(o)),
         ("#1189", lambda o: o.exp.recorded and bool(o.case.row["node_weights"])),
-        ("#1207", lambda o: o.case.row["cluster_data"] == "hard"),
         (
             "#1209",
             lambda o: (
@@ -901,7 +900,6 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
             ),
         ),
         ("#1189", lambda o: o.exp.recorded and bool(o.case.row["node_weights"])),
-        ("#1207", lambda o: o.case.row["cluster_data"] == "hard"),
         (
             "#1209",
             lambda o: (
