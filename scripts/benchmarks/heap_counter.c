@@ -76,7 +76,7 @@ void* aligned_alloc(size_t alignment, size_t size) { return count_allocation(__l
 
 int posix_memalign(void** out, size_t alignment, size_t size)
 {
-  if (alignment % sizeof(void*) != 0 || (alignment & (alignment - 1)) != 0)
+  if (alignment == 0 || alignment % sizeof(void*) != 0 || (alignment & (alignment - 1)) != 0)
     return EINVAL;
   void* ptr = __libc_memalign(alignment, size);
   if (ptr == NULL)

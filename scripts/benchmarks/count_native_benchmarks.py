@@ -380,7 +380,9 @@ def main() -> int:
         if not binary.is_file():
             parser.error(f"benchmark binary not found: {binary}")
 
-    binaries = {"base": args.base_binary, "head": args.head_binary}
+    # Resolved, since Path("./bench") prints as "bench", which subprocess would look
+    # up on PATH instead of in the current directory.
+    binaries = {"base": args.base_binary.resolve(), "head": args.head_binary.resolve()}
     with tempfile.TemporaryDirectory() as temp_dir:
         work_dir = Path(temp_dir)
         generated_dir = args.generated_dir or work_dir
