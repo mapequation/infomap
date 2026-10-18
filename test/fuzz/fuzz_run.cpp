@@ -50,9 +50,13 @@ bool contains(const char* haystack, const char* needle) { return std::strstr(hay
 // The flow invariants, and the negative-flow guards on the finished tree, say in
 // their message that they are a bug ("This is a bug in Infomap", "this is a bug
 // in how module flow is accumulated", ...).
-bool isBug(const char* message)
+// Only an internal error counts: an input error can quote the fuzzed line back,
+// and that line can hold the same words (#1263).
+bool isBug(const infomap::InfomapError& e)
 {
-  return contains(message, "Flow invariant violated") || contains(message, "is a bug in");
+  const char* message = e.what();
+  return e.code() == infomap::ExitCode::InternalError
+      && (contains(message, "Flow invariant violated") || contains(message, "is a bug in"));
 }
 
 // Picks one of the values by a few bits of the header.
@@ -162,9 +166,11 @@ MetaData applyMetaData(infomap::InfomapWrapper& im, uint8_t byte)
 
 // Open bugs the target would otherwise report on every run. Each needs its options,
 // its kind of failure and, where it has one, its network shape, so an unrelated
-// failure under the same options is still reported. Each names its issue and is pinned
-// as a should_fail case in test/cpp/test_map_equation_invariants.cpp ("Fuzz finding:");
-// drop the entry when the bug is fixed so the fuzzer guards the fix.
+// failure under the same options is still reported. Each names its issue as "#N" in a
+// comment and is pinned as a should_fail case with "(#N)" in its name in
+// test/cpp/test_map_equation_invariants.cpp ("Fuzz finding:");
+// test/python/test_known_findings.py checks the pairing. Drop the entry when the bug
+// is fixed so the fuzzer guards the fix.
 bool isKnownFinding(const infomap::InfomapWrapper& /*im*/, const char* /*message*/)
 {
   return false;
@@ -223,12 +229,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     metaData = applyMetaData(*im, data[5]);
     im->run();
   } catch (const infomap::InfomapError& e) {
-    if (isBug(e.what()) && !isKnownFinding(*im, e.what()))
+    if (isBug(e) && !isKnownFinding(*im, e.what()))
       reportBug(flags, metaData, e.what());
     // Otherwise an expected rejection of the input or the options.
   } catch (const std::runtime_error&) { // NOLINT(bugprone-empty-catch)
-    // Validation that throws a plain runtime_error, such as a missing node
-    // flow under --flow-model precomputed: also a rejection.
+    // Validation that throws a plain runtime_error: also a rejection.
   } catch (const std::exception& e) {
     // A logic_error (out_of_range, invalid_argument, ...) or bad_alloc on a
     // network this small is a bug.

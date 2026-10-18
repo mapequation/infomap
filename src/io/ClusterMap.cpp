@@ -9,6 +9,7 @@
 
 #include "ClusterMap.h"
 #include "SafeFile.h"
+#include "InfomapError.h"
 #include "../utils/Log.h"
 #include "../utils/Console.h"
 #include "../utils/FileURI.h"
@@ -65,15 +66,27 @@ void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, 
   m_hasTreeLeafIdType = false;
   m_treeLeafIdType = TreeLeafIdType::physical;
 
-  FileURI file(filename);
-  m_extension = file.getExtension();
-  if (m_extension == "tree" || m_extension == "ftree") {
-    return readTree(filename, includeFlow, layerNodeToStateId);
+  // The readers throw a plain runtime_error on a missing or malformed file, and
+  // FileURI an invalid_argument on a malformed name. Both are input errors (exit
+  // 2), as for the network and the meta data, not internal ones (#1263). Other
+  // logic errors pass through: they are bugs.
+  try {
+    FileURI file(filename);
+    m_extension = file.getExtension();
+    if (m_extension == "tree" || m_extension == "ftree") {
+      return readTree(filename, includeFlow, layerNodeToStateId);
+    }
+    if (m_extension == "clu") {
+      return readClu(filename, includeFlow, layerNodeToStateId);
+    }
+    throw std::runtime_error(fmt::format(FMT_STRING("Input cluster data from file '{}' is of unknown extension '{}'. Must be 'clu', 'tree' or 'ftree'."), filename, m_extension));
+  } catch (const InfomapError&) {
+    throw;
+  } catch (const std::runtime_error& e) {
+    throw InfomapError(ExitCode::InputError, e.what());
+  } catch (const std::invalid_argument& e) {
+    throw InfomapError(ExitCode::InputError, e.what());
   }
-  if (m_extension == "clu") {
-    return readClu(filename, includeFlow, layerNodeToStateId);
-  }
-  throw std::runtime_error(fmt::format(FMT_STRING("Input cluster data from file '{}' is of unknown extension '{}'. Must be 'clu', 'tree' or 'ftree'."), filename, m_extension));
 }
 
 /**

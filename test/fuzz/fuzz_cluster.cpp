@@ -160,9 +160,13 @@ bool contains(const char* haystack, const char* needle) { return std::strstr(hay
 
 // The flow invariants, and the negative-flow guards on the finished tree, say in
 // their message that they are a bug.
-bool isBug(const char* message)
+// Only an internal error counts: an input error can quote the fuzzed line back,
+// and that line can hold the same words (#1263).
+bool isBug(const infomap::InfomapError& e)
 {
-  return contains(message, "Flow invariant violated") || contains(message, "is a bug in");
+  const char* message = e.what();
+  return e.code() == infomap::ExitCode::InternalError
+      && (contains(message, "Flow invariant violated") || contains(message, "is a bug in"));
 }
 
 // A failed check of the harness's own, raised as a bug.
@@ -172,15 +176,12 @@ struct Finding : std::runtime_error {
 
 // Open bugs the target would otherwise report on every run. Each needs its options
 // and its kind of failure, so an unrelated failure under the same options is still
-// reported. Drop the entry when the bug is fixed so the fuzzer guards the fix.
-bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
+// reported. Each names its issue as "#N" in a comment and is pinned as a should_fail
+// case with "(#N)" in its name in test/cpp/test_partition.cpp ("Fuzz finding:");
+// test/python/test_known_findings.py checks the pairing. Drop the entry when the bug
+// is fixed so the fuzzer guards the fix.
+bool isKnownFinding(const infomap::InfomapWrapper& /*im*/, const char* /*message*/)
 {
-  const bool misreported = contains(message, "reported codelength");
-  // #1207: the tree is not scored again after the hard partition is restored: a module that held
-  // a single hard module is left without that module's codebook, and a hard module
-  // directly under the root (all of them under --no-infomap) is replaced by its nodes there.
-  if (im.clusterDataIsHard && misreported)
-    return true;
   return false;
 }
 
@@ -411,12 +412,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     applyMetaData(im, options.metaData);
     im.run();
   } catch (const infomap::InfomapError& e) {
-    if (isBug(e.what()) && !isKnownFinding(im, e.what()))
+    if (isBug(e) && !isKnownFinding(im, e.what()))
       reportBug(options, clusterText, e.what());
     // Otherwise an expected rejection of the cluster data.
     return 0;
   } catch (const std::runtime_error&) {
-    // The cluster data readers throw a plain runtime_error on malformed input.
+    // Validation that throws a plain runtime_error: also a rejection.
     return 0;
   } catch (const std::exception& e) {
     // A logic_error (out_of_range, invalid_argument, ...) or bad_alloc on a

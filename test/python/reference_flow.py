@@ -17,6 +17,11 @@ Notation: ``w_ab`` is the weight of the link from ``a`` to ``b``,
 is dangling when ``out_a = 0``; a self-link counts as an out-link. ``alpha`` is
 the teleportation probability and ``beta = 1 - alpha``.
 
+A change to this module cites its source below and lands in a pull request
+of its own, with nothing under ``src/``, so the oracle stays independent of
+the code it checks (#1261). CI checks the second part
+(``scripts/check_reference_edits.py``).
+
 Sources for each model
 ----------------------
 Undirected (``--flow-model undirected``, the default)

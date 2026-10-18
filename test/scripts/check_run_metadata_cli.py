@@ -49,6 +49,42 @@ def test_missing_input_returns_input_exit_code(infomap_bin, work):
     assert "Error:" in result.stderr
 
 
+def test_malformed_cluster_data_returns_input_exit_code(infomap_bin, work):
+    # A cluster file that cannot be parsed is bad input, not an internal error (#1263).
+    make_workdir(work)
+    (work / "bad.clu").write_text("1 1\nx\n", encoding="utf-8")
+    (work / "bad.tree").write_text(
+        '# path flow name node\n1:x 0.5 "one" 1\n', encoding="utf-8"
+    )
+
+    for name, message in (
+        ("bad.clu", "Couldn't parse node key and cluster id from line 'x'"),
+        ("bad.tree", "Invalid tree path '1:x' on line 2"),
+    ):
+        result = run(
+            infomap_bin, "network.net", "out", "--silent", "-c", name, cwd=work
+        )
+        assert result.returncode == 2, (name, result.returncode, result.stderr)
+        assert message in result.stderr
+
+
+def test_missing_precomputed_flow_returns_input_exit_code(infomap_bin, work):
+    make_workdir(work)
+
+    result = run(
+        infomap_bin,
+        "network.net",
+        "out",
+        "--silent",
+        "--flow-model",
+        "precomputed",
+        cwd=work,
+    )
+
+    assert result.returncode == 2
+    assert "Missing node flow in input data" in result.stderr
+
+
 def test_no_overwrite_returns_output_exit_code(infomap_bin, work):
     make_workdir(work)
     out_dir = work / "out"
@@ -661,6 +697,8 @@ def main(argv):
         for test in [
             test_print_config_fingerprint_exits_without_output_directory,
             test_missing_input_returns_input_exit_code,
+            test_malformed_cluster_data_returns_input_exit_code,
+            test_missing_precomputed_flow_returns_input_exit_code,
             test_no_overwrite_returns_output_exit_code,
             test_no_overwrite_preflight_writes_no_files_when_one_target_exists,
             test_no_overwrite_preflight_sees_a_shards_own_trial_paths,

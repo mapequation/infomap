@@ -36,6 +36,7 @@ policy:
   - "interfaces/swig/**"
   - "interfaces/R/generated/**"
   - "scripts/check_cpp_stream_policy.py"
+  - "scripts/check_reference_edits.py"
   - ".github/workflows/ci.yml"
   - ".github/filters.yml"
 
@@ -62,6 +63,7 @@ python-core:
   - "examples/notebooks/**"
   - "examples/networks/**"
   - "test/python/**"
+  - "RESULT_CHANGES.csv"
   - "test/scripts/**"
   - "test/schemas/**"
   - "scripts/build_config.py"
@@ -176,6 +178,7 @@ docs:
   - ".github/workflows/ci.yml"
   - "README.rst"
   - "BUILD.md"
+  - "RESULT_CHANGES.csv"
   - "pyproject.toml"
   - "setup.py"
   - "examples/notebooks/**"
@@ -202,6 +205,7 @@ docker:
 notebooks:
   - "interfaces/python/**"
   - "test/python/**"
+  - "RESULT_CHANGES.csv"
   - "examples/notebooks/**"
   - "scripts/notebook_manifest.py"
   - ".github/actions/setup-python-build/action.yml"

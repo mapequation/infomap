@@ -1629,14 +1629,24 @@ TEST_CASE("Invalid cluster-data fixtures fail deterministically [fast][core][par
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
   im.initNetwork(im.network());
 
+  // An input error, so the CLI exits 2 rather than 7 (#1263).
   CHECK_THROWS_WITH_AS(
       im.initPartition(infomap::test::clusterFixturePath("invalid_missing_module.clu"), false, &im.network()),
       "Couldn't parse node key and cluster id from line '1'",
-      std::runtime_error);
+      infomap::InfomapError);
   CHECK_THROWS_WITH_AS(
       im.initPartition(infomap::test::clusterFixturePath("invalid_zero_path.tree"), false, &im.network()),
       "Invalid tree path '0:1' on line 1 ('0:1 0.1 \"A\" 1'). A path is positive integers separated by ':', such as 1:2:1.",
-      std::runtime_error);
+      infomap::InfomapError);
+  for (const auto* name : { "invalid_missing_module.clu", "invalid_zero_path.tree", "missing.clu", "unknown.txt" }) {
+    INFO(name);
+    try {
+      im.initPartition(infomap::test::clusterFixturePath(name), false, &im.network());
+      FAIL("expected the cluster data to be rejected");
+    } catch (const infomap::InfomapError& e) {
+      CHECK(e.code() == infomap::ExitCode::InputError);
+    }
+  }
 }
 
 TEST_CASE("Invalid cluster-data failure does not poison later valid init on the same instance [fast][core][partition][parser][lifecycle]")
