@@ -2818,7 +2818,20 @@ void InfomapBase::partition()
     nonTrivialSummary = fmt::format(FMT_STRING(" ({} non-trivial)"), m_numNonTrivialTopModules);
   progress.finish(fmt::format(FMT_STRING("{} {} codelength {}, {} modules{}"), compressionSummary(prettyCompression), Console::arrow(), io::toPrecision(getCodelength()), numTopModules(), nonTrivialSummary));
   const bool regularizedPriorOnly = usesRegularizedFlow() && network().numLinks() == 0;
-  if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > getOneLevelCodelength()) {
+  double oneModuleCodelength = getOneLevelCodelength();
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  // The regularized multilayer objective prices one module holding every node with
+  // exit flow, while the one-level codelength prices the root with none. Compare
+  // with, and report, the codelength the one-module tree has (#1285).
+  const bool regularizedMultilayerRoot = isMainInfomap() && !haveMetaData() && haveMemory() && isRegularizedMultilayerFlow();
+  double oneModuleExitFlow = 0.0;
+  if (regularizedMultilayerRoot) {
+    oneModuleExitFlow = calcRegularizedMultilayerOneModuleExitFlow();
+    const double flow = m_root.data.flow;
+    oneModuleCodelength += infomath::plogp(flow + oneModuleExitFlow) - infomath::plogp(flow) - infomath::plogp(oneModuleExitFlow);
+  }
+#endif
+  if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > oneModuleCodelength) {
     Console::detail(1, "worse codelength than one-level, putting all nodes in one module");
 
     // Create new single module between modules and root
@@ -2830,12 +2843,18 @@ void InfomapBase::partition()
     module.lossyEntropy = m_root.lossyEntropy;
     module.lossyFlowLogFlow = m_root.lossyFlowLogFlow;
 #endif
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+    if (regularizedMultilayerRoot) {
+      module.data.enterFlow = oneModuleExitFlow;
+      module.data.exitFlow = oneModuleExitFlow;
+    }
+#endif
     module.index = 0;
     for (auto& node : module) {
       node.index = 0;
     }
-    module.codelength = getOneLevelCodelength();
-    m_hierarchicalCodelength = getOneLevelCodelength();
+    module.codelength = oneModuleCodelength;
+    m_hierarchicalCodelength = oneModuleCodelength;
     // calcCodelengthOnTree(root(), true);
     m_root.codelength = 0.0;
     m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
@@ -2978,6 +2997,31 @@ void InfomapBase::initEnterExitFlow()
     }
   }
 }
+
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+double InfomapBase::calcRegularizedMultilayerOneModuleExitFlow() const
+{
+  // The leaf exit flow less what RegularizedMultilayerMapEquation cancels when all
+  // leaf nodes share one module: the link flow between them and, per layer, the
+  // teleportation T_i (W - w_i) to the other nodes in the layer. What remains is
+  // flow the leaf exit flow carries that no link or teleportation term inside the
+  // module accounts for.
+  std::map<unsigned int, double> layerTeleportWeight;
+  for (const auto* node : m_leafNodes) {
+    for (const auto& layerData : node->layerTeleFlowData())
+      layerTeleportWeight[layerData.layerId] += layerData.teleportWeight;
+  }
+  double exitFlow = 0.0;
+  for (auto* node : m_leafNodes) {
+    exitFlow += node->data.exitFlow;
+    for (const InfoEdge* edge : node->outEdges())
+      exitFlow -= edge->data.flow;
+    for (const auto& layerData : node->layerTeleFlowData())
+      exitFlow -= layerData.teleportFlow * (layerTeleportWeight[layerData.layerId] - layerData.teleportWeight);
+  }
+  return std::max(exitFlow, 0.0);
+}
+#endif
 
 // Aggregate node and enter/exit flow to all tree nodes
 void InfomapBase::aggregateFlowValuesFromLeafToRoot()
