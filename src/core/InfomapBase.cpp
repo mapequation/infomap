@@ -275,6 +275,28 @@ namespace {
     orderChildrenAsRows(root, rowOfState);
   }
 
+  // Copy the objective-specific module aggregates from a sub-Infomap module onto the
+  // main-tree module node made from it. calcCodelength and the deeper recursion read
+  // these on module nodes (e.g. MemMapEquation reads parent.physicalNodes); without
+  // them, higher-order and feature builds price the module wrongly (#1262).
+  void copyModuleAggregates(InfoNode& module, const InfoNode& subModule)
+  {
+    module.physicalNodes = subModule.physicalNodes;
+    module.stateNodes = subModule.stateNodes;
+#ifndef SWIG
+    // #659 moved these feature-only fields out-of-line into InfoNodeExtras; only
+    // allocate extras when the source actually carries them (preserve the shrink).
+    if (!subModule.layerTeleFlowData().empty())
+      module.ensureExtras().layerTeleFlowData = subModule.layerTeleFlowData();
+    if (subModule.hasMetaCollection())
+      module.ensureMetaCollection() = subModule.metaCollection();
+#endif
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    module.lossyEntropy = subModule.lossyEntropy;
+    module.lossyFlowLogFlow = subModule.lossyFlowLogFlow;
+#endif
+  }
+
 } // namespace
 
 class InfomapBase::RunSession {
@@ -2641,7 +2663,9 @@ void InfomapBase::hierarchicalPartition()
             InfoNode* leaf = leafs[j];
             unsigned int moduleIndex = modules[j];
             if (subModules[moduleIndex] == nullptr) {
-              subModules[moduleIndex] = &allocNode(subInfomap.leafNodes()[j]->parent->data);
+              const InfoNode& subModule = *subInfomap.leafNodes()[j]->parent;
+              subModules[moduleIndex] = &allocNode(subModule.data);
+              copyModuleAggregates(*subModules[moduleIndex], subModule);
               subModules[moduleIndex]->index = moduleIndex;
               module.addChild(subModules[moduleIndex]);
             }
@@ -4075,26 +4099,8 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
       const InfoNode* cloneSubModule = subQueue[k];
       auto* newSubModule = new InfoNode(cloneSubModule->data);
       newSubModule->codelength = cloneSubModule->codelength;
-      // Copy the objective-specific module aggregates the lazy sub-Infomap module
-      // node carried, so the materialized node is equivalent: calcCodelength and
-      // the deeper recursion read these on module nodes (e.g. MemMapEquation reads
-      // parent.physicalNodes). Without them, feature/higher-order builds compute
-      // wrong codelengths.
-      newSubModule->physicalNodes = cloneSubModule->physicalNodes;
-      newSubModule->stateNodes = cloneSubModule->stateNodes;
-#ifndef SWIG
-      // #659 moved these feature-only fields out-of-line into InfoNodeExtras;
-      // route the materialize-copy through the extras API and only allocate
-      // extras when the clone actually carries them (preserve the shrink).
-      if (!cloneSubModule->layerTeleFlowData().empty())
-        newSubModule->ensureExtras().layerTeleFlowData = cloneSubModule->layerTeleFlowData();
-      if (cloneSubModule->hasMetaCollection())
-        newSubModule->ensureMetaCollection() = cloneSubModule->metaCollection();
-#endif
-#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
-      newSubModule->lossyEntropy = cloneSubModule->lossyEntropy;
-      newSubModule->lossyFlowLogFlow = cloneSubModule->lossyFlowLogFlow;
-#endif
+      // So the materialized node is equivalent to the lazy sub-Infomap module node.
+      copyModuleAggregates(*newSubModule, *cloneSubModule);
       cloneToMaterialized[cloneSubModule] = newSubModule;
       materializedSubModules[k] = newSubModule;
     }
