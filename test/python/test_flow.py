@@ -32,6 +32,25 @@ def test_node_weights_as_flow_do_not_hide_degenerate_flow(example_network_path):
         )
 
 
+def test_node_weights_as_flow_do_not_hide_degenerate_flow_without_links():
+    # Recorded teleportation to links has no link to land on, so no node is
+    # entered, but the node weights still give the nodes flow. The run reported
+    # 2 bits against a one-level codelength of 1 (#1253).
+    im = infomap.Infomap(
+        directed=True,
+        recorded_teleportation=True,
+        use_node_weights_as_flow=True,
+        seed=7,
+        num_trials=1,
+        silent=True,
+    )
+    im.add_node(1)
+    im.add_node(2)
+
+    with pytest.raises(infomap.InfomapError, match="Degenerate flow"):
+        im.run()
+
+
 def test_skip_adjust_bipartite_flow_still_runs(example_network_path):
     # The documented opt-out from distributing flow to the primary nodes: flow
     # deliberately sums to less than one, so the run must complete.

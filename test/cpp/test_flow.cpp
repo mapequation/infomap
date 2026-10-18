@@ -1153,6 +1153,38 @@ TEST_CASE("Node weights as flow do not hide a walk without flow [fast][core][flo
   }
 }
 
+TEST_CASE("Node weights as flow do not hide a walk without flow on a link-free network [fast][core][flow]")
+{
+  // Recorded teleportation to links has no link to land on, so no node is entered, but the
+  // node weights still gave the nodes flow. The link-free early return skipped the check above,
+  // and the run reported 2 bits against a one-level codelength of 1 (#1253).
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --recorded-teleportation --use-node-weights-as-flow"));
+  im.addNode(1);
+  im.addNode(2);
+
+  try {
+    im.run();
+    FAIL("expected the walk without flow to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    CHECK(std::string(e.what()).find("Degenerate flow") != std::string::npos);
+  }
+}
+
+TEST_CASE("A link-free network keeps its trivial answer when the walk does not need to move [fast][core][flow]")
+{
+  // The #1253 check applies only when node weights give the nodes flow and teleportation is
+  // recorded. Without either, the link-free network still reports its trivial zero-bit answer.
+  for (const char* flags : { "--directed --recorded-teleportation", "--directed --use-node-weights-as-flow", "--directed --recorded-teleportation --to-nodes --use-node-weights-as-flow" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(infomap::test::defaultFlags(std::string("-N 1 --seed 7 ") + flags));
+    im.addNode(1);
+    im.addNode(2);
+    im.run();
+    CHECK(im.codelength() <= im.getOneLevelCodelength() + 1e-10);
+  }
+}
+
 TEST_CASE("skip-adjust-bipartite-flow keeps its documented unnormalized flow [fast][core][flow]")
 {
   // The flag is documented as "Keep flow on bipartite nodes instead of
