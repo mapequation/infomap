@@ -2341,10 +2341,12 @@ TEST_CASE("A search over hard cluster-data with meta data ends no higher than it
 
 // Restoring the super-level tree re-initialises the objective's network-level terms for the
 // top modules. The next trial started from the leaves on those terms, so its search tracked
-// a codelength off by a constant: on this 60-node cycle trial 2 started at 3.571 bits instead
-// of 7.907 and ended its two-level search at -0.509 bits. Every trial starts from the same
-// singleton partition, so each must start where the first trial, fresh from init(), did.
-// Trial 2 must also track what a run of its seed alone does (#1284).
+// a codelength off by a constant: on this 60-node cycle with --seed 3 on libc++, trial 2
+// started at 3.571 bits instead of 7.907 and ended its two-level search at -0.509 bits.
+// Every trial starts from the same singleton partition, so each must start where the first
+// trial, fresh from init(), did. Trial 2 must also track what a run of its seed alone does
+// (#1284). Seeds reach different trees on different standard libraries (#342), and few of
+// them fall back on this cycle, so this sweeps them.
 TEST_CASE("A trial after a restored super-level tree tracks the leaf network's codelength (#1284) [fast][core][partition]")
 {
   const auto runCycle = [](const std::string& flags) {
@@ -2367,18 +2369,25 @@ TEST_CASE("A trial after a restored super-level tree tracks the leaf network's c
     return passes;
   };
 
-  const std::string log = runCycle("--seed 3 --num-trials 2");
-  INFO(log);
-  const auto trial2 = log.find("Trial 2/2");
-  REQUIRE(trial2 != std::string::npos);
-  REQUIRE(log.rfind("restoring it", trial2) != std::string::npos); // trial 1 fell back (#837)
+  // The first seed whose trial 1 falls back to the super-level tree (#837).
+  unsigned int seed = 1;
+  std::string log;
+  for (; seed <= 200; ++seed) {
+    log = runCycle("--seed " + std::to_string(seed) + " --num-trials 2");
+    const auto trial2 = log.find("Trial 2/2");
+    REQUIRE(trial2 != std::string::npos);
+    if (log.rfind("restoring it", trial2) != std::string::npos)
+      break;
+  }
+  REQUIRE(seed <= 200);
+  INFO("seed " << seed << "\n" << log);
 
   const auto passes = firstPasses(log);
   REQUIRE(passes.size() == 2);
   CHECK(passes[1].first == doctest::Approx(passes[0].first).epsilon(1e-9));
 
   // Trial seeds are the base seed plus the trial index.
-  const auto alone = firstPasses(runCycle("--seed 4 --num-trials 1"));
+  const auto alone = firstPasses(runCycle("--seed " + std::to_string(seed + 1) + " --num-trials 1"));
   REQUIRE(alone.size() == 1);
   CHECK(passes[1].second == doctest::Approx(alone[0].second).epsilon(1e-9));
 }
