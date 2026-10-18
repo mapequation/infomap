@@ -167,6 +167,8 @@ _TREE_LINE = re.compile(r'^(\S+) (\S+) ".*" ([\d ]+)$')
 class Outcome:
     error: str | None = None
     skipped: str | None = None
+    # The run wrote nothing for the case: a broken run, never a result.
+    missing: bool = False
     codelength: float = math.nan
     # (path, (state_id, node_id, layer_id)) -> flow
     nodes: tuple = ()
@@ -198,28 +200,40 @@ def load_outcome(run_dir: Path, case_id: str) -> Outcome:
     if error.exists():
         return Outcome(error=error.read_text().strip())
     tree = run_dir / f"{case_id}.tree"
-    if not tree.exists():
-        return Outcome(error="missing result")
-    codelength = float((run_dir / f"{case_id}.codelength").read_text())
+    codelength = run_dir / f"{case_id}.codelength"
+    if not tree.exists() or not codelength.exists():
+        return Outcome(missing=True)
+    codelength = float(codelength.read_text())
     return Outcome(codelength=codelength, nodes=_parse_tree(tree.read_text()))
 
 
 def _hierarchy(nodes: tuple) -> frozenset:
-    """The modules at every level as sets of nodes, without their ids or order."""
+    """The modules at every level as (depth, set of nodes), without their ids or
+    order. The depth tells a module from its only child module."""
     members: dict[str, set] = {}
     for path, ids, _ in nodes:
         parts = path.split(":")
         for depth in range(1, len(parts)):
             members.setdefault(":".join(parts[:depth]), set()).add(ids)
-    return frozenset(frozenset(module) for module in members.values())
+    return frozenset(
+        (prefix.count(":") + 1, frozenset(module)) for prefix, module in members.items()
+    )
+
+
+def _flows(nodes: tuple) -> list:
+    return sorted(((ids, flow) for _, ids, flow in nodes), key=lambda n: str(n[0]))
 
 
 def differences(a: Outcome, b: Outcome) -> list[str]:
-    """Which of error, codelength, tree, order, flow differ between two outcomes.
+    """Which of missing, error, codelength, tree, order, flow differ between
+    two outcomes.
 
     ``tree`` means the modules differ; ``order`` means the same modules with
-    other module ids or another order of their children.
+    other module ids or another order of their children. ``flow`` compares the
+    flow of each node, wherever it is in the tree.
     """
+    if a.missing or b.missing:
+        return ["missing"]
     if a.error is not None or b.error is not None:
         return [] if (a.error is None) == (b.error is None) else ["error"]
     found = []
@@ -231,15 +245,18 @@ def differences(a: Outcome, b: Outcome) -> list[str]:
         (path, ids) for path, ids, _ in b.nodes
     ]:
         found.append("tree" if _hierarchy(a.nodes) != _hierarchy(b.nodes) else "order")
-    elif not all(
+    flows_a, flows_b = _flows(a.nodes), _flows(b.nodes)
+    if [ids for ids, _ in flows_a] != [ids for ids, _ in flows_b] or not all(
         math.isclose(fa, fb, rel_tol=FLOW_RELATIVE_TOLERANCE, abs_tol=1e-12)
-        for (_, _, fa), (_, _, fb) in zip(a.nodes, b.nodes, strict=True)
+        for (_, fa), (_, fb) in zip(flows_a, flows_b, strict=True)
     ):
         found.append("flow")
     return found
 
 
 def _describe(outcome: Outcome) -> str:
+    if outcome.missing:
+        return "no result written"
     if outcome.error is not None:
         return "error: " + outcome.error.splitlines()[0][:120]
     top = len({path.split(":")[0] for path, _, _ in outcome.nodes})
@@ -305,7 +322,11 @@ def _check(found: dict, expected: dict, what: str) -> tuple[int, list[str]]:
     return listed, problems
 
 
-def compare(run_dirs: list[Path], expected_path: Path = FRONTEND_DIFFERENCES) -> int:
+def compare(
+    run_dirs: list[Path],
+    expected_path: Path = FRONTEND_DIFFERENCES,
+    case_ids: list[str] | None = None,
+) -> int:
     """Every run must agree with the first on every case, apart from the
     disagreements listed in ``expected_path``."""
     _, rows = _read_table(expected_path, ["id", "run", "changes", "explained_by"])
@@ -319,26 +340,26 @@ def compare(run_dirs: list[Path], expected_path: Path = FRONTEND_DIFFERENCES) ->
     # Lines for a front end that is not compared here do not apply.
     names = {other.name for other in others}
     expected = {key: entry for key, entry in expected.items() if key[1] in names}
-    cases = load_cases()
+    cases = case_ids or [case.id for case in load_cases()]
     found = {}
     skipped = 0
-    for case in cases:
-        base = load_outcome(reference, case.id)
+    for case_id in cases:
+        base = load_outcome(reference, case_id)
         for other in others:
-            outcome = load_outcome(other, case.id)
+            outcome = load_outcome(other, case_id)
             if base.skipped or outcome.skipped:
                 skipped += 1
                 print(
-                    f"{case.id}: skipped in {other.name}: {base.skipped or outcome.skipped}"
+                    f"{case_id}: skipped in {other.name}: {base.skipped or outcome.skipped}"
                 )
                 continue
             changes = differences(base, outcome)
             if changes:
                 checked = frozenset(changes) - UNCHECKED
                 if checked:
-                    found[(case.id, other.name)] = checked
-                entry = expected.get((case.id, other.name))
-                print(f"{case.id}: {_name_changes(changes)} differ")
+                    found[(case_id, other.name)] = checked
+                entry = expected.get((case_id, other.name))
+                print(f"{case_id}: {_name_changes(changes)} differ")
                 print(f"  {reference.name}: {_describe(base)}")
                 print(f"  {other.name}: {_describe(outcome)}")
                 if entry is not None:
@@ -374,7 +395,10 @@ def release_reference(path: Path = RELEASE_DIFFERENCES) -> str:
 
 
 def compare_release(
-    reference_dir: Path, current_dir: Path, expected_path: Path = RELEASE_DIFFERENCES
+    reference_dir: Path,
+    current_dir: Path,
+    expected_path: Path = RELEASE_DIFFERENCES,
+    case_ids: list[str] | None = None,
 ) -> int:
     """The current CLI must match the released one, apart from the differences
     listed in ``expected_path``, each explained by RESULT_CHANGES.csv rows."""
@@ -384,7 +408,7 @@ def compare_release(
         row[0]: ExpectedDifference(frozenset(row[1].split(",")), tuple(row[2].split()))
         for row in rows
     }
-    cases = [case.id for case in load_cases()]
+    cases = case_ids or [case.id for case in load_cases()]
     found = {}
     for case_id in cases:
         old = load_outcome(reference_dir, case_id)
