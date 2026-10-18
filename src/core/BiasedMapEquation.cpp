@@ -145,8 +145,14 @@ double BiasedMapEquation::calcNumModuleCost(unsigned int numModules) const
 //
 // Equivalently: L is the entropy rate of the Markov chain over codebooks, whose
 // ML estimate is biased by -(free parameters)/(2D) nats.
+//
+// A network without links has D = 0: no walk step was observed, so there is no
+// estimate to correct and the correction is 0, which leaves such a network at the
+// one module and 0 bits it reports without the correction (#1296).
 double BiasedMapEquation::bitsPerFreeParameter() const
 {
+  if (m_totalDegree <= 0)
+    return 0;
   return entropyBiasCorrectionMultiplier / (2 * m_totalDegree * LOG_2);
 }
 
