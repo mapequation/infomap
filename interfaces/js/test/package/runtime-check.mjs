@@ -105,6 +105,76 @@ for (const { label, run } of [
   );
 }
 
+// Extra input files reach the engine through `files`, and give the same result as the
+// native binary given the same files on disk. `make test-js` builds ./Infomap first.
+{
+  const nativeBin = path.resolve("Infomap");
+  const network = fs.readFileSync("examples/networks/twotriangles.net", "utf8");
+  const files = {
+    "meta.clu": "1 1\n2 1\n3 2\n4 2\n5 1\n6 2\n",
+    "init.clu": "1 1\n2 1\n3 1\n4 2\n5 2\n6 2\n",
+  };
+  const body = (clu) =>
+    clu
+      .split("\n")
+      .filter((line) => line && !line.startsWith("#"))
+      .join("\n");
+  const nativeDir = fs.mkdtempSync(path.join(os.tmpdir(), "infomap-files-"));
+  try {
+    fs.writeFileSync(path.join(nativeDir, "network.net"), network);
+    for (const [name, content] of Object.entries(files)) {
+      fs.writeFileSync(path.join(nativeDir, name), content);
+    }
+    for (const { label, args, input } of [
+      {
+        label: "--meta-data",
+        args: ["--meta-data", "meta.clu", "--meta-data-rate", "3", "-2"],
+        input: "metaData",
+      },
+      {
+        label: "--cluster-data",
+        args: ["--cluster-data", "init.clu", "--no-infomap"],
+        input: "clusterData",
+      },
+    ]) {
+      const common = [...args, "-o", "clu,json", "--silent"];
+      execFileSync(nativeBin, ["network.net", ".", ...common], {
+        cwd: nativeDir,
+      });
+      const nativeClu = fs.readFileSync(
+        path.join(nativeDir, "network.clu"),
+        "utf8",
+      );
+      const nativeJson = JSON.parse(
+        fs.readFileSync(path.join(nativeDir, "network.json"), "utf8"),
+      );
+
+      for (const { label: api, run } of [
+        { label: "esm", run: nodeModule.run },
+        { label: "cjs", run: nodeCjsModule.run },
+      ]) {
+        const result = await run(network, { args: common, files });
+        assert.equal(
+          result.json[input]?.hash,
+          nativeJson[input].hash,
+          `${api} ${label}: the file did not reach the engine`,
+        );
+        assert.equal(
+          body(result.clu),
+          body(nativeClu),
+          `${api} ${label}: partition differs from the native binary`,
+        );
+        assert.ok(
+          Math.abs(result.json.codelength - nativeJson.codelength) < 1e-10,
+          `${api} ${label}: codelength ${result.json.codelength} != native ${nativeJson.codelength}`,
+        );
+      }
+    }
+  } finally {
+    fs.rmSync(nativeDir, { recursive: true, force: true });
+  }
+}
+
 // Exercise the `infomap` bin on real files, like the native binary.
 const binPath = path.join(packageDir, "cli.js");
 const binDir = fs.mkdtempSync(path.join(os.tmpdir(), "infomap-bin-check-"));
