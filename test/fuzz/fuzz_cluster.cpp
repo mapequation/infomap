@@ -242,7 +242,12 @@ std::vector<Leaf> leavesOf(const infomap::InfoNode& root)
   return leaves;
 }
 
-bool sameCodelength(double a, double b) { return std::abs(a - b) <= 1e-9 * std::max({ 1.0, std::abs(a), std::abs(b) }); }
+// A non-finite score never matches: with one side infinite the scaled tolerance is
+// infinite too.
+bool sameCodelength(double a, double b)
+{
+  return std::isfinite(a) && std::isfinite(b) && std::abs(a - b) <= 1e-9 * std::max({ 1.0, std::abs(a), std::abs(b) });
+}
 
 std::string formatCodelength(double value)
 {
