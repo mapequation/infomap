@@ -49,7 +49,9 @@ as the one without the option:
 - ``--recorded-teleportation`` under the same models (#1194);
 - ``--entropy-corrected`` and ``--preferred-number-of-modules`` under any
   objective but the ordinary map equation: state, multilayer and meta-data
-  input (#904).
+  input (#904);
+- ``--parallel-trials`` in a build without OpenMP, which runs the trials
+  serially (#1248).
 
 A combination the run refuses with an input error cannot be combined with
 anything else, so its pair is left out of the array and checked on its own
@@ -81,6 +83,7 @@ repros of new findings are pinned as strict xfails at the end of the file.
 
 from __future__ import annotations
 
+import functools
 import itertools
 import logging
 import math
@@ -457,8 +460,27 @@ WARN_RECORDED = "--recorded-teleportation has no effect"
 WARN_ENTROPY = "--entropy-corrected has no effect"
 WARN_PREFERRED = "--preferred-number-of-modules has no effect"
 WARN_NORMALISED = "Node flow sums to"
+WARN_SERIAL = "--parallel-trials requires an OpenMP build"
 # Warned about, but not an option the run ignores; see the module docstring.
 TOLERATED = ("PageRank calculation did not converge",)
+
+
+@functools.cache
+def _openmp() -> bool:
+    """Whether the extension runs with OpenMP, read from the run's log."""
+    handler = _Messages()
+    logger = logging.getLogger("infomap")
+    old_level = logger.level
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    try:
+        im = Infomap(num_trials=1)
+        im.add_link(1, 2)
+        im.run()
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(old_level)
+    return any("Runtime" in line and "OpenMP" in line for line in handler.lines)
 
 
 def expected(row: Mapping[str, object], net: Net) -> Expected:
@@ -494,6 +516,8 @@ def expected(row: Mapping[str, object], net: Net) -> Expected:
         and not row["node_weights"]
     ):
         exp.error = "Degenerate flow"
+    if row["search"] == "N3-parallel" and not _openmp():
+        exp.warnings.add(WARN_SERIAL)
     if model == "precomputed":
         if not net.weights:
             exp.error = "Missing node flow"
