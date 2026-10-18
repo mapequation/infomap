@@ -16,6 +16,7 @@
 #include "../utils/format.h"
 #include <algorithm>
 #include <limits>
+#include <set>
 #include <sstream>
 #include "../utils/convert.h"
 
@@ -110,6 +111,7 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
   std::istringstream lineStream;
 
   unsigned int lineNr = 0;
+  std::set<unsigned int> seenStateIds;
 
   while (!std::getline(input, line).fail()) {
     ++lineNr;
@@ -200,6 +202,19 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
         // Skip rows whose layer/node combination is not present in the network
         continue;
       }
+    }
+
+    // A states tree has one row per state node. A repeated state id put the same
+    // leaf into two modules, and a multi-level tree then crashed in initTree (#1335).
+    // Physical rows repeat by design on higher-order networks, one per module of a
+    // split physical node, and are paired with states in normalizeTreePaths.
+    if (m_treeLeafIdType == TreeLeafIdType::state && !seenStateIds.insert(stateId).second) {
+      const auto node = isMultilayer ? fmt::format(FMT_STRING("Node {} in layer {}"), nodeId, layerId) : fmt::format(FMT_STRING("State id {}"), stateId);
+      throw std::runtime_error(fmt::format(FMT_STRING("{} appears more than once in the tree, again on line {} ('{}'). "
+                                                      "A tree with state ids has one row per state node."),
+                                           node,
+                                           lineNr,
+                                           line));
     }
 
     m_treePaths.push_back({ stateId, path, m_treeLeafIdType });

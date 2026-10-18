@@ -1843,6 +1843,28 @@ TEST_CASE("Tree with rows that mix physical and state id columns fails determini
       std::runtime_error);
 }
 
+TEST_CASE("Tree with a repeated state id is refused, not linked into two modules [fast][core][partition][parser]")
+{
+  // The repeated state put one leaf into two modules, and a multi-level tree then
+  // crashed in initTree (#1335).
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+
+  try {
+    im.initPartition(infomap::test::clusterFixturePath("repeated_state_id.tree"), false, &im.network());
+    FAIL("expected the cluster data to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    CHECK(std::string(e.what()) == "State id 3 appears more than once in the tree, again on line 8 ('2:4 0.1 \"C\" 3 3'). A tree with state ids has one row per state node.");
+  }
+
+  // The run path reads the file once before the trials.
+  InfomapWrapper run(infomap::test::defaultFlags("--no-infomap --cluster-data " + infomap::test::clusterFixturePath("repeated_state_id.tree")));
+  run.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  CHECK_THROWS_AS(run.run(), infomap::InfomapError);
+}
+
 TEST_CASE("Tree round-trip reproduces codelength on a regular network [fast][core][partition][parser][lifecycle]")
 {
   auto baseline = infomap::test::makeRunningInfomap(
