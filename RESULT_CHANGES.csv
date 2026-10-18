@@ -61,3 +61,4 @@ version,flags,changes,description,issue,pr
 2.16.0,--directed --recorded-teleportation --use-node-weights-as-flow,error,Teleportation to links (not --to-nodes): a network without links is refused with degenerate flow. It used to report a codelength above the one-level codelength.,1253,1254
 2.16.0,--variable-markov-time --use-node-weights-as-flow,codelength runs,The scale is floored at an effective degree of 1. Networks with isolated nodes are no longer refused for negative flow.,1191,1255
 2.16.0,--variable-markov-time --regularized,codelength partition,The scale is floored at an effective degree of 1. Networks with isolated nodes no longer run on negative link flow.,1191,1255
+2.16.0,--cluster-data,error,"Multilayer input whose expansion is the identity runs first-order: Infomap reads back its own .clu, _states.clu and _states.tree. They were refused for a missing layer id column.",1273,1277
