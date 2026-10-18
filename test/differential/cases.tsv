@@ -1,0 +1,72 @@
+# Corpus for the differential checks in test/differential/README.md.
+#
+# One run per line: a case id, a network file relative to the repository root,
+# and the options as space-separated `name` (a flag) or `name=value` tokens,
+# using the snake_case option names of the Python and R APIs. The CLI and the
+# JavaScript package get the same options as --kebab-case flags. Every run
+# also gets seed=123 unless the line sets its own seed.
+#
+# Keep ids stable: release_differences.tsv refers to them.
+id	network	options
+twotriangles	examples/networks/twotriangles.net
+twotriangles-2	examples/networks/twotriangles.net	two_level
+twotriangles-d	examples/networks/twotriangles.net	directed
+twotriangles-n5	examples/networks/twotriangles.net	num_trials=5 seed=7
+twotriangles-meta	examples/networks/twotriangles.net	meta_data=test/fixtures/meta/twotriangles.meta
+ninetriangles	examples/networks/ninetriangles.net
+ninetriangles-2	examples/networks/ninetriangles.net	two_level
+ninetriangles-d	examples/networks/ninetriangles.net	directed
+ninetriangles-n5	examples/networks/ninetriangles.net	num_trials=5 seed=7
+ninetriangles-m05	examples/networks/ninetriangles.net	markov_time=0.5
+ninetriangles-m2	examples/networks/ninetriangles.net	markov_time=2
+ninetriangles-ec	examples/networks/ninetriangles.net	entropy_corrected
+ninetriangles-reg	examples/networks/ninetriangles.net	regularized
+ninetriangles-vmt	examples/networks/ninetriangles.net	variable_markov_time
+ninetriangles-pm2	examples/networks/ninetriangles.net	preferred_number_of_modules=2
+ninetriangles-meta	examples/networks/ninetriangles.net	meta_data=test/fixtures/meta/ninetriangles_crossing.meta
+modular_w	examples/networks/modular_w.net
+modular_w-2	examples/networks/modular_w.net	two_level
+modular_w-n5	examples/networks/modular_w.net	num_trials=5 seed=7
+modular_w-reg	examples/networks/modular_w.net	regularized
+modular_w-tp	examples/networks/modular_w.net	teleportation_probability=0.3 directed
+modular_wd	examples/networks/modular_wd.net
+modular_wd-d	examples/networks/modular_wd.net	directed
+modular_wd-d2	examples/networks/modular_wd.net	directed two_level
+modular_wd-n5	examples/networks/modular_wd.net	directed num_trials=5 seed=7
+modular_wd-rt	examples/networks/modular_wd.net	directed recorded_teleportation
+modular_wd-tn	examples/networks/modular_wd.net	directed to_nodes
+modular_wd-outdirdir	examples/networks/modular_wd.net	flow_model=outdirdir
+modular_wd-rawdir	examples/networks/modular_wd.net	flow_model=rawdir
+bipartite	examples/networks/bipartite.net
+bipartite-2	examples/networks/bipartite.net	two_level
+bipartite_uneven	test/fixtures/networks/bipartite_uneven.net
+bipartite_uneven-d	test/fixtures/networks/bipartite_uneven.net	directed
+states	examples/networks/states.net
+states-2	examples/networks/states.net	two_level
+states-d	examples/networks/states.net	directed
+states-n5	examples/networks/states.net	num_trials=5 seed=7
+states-meta	examples/networks/states.net	meta_data=test/fixtures/meta/states.meta
+states_flow	test/fixtures/networks/states_flow.net
+multilayer	examples/networks/multilayer.net
+multilayer-2	examples/networks/multilayer.net	two_level
+multilayer-d	examples/networks/multilayer.net	directed
+multilayer-n5	examples/networks/multilayer.net	num_trials=5 seed=7
+multilayer_intra	examples/networks/multilayer_intra.net
+multilayer_intra-r0	examples/networks/multilayer_intra.net	multilayer_relax_rate=0
+multilayer_intra-r05	examples/networks/multilayer_intra.net	multilayer_relax_rate=0.5
+multilayer_intra-self	examples/networks/multilayer_intra.net	multilayer_relax_to_self
+multilayer_intra_inter	examples/networks/multilayer_intra_inter.net
+multilayer_intra_inter-2	examples/networks/multilayer_intra_inter.net	two_level
+intra_inter	test/fixtures/networks/intra_inter.net
+intra_identity_states	test/fixtures/networks/intra_identity_states.net
+lossy_benchmark	test/fixtures/networks/lossy_benchmark.net
+lossy_benchmark-2	test/fixtures/networks/lossy_benchmark.net	two_level
+lossy_benchmark_reciprocal	test/fixtures/networks/lossy_benchmark_reciprocal.net	directed
+teleport_directed	test/fixtures/networks/teleport_directed.net	directed
+teleport_directed-rt	test/fixtures/networks/teleport_directed.net	directed recorded_teleportation
+twotriangles_flow	test/fixtures/networks/twotriangles_flow.net
+twotriangles_flow-nw	test/fixtures/networks/twotriangles_flow.net	use_node_weights_as_flow
+quoted_name	test/fixtures/networks/quoted_name.net
+unbalanced_hierarchy	test/fixtures/networks/unbalanced_hierarchy.net
+unbalanced_hierarchy-2	test/fixtures/networks/unbalanced_hierarchy.net	two_level
+unbalanced_hierarchy-pl2	test/fixtures/networks/unbalanced_hierarchy.net	preferred_number_of_levels=2

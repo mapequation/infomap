@@ -213,6 +213,32 @@ notebooks:
   - ".github/workflows/notebooks.yml"
   - ".github/filters.yml"
 
+# The differential checks (test/differential/README.md) build the CLI, the
+# released CLI, and the Python, R and JavaScript packages, and compare them on a
+# fixture corpus, so any of their inputs fires them.
+differential:
+  - *build_core
+  - "test/differential/**"
+  - "test/fixtures/**"
+  - "examples/networks/**"
+  - "RESULT_CHANGES.csv"
+  - "pyproject.toml"
+  - "setup.py"
+  - "scripts/build_config.py"
+  - "scripts/stage_r_package.py"
+  - "scripts/prepare_npm_package.py"
+  - "package.json"
+  - "package-lock.json"
+  - "interfaces/swig/**"
+  - "interfaces/python/**"
+  - "interfaces/R/**"
+  - "interfaces/js/**"
+  - ".github/actions/setup-python-build/action.yml"
+  - ".github/actions/setup-js-build/action.yml"
+  - ".github/actions/setup-ccache/action.yml"
+  - ".github/workflows/ci.yml"
+  - ".github/filters.yml"
+
 # The CI surface with no build lane of its own: workflow definitions, composite
 # actions, and the hook config. Gates the pre-commit job (and with it
 # actionlint plus the YAML/hygiene hooks), so none of these can change with

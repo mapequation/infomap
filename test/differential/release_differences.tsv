@@ -1,0 +1,22 @@
+# Cases in cases.tsv whose result from the current CLI differs from the
+# release named below, found by `differential.py compare-release` on
+# ubuntu-24.04. Each line names what differs (codelength, tree, order, flow,
+# error; see README.md) and the issue or PR numbers of the RESULT_CHANGES.csv
+# rows that explain it. The check fails on a difference that is not listed and
+# on a listed one that no longer shows, so the list stays exact.
+#
+# After a release, set the reference to the new tag and empty the list.
+# reference: v2.15.1
+id	changes	explained_by
+twotriangles-n5	order	#1213
+ninetriangles	codelength,tree	#1075
+ninetriangles-d	codelength,tree	#1159
+ninetriangles-n5	codelength,tree	#1075
+ninetriangles-m05	codelength,tree	#1075
+ninetriangles-ec	codelength,tree	#1033 #1291
+ninetriangles-vmt	codelength,tree	#1075 #1270
+ninetriangles-pm2	codelength,tree	#1298
+ninetriangles-meta	codelength,tree	#1075 #1143
+modular_w-n5	order	#1213
+multilayer-n5	order	#1213
+unbalanced_hierarchy	codelength,tree	#1075
