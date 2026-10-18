@@ -308,6 +308,66 @@ TEST_CASE("A physical clu whose ids repeat says so [fast][core][partition][parse
   std::remove(statesClu.c_str());
 }
 
+TEST_CASE("Cluster output of multilayer and state networks reads back [fast][core][partition][parser]")
+{
+  // Every cluster file a run writes reads back as --cluster-data to the codelength it
+  // was written with. On a higher-order run the physical files are lossy by
+  // construction (the two cases above), so only the state files are held to it there.
+  // intra_identity_states.net is multilayer input that runs first-order: the writers
+  // left out the layer id column and the reader demanded it (#1273).
+  const std::vector<std::string> networks = {
+    "test/fixtures/networks/intra_identity_states.net",
+    "test/fixtures/networks/intra_inter.net",
+    "test/fixtures/networks/multilayer.net",
+    "test/fixtures/networks/states.net",
+    "test/fixtures/networks/states_flow.net",
+    "examples/networks/multilayer.net",
+    "examples/networks/multilayer_intra.net",
+    "examples/networks/multilayer_intra_inter.net",
+    "examples/networks/states.net",
+  };
+
+  for (const auto& network : networks) {
+    CAPTURE(network);
+    const auto networkPath = infomap::test::repoPath(network);
+    const std::string physicalClu = "roundtrip_1273.clu";
+    const std::string statesClu = "roundtrip_1273_states.clu";
+    const std::string physicalTree = "roundtrip_1273.tree";
+    const std::string statesTree = "roundtrip_1273_states.tree";
+
+    double written = 0.0;
+    bool higherOrder = false;
+    {
+      InfomapWrapper writer(infomap::test::defaultFlags("--seed 1"));
+      writer.readInputData(networkPath);
+      writer.run();
+      written = writer.codelength();
+      higherOrder = writer.haveMemory();
+      infomap::writeClu(writer, writer.network(), physicalClu, false, 1);
+      infomap::writeClu(writer, writer.network(), statesClu, true, 1);
+      infomap::writeTree(writer, writer.network(), physicalTree, false);
+      infomap::writeTree(writer, writer.network(), statesTree, true);
+    }
+
+    std::vector<std::string> files = { statesClu, statesTree };
+    if (!higherOrder) {
+      files.push_back(physicalClu);
+      files.push_back(physicalTree);
+    }
+
+    for (const auto& file : files) {
+      CAPTURE(file);
+      InfomapWrapper reader(infomap::test::defaultFlags("--no-infomap --cluster-data " + file));
+      reader.readInputData(networkPath);
+      CHECK_NOTHROW(reader.run());
+      CHECK(reader.codelength() == doctest::Approx(written).epsilon(1e-9));
+    }
+
+    for (const auto& file : { physicalClu, statesClu, physicalTree, statesTree })
+      std::remove(file.c_str());
+  }
+}
+
 TEST_CASE("Duplicate clu ids are reported for a first-order network too [fast][core][partition][parser]")
 {
   // Nothing higher-order about a repeated id: a hand-written or concatenated clu can
