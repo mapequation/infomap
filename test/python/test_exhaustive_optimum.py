@@ -516,7 +516,7 @@ def test_multilevel_search_is_never_below_the_optimum(
     if network == "deep-5":
         nodes, links = DEEP_5
         if FLOWS[flow_name].get("directed"):
-            links += [(t, s, w) for s, t, w in links]
+            links = [*links, *((t, s, w) for s, t, w in links)]
     else:
         nodes, links = _fast_network(network, flow_name)
     _check_multilevel(tmp_path, nodes, links, flow_name, objective)
@@ -526,7 +526,10 @@ def test_a_deeper_tree_can_be_the_optimum(tmp_path):
     # The search misses it on macOS, a search limit (see DEEP_5). The tree it
     # returns depends on the standard library (#342), so it is held only to
     # the checks in _check_multilevel.
-    _, saving = _check_multilevel(tmp_path, *DEEP_5, "undirected", "markov-time-0.25")
+    nodes, links = DEEP_5
+    _, saving = _check_multilevel(
+        tmp_path, nodes, links, "undirected", "markov-time-0.25"
+    )
     assert saving > 0.005
 
 
