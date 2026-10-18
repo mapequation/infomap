@@ -684,6 +684,32 @@ TEST_CASE("Fast hierarchical fine-tuning survives a ragged cluster-data tree [fa
   }
 }
 
+TEST_CASE("Fast hierarchical search reports the codelength of the tree it returns [fast][core][partition][tree]")
+{
+  // -F fine-tunes the modules of leaf modules and starts the recursion from the seed
+  // tree's codelength and its leaf modules' terms. The fine-tuned sub modules had no term
+  // yet, so the recursion summed to 5.09 bits for a tree of 3.37. Only a dissolve in the
+  // prune step re-scored the tree, and here nothing is dissolved.
+  const std::string resultPath = "fast_hierarchical_ninetriangles_result.tree";
+  double codelength = 0.0;
+  {
+    InfomapWrapper im(infomap::test::defaultFlags("-F --cluster-data " + infomap::test::clusterFixturePath("ninetriangles_ragged_three_level.tree")));
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    infomap::test::checkRunSanity(im);
+    codelength = im.codelength();
+    infomap::writeTree(im, im.network(), resultPath, false);
+  }
+
+  InfomapWrapper reader(infomap::test::defaultFlags("--no-infomap --cluster-data " + resultPath));
+  reader.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  reader.run();
+  infomap::test::checkApproxCodelength(reader.codelength(), codelength, 1e-9);
+  infomap::test::checkApproxCodelength(codelength, 3.371875026, 1e-9);
+
+  std::remove(resultPath.c_str());
+}
+
 TEST_CASE("An unknown node id in cluster data leaves the partition alone [fast][core][partition][parser]")
 {
   // std::map::operator[] inserted the unknown id with a default index of 0, so it
@@ -2007,11 +2033,101 @@ TEST_CASE("Hard cluster-data keeps a hard module together [fast][core][partition
   CHECK(hardModuleKept(partition));
 }
 
-// initPartition passes `hard` on only when every node has a module. When the partition
-// leaves a node out, the rest is used as a soft seed and the search splits its modules.
-TEST_CASE("Fuzz finding: hard cluster-data that leaves nodes out keeps a hard module together (#1206) [fast][core][partition]" * doctest::should_fail())
+// The nodes a hard partition leaves out get modules of their own, as in a soft one, and
+// the modules it names are kept whole. initPartition used to pass `hard` on only when every
+// node had a module, so the search split them.
+TEST_CASE("Hard cluster-data that leaves nodes out keeps a hard module together (#1206) [fast][core][partition]")
 {
   CHECK(hardModuleKept({ { 1, 1 }, { 10, 1 } })); // the other 25 nodes left out
+}
+
+// With three triangles of ninetriangles as hard modules, the recursive search ends above
+// the super-level tree. Restoring that tree by node id under a hard partition, whose leaves
+// are the collapsed hard modules, gave a tree with a node 0 and without node 14, and a crash
+// at exit.
+TEST_CASE("A search over hard cluster-data returns every node once (#1206) [fast][core][partition]")
+{
+  for (const bool complete : { false, true }) {
+    CAPTURE(complete);
+    infomap::InfomapBase::InitialPartition partition { { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 }, { 7, 3 }, { 8, 3 }, { 9, 3 } };
+    if (complete) {
+      for (unsigned int node = 10; node <= 27; ++node)
+        partition[node] = node;
+    }
+    InfomapWrapper im(infomap::test::defaultFlags());
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.clusterDataIsHard = true;
+    im.setInitialPartition(partition);
+    im.run();
+    std::map<unsigned int, const InfoNode*> parentOf;
+    unsigned int numLeaves = 0;
+    for (auto& node : im.root().infomapTree()) {
+      if (node.isLeaf()) {
+        parentOf[node.stateId] = node.parent;
+        ++numLeaves;
+      }
+    }
+    CHECK(numLeaves == 27);
+    REQUIRE(parentOf.size() == 27);
+    CHECK(parentOf.begin()->first == 1);
+    CHECK(parentOf.rbegin()->first == 27);
+    for (unsigned int first : { 1, 4, 7 }) {
+      CHECK(parentOf.at(first) == parentOf.at(first + 1));
+      CHECK(parentOf.at(first) == parentOf.at(first + 2));
+    }
+  }
+}
+
+// The same run must not end above the super-level tree, which -FF stops at with the same
+// seed. Without the super-level fallback under a hard partition it ended at 2.918 bits
+// with five top modules, above the super-level tree's 2.860 bits with three.
+TEST_CASE("A search over hard cluster-data ends no higher than its super-level tree [fast][core][partition]")
+{
+  for (const bool complete : { false, true }) {
+    CAPTURE(complete);
+    infomap::InfomapBase::InitialPartition partition { { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 }, { 7, 3 }, { 8, 3 }, { 9, 3 } };
+    if (complete) {
+      for (unsigned int node = 10; node <= 27; ++node)
+        partition[node] = node;
+    }
+    auto run = [&](const std::string& extraFlags) {
+      InfomapWrapper im(infomap::test::defaultFlags(extraFlags));
+      im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+      im.clusterDataIsHard = true;
+      im.setInitialPartition(partition);
+      im.run();
+      return im.codelength();
+    };
+    const double superLevelCodelength = run("-FF");
+    CHECK(run("") <= superLevelCodelength + 1e-10);
+  }
+}
+
+// With meta data the restored tree is scored by the meta map equation, which collects
+// the meta data from the leaves. A collapsed hard module has no meta data of its own,
+// only its nodes' collected, so this threw "A node is missing meta data".
+TEST_CASE("A search over hard cluster-data with meta data ends no higher than its super-level tree [fast][core][partition]")
+{
+  for (const bool complete : { false, true }) {
+    CAPTURE(complete);
+    infomap::InfomapBase::InitialPartition partition { { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 }, { 7, 3 }, { 8, 3 }, { 9, 3 } };
+    if (complete) {
+      for (unsigned int node = 10; node <= 27; ++node)
+        partition[node] = node;
+    }
+    auto run = [&](const std::string& extraFlags) {
+      InfomapWrapper im("--seed 1 --num-trials 1 --silent --meta-data-rate 1 " + extraFlags);
+      im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+      for (unsigned int node = 1; node <= 27; ++node)
+        im.addMetaData(node, static_cast<int>(node % 2));
+      im.clusterDataIsHard = true;
+      im.setInitialPartition(partition);
+      im.run();
+      return im.codelength();
+    };
+    const double superLevelCodelength = run("-FF");
+    CHECK(run("") <= superLevelCodelength + 1e-10);
+  }
 }
 
 // The hard modules are leaves while the run scores the tree, and restoreHardPartition
