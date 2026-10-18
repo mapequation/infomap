@@ -2381,11 +2381,6 @@ void InfomapBase::generateSubNetwork(Network& network)
   unsigned int maxDegree = 0;
   unsigned int maxOutDegree = 0;
   unsigned int maxInDegree = 0;
-  // Count a pair listed as a b and b a once on undirected input, as --regularized and the
-  // entropy correction do (#1203, #1264). The multilayer expansion lists undirected links in
-  // both directions itself, so it keeps its count.
-  const bool undirectedLinks = flowModel == FlowModel::undirected && !isMultilayerNetwork();
-  double totDegree = undirectedLinks ? network.sumUndirectedDegree() : network.sumDegree();
   std::vector<double> entropies(numNodes, 0);
 
   for (unsigned i = 0; i < numNodes; ++i) {
@@ -2418,6 +2413,14 @@ void InfomapBase::generateSubNetwork(Network& network)
 
   double minLocalScale = variableMarkovTimeMinLocalScale;
   double damping = variableMarkovTimeDamping;
+
+  // Count a pair listed as a b and b a once on undirected input, as --regularized and the
+  // entropy correction do (#1203, #1264). The multilayer expansion lists undirected links in
+  // both directions itself, so it keeps its count. The count scans every link, so only take it
+  // when it is used.
+  const bool undirectedLinks = flowModel == FlowModel::undirected && !isMultilayerNetwork();
+  double totDegree = !variableMarkovTime ? 0.0 : undirectedLinks ? network.sumUndirectedDegree()
+                                                                 : network.sumDegree();
 
   // No links means nothing to rescale, and maxFlow * totDegree = 0 would give linlog(0) = log2(0).
   if (variableMarkovTime && totDegree > 0) {
