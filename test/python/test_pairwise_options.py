@@ -843,22 +843,8 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
             ),
         ),
     ],
-    "codelength": [
-        (
-            "#1209",
-            lambda o: (
-                o.case.net.kind == "state" and o.case.row["cluster_data"] != "none"
-            ),
-        ),
-    ],
-    "read back": [
-        (
-            "#1209",
-            lambda o: (
-                o.case.net.kind == "state" and o.case.row["cluster_data"] != "none"
-            ),
-        ),
-    ],
+    "codelength": [],
+    "read back": [],
 }
 
 
