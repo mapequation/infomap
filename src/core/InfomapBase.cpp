@@ -2382,12 +2382,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
   m_root.data.flow = sumNodeFlow;
   m_root.data.teleportFlow = sumTeleFlow;
-  // Regularized multilayer flow keeps the flow calculator's enter and exit flow, which carry
-  // the per-layer teleportation terms. Every other model adds them up from the links in
-  // initEnterExitFlow().
-  if (!isRegularizedMultilayerFlow()) {
-    m_calculateEnterExitFlow = true;
-  }
+  m_calculateEnterExitFlow = true;
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Console::warn(1, "Total flow on nodes differs from 1.0 by {:g}.", sumNodeFlow - 1.0);
 
@@ -2947,6 +2942,13 @@ void InfomapBase::initEnterExitFlow()
   if (usesRegularizedFlow()) {
     const double sumTeleportFlow = m_root.data.teleportFlow;
     const bool undirectedLinks = isUndirectedClustering();
+    // Regularized multilayer flow teleports within a layer, so a node's teleportation
+    // enter flow comes from the other nodes in its layer (#1287).
+    std::map<unsigned int, double> layerTeleportFlow;
+    for (const auto* n : m_leafNodes) {
+      for (const auto& layerData : n->layerTeleFlowData())
+        layerTeleportFlow[layerData.layerId] += layerData.teleportFlow;
+    }
     for (auto* n : m_leafNodes) {
       auto& node = *n;
       for (InfoEdge* e : node.outEdges()) {
@@ -2964,6 +2966,10 @@ void InfomapBase::initEnterExitFlow()
       }
       node.data.exitFlow += node.data.teleportFlow * (1.0 - node.data.teleportWeight);
       node.data.enterFlow += (sumTeleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
+      for (const auto& layerData : node.layerTeleFlowData()) {
+        node.data.exitFlow += layerData.teleportFlow * (1.0 - layerData.teleportWeight);
+        node.data.enterFlow += (layerTeleportFlow[layerData.layerId] - layerData.teleportFlow) * layerData.teleportWeight;
+      }
     }
     return;
   }
