@@ -511,22 +511,37 @@ void checkLeafFlowBalances(InfomapWrapper& im)
 
 } // namespace
 
-// Markov time scales the link flow but not the node exit flow that the regularized
-// path sets, so above 1 a module's internal link flow outweighs its nodes' exit flow
-// and the module is left with negative enter and exit flow. --variable-markov-time
-// does the same wherever it scales a node's links up.
-TEST_CASE("Fuzz finding: --regularized with --markov-time above 1 keeps module flow non-negative (#1191) [fast][core][mapeq]" * doctest::should_fail())
+// Under --regularized the leaves' enter and exit flow came from the node flow, which Markov
+// time does not scale, while a module subtracts its scaled internal link flow. Above 1 that
+// left a module with negative enter and exit flow, and --variable-markov-time did the same
+// wherever it scaled a node's links up (#1191). Below 1 a module kept exit flow the walk
+// does not have, so one module over the whole network cost more than the one-level
+// codelength (#1231). The leaves' enter and exit flow now come from the scaled links plus
+// the teleportation to and from other nodes.
+TEST_CASE("--regularized with --markov-time above 1 keeps module flow non-negative (#1191) [fast][core][mapeq]")
 {
   InfomapWrapper im(defaultFlags("--regularized --markov-time 2"));
   im.addLink(1, 2);
   CHECK_NOTHROW(im.run());
 }
 
-TEST_CASE("Fuzz finding: --regularized with --variable-markov-time keeps module flow non-negative (#1191) [fast][core][mapeq]" * doctest::should_fail())
+TEST_CASE("--regularized with --variable-markov-time keeps module flow non-negative (#1191) [fast][core][mapeq]")
 {
   InfomapWrapper im(defaultFlags("--directed --regularized --variable-markov-time"));
   im.readInputData(repoPath("examples/networks/modular_w.net"));
   CHECK_NOTHROW(im.run());
+}
+
+TEST_CASE("--regularized with --markov-time below 1: one module costs the one-level codelength (#1231) [fast][core][mapeq]")
+{
+  for (const char* flags : { "", "--directed" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(defaultFlags(std::string(flags) + " --regularized --markov-time 0.5 --no-infomap --cluster-data " + clusterFixturePath("twotriangles_single_module.clu")));
+    im.readInputData(repoPath("examples/networks/twotriangles.net"));
+    im.run();
+    REQUIRE(im.numTopModules() == 1);
+    checkApproxCodelength(im.codelength(), im.getOneLevelCodelength());
+  }
 }
 
 // The recorded-teleportation enter and exit terms assumed the directed model's
@@ -667,12 +682,12 @@ TEST_CASE("--regularized under outdirdir: a restored tree keeps the search's cod
   checkRestoredTreeKeepsCodelength("examples/networks/ninetriangles.net", "--flow-model outdirdir --regularized --seed 3");
 }
 
-// --regularized with --use-node-weights-as-flow has the same mismatch: the regularized flow step
-// takes the leaves' enter and exit flow from the node weights, while a restored tree is priced
-// from the links. Which of the two is right waits on a decision about link-based leaf flow (#1089).
-TEST_CASE("Fuzz finding: --regularized with --use-node-weights-as-flow: a restored tree keeps the search's codelength (#1189) [fast][core][mapeq]" * doctest::should_fail())
+// --regularized with --use-node-weights-as-flow had the same mismatch: the leaves' enter and
+// exit flow came from the node weights, while a restored tree is priced from the links. The
+// leaves' enter and exit flow now come from the links too (#1189).
+TEST_CASE("--regularized with --use-node-weights-as-flow: a restored tree keeps the search's codelength (#1189) [fast][core][mapeq]")
 {
-  checkRestoredTreeKeepsCodelength("test/fixtures/networks/lossy_benchmark.net", "--regularized --use-node-weights-as-flow --seed 1");
+  checkRestoredTreeKeepsCodelength("examples/networks/ninetriangles.net", "--regularized --regularization-strength 0.01 --use-node-weights-as-flow --seed 1");
 }
 
 // --variable-markov-time scales each link by the largest node flow over the local one.
@@ -786,11 +801,11 @@ TEST_CASE("Bipartite input renormalises the teleport weights of the coded nodes 
   CHECK(sumWeight == doctest::Approx(1.0));
 }
 
-// --use-node-weights-as-flow replaces the node flow after the link flow is computed,
-// and the regularized path takes enter and exit flow from the node flow. Where a node's
-// weight gives it less flow than its links carry, enter flow goes negative, on the node
-// itself or on the module that holds it.
-TEST_CASE("Fuzz finding: --regularized with --use-node-weights-as-flow keeps flow non-negative (#1191) [fast][core][mapeq]" * doctest::should_fail())
+// --use-node-weights-as-flow replaces the node flow after the link flow is computed, and
+// the regularized path took enter and exit flow from the node flow. Where a node's weight
+// gave it less flow than its links carry, enter flow went negative, on the node itself or
+// on the module that holds it (#1191).
+TEST_CASE("--regularized with --use-node-weights-as-flow keeps flow non-negative (#1191) [fast][core][mapeq]")
 {
   InfomapWrapper im(defaultFlags("--regularized --use-node-weights-as-flow"));
   // Unit node weights give each node a third of the flow; the links give node 7 a twentieth.

@@ -1058,7 +1058,8 @@ private:
       // Unscaled: a leaf's enter and exit flow are only added up from non-negative terms -- link
       // flow (scaled by the Markov time in initEnterExitFlow()) and teleportation -- so nothing of
       // size t cancels, unlike in a module's, which subtracts the flow internal to it. Under
-      // --regularized they are the flow calculator's, which does not apply the Markov time.
+      // regularized multilayer flow they are the flow calculator's, which does not apply the
+      // Markov time.
       const char* quantity = negativeFlowQuantity(data, 1.0);
       if (quantity == nullptr)
         continue;
@@ -1279,7 +1280,7 @@ private:
       if (numNodesNotInNetwork > 0)
         Console::note(1, "{} nodes in embedded initial-partition paths not found in network.", numNodesNotInNetwork);
       InfomapBase::validateClusterDataTreeShape(normalizedTree);
-      infomap.initTree(normalizedTree);
+      infomap.initTreeInput(normalizedTree, infomap.clusterDataIsHard);
     }
   }
 
@@ -1728,7 +1729,7 @@ InfomapBase& InfomapBase::initPartition(const ClusterMap& clusterMap, bool hard)
       Console::note(1, "{} physical nodes in tree not found in network.", numTreeNodesNotInNetwork);
     }
     validateClusterDataTreeShape(normalizedTree);
-    initTree(normalizedTree);
+    initTreeInput(normalizedTree, hard);
   } else if (ext == "clu") {
     // Repeated ids in this file are reported once per run by
     // RunSession::reportClusterDataIssues, not here: this runs per trial, and per
@@ -1891,6 +1892,29 @@ void InfomapBase::validateClusterDataTreeShape(const NodePaths& tree)
                                    modulePath,
                                    modulePath));
   }
+}
+
+// A hard partition keeps each of its modules whole, which a tree only defines for
+// one level of modules. A deeper tree is refused rather than read as one of its
+// levels. A one-level tree is the partition a .clu file gives, and is applied the
+// same way; initTree has no hard partition and ran it as a soft one (#1244).
+InfomapBase& InfomapBase::initTreeInput(const NodePaths& tree, bool hard)
+{
+  if (!hard)
+    return initTree(tree);
+  std::map<unsigned int, unsigned int> clusterIds;
+  for (const auto& nodePath : tree) {
+    const auto& path = nodePath.second;
+    if (path.empty())
+      continue;
+    if (path.size() > 2)
+      throw InfomapError(ExitCode::InputError,
+                         fmt::format(FMT_STRING("A hard partition from a tree must be one level deep, but node {} is "
+                                                "in a sub-module. Give only the top-level modules, as a .clu file does."),
+                                     nodePath.first));
+    clusterIds[nodePath.first] = path[0];
+  }
+  return initPartition(clusterIds, true);
 }
 
 InfomapBase& InfomapBase::initTree(const NodePaths& tree)
@@ -2316,8 +2340,10 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
   m_root.data.flow = sumNodeFlow;
   m_root.data.teleportFlow = sumTeleFlow;
-  // m_calculateEnterExitFlow = true; //TODO: Implement always in flow calculation
-  if (!usesRegularizedFlow()) {
+  // Regularized multilayer flow keeps the flow calculator's enter and exit flow, which carry
+  // the per-layer teleportation terms. Every other model adds them up from the links in
+  // initEnterExitFlow().
+  if (!isRegularizedMultilayerFlow()) {
     m_calculateEnterExitFlow = true;
   }
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
@@ -2823,6 +2849,37 @@ void InfomapBase::initEnterExitFlow()
 
   for (auto* n : m_leafNodes) {
     n->data.enterFlow = n->data.exitFlow = 0.0;
+  }
+  // Under --regularized the flow calculator sets each node's teleportation flow and weight,
+  // and the enter and exit flow are its links plus the teleportation to and from other nodes,
+  // as the module terms in aggregateFlowValuesFromLeafToRoot() and the optimizer price them.
+  // Taking them from the node flow instead, less self-teleportation, agrees with that only
+  // when the node flow is the walk's own. With node weights as flow, a Markov time other than
+  // 1 or variable Markov time it is not, and modules got negative enter flow (#1191), exit
+  // flow the walk does not have (#1231), and a restored tree a different codelength than the
+  // search gave it (#1189).
+  if (usesRegularizedFlow()) {
+    const double sumTeleportFlow = m_root.data.teleportFlow;
+    const bool undirectedLinks = isUndirectedClustering();
+    for (auto* n : m_leafNodes) {
+      auto& node = *n;
+      for (InfoEdge* e : node.outEdges()) {
+        InfoEdge& edge = *e;
+        if (undirectedLinks) {
+          double halfFlow = edge.data.flow / 2;
+          edge.source->data.exitFlow += halfFlow;
+          edge.target->data.exitFlow += halfFlow;
+          edge.source->data.enterFlow += halfFlow;
+          edge.target->data.enterFlow += halfFlow;
+        } else {
+          edge.source->data.exitFlow += edge.data.flow;
+          edge.target->data.enterFlow += edge.data.flow;
+        }
+      }
+      node.data.exitFlow += node.data.teleportFlow * (1.0 - node.data.teleportWeight);
+      node.data.enterFlow += (sumTeleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
+    }
+    return;
   }
   // Per run: a second run on this instance, or a --parallel-trials worker's next
   // trial, would otherwise count the dangling flow again (#1201).

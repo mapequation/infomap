@@ -518,6 +518,12 @@ private:
   //! materializes engine-generated trees, which cannot have that shape (#990).
   static void validateClusterDataTreeShape(const NodePaths& tree);
 
+#ifndef SWIG
+  //! Apply a tree parsed from input: a .tree/.ftree file or JSON node paths. A hard
+  //! partition from a tree must be one level deep, and is applied as from a .clu file.
+  InfomapBase& initTreeInput(const NodePaths& tree, bool hard);
+#endif
+
   /**
    * Normalize tree leaf ids so the leaf id always identifies a state node in
    * m_leafNodes. For higher-order networks, physical-id rows are expanded by

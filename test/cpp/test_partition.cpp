@@ -2183,6 +2183,126 @@ TEST_CASE("A search over hard cluster-data reports the codelength of its tree (#
   CHECK(im.codelength() == doctest::Approx(2.320730357)); // was 1.256687717
 }
 
+namespace {
+
+// Runs a hard partition of ninetriangles, from `clusterData` or, if empty, from the paths
+// in `network`. Returns the codelength and whether nodes 1 and 10, in different
+// triangles, end up in one module.
+std::pair<double, bool> runHardNineTriangles(const std::string& network, const std::string& clusterData)
+{
+  InfomapWrapper im(infomap::test::defaultFlags(clusterData.empty() ? "" : "--cluster-data " + clusterData));
+  im.readInputData(network);
+  im.clusterDataIsHard = true;
+  im.run();
+  std::map<unsigned int, const InfoNode*> parentOf;
+  for (auto& node : im.root().infomapTree()) {
+    if (node.isLeaf())
+      parentOf[node.stateId] = node.parent;
+  }
+  return { im.codelength(), parentOf.at(1) == parentOf.at(10) };
+}
+
+// Nodes 1 and 10 in one module and every other node alone, in each of the three formats.
+struct HardNineTrianglesFiles {
+  std::string clu = "hard_1244.clu";
+  std::string tree = "hard_1244.tree";
+  std::string json = "hard_1244.json";
+
+  HardNineTrianglesFiles()
+  {
+    std::ofstream cluOut(clu);
+    std::ofstream treeOut(tree);
+    std::ofstream jsonOut(json);
+    cluOut << "1 1\n10 1\n";
+    treeOut << "1:1 0 \"1\" 1\n1:2 0 \"10\" 10\n";
+    // The nodes in id order, as the .net file has them, so the search visits them in
+    // the same order.
+    jsonOut << R"({"format": "infomap-network", "version": "1.0", "nodes": [)";
+    unsigned int module = 2;
+    for (unsigned int node = 1; node <= 27; ++node) {
+      jsonOut << (node == 1 ? "" : ", ") << R"({"id": )" << node << R"(, "path": [)" << (node == 1 || node == 10 ? 1 : node + 100) << "]}";
+      if (node == 1 || node == 10)
+        continue;
+      cluOut << node << " " << node + 100 << "\n";
+      treeOut << module << ":1 0 \"" << node << "\" " << node << "\n";
+      ++module;
+    }
+    jsonOut << R"(], "edges": [)";
+    std::ifstream links(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    std::string line;
+    const char* separator = "";
+    while (std::getline(links, line)) {
+      if (line.empty() || line[0] == '#')
+        continue;
+      std::istringstream fields(line);
+      unsigned int source = 0;
+      unsigned int target = 0;
+      double weight = 1.0;
+      fields >> source >> target;
+      if (!(fields >> weight))
+        weight = 1.0;
+      jsonOut << separator << R"({"source": )" << source << R"(, "target": )" << target << R"(, "weight": )" << weight << "}";
+      separator = ", ";
+    }
+    jsonOut << "]}\n";
+  }
+
+  ~HardNineTrianglesFiles()
+  {
+    std::remove(clu.c_str());
+    std::remove(tree.c_str());
+    std::remove(json.c_str());
+  }
+};
+
+} // namespace
+
+// A hard partition from a one-level tree is kept as the same partition from a .clu file
+// is. initTree has no hard partition, so the tree ran as a soft seed and the search put
+// 1 and 10 in different modules.
+TEST_CASE("Hard cluster-data from a .tree file is kept as from a .clu file (#1244) [fast][core][partition]")
+{
+  const HardNineTrianglesFiles files;
+  const auto network = infomap::test::repoPath("examples/networks/ninetriangles.net");
+  const auto fromClu = runHardNineTriangles(network, files.clu);
+  const auto fromTree = runHardNineTriangles(network, files.tree);
+  CHECK(fromClu.second);
+  CHECK(fromTree.second);
+  CHECK(fromTree.first == doctest::Approx(fromClu.first));
+}
+
+// Embedded JSON paths take the same route as a .tree file.
+TEST_CASE("Hard cluster-data from embedded JSON paths is kept as from a .clu file (#1244) [fast][core][partition]")
+{
+  const HardNineTrianglesFiles files;
+  const auto fromClu = runHardNineTriangles(infomap::test::repoPath("examples/networks/ninetriangles.net"), files.clu);
+  const auto fromJson = runHardNineTriangles(files.json, "");
+  CHECK(fromJson.second);
+  CHECK(fromJson.first == doctest::Approx(fromClu.first));
+}
+
+// Which level of a deeper tree a hard partition would keep is not defined, so the tree
+// is refused.
+TEST_CASE("Hard cluster-data from a tree with sub-modules is rejected (#1244) [fast][core][partition]")
+{
+  const std::string tree = "hard_deep_1244.tree";
+  {
+    std::ofstream out(tree);
+    out << "1:1:1 0 \"1\" 1\n1:1:2 0 \"2\" 2\n1:2:1 0 \"3\" 3\n2:1:1 0 \"4\" 4\n2:1:2 0 \"5\" 5\n2:1:3 0 \"6\" 6\n";
+  }
+  InfomapWrapper im(infomap::test::defaultFlags("--cluster-data " + tree));
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.clusterDataIsHard = true;
+  try {
+    im.run();
+    FAIL("expected a hard partition from a deeper tree to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    CHECK(std::string(e.what()).find("must be one level deep") != std::string::npos);
+  }
+  std::remove(tree.c_str());
+}
+
 // On a state network, a search from a three-level tree seed removes the sub-modules and
 // ends with states 1 and 4, both of physical node 1, in one module. That module was a
 // module of modules in the seed, and only leaf modules got their physical nodes, so the
