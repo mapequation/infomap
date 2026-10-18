@@ -2410,7 +2410,10 @@ void InfomapBase::generateSubNetwork(Network& network)
 
   // No links means nothing to rescale, and maxFlow * totDegree = 0 would give linlog(0) = log2(0).
   if (variableMarkovTime && totDegree > 0) {
-    double maxScale = infomath::linlog(maxFlow * totDegree, damping);
+    // maxFlow * totDegree is the largest effective degree. With the walk's own flow it is at
+    // least 1, but node weights as flow or the teleportation flow under --regularized can put
+    // it below, and its log would scale the links by a negative Markov time (#1191).
+    double maxScale = infomath::linlog(std::max(1.0, maxFlow * totDegree), damping);
     if (damping < 0) {
       maxScale = infomath::linlog(pow(2.0, maxEntropy), -damping);
     }

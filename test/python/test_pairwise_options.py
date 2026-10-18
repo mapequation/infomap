@@ -822,27 +822,12 @@ def covers_flow(case: Case, exp: Expected) -> bool:
 # --- known issues ------------------------------------------------------------
 
 
-def _negative_flow(o: Outcome) -> bool:
-    # The release guard (#963) and the debug invariant word it the same way.
-    return o.error is not None and "Negative" in o.error
-
-
 # Open issues the sweep reaches, as check -> (issue, predicate). A failure of
 # that check on a run the predicate matches is put down to the issue. Some of
 # these depend on the search path, which differs between standard libraries
 # (#342), so a predicate may match runs that pass here.
 KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
-    "runs": [
-        # --variable-markov-time with --use-node-weights-as-flow.
-        (
-            "#1191",
-            lambda o: (
-                o.case.row["markov_time"] == "variable"
-                and bool(o.case.row["node_weights"])
-                and _negative_flow(o)
-            ),
-        ),
-    ],
+    "runs": [],
     "codelength": [],
     "read back": [],
 }

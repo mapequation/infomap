@@ -160,36 +160,14 @@ MetaData applyMetaData(infomap::InfomapWrapper& im, uint8_t byte)
   return metaData;
 }
 
-// What the known findings below need from the network.
-struct NetworkShape {
-  bool isolatedNode = false;
-};
-
-NetworkShape networkShape(const infomap::Network& network)
-{
-  NetworkShape shape;
-  std::vector<bool> linked(network.numNodes(), false);
-  network.forEachLink([&](unsigned int source, unsigned int target, double /*weight*/, double& /*flow*/) {
-    linked[source] = linked[target] = true;
-  });
-  for (const bool isLinked : linked)
-    shape.isolatedNode = shape.isolatedNode || !isLinked;
-  return shape;
-}
-
 // Open bugs the target would otherwise report on every run. Each needs its options,
 // its kind of failure and, where it has one, its network shape, so an unrelated
 // failure under the same options is still reported. Each names its issue and is pinned
 // as a should_fail case in test/cpp/test_map_equation_invariants.cpp ("Fuzz finding:");
 // drop the entry when the bug is fixed so the fuzzer guards the fix.
-bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
+bool isKnownFinding(const infomap::InfomapWrapper& /*im*/, const char* /*message*/)
 {
-  const bool negative = contains(message, "Negative");
-  const auto shape = networkShape(im.network());
-
-  // #1191: --variable-markov-time with --use-node-weights-as-flow: negative enter flow when an
-  // isolated node holds the largest flow.
-  return im.variableMarkovTime && im.useNodeWeightsAsFlow && shape.isolatedNode && negative;
+  return false;
 }
 
 // Prints what the CLI needs to replay the finding: the options, and the meta
