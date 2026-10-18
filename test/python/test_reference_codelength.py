@@ -517,18 +517,50 @@ def test_regularized(network):
     _assert_matches(result, _with_reported_teleportation(result, partition))
 
 
+# A node flow that is not the regularized walk's own: Markov time scales the link
+# flow and not the teleportation, and node weights replace the node flow. The leaves'
+# enter and exit flow came from the node flow, so the search priced modules from
+# something else than the links (#1189, #1191, #1231).
+@pytest.mark.parametrize(
+    "objective",
+    [
+        {"markov_time": 0.5},
+        {"markov_time": 2.0},
+        {"use_node_weights_as_flow": True},
+    ],
+    ids=["markov-time-0.5", "markov-time-2", "node-weights"],
+)
+@pytest.mark.parametrize(
+    "network",
+    [
+        EXAMPLES / "twotriangles.net",
+        EXAMPLES / "modular_w.net",
+        NETWORKS / "lossy_benchmark.net",
+        EXAMPLES / "modular_wd.net",
+        NETWORKS / "teleport_directed.net",
+    ],
+    ids=_id,
+)
+def test_regularized_with_foreign_node_flow(network, objective):
+    options = {
+        "regularized": True,
+        "directed": network.name in ("modular_wd.net", "teleport_directed.net"),
+        **objective,
+    }
+    result = _run(network, **options)
+    partition = _partition(
+        result,
+        options,
+        recorded_teleportation=True,
+        markov_time=objective.get("markov_time", 1.0),
+    )
+    _assert_matches(result, _with_reported_teleportation(result, partition))
+
+
 @pytest.mark.parametrize(
     "options",
     [
-        pytest.param(
-            {"regularized": True},
-            marks=pytest.mark.xfail(
-                reason="under --regularized the leaves' enter and exit flow come from the "
-                "node flow, and the uncoded feature nodes keep 0 while their links carry "
-                "flow, so module enter and exit flow do not balance (#1175)",
-                strict=True,
-            ),
-        ),
+        {"regularized": True},
         {"directed": True, "recorded_teleportation": True, "to_nodes": True},
     ],
     ids=["regularized", "recorded-to-nodes"],
