@@ -53,27 +53,30 @@ METRICS = ("instructions", "peak_heap_bytes")
 
 
 def build_count_cases(generated_dir: Path) -> list[dict[str, str | Path]]:
-    """Cases of 20k to 40k nodes: big enough that start-up is a small part of the
-    count, small enough for Valgrind. They cover the two-level and multilevel
-    search, directed flow, and memory and multilayer input."""
+    """Cases of 10k to 20k nodes: big enough that start-up is a small part of the
+    count, small enough that each runs in under a minute under cachegrind. They
+    cover the two-level and multilevel search, directed flow, and memory and
+    multilayer input."""
+    sparse_10k = generated_dir / "sparse_10k.net"
     sparse_20k = generated_dir / "sparse_20k.net"
     ring_20k = generated_dir / "ring_of_cliques_20k.net"
-    state_block_40k = generated_dir / "state_block_40k_states.net"
-    multilayer_10k_x4 = generated_dir / "multilayer_10k_x4.net"
+    state_block_20k = generated_dir / "state_block_20k_states.net"
+    multilayer_5k_x4 = generated_dir / "multilayer_5k_x4.net"
+    generate_sparse_graph(sparse_10k, num_nodes=10_000, avg_degree=10, seed=123)
     generate_sparse_graph(sparse_20k, num_nodes=20_000, avg_degree=10, seed=123)
     generate_ring_of_cliques(ring_20k, clique_count=2_000, clique_size=10)
-    generate_state_block_network(state_block_40k, 10_000, 4, 50)
-    generate_multilayer_block_network(multilayer_10k_x4, 10_000, 4, 50)
+    generate_state_block_network(state_block_20k, 5_000, 4, 50)
+    generate_multilayer_block_network(multilayer_5k_x4, 5_000, 4, 50)
     return [
         {"name": "sparse_20k", "path": sparse_20k, "flags": ""},
         {
-            "name": "sparse_20k_directed",
-            "path": sparse_20k,
+            "name": "sparse_10k_directed",
+            "path": sparse_10k,
             "flags": "--flow-model directed",
         },
         {"name": "ring_of_cliques_20k", "path": ring_20k, "flags": ""},
-        {"name": "state_block_40k_states", "path": state_block_40k, "flags": ""},
-        {"name": "multilayer_10k_x4", "path": multilayer_10k_x4, "flags": ""},
+        {"name": "state_block_20k_states", "path": state_block_20k, "flags": ""},
+        {"name": "multilayer_5k_x4", "path": multilayer_5k_x4, "flags": ""},
     ]
 
 
