@@ -1738,6 +1738,9 @@ InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
   if (asSuperNetwork)
     transformNodeFlowToEnterFlow(m_root);
 
+  // Before init() prices the one-level codelength with it (#1283).
+  m_optimizer->setNumNetworkNodes(numLeafNodes());
+
   init();
   return *this;
 }
