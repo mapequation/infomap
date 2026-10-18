@@ -168,4 +168,6 @@ def test_repeated_state_row_does_not_crash(tmp_path):
         tmp_path / "seed.tree", THREE_LEVEL + [(3, (2, 2, 2))], state_ids=True
     )
     completed = _subprocess_run(tree)
-    assert completed.returncode >= 0, completed.stderr
+    # 0 if the file is read, 1 if it is refused with an exception. A crash is
+    # a negative code on POSIX and a large positive one on Windows.
+    assert completed.returncode in (0, 1), completed.stderr
