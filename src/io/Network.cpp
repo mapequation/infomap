@@ -376,27 +376,29 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLa
   double relaxRate = m_config.multilayerRelaxRate;
 
   // A negative limit means no limit, also across gaps in the layer ids
-  int maxRelaxLimit = std::numeric_limits<int>::max();
-  int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
-  int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
-  int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
+  const unsigned int noRelaxLimit = std::numeric_limits<unsigned int>::max();
+  auto toRelaxLimit = [](int limit) { return limit < 0 ? std::numeric_limits<unsigned int>::max() : static_cast<unsigned int>(limit); };
+  unsigned int relaxLimitSymmetric = toRelaxLimit(m_config.multilayerRelaxLimit);
+  unsigned int relaxLimitDown = std::min(relaxLimitSymmetric, toRelaxLimit(m_config.multilayerRelaxLimitDown));
+  unsigned int relaxLimitUp = std::min(relaxLimitSymmetric, toRelaxLimit(m_config.multilayerRelaxLimitUp));
   auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
 
   Console::detail(1, "{} networks", m_networks.size());
   Console::detail(1, "relax rate: {:g}", relaxRate);
   if (haveUpOrDownLimit) {
-    Console::detail(1, "relax limit up: {}", relaxLimitUp == maxRelaxLimit ? "no limit" : std::to_string(relaxLimitUp));
-    Console::detail(1, "relax limit down: {}", relaxLimitDown == maxRelaxLimit ? "no limit" : std::to_string(relaxLimitDown));
+    Console::detail(1, "relax limit up: {}", relaxLimitUp == noRelaxLimit ? "no limit" : std::to_string(relaxLimitUp));
+    Console::detail(1, "relax limit down: {}", relaxLimitDown == noRelaxLimit ? "no limit" : std::to_string(relaxLimitDown));
   } else if (m_config.multilayerRelaxLimit >= 0) {
     Console::detail(1, "relax limit: {}", m_config.multilayerRelaxLimit);
   }
 
-  // Whether a state in layer1 may relax to layer2. The limits are non-negative here;
-  // compare unsigned so far apart ids cannot overflow. A layer is always within reach
+  // Whether a state in layer1 may relax to layer2. A layer is always within reach
   // of itself, so the intra-layer links are kept with limit 0.
   auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](unsigned int layer1, unsigned int layer2) {
-    return layer1 >= layer2 ? layer1 - layer2 <= static_cast<unsigned int>(relaxLimitDown) : layer2 - layer1 <= static_cast<unsigned int>(relaxLimitUp);
+    return layer1 >= layer2 ? layer1 - layer2 <= relaxLimitDown : layer2 - layer1 <= relaxLimitUp;
   };
+  // Layers further below than this are out of reach in both directions
+  unsigned int relaxReach = std::max(relaxLimitDown, relaxLimitUp);
 
   if (m_config.multilayerRelaxByJensenShannonDivergence) {
     Console::detail(1, "using Jensen-Shannon divergence");
@@ -417,20 +419,19 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLa
 
         double sumOutLinkWeightLayer1 = layer1It.second.outWeights()[nodeId];
 
-        for (auto& layer2It : m_networks) {
-          unsigned int layer2 = layer2It.first;
-          if (layer2 > layer1)
-            break;
+        auto layer2It = m_networks.lower_bound(layer1 > relaxReach ? layer1 - relaxReach : 0);
+        for (; layer2It != m_networks.end() && layer2It->first <= layer1; ++layer2It) {
+          unsigned int layer2 = layer2It->first;
           bool down = withinRelaxLimit(layer1, layer2);
           bool up = withinRelaxLimit(layer2, layer1);
           if (!down && !up)
             continue;
 
-          auto& layer2OutLinks = layer2It.second.nodeLinkMap()[nodeId];
+          auto& layer2OutLinks = layer2It->second.nodeLinkMap()[nodeId];
           if (layer2OutLinks.empty())
             continue;
 
-          double sumOutLinkWeightLayer2 = layer2It.second.outWeights()[nodeId];
+          double sumOutLinkWeightLayer2 = layer2It->second.outWeights()[nodeId];
 
           bool intersect;
           double div = calculateJensenShannonDivergence(intersect, layer1OutLinks, sumOutLinkWeightLayer1, layer2OutLinks, sumOutLinkWeightLayer2);

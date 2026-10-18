@@ -541,6 +541,9 @@ TEST_CASE("relax by JSD compares layer ids, gaps included [fast][core][multilaye
   CHECK(jsdLinksPerLayerPair("", layers) == expectedJsdLinks(layers, [](int, int) { return true; }));
   CHECK(jsdLinksPerLayerPair("--multilayer-relax-limit 2", layers)
         == expectedJsdLinks(layers, [](int a, int b) { return std::abs(a - b) <= 2; }));
+  // Further apart than the largest int
+  const std::vector<unsigned int> farLayers { 1, 2147483649u };
+  CHECK(jsdLinksPerLayerPair("", farLayers) == expectedJsdLinks(farLayers, [](int, int) { return true; }));
 }
 
 TEST_CASE("NetworkBuilder validates bipartite intake while building Network state [fast][core][parser]")
