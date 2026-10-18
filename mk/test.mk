@@ -25,6 +25,10 @@ TSAN_SUPPRESSIONS ?= $(CURDIR)/test/tsan.supp
 # as a race. Linux LLVM packages ship it in the LLVM lib dir, two levels above
 # clang's resource dir; Homebrew does not ship it, see test-tsan below.
 TSAN_ARCHER_LIB ?= $(shell p=$$($(TSAN_CXX) -print-resource-dir 2>/dev/null)/../../libarcher.so; [ -f "$$p" ] && echo "$$p")
+PYTHON_ASAN_CXX ?= clang++
+PYTHON_ASAN_BUILD_DIR ?= build/python-asan
+PYTHON_ASAN_PYTEST_ARGS ?= test/python
+R_SANITIZER_CXX ?= clang++
 FUZZ_BUILD_DIR ?= build/fuzz
 FUZZ_SECONDS ?= 60
 FUZZ_CXX ?= clang++
@@ -83,7 +87,7 @@ define warn_cmake_build_type_mismatch
 	fi
 endef
 
-.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers test-tsan fuzz coverage bench-python bench-native
+.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers test-tsan test-python-asan test-r-asan test-r-valgrind fuzz coverage bench-python bench-native
 
 configure-cpp-dev:
 	@generator_args=""; \
@@ -199,6 +203,32 @@ test-tsan:
 		TSAN_OPTIONS="ignore_noninstrumented_modules=1 abort_on_error=0 second_deadlock_stack=1 suppressions=$(TSAN_SUPPRESSIONS)" \
 		"$(CTEST)" --test-dir $(TSAN_BUILD_DIR) --output-on-failure $(CTEST_ARGS)
 
+# Run the Python tests against an extension built with ASan/UBSan (the flags of
+# test-sanitizers, OpenMP off), with the sanitizer runtime preloaded into the
+# interpreter. The build goes to PYTHON_ASAN_BUILD_DIR; the dev install is not
+# touched. Narrow the run with PYTHON_ASAN_PYTEST_ARGS, e.g.
+# PYTHON_ASAN_PYTEST_ARGS=test/python/test_binding_lifetimes.py.
+#
+# The interpreter must accept the preloaded runtime. Homebrew's framework Python
+# on macOS does not ("Interceptors are not working"); a uv-managed Python does:
+#   uv venv --python 3.12 && make test-python-asan PYTHON=.venv/bin/python
+# On Linux with GCC, pass PYTHON_ASAN_CXX=g++.
+test-python-asan:
+	@$(PYTHON) test/scripts/run_python_asan.py --cxx "$(PYTHON_ASAN_CXX)" \
+		--build-dir "$(PYTHON_ASAN_BUILD_DIR)" --jobs $(JOBS) -- $(PYTHON_ASAN_PYTEST_ARGS)
+
+# CRAN's additional checks, approximated without a sanitizer-built R: the R
+# package's tests, Rd examples and examples/R under ASan/UBSan (the package built
+# instrumented, the runtime preloaded into R), or under valgrind (Linux only).
+# Both install into build/R-<mode>/lib, not the user library.
+# On Linux, R_SANITIZER_CXX=g++ matches R's own compiler and CRAN's gcc-ASAN.
+test-r-asan:
+	@$(PYTHON) test/scripts/run_r_sanitizers.py --mode asan --cxx "$(R_SANITIZER_CXX)" \
+		--r "$(R)" --jobs $(JOBS)
+
+test-r-valgrind:
+	@$(PYTHON) test/scripts/run_r_sanitizers.py --mode valgrind --r "$(R)" --jobs $(JOBS)
+
 # Build and briefly run a libFuzzer harness (Clang only; opt-in via
 # INFOMAP_BUILD_FUZZERS, kept out of the default build/ctest).
 # FUZZ_TARGET=intake (default) feeds bytes through buildNetworkFromInput, which
@@ -263,7 +293,7 @@ coverage:
 		$(if $(filter-out 0,$(COVERAGE_FUZZ_SECONDS)),fuzz_intake fuzz_run fuzz_cluster,) --parallel $(JOBS)
 	@rm -rf $(COVERAGE_BUILD_DIR)/profiles $(COVERAGE_BUILD_DIR)/report
 	@mkdir -p $(COVERAGE_BUILD_DIR)/profiles
-	@LLVM_PROFILE_FILE="$(CURDIR)/$(COVERAGE_BUILD_DIR)/profiles/ctest-%p.profraw" \
+	@LLVM_PROFILE_FILE="$(abspath $(COVERAGE_BUILD_DIR))/profiles/ctest-%p.profraw" \
 		"$(CTEST)" --test-dir $(COVERAGE_BUILD_DIR) --output-on-failure $(CTEST_ARGS) \
 		|| printf "%s\n" "coverage: some tests failed; the report covers what ran."
 ifneq ($(COVERAGE_FUZZ_SECONDS),0)
@@ -277,7 +307,7 @@ ifneq ($(COVERAGE_FUZZ_SECONDS),0)
 		esac; \
 		mkdir -p $(COVERAGE_BUILD_DIR)/corpus-$$target $(COVERAGE_BUILD_DIR)/artifacts; \
 		printf "%s\n" "coverage: fuzzing $$target for $(COVERAGE_FUZZ_SECONDS)s"; \
-		LLVM_PROFILE_FILE="$(CURDIR)/$(COVERAGE_BUILD_DIR)/profiles/fuzz-$$target-%p.profraw" \
+		LLVM_PROFILE_FILE="$(abspath $(COVERAGE_BUILD_DIR))/profiles/fuzz-$$target-%p.profraw" \
 			$(COVERAGE_BUILD_DIR)/fuzz_$$target -max_total_time=$(COVERAGE_FUZZ_SECONDS) \
 			-max_len=$$max_len -timeout=10 -dict=test/fuzz/$$dict.dict \
 			-artifact_prefix=$(COVERAGE_BUILD_DIR)/artifacts/$$target- $(COVERAGE_FUZZ_ARGS) \
@@ -292,8 +322,8 @@ ifeq ($(COVERAGE_PYTHON),1)
 	@CC="$(COVERAGE_CC)" CXX="$(COVERAGE_CXX)" MODE=debug OPENMP=$(COVERAGE_OPENMP) INFOMAP_BUILD_JOBS="$(JOBS)" \
 		CXXFLAGS="$(COVERAGE_FLAGS)" LDFLAGS="-fprofile-instr-generate" \
 		$(PYTHON) setup.py -q build_ext --build-lib $(COVERAGE_BUILD_DIR)/python --build-temp $(COVERAGE_BUILD_DIR)/python-obj
-	@PYTHONPATH="$(CURDIR)/$(COVERAGE_BUILD_DIR)/python" \
-		LLVM_PROFILE_FILE="$(CURDIR)/$(COVERAGE_BUILD_DIR)/profiles/python-%p.profraw" \
+	@PYTHONPATH="$(abspath $(COVERAGE_BUILD_DIR))/python" \
+		LLVM_PROFILE_FILE="$(abspath $(COVERAGE_BUILD_DIR))/profiles/python-%p.profraw" \
 		$(PYTEST) -q -p no:cacheprovider $(PYTEST_ARGS) $(PYTHON_TEST_DIR) \
 		|| printf "%s\n" "coverage: some Python tests failed; the report covers what ran."
 endif
