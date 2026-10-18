@@ -213,9 +213,6 @@ TEST_CASE("A module preference reaches a one-node network (#1293) [fast][core][m
   };
   for (const auto& flags : flagSets) {
     for (const bool selfLink : { true, false }) {
-      // Entropy correction on a network without links is a separate gap.
-      if (!selfLink && flags == "--entropy-corrected")
-        continue;
       InfomapWrapper im(defaultFlags("--preferred-number-of-modules 4 " + flags));
       if (selfLink)
         im.addLink(1, 1);
@@ -433,6 +430,39 @@ TEST_CASE("A single module covering the network has no exit codeword [fast][core
   checkApproxCodelength(correction, expected);
 
   checkTrackedMatchesRecompute(*corrected);
+}
+
+// Without links the total degree D is 0: there is no sample to correct, so the
+// correction is 0. Dividing by D made every codelength inf or nan, no trial beat the
+// initial best, and no tree was written (#1296).
+TEST_CASE("Entropy correction on a network without links is 0 (#1296) [fast][core][mapeq][entropy-corrected]")
+{
+  const std::vector<std::string> flagSets {
+    "",
+    "--two-level",
+    "--directed",
+  };
+  for (const auto& flags : flagSets) {
+    for (const unsigned int numNodes : { 1u, 3u }) {
+      const auto run = [numNodes](const std::string& runFlags) {
+        auto im = std::make_unique<InfomapWrapper>(defaultFlags(runFlags));
+        for (unsigned int node = 1; node <= numNodes; ++node)
+          im->addNode(node);
+        im->run();
+        return im;
+      };
+      const auto plain = run(flags);
+      const auto corrected = run("--entropy-corrected " + flags);
+      auto& im = *corrected;
+      INFO("flags '" << flags << "', " << numNodes << " nodes");
+      REQUIRE(im.numLeafNodes() == numNodes);
+      CHECK(im.numTopModules() == plain->numTopModules());
+      CHECK(im.numLevels() == plain->numLevels());
+      CHECK(im.getOneLevelCodelength() == 0.0);
+      CHECK(im.codelength() == 0.0);
+      checkApproxCodelength(im.codelength(), im.calcCodelengthOnTree(im.root(), true));
+    }
+  }
 }
 
 // The entropy-bias correction must reach the move loop, not only the reported
