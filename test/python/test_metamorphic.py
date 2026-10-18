@@ -601,8 +601,10 @@ def test_thread_count_does_not_change_the_result(tmp_path, name, variant):
         )
         # A worker rebuilds the network for each trial, so a sum can come out in
         # the last bit.
-        assert parallel.codelengths == pytest.approx(serial.codelengths, rel=1e-14)
-        assert parallel.codelength == pytest.approx(serial.codelength, rel=1e-14)
+        assert parallel.codelengths == pytest.approx(
+            serial.codelengths, rel=1e-14, abs=0
+        )
+        assert parallel.codelength == pytest.approx(serial.codelength, rel=1e-14, abs=0)
         # The same tree, though not always in the same order (see below).
         assert _modules(parallel) == _modules(serial), threads
 

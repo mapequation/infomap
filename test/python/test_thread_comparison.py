@@ -226,8 +226,10 @@ def test_thread_count_does_not_change_a_large_result(tmp_path, shape, kind, vari
             **options,
         )
         assert used == threads
-        assert parallel.codelengths == pytest.approx(serial.codelengths, rel=1e-14)
-        assert parallel.codelength == pytest.approx(serial.codelength, rel=1e-14)
+        assert parallel.codelengths == pytest.approx(
+            serial.codelengths, rel=1e-14, abs=0
+        )
+        assert parallel.codelength == pytest.approx(serial.codelength, rel=1e-14, abs=0)
         assert _modules(parallel) == _modules(serial), threads
 
 
