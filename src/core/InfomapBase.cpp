@@ -859,6 +859,12 @@ private:
     }
 
     if (m_network.haveDirectedInput() && m_infomap.isUndirectedFlow()) {
+      // Only multilayer input with intra-layer links sets haveDirectedInput: the inter-layer links
+      // break the symmetry, so the intra-layer links are expanded to both directions and run with
+      // the directed model. That is the undirected multilayer flow, and undirdir was replaced by it
+      // with only the note below to show for it (#1233). outdirdir and rawdir are not replaced.
+      if (m_infomap.flowModel == FlowModel::undirdir)
+        Console::warn(0, "The undirdir flow model has no effect on multilayer input with intra-layer links: the links are expanded to both directions and run with the directed model, which is the flow of the default undirected model.");
       Console::note(1, "Directed input found, changing flow model from '{}' to '{}'.", m_infomap.flowModel, FlowModel(FlowModel::directed));
       m_infomap.flowModel = FlowModel::directed;
     }
@@ -2572,7 +2578,7 @@ void InfomapBase::hierarchicalPartition()
       restoreSilent.restore();
 
       const double diffCodelength = codelengthBefore - codelengthAfter;
-      Console::detail(1, "fine-tune bottom modules: improvement {:g}% {} codelength {}", (diffCodelength / codelengthBefore) * 100, Console::arrow(), io::toPrecision(codelengthAfter));
+      Console::detail(1, "fine-tune bottom modules: improvement {:g}% {} codelength {}", (codelengthBefore < 1e-16 ? 0.0 : diffCodelength / codelengthBefore * 100), Console::arrow(), io::toPrecision(codelengthAfter));
 
       // The recursion below starts from m_hierarchicalCodelength and the leaf modules'
       // codelength terms. Both still describe the seed tree, and the new sub modules have
@@ -3301,8 +3307,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 
     workingHierarchicalCodelength += superCodelength - oldIndexLength;
 
-    const double superCompression = ((hierarchicalCodelength - workingHierarchicalCodelength)
-                                     / hierarchicalCodelength * 100);
+    const double superCompression = hierarchicalCodelength < 1e-16 ? 0.0 : (hierarchicalCodelength - workingHierarchicalCodelength) / hierarchicalCodelength * 100;
     prettyCompression.push_back(Console::percent(superCompression));
     progress.update(fmt::format(FMT_STRING("working… codelength {} · {} top modules"), io::toPrecision(workingHierarchicalCodelength), numSuperModules));
     Console::detail(1, "super iter {}: found {} super modules, codelength {:g} + {:g} + {:g} = {:g}", numLevelsCreated + 1, numSuperModules, superIndexCodelength, superCodelength - superIndexCodelength, workingHierarchicalCodelength - superCodelength, workingHierarchicalCodelength);
@@ -3394,7 +3399,7 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
 
     workingHierarchicalCodelength += codelength - oldIndexLength;
 
-    Log(1) << hideIf(!acceptSolution) << ((hierarchicalCodelength - workingHierarchicalCodelength) / hierarchicalCodelength * 100) << "% " << std::flush;
+    Log(1) << hideIf(!acceptSolution) << (hierarchicalCodelength < 1e-16 ? 0.0 : (hierarchicalCodelength - workingHierarchicalCodelength) / hierarchicalCodelength * 100) << "% " << std::flush;
     Console::note(1, "Found {} super modules in {} effective loops with hierarchical codelength {:g} + {:g} = {:g}{}", numActiveModules(), numEffectiveLoops, indexCodelength, workingHierarchicalCodelength - indexCodelength, workingHierarchicalCodelength, acceptSolution ? "" : ", discarding the solution.");
     Log(1) << std::flush;
     Log(1).print("{:g} -> {}\n", oldIndexLength, io::stringify(*this));
@@ -3669,7 +3674,7 @@ unsigned int InfomapBase::recursivePartition()
     sumConsolidatedCodelength += sumIndexCodelength + sumLeafCodelength;
     double limitCodelength = sumConsolidatedCodelength + leftToImprove;
 
-    const double recursiveCompression = ((hierarchicalCodelength - limitCodelength) / hierarchicalCodelength) * 100;
+    const double recursiveCompression = hierarchicalCodelength < 1e-16 ? 0.0 : (hierarchicalCodelength - limitCodelength) / hierarchicalCodelength * 100;
     prettyCompression.push_back(Console::percent(recursiveCompression));
     progress.update(fmt::format(FMT_STRING("working… {} levels · codelength {}"), levelNum, io::toPrecision(limitCodelength)));
     Console::detail(1, "level {}: {} modules ({:g}% flow) {} codelength {:.6g} + {:.6g} (+{:.6g} to improve) = {} bits", levelNum, levelModules, levelFlowPct, Console::arrow(), sumIndexCodelength, sumLeafCodelength, leftToImprove, io::toPrecision(limitCodelength));
