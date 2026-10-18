@@ -9,6 +9,11 @@ run reports and compare its codelength with the one the run reports.
 Inputs are plain Python data (see :class:`Partition`). Everything else, every
 enter and exit rate and every codebook, is derived here.
 
+A change to this module cites its source below and lands in a pull request
+of its own, with nothing under ``src/``, so the oracle stays independent of
+the code it checks (#1261). CI checks the second part
+(``scripts/check_reference_edits.py``).
+
 Sources for each term
 ---------------------
 Map equation, two-level

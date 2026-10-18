@@ -36,6 +36,7 @@ policy:
   - "interfaces/swig/**"
   - "interfaces/R/generated/**"
   - "scripts/check_cpp_stream_policy.py"
+  - "scripts/check_reference_edits.py"
   - ".github/workflows/ci.yml"
   - ".github/filters.yml"
 
