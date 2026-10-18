@@ -406,7 +406,7 @@ TEST_CASE("multilayer-relax-to-self couples diagonal nodes in the explicit *Inte
   CHECK(out.count(sid(2, 3)) == 0);
 }
 
-TEST_CASE("explicit *Inter to-self links even when the node is absent in the target layer [fast][core][multilayer]")
+TEST_CASE("explicit *Inter to-self link is dropped when the node is absent in the target layer (#1314) [fast][core][multilayer]")
 {
   Network network(Config("--silent --directed --multilayer-relax-to-self", false));
   network.addMultilayerIntraLink(1, 1, 2, 1.0);
@@ -425,9 +425,11 @@ TEST_CASE("explicit *Inter to-self links even when the node is absent in the tar
     if (network.nodeId(s) == s11) out[network.nodeId(t)] = w;
   });
 
-  // The explicit coupling is still created even though (2,1) is dangling.
-  CHECK(out.count(sid(2, 1)) == 1);
-  CHECK(out.at(sid(2, 1)) == doctest::Approx(0.5));
+  // As in the default model: (2,1) has nowhere to relay the coupling's flow, so
+  // the link is dropped instead of losing that flow.
+  CHECK(map.at(2).count(1) == 0);
+  CHECK(out.size() == 1);
+  CHECK(out.at(sid(1, 2)) == doctest::Approx(1.0));
 }
 
 TEST_CASE("multilayer-relax-to-self adds reverse diagonal inter link for undirected flow [fast][core][multilayer]")

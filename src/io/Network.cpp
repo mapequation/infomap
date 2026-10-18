@@ -272,6 +272,20 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
     }
   }
 
+  // Spread drops an inter-layer link to a layer where the node has no intra-layer
+  // out-links, so the to-self links below are dropped there too: the relax-to-self
+  // flow relays the link's flow onward along those out-links, and without any the
+  // flow would be lost (#1314).
+  auto hasIntraOutLinks = [this](unsigned int layer, unsigned int physId) {
+    auto networkIt = m_networks.find(layer);
+    if (networkIt == m_networks.end()) {
+      return false;
+    }
+    const auto& linkMap = networkIt->second.nodeLinkMap();
+    auto linksIt = linkMap.find(physId);
+    return linksIt != linkMap.end() && !linksIt->second.empty();
+  };
+
   Console::detail(1, "connecting layers");
   // Connect layers with inter-layer links spread out in target layer
   for (auto& it : m_interLinks) {
@@ -284,6 +298,9 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
       double interWeight = it2.second;
 
       if (m_config.multilayerRelaxToSelf) {
+        if (!hasIntraOutLinks(layer2, physId)) {
+          continue;
+        }
         unsigned int stateId2 = addMultilayerNode(layer2, physId);
         addLink(stateId1, stateId2, interWeight);
         ++m_numInterLayerLinks;
@@ -321,6 +338,9 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
       unsigned int physId = layerNode.node;
 
       if (m_config.multilayerRelaxToSelf) {
+        if (!hasIntraOutLinks(layer2, physId)) {
+          continue;
+        }
         unsigned int stateId2 = addMultilayerNode(layer2, physId);
         for (auto& it2 : it.second) {
           unsigned int layer1 = it2.first;
