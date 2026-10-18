@@ -701,6 +701,32 @@ TEST_CASE("Fuzz finding: --variable-markov-time with --use-node-weights-as-flow 
   CHECK_NOTHROW(im.run());
 }
 
+// A link-free network with directed recorded teleportation to links has no teleportation
+// target, so every teleport weight is 0. Node weights as flow still give the nodes flow, so
+// each node exits by teleportation and none is entered: a release run reports codelength 2
+// against a one-level codelength of 1. The degenerate-flow check that refuses this walk
+// (#1232) is skipped for link-free networks. Refusing the run would also pass (#1253).
+TEST_CASE("Fuzz finding: a link-free network with --recorded-teleportation --use-node-weights-as-flow balances or is refused (#1253) [fast][core][mapeq]" * doctest::should_fail())
+{
+  InfomapWrapper im(defaultFlags("--directed --recorded-teleportation --use-node-weights-as-flow"));
+  im.addNode(1);
+  im.addNode(2);
+  try {
+    im.run();
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    return;
+  }
+  double sumEnter = 0.0;
+  double sumExit = 0.0;
+  for (const auto& node : im.network().nodes()) {
+    sumEnter += node.second.enterFlow;
+    sumExit += node.second.exitFlow;
+  }
+  INFO("leaf enter flow " << sumEnter << ", exit flow " << sumExit);
+  CHECK(sumExit == doctest::Approx(sumEnter));
+}
+
 // The relax-to-self relay in the flow calculation treated any link between two states of
 // one physical node as a layer switch and relayed its flow onward, on state networks
 // too. Under --regularized that extra link flow left a module with negative enter flow.

@@ -185,8 +185,13 @@ NetworkShape networkShape(const infomap::Network& network)
 bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
 {
   const bool negative = contains(message, "Negative");
+  const bool unbalanced = contains(message, "do not balance");
   const auto shape = networkShape(im.network());
 
+  // #1253: a link-free network with directed recorded teleportation to links and node weights
+  // as flow: no node is reached by teleportation, so every node exits and none is entered.
+  if (im.network().numLinks() == 0 && im.flowModel == infomap::FlowModel::directed && im.recordedTeleportation && !im.teleportToNodes && im.useNodeWeightsAsFlow && unbalanced)
+    return true;
   // #1191: --variable-markov-time with --use-node-weights-as-flow: negative enter flow when an
   // isolated node holds the largest flow.
   return im.variableMarkovTime && im.useNodeWeightsAsFlow && shape.isolatedNode && negative;
