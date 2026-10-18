@@ -997,28 +997,35 @@ private:
                                      sumNodeFlow,
                                      m_network.numLinks()));
 
-    if (zeroFlowIsExpected)
-      return;
-
     // The node flow can come from somewhere else than the walk: --use-node-weights-as-flow
     // replaces it with the node weights after the flow model has run. The case above then
     // passed with a walk that takes no link steps and teleports into no node, and the run
-    // reported a codelength for it (#1232). Check the walk itself as well.
-    double sumLinkFlow = 0.0;
-    m_network.forEachLink([&](unsigned int, unsigned int, double, double& flow) { sumLinkFlow += flow; });
-    double sumTeleportWeight = 0.0;
-    for (const auto& nodeIt : m_network.nodes())
-      sumTeleportWeight += nodeIt.second.weight;
-    if (sumLinkFlow <= 0 && sumTeleportWeight <= 0)
-      throw InfomapError(ExitCode::InputError,
-                         fmt::format(FMT_STRING("Degenerate flow: the {} links carry no flow and no node is reached by "
-                                                "teleportation, so the walk takes no steps and no codelength is defined. "
-                                                "Node weights used as flow set the visit rates but not the steps between "
-                                                "nodes. This happens when the flow model cannot distribute flow over the "
-                                                "network -- for example a directed flow model with recorded teleportation "
-                                                "on a bipartite network whose links all point from the primary side to the "
-                                                "feature side."),
-                                     m_network.numLinks()));
+    // reported a codelength for it (#1232). Check the walk itself as well. A link-free network
+    // is checked too when its nodes have flow and teleportation is recorded: the teleportation
+    // steps are then the whole walk, and with recorded teleportation to links they land on no
+    // node, so the run reported a codelength above the one-level one (#1253). Without recorded
+    // teleportation nothing is coded, and the trivial partition at zero bits stays the answer.
+    const bool checkWalk = !zeroFlowIsExpected || (sumNodeFlow > 0 && m_infomap.recordsTeleportation());
+    if (checkWalk) {
+      double sumLinkFlow = 0.0;
+      m_network.forEachLink([&](unsigned int, unsigned int, double, double& flow) { sumLinkFlow += flow; });
+      double sumTeleportWeight = 0.0;
+      for (const auto& nodeIt : m_network.nodes())
+        sumTeleportWeight += nodeIt.second.weight;
+      if (sumLinkFlow <= 0 && sumTeleportWeight <= 0)
+        throw InfomapError(ExitCode::InputError,
+                           fmt::format(FMT_STRING("Degenerate flow: no link carries flow (the network has {} links) and no "
+                                                  "node is reached by teleportation, so the walk takes no steps and no "
+                                                  "codelength is defined. Node weights used as flow set the visit rates but "
+                                                  "not the steps between nodes. This happens when the flow model cannot "
+                                                  "distribute flow over the network -- for example a directed flow model "
+                                                  "with recorded teleportation on a bipartite network whose links all point "
+                                                  "from the primary side to the feature side, or on a network without links."),
+                                       m_network.numLinks()));
+    }
+
+    if (zeroFlowIsExpected)
+      return;
 
     checkNoNegativeFlow();
 
