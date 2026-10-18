@@ -65,6 +65,11 @@ Thread count
     gives trial ``i`` the seed it has in a serial run. Nor may an Infomap
     object that runs twice give two results. ``--inner-parallelization`` is
     documented to change the partition and is not covered.
+
+Flattening the tree
+    A returned hierarchy codes no worse than its flattening to top modules or to
+    leaf modules, and multilevel search codes no worse than two-level search
+    with the same seed. ``flattening.py`` has the reasoning (#1257).
 """
 
 from __future__ import annotations
@@ -80,6 +85,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from flattening import codes_no_worse, flatten_tree, flattenings
 from infomap import Infomap, run
 from reference_codelength import total_degree
 
@@ -554,6 +560,75 @@ def test_undirected_equals_both_directions_best_codelength(tmp_path, name):
         tmp_path, _both_directions(net), {"directed": True}, tag="b"
     )
     assert directed.codelength == pytest.approx(undirected.codelength, rel=SEARCH_NOISE)
+
+
+# --- flattenings ----------------------------------------------------------------
+
+
+def _scorer(net_path: Path, options):
+    """A ``score`` for ``flattening.flattenings``: the tree file under ``options``."""
+
+    def score(tree: Path, two_level: bool) -> float:
+        return run(
+            str(net_path),
+            silent=True,
+            cluster_data=str(tree),
+            no_infomap=True,
+            two_level=two_level,
+            **options,
+            **SERIAL,
+        ).codelength
+
+    return score
+
+
+def test_flatten_tree_rewrites_only_the_path():
+    tree = '# a state tree\n1:1:1 0.3 "a b" 7 1\n1:1:2 0.2 "c" 8 1\n1:2:1 0.4 "d" 9 2\n2:1 0.1 "e" 10 3\n'
+    assert flatten_tree(tree, 1) == (
+        '# a state tree\n1:1 0.3 "a b" 7 1\n1:2 0.2 "c" 8 1\n1:3 0.4 "d" 9 2\n2:1 0.1 "e" 10 3\n'
+    )
+    assert flatten_tree(tree, -1) == (
+        '# a state tree\n1:1 0.3 "a b" 7 1\n1:2 0.2 "c" 8 1\n2:1 0.4 "d" 9 2\n3:1 0.1 "e" 10 3\n'
+    )
+
+
+@pytest.mark.parametrize("variant", VARIANTS)
+@pytest.mark.parametrize("name", NETWORK_IDS)
+def test_a_tree_codes_no_worse_than_its_flattenings(tmp_path, name, variant):
+    # See flattening.py for why, and for how the objectives that price the
+    # tree are compared.
+    options = VARIANTS[variant]
+    path = network(name).write(tmp_path / "net.net")
+    result = run(str(path), silent=True, num_trials=2, seed=3, **options, **SERIAL)
+    tree = tmp_path / "run.tree"
+    result.write_tree(str(tree))
+    found = flattenings(tree, _scorer(path, options))
+    _same(found.hierarchy, result.codelength)
+    assert not found.violations()
+
+
+@pytest.mark.parametrize("variant", SEARCH_VARIANTS)
+@pytest.mark.parametrize("name", NETWORK_IDS)
+def test_multilevel_codes_no_worse_than_two_level_with_the_same_seed(
+    tmp_path, name, variant
+):
+    # Multilevel search starts from the two-level search of the same seed.
+    options = SEARCH_VARIANTS[variant]
+    path = network(name).write(tmp_path / "net.net")
+    for seed in (1, 2):
+        multilevel, two_level = (
+            run(
+                str(path),
+                silent=True,
+                num_trials=1,
+                seed=seed,
+                **levels,
+                **options,
+                **SERIAL,
+            )
+            for levels in ({}, {"two_level": True})
+        )
+        assert codes_no_worse(multilevel.codelength, two_level.codelength), seed
 
 
 # --- thread count ----------------------------------------------------------------

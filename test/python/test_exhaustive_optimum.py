@@ -32,14 +32,46 @@ level, so a systematic loss shows.
 
 The default run covers n <= 7. The sweep up to n = 9 is marked slow
 (``pytest --run-slow``).
+
+Multilevel
+----------
+Counting every tree Infomap can return (``hierarchies``) gives 612 for n = 5
+and 8374 for n = 6, so the multilevel search can be checked against the
+optimum over all of them too. Scoring the 8374 trees takes about 0.6 s, and
+n = 7, with 140408 trees, about 10 s per run, so the default run covers two
+networks of five nodes and the slow sweep n = 5 and 6. For each run:
+
+* the multilevel result is never below the optimum over every tree, and it
+  reports the reference's codelength for the tree it returns;
+* the returned tree codes no worse than its flattenings to top and to leaf
+  modules, all three priced by the reference, and no worse than two-level
+  search with the same seed (``flattening.py``, #1257).
+
+Over the sweep (n = 5 with three seeds, n = 6 with two, the five flows), on
+macOS, a tree deeper than two levels beat every two-level partition in two
+settings only:
+
+* 2 preferred modules, 2 of 100 runs: the search found both;
+* Markov time 0.25, 11 of 100 runs: the search found none, by up to 0.048
+  bits, and returned the best two-level partition each time.
+
+These optima put nodes in modules of their own under a common module. The
+search does not reach them for two reasons. It skips the hierarchical search
+when the two-level partition has every node in a module of its own, and it
+rejects a sub-partition that puts every node of a module in a module of its
+own. A low Markov time favours such modules. The other misses are the
+two-level misses above: the node without in-links, and the preferred number
+of modules.
 """
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import numpy as np
 import pytest
+from flattening import Flattenings, codes_no_worse, flatten
 from infomap import run
 from reference_codelength import Leaf, Partition, codelength, total_degree
 from reference_flow import flow
@@ -189,10 +221,17 @@ class Scorer:
 
     def __call__(self, labels) -> float:
         sizes = {}
-        leaves = {}
+        paths = {}
         for node, label in zip(self.nodes, labels, strict=True):
             sizes[label] = sizes.get(label, 0) + 1
-            leaf = Leaf(path=(label + 1, sizes[label]), flow=self.flow.node[node])
+            paths[node] = (label + 1, sizes[label])
+        return self.tree(paths)
+
+    def tree(self, paths) -> float:
+        """Reference codelength of a tree, given as ``{node: path}``."""
+        leaves = {}
+        for node, path in paths.items():
+            leaf = Leaf(path=path, flow=self.flow.node[node])
             if self.recorded:
                 leaf.teleport_flow = self.flow.teleport_flow[node]
                 leaf.teleport_weight = self.flow.teleport_weight[node]
@@ -346,3 +385,161 @@ def test_search_quality(tmp_path, n, flow_name):
     runs = len(SWEEP_KINDS) * len(SWEEP_SEEDS)
     for name in ("plain", "markov-time", "entropy"):
         assert len(misses[name]) <= runs // 6, misses[name]
+
+
+# --- multilevel ------------------------------------------------------------------
+
+
+def hierarchies(nodes):
+    """Every tree Infomap can return over ``nodes``, as ``{node: path}``.
+
+    Either one module that holds every node, or two or more top modules. A
+    module holds its nodes as leaves, or is split again into two or more
+    modules. As in Infomap's trees, leaves never sit beside modules and no
+    module is the only child of another. That gives 1, 2, 8, 58, 612, 8374
+    and 140408 trees for n = 1 to 7.
+    """
+    nodes = list(nodes)
+    yield {node: (1, i + 1) for i, node in enumerate(nodes)}
+    for tree in _splits(nodes):
+        yield dict(tree)
+
+
+def _module(items):
+    # Each arrangement of one module, as (item, path inside the module) pairs.
+    yield tuple((item, (i + 1,)) for i, item in enumerate(items))
+    yield from _splits(items)
+
+
+def _splits(items):
+    # Each split of items into two or more modules, each arranged by _module.
+    for labels in set_partitions(len(items)):
+        num_blocks = max(labels) + 1
+        if num_blocks > 1:
+            blocks = [
+                [
+                    item
+                    for item, label in zip(items, labels, strict=True)
+                    if label == block
+                ]
+                for block in range(num_blocks)
+            ]
+            yield from _arrange(blocks, 1)
+
+
+def _arrange(blocks, index):
+    if not blocks:
+        yield ()
+        return
+    for inner in _module(blocks[0]):
+        head = tuple((item, (index, *path)) for item, path in inner)
+        for tail in _arrange(blocks[1:], index + 1):
+            yield head + tail
+
+
+def test_hierarchies_are_every_tree():
+    counts = [sum(1 for _ in hierarchies(range(n))) for n in range(1, 7)]
+    assert counts == [1, 2, 8, 58, 612, 8374]
+    assert len({tuple(sorted(t.items())) for t in hierarchies(range(5))}) == 612
+
+
+# A lower Markov time favours more modules. It is the objective under which
+# a tree deeper than two levels is the optimum on networks this small.
+MULTILEVEL_OBJECTIVES = {
+    **OBJECTIVES,
+    "markov-time-0.25": ({"markov_time": 0.25}, {"markov_time": 0.25}),
+}
+
+
+def _check_multilevel(tmp_path, nodes, links, flow_name, objective_name):
+    flow_options = FLOWS[flow_name]
+    engine, reference = MULTILEVEL_OBJECTIVES[objective_name]
+    scorer = Scorer(nodes, links, flow_options, reference)
+    optimum = deep_optimum = two_level_optimum = math.inf
+    for tree in hierarchies(nodes):
+        score = scorer.tree(tree)
+        optimum = min(optimum, score)
+        if all(len(path) == 2 for path in tree.values()):
+            two_level_optimum = min(two_level_optimum, score)
+        else:
+            deep_optimum = min(deep_optimum, score)
+
+    path = _write_pajek(
+        tmp_path / "net.net",
+        nodes,
+        links,
+        directed=flow_options.get("directed", False),
+    )
+    options = {"silent": True, "num_trials": 5, "seed": 1, **flow_options, **engine}
+    result = run(str(path), **options)
+    tree = {node.node_id: tuple(node.path) for node in result.tree() if node.is_leaf}
+    # Never below the optimum over every tree, and priced as the reference
+    # prices the same tree.
+    assert result.codelength >= optimum - REL * max(1.0, optimum)
+    assert result.codelength == pytest.approx(scorer.tree(tree), rel=REL, abs=ABS)
+    # Never worse than its flattenings, all three priced by the reference, nor
+    # than two-level search with the same seed (flattening.py).
+    found = Flattenings(
+        result.codelength,
+        scorer.tree(flatten(tree, 1)),
+        scorer.tree(flatten(tree, -1)),
+    )
+    assert not found.violations()
+    two_level = run(str(path), two_level=True, **options)
+    assert codes_no_worse(result.codelength, two_level.codelength)
+    # The gap to the optimum, and how much a deeper tree saves, if anything.
+    return result.codelength - optimum, max(0.0, two_level_optimum - deep_optimum)
+
+
+# A path 2 - 1 - 4 and a ten times weaker triangle 3, 4, 5. At Markov time
+# 0.25 the optimum puts 1, 2 and 4 in one module, each in a sub-module of its
+# own, and 3 and 5 in modules of their own. Infomap returns the best two-level
+# partition, 0.006 bits above it: {3, 5} together and the rest alone. A super
+# module over 1, 2 and 4 codes worse than that partition. Splitting {3, 5}
+# into two modules of one node is a sub-partition the search rejects, and the
+# two-level partition with every node alone, which codes worse too, is one it
+# does not search further (see the module docstring).
+DEEP_5 = (
+    [1, 2, 3, 4, 5],
+    [(1, 2, 1.0), (1, 4, 1.0), (3, 4, 0.1), (3, 5, 0.1), (4, 5, 0.1)],
+)
+# The default run; the slow sweep covers the rest.
+MULTILEVEL_FLOWS = ["undirected", "directed", "recorded"]
+
+
+@pytest.mark.parametrize("objective", MULTILEVEL_OBJECTIVES)
+@pytest.mark.parametrize("flow_name", MULTILEVEL_FLOWS)
+@pytest.mark.parametrize("network", ["deep-5", "two-groups-5"])
+def test_multilevel_search_is_never_below_the_optimum(
+    tmp_path, network, flow_name, objective
+):
+    if network == "deep-5":
+        nodes, links = DEEP_5
+        if FLOWS[flow_name].get("directed"):
+            links += [(t, s, w) for s, t, w in links]
+    else:
+        nodes, links = _fast_network(network, flow_name)
+    _check_multilevel(tmp_path, nodes, links, flow_name, objective)
+
+
+def test_a_deeper_tree_can_be_the_optimum(tmp_path):
+    # The search misses it on macOS, a search limit (see DEEP_5). The tree it
+    # returns depends on the standard library (#342), so it is held only to
+    # the checks in _check_multilevel.
+    _, saving = _check_multilevel(tmp_path, *DEEP_5, "undirected", "markov-time-0.25")
+    assert saving > 0.005
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("flow_name", FLOWS)
+@pytest.mark.parametrize("n", [5, 6])
+def test_multilevel_search_quality(tmp_path, n, flow_name):
+    # The checks of the default run on every kind of tiny network. How often
+    # the search misses, and how often a deeper tree is the optimum, is in the
+    # module docstring.
+    directed = FLOWS[flow_name].get("directed", False)
+    for kind in SWEEP_KINDS:
+        for seed in SWEEP_SEEDS if n == 5 else SWEEP_SEEDS[:2]:
+            nodes, links = tiny_network(kind, n, seed, directed=directed)
+            for name in MULTILEVEL_OBJECTIVES:
+                _check_multilevel(tmp_path, nodes, links, flow_name, name)
