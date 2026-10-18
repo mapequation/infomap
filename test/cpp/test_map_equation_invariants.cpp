@@ -690,15 +690,24 @@ TEST_CASE("--regularized with --use-node-weights-as-flow: a restored tree keeps 
   checkRestoredTreeKeepsCodelength("examples/networks/ninetriangles.net", "--regularized --regularization-strength 0.01 --use-node-weights-as-flow --seed 1");
 }
 
-// --variable-markov-time scales each link by the largest node flow over the local one.
-// With --use-node-weights-as-flow an isolated node can hold that largest flow, and the
-// run is refused with negative enter flow on a linked node.
-TEST_CASE("Fuzz finding: --variable-markov-time with --use-node-weights-as-flow keeps flow non-negative (#1191) [fast][core][mapeq]" * doctest::should_fail())
+// --variable-markov-time scales each link by the log of the largest effective degree, node
+// flow times the number of link ends, over the local one. With the walk's own flow that degree
+// is at least 1, but with --use-node-weights-as-flow, or the teleportation flow under
+// --regularized, an isolated node takes flow from the linked ones and can put it below 1.
+// The links were then scaled by a negative Markov time: refused with negative enter flow, or
+// under --regularized not refused at all (#1191).
+TEST_CASE("--variable-markov-time keeps link flow non-negative with flow on isolated nodes (#1191) [fast][core][mapeq]")
 {
-  InfomapWrapper im(defaultFlags("--variable-markov-time --use-node-weights-as-flow"));
-  im.addNode(3);
-  im.addLink(1, 2);
-  CHECK_NOTHROW(im.run());
+  for (const char* flags : { "--use-node-weights-as-flow", "--directed --use-node-weights-as-flow", "--regularized", "--directed --regularized" }) {
+    INFO(flags);
+    InfomapWrapper im(defaultFlags(std::string(flags) + " --variable-markov-time"));
+    im.addNode(3);
+    im.addLink(1, 2);
+    CHECK_NOTHROW(im.run());
+    for (auto* node : im.leafNodes())
+      for (const auto* edge : node->outEdges())
+        CHECK(edge->data.flow >= 0.0);
+  }
 }
 
 // The relax-to-self relay in the flow calculation treated any link between two states of
