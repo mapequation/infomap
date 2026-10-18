@@ -798,7 +798,11 @@ private:
       return;
     }
 
-    if (m_network.isMultilayerNetwork()) {
+    // The writers add the layer id column only when the run is multilayer, and a
+    // multilayer network whose expansion is the identity runs first-order (no memory
+    // input, so configureNetworkMode() never sets it). Read with the same test, or
+    // Infomap cannot read its own output back (#1273).
+    if (m_network.isMultilayerNetwork() && m_infomap.isMultilayerNetwork()) {
       const auto& map = m_network.layerNodeToStateId();
       m_clusterData.readClusterData(m_infomap.clusterDataFile, false, &map);
     } else {
@@ -1735,7 +1739,8 @@ InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
 InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool hard, const Network* network)
 {
   ClusterMap clusterMap;
-  if (network != nullptr && network->isMultilayerNetwork()) {
+  // Same test as readClusterData() in the run path (#1273).
+  if (network != nullptr && network->isMultilayerNetwork() && isMultilayerNetwork()) {
     const auto& map = network->layerNodeToStateId();
     clusterMap.readClusterData(clusterDataFile, false, &map);
   } else {
