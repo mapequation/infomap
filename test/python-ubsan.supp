@@ -1,0 +1,2 @@
+# UndefinedBehaviorSanitizer suppressions for `make test-python-asan`. One entry
+# per report, each with a reason. Keep entries narrow: one check, one function.

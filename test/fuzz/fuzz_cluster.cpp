@@ -5,7 +5,8 @@
 // format of the cluster file and the options; the rest is the cluster file, a
 // .clu, .tree or .ftree. The options are the ones that change how cluster data
 // is used: hard or soft partitions, --no-infomap scoring, two-level or
-// multilevel, directed flow, and a bounded set of objectives.
+// multilevel, --fast-hierarchical-solution, directed flow, and a bounded set
+// of objectives.
 //
 // The fuzz build defines INFOMAP_CHECK_INVARIANTS, so the run checks the flow
 // invariants after each phase. Contract:
@@ -133,8 +134,10 @@ Options optionsFromHeader(const uint8_t* h)
   if ((h[1] & 0x80) != 0)
     flags += " --core-level-limit 1";
 
-  // Byte 2: seed.
-  flags += " --seed " + std::to_string(1 + h[2]);
+  // Byte 2: seed (bits 0-5) and how many fast hierarchical levels (bits 6-7).
+  static const std::array<const char*, 4> fastLevels = { "", " -F", " -FF", " -FFF" };
+  flags += fastLevels[h[2] >> 6];
+  flags += " --seed " + std::to_string(1 + (h[2] & 0x3f));
   return options;
 }
 
@@ -176,13 +179,9 @@ bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
   const bool unbalanced = contains(message, "do not balance");
   const bool misreported = contains(message, "reported codelength");
   // #1175: bipartite input with recorded teleportation (also implied by
-  // --regularized) leaves the teleport weights summing to less than 1.
-  if (im.network().isBipartite() && (im.recordedTeleportation || im.regularized) && (negative || unbalanced))
-    return true;
-  // #1207: the tree is not scored again after the hard partition is restored: a module that held
-  // a single hard module is left without that module's codebook, and a hard module
-  // directly under the root (all of them under --no-infomap) is replaced by its nodes there.
-  if (im.clusterDataIsHard && misreported)
+  // --regularized) leaves the teleport weights summing to less than 1, so the
+  // reported codelength does not match the finished tree's either.
+  if (im.network().isBipartite() && (im.recordedTeleportation || im.regularized) && (negative || unbalanced || misreported))
     return true;
   return false;
 }
@@ -440,7 +439,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
     if (options.hard && std::strcmp(options.extension, "clu") == 0)
       checkKeepsHardModules(im, clusterFile.path, leaves);
-    if (options.noInfomap && !options.hard)
+    if (options.noInfomap)
       checkKeepsPartition(im, options, clusterFile.path, leaves);
 
     if (!leafUnderRoot) {

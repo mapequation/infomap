@@ -1,0 +1,170 @@
+name: Fuzz PR
+
+# A short fuzz run on PRs that touch the code a fuzz target covers: each
+# affected target runs for 60 s, starting from the weekly corpus (fuzz.yml).
+# Non-blocking like fuzz.yml: a separate workflow that ci.yml's CI Summary does
+# not depend on, so it never gates a merge, but it goes RED on a finding. Do NOT
+# add continue-on-error, that would mask the alert.
+#
+# One job runs the targets in sequence rather than a matrix: the three targets
+# share the instrumented core, so one job installs clang and builds it once,
+# and holds one runner instead of three (runner concurrency is the bottleneck).
+# Worst case, all three targets, is about 5 minutes.
+on:
+  pull_request:
+    # The union of the per-target filters below, so an unrelated PR starts no
+    # runner at all.
+    paths:
+      - "src/core/**"
+      - "src/io/**"
+      - "src/utils/convert.*"
+      - "src/utils/FileURI.*"
+      - "src/utils/FlowCalculator*"
+      - "test/fuzz/**"
+      - "test/fixtures/clusters/**"
+      - "CMakeLists.txt"
+      - "mk/test.mk"
+      - ".github/workflows/fuzz-pr.yml"
+      - ".github/actions/restore-fuzz-corpus/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # dorny/paths-filter lists the PR's changed files through the API.
+  pull-requests: read
+  # restore-fuzz-corpus finds the weekly corpus artifact.
+  actions: read
+
+concurrency:
+  group: fuzz-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    # pipefail, so a finding fails the step through `| tee`.
+    shell: bash
+
+jobs:
+  fuzz:
+    name: Fuzz changed code
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Which targets cover the change. A manual dispatch runs all three.
+      - name: Detect changed paths
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v3.0.2
+        with:
+          filters: |
+            shared: &shared
+              - "CMakeLists.txt"
+              - "mk/test.mk"
+              - ".github/workflows/fuzz-pr.yml"
+              - ".github/actions/restore-fuzz-corpus/**"
+            intake:
+              - *shared
+              - "src/io/**"
+              - "src/utils/convert.*"
+              - "src/utils/FileURI.*"
+              - "test/fuzz/fuzz_intake.cpp"
+              - "test/fuzz/intake.dict"
+            run:
+              - *shared
+              - "src/core/**"
+              - "src/utils/FlowCalculator*"
+              - "src/io/Config.*"
+              - "test/fuzz/fuzz_run.cpp"
+              - "test/fuzz/intake.dict"
+              - "test/fuzz/seed_run_corpus.sh"
+            cluster:
+              - *shared
+              - "src/io/ClusterMap.*"
+              - "src/core/InfomapBase.*"
+              - "test/fuzz/fuzz_cluster.cpp"
+              - "test/fuzz/cluster.dict"
+              - "test/fuzz/cluster_seeds/**"
+              - "test/fuzz/seed_cluster_corpus.sh"
+              - "test/fixtures/clusters/**"
+
+      - name: Install clang
+        # Same packages as fuzz.yml: libclang-rt-dev ships the libFuzzer and
+        # ASan runtimes.
+        run: |
+          # A third-party repo in the runner image (azure-cli, chrome, ...) can
+          # 403, which fails `apt-get update` even when the Ubuntu archive we
+          # install from downloaded fine. The install is the real gate.
+          sudo apt-get update || echo "::warning::apt-get update reported errors; continuing to the install"
+          sudo apt-get install -y clang libclang-rt-dev
+
+      # The weekly corpus of all three targets, read only: this workflow never
+      # uploads one, so a PR cannot change what the weekly run starts from.
+      # With no artifact the fuzzers start from the seeds, as `make fuzz` does
+      # locally.
+      - name: Restore fuzz corpus
+        uses: ./.github/actions/restore-fuzz-corpus
+        with:
+          token: ${{ github.token }}
+
+      - name: Fuzz the network intake
+        if: github.event_name != 'pull_request' || steps.filter.outputs.intake == 'true'
+        run: |
+          mkdir -p build/fuzz-logs
+          make fuzz FUZZ_TARGET=intake FUZZ_SECONDS=60 2>&1 | tee build/fuzz-logs/intake.log
+
+      # The steps below run even when an earlier target found something, so
+      # one red step does not hide another.
+      - name: Fuzz full runs
+        if: ${{ !cancelled() && (github.event_name != 'pull_request' || steps.filter.outputs.run == 'true') }}
+        run: |
+          mkdir -p build/fuzz-logs
+          make fuzz FUZZ_TARGET=run FUZZ_SECONDS=60 2>&1 | tee build/fuzz-logs/run.log
+
+      - name: Fuzz cluster data
+        if: ${{ !cancelled() && (github.event_name != 'pull_request' || steps.filter.outputs.cluster == 'true') }}
+        run: |
+          mkdir -p build/fuzz-logs
+          make fuzz FUZZ_TARGET=cluster FUZZ_SECONDS=60 2>&1 | tee build/fuzz-logs/cluster.log
+
+      # Puts each finding on the run page: the sanitizer or libFuzzer summary,
+      # the options line the harness prints (fuzz_run and fuzz_cluster), and the
+      # command that replays the saved input.
+      - name: Report findings
+        if: failure()
+        run: |
+          for log in build/fuzz-logs/*.log; do
+            [ -f "$log" ] || continue
+            target=$(basename "$log" .log)
+            unit=$(sed -n 's/.*Test unit written to //p' "$log" | tail -n 1)
+            [ -n "$unit" ] || continue
+            {
+              echo "### fuzz_$target"
+              echo '```'
+              grep -E "^(SUMMARY: |==[0-9]+== ?ERROR: |fuzz_$target: )" "$log" || true
+              echo "build/fuzz/fuzz_$target $unit"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            # fuzz_intake prints no such lines, nor does a timeout in any target.
+            { grep -E "^fuzz_$target: (network|options): " "$log" || true; } | while IFS= read -r line; do
+              echo "::error title=fuzz_$target::${line//%/%25}"
+            done
+            echo "::error title=fuzz_$target::Replay: build/fuzz/fuzz_$target $unit (the input is in the fuzz-pr-findings artifact)"
+          done
+
+      - name: Upload findings
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-pr-findings
+          path: |
+            build/fuzz/*crash-*
+            build/fuzz/*timeout-*
+            build/fuzz/*leak-*
+            build/fuzz/*oom-*
+            build/fuzz-logs/*.log
+          if-no-files-found: ignore
+          retention-days: 14

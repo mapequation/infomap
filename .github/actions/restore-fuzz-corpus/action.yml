@@ -1,0 +1,38 @@
+name: Restore fuzz corpus
+description: >-
+  Download the newest fuzz-corpus artifact that a default-branch run of
+  fuzz.yml uploaded into build/fuzz (corpus, corpus-run, corpus-cluster). The
+  corpus lives in an artifact, not the Actions cache: the cache is shared with
+  the per-sha ccache entries and evicts anything unused for a week. With no
+  artifact, or when the download fails, the fuzzers start from the seeds.
+inputs:
+  token:
+    description: Token with actions:read on this repository (e.g. github.token).
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Download the newest corpus artifact
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        GH_REPO: ${{ github.repository }}
+      run: |
+        set -uo pipefail
+        # From the API, not the event payload, whose shape depends on the
+        # trigger.
+        branch=$(gh api "repos/$GH_REPO" --jq .default_branch) || branch=""
+        run_id=$(gh api "repos/$GH_REPO/actions/artifacts?name=fuzz-corpus&per_page=100" --jq \
+          "[.artifacts[] | select((.expired | not) and .workflow_run.head_branch == \"$branch\")]
+           | sort_by(.created_at) | last | .workflow_run.id // empty") || run_id=""
+        if [ -z "$run_id" ]; then
+          echo "::warning::No fuzz corpus artifact found; starting from the seeds"
+          exit 0
+        fi
+        mkdir -p build/fuzz
+        if gh run download "$run_id" --name fuzz-corpus --dir build/fuzz; then
+          echo "Restored the fuzz corpus from run $run_id"
+          du -sh build/fuzz/corpus* || true
+        else
+          echo "::warning::Could not download the fuzz corpus from run $run_id; starting from the seeds"
+        fi

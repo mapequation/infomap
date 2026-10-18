@@ -5,11 +5,16 @@
 
 #include "TestUtils.h"
 
+#include <nlohmann/json.hpp>
+
 #include <array>
 #include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <functional>
 #include <map>
+#include <random>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -339,6 +344,48 @@ void checkInnerParallelPartitionCodelength(const std::string& extraFlags, const 
 
   infomap::test::checkApproxCodelength(check.codelength(), result.codelength, 1e-9);
   infomap::test::checkApproxCodelength(check.getIndexCodelength(), result.indexCodelength, 1e-9);
+}
+
+// --inner-parallelization only engages on an active network of at least
+// minNetworkSizeForInnerParallelization (10,000) nodes, so the fixtures above take
+// the serial path. This directed planted partition is exactly that large: groups
+// of 40 nodes, each node with four random draws inside its group (self-links
+// skipped, repeats kept) and one link to a random node anywhere.
+void addInnerParallelThresholdNetwork(InfomapWrapper& im)
+{
+  const unsigned int groupSize = 40;
+  const unsigned int numNodes = 10000;
+  std::mt19937 rng(17);
+  for (unsigned int source = 0; source < numNodes; ++source) {
+    const unsigned int groupStart = source - source % groupSize;
+    for (unsigned int k = 0; k < 4; ++k) {
+      unsigned int target = groupStart + rng() % groupSize;
+      if (target != source)
+        im.addLink(source, target);
+    }
+    im.addLink(source, rng() % numNodes);
+  }
+}
+
+struct InnerParallelThresholdRun {
+  std::map<unsigned int, unsigned int> modules;
+  double codelength = 0.0;
+  double indexCodelength = 0.0;
+  unsigned long threadsUsed = 0;
+};
+
+InnerParallelThresholdRun runInnerParallelThresholdNetwork(const std::string& flags)
+{
+  const std::string reportPath = "inner_parallel_threshold_report.json";
+  std::remove(reportPath.c_str());
+  InfomapWrapper im(infomap::test::defaultFlags("--directed --two-level --no-file-output --timing-json " + reportPath + " " + flags));
+  addInnerParallelThresholdNetwork(im);
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  const auto report = nlohmann::json::parse(infomap::test::readTextFile(reportPath));
+  std::remove(reportPath.c_str());
+  return { im.getModules(), im.codelength(), im.getIndexCodelength(), report.at("threads_used").get<unsigned long>() };
 }
 
 TEST_CASE("Recorded teleportation stays stable across trial counts for the directed fixture [fast][core][flow]")
@@ -745,6 +792,38 @@ TEST_CASE("Inner parallelization is deterministic for a fixed seed and thread co
   CHECK(first.indexCodelength == doctest::Approx(second.indexCodelength));
 }
 
+TEST_CASE("Inner parallelization above the size threshold reports the codelength of its partition [fast][core][flow][openmp]")
+{
+  // The commit phase rechecks conflicting moves with the non-hoisted move delta,
+  // which nothing else calls. #830/#904 was in the guard of that delta, so run
+  // with and without each term it switches on.
+  for (const std::string flags : {
+           "",
+           "--recorded-teleportation",
+           "--entropy-corrected",
+           "--preferred-number-of-modules 200",
+           "--entropy-corrected --preferred-number-of-modules 200",
+           "--recorded-teleportation --entropy-corrected --preferred-number-of-modules 200",
+       }) {
+    CAPTURE(flags);
+    const auto result = runInnerParallelThresholdNetwork("--inner-parallelization --num-threads 4 " + flags);
+#ifdef _OPENMP
+    CHECK(result.threadsUsed > 1);
+#else
+    CHECK(result.threadsUsed == 1);
+#endif
+
+    InfomapWrapper check(infomap::test::defaultFlags("--directed --two-level --no-infomap " + flags));
+    addInnerParallelThresholdNetwork(check);
+    check.setInitialPartition(result.modules);
+    check.run();
+
+    CHECK(check.getModules() == result.modules);
+    infomap::test::checkApproxCodelength(check.codelength(), result.codelength, 1e-9);
+    infomap::test::checkApproxCodelength(check.getIndexCodelength(), result.indexCodelength, 1e-9);
+  }
+}
+
 TEST_CASE("Inner parallelization with meta data falls back to stable serial optimization [fast][core][flow][openmp]")
 {
 #ifdef _OPENMP
@@ -891,6 +970,51 @@ TEST_CASE("multilayer-relax-to-self matches spread on a single-node overlap [fas
   infomap::test::checkApproxCodelength(toself.second, spread.second, 1e-9);
 }
 
+// Multilayer input with intra-layer links expands them to both directions and runs the directed
+// model under undirected flow, and undirdir was replaced by that flow with only a -v note (#1233).
+// It now warns. outdirdir and rawdir compute their own flow, and *Multilayer input keeps undirdir.
+TEST_CASE("undirdir on multilayer input with intra-layer links warns that it has no effect (#1233) [fast][core][flow][multilayer]")
+{
+  const std::string warning = "The undirdir flow model has no effect on multilayer input with intra-layer links";
+  const auto run = [](const std::string& model, const std::function<void(InfomapWrapper&)>& addInput) {
+    std::ostringstream captured;
+    double codelength = 0;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      // Not defaultFlags: it carries --silent, which mutes the warning under test.
+      InfomapWrapper im("--seed 1 --num-trials 1 --no-file-output --flow-model " + model);
+      addInput(im);
+      im.run();
+      codelength = im.codelength();
+    }
+    return std::make_pair(captured.str(), codelength);
+  };
+  const auto readFile = [](const std::string& path) {
+    return [path](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath(path)); };
+  };
+  const auto intraLinks = [](InfomapWrapper& im) {
+    addMultilayerIntraLinks(im, { { 1, 1, 2, 1.0 }, { 1, 2, 3, 1.0 }, { 2, 3, 1, 1.0 }, { 2, 1, 2, 2.0 } });
+  };
+
+  const std::vector<std::pair<std::string, std::function<void(InfomapWrapper&)>>> intraInputs {
+    { "multilayer_intra_inter.net", readFile("examples/networks/multilayer_intra_inter.net") },
+    { "multilayer_intra.net", readFile("examples/networks/multilayer_intra.net") },
+    { "addMultilayerIntraLink", intraLinks },
+  };
+  for (const auto& input : intraInputs) {
+    CAPTURE(input.first);
+    const auto undirdir = run("undirdir", input.second);
+    CHECK(undirdir.first.find(warning) != std::string::npos);
+    CHECK(undirdir.second == run("undirected", input.second).second);
+    for (const char* model : { "undirected", "directed", "outdirdir", "rawdir" }) {
+      CAPTURE(model);
+      CHECK(run(model, input.second).first.find(warning) == std::string::npos);
+    }
+  }
+
+  CHECK(run("undirdir", readFile("examples/networks/multilayer.net")).first.find(warning) == std::string::npos);
+}
+
 // The canonical bipartite shape: every link runs primary -> feature, as in
 // examples/networks/bipartite.net. Several directed flow models degenerate on
 // it (all-zero or non-finite node flow); the map equation is undefined there, so
@@ -1010,6 +1134,22 @@ TEST_CASE("Degenerate flow reports an input error [fast][core][flow]")
     // The message must name the quantity, so a user can tell this from a
     // parse failure or an empty network.
     CHECK(std::string(e.what()).find("flow") != std::string::npos);
+  }
+}
+
+TEST_CASE("Node weights as flow do not hide a walk without flow [fast][core][flow]")
+{
+  // The node flow came from the weights, so the node-flow check passed, and the run reported
+  // 1.185 bits for a walk that takes no link steps and teleports into no node (#1232).
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --recorded-teleportation --use-node-weights-as-flow"));
+  addCanonicalBipartiteLinks(im);
+
+  try {
+    im.run();
+    FAIL("expected the walk without flow to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    CHECK(std::string(e.what()).find("Degenerate flow") != std::string::npos);
   }
 }
 
