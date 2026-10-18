@@ -49,7 +49,9 @@ as the one without the option:
 - ``--recorded-teleportation`` under the same models (#1194);
 - ``--entropy-corrected`` and ``--preferred-number-of-modules`` under any
   objective but the ordinary map equation: state, multilayer and meta-data
-  input (#904).
+  input (#904);
+- ``undirdir`` on multilayer ``*Intra``/``*Inter`` input, which runs the
+  undirected multilayer flow (#1233).
 
 A combination the run refuses with an input error cannot be combined with
 anything else, so its pair is left out of the array and checked on its own
@@ -457,16 +459,18 @@ WARN_RECORDED = "--recorded-teleportation has no effect"
 WARN_ENTROPY = "--entropy-corrected has no effect"
 WARN_PREFERRED = "--preferred-number-of-modules has no effect"
 WARN_NORMALISED = "Node flow sums to"
+WARN_UNDIRDIR = "The undirdir flow model has no effect on multilayer input"
 # Warned about, but not an option the run ignores; see the module docstring.
 TOLERATED = ("PageRank calculation did not converge",)
 
 
 def expected(row: Mapping[str, object], net: Net) -> Expected:
     model = str(row["flow_model"])
+    replaced_undirdir = model == "undirdir" and net.directed_input
     if model in ("undirected", "undirdir") and net.directed_input:
         # Multilayer *Intra/*Inter input expands its links to both directions and
         # runs directed (Network::generateStateNetworkFromMultilayer), undirdir
-        # included, with a note at verbosity 1 only (#1233).
+        # included, which warns that it has no effect (#1233).
         model = "directed"
     multilayer = net.kind == "multilayer"
     exp = Expected(flow_model=model, memory=net.kind in ("state", "multilayer"))
@@ -481,6 +485,8 @@ def expected(row: Mapping[str, object], net: Net) -> Expected:
         exp.warnings.add(WARN_REGULARIZED)
     elif asked_recorded and not exp.recorded and model != "undirected":
         exp.warnings.add(WARN_RECORDED)
+    if replaced_undirdir:
+        exp.warnings.add(WARN_UNDIRDIR)
     if not exp.biased and row["entropy"]:
         exp.warnings.add(WARN_ENTROPY)
     if not exp.biased and row["preferred"]:
