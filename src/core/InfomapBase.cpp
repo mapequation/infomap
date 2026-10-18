@@ -2218,6 +2218,9 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
     unsigned int numLinksInNewNetwork = 0;
     for (InfoNode& node : m_root) {
       m_leafNodes[nodeIndex] = &node;
+      // Give the hard module a node id of its own, so that a tree saved by node id over this
+      // network (the super-level tree in hierarchicalPartition) can be rebuilt with initTree.
+      node.stateId = nodeIndex;
       // Collapse children
       node.collapseChildren();
       numLinksInNewNetwork += node.outDegree();
@@ -2590,6 +2593,11 @@ void InfomapBase::hierarchicalPartition()
 
       const double diffCodelength = codelengthBefore - codelengthAfter;
       Console::detail(1, "fine-tune bottom modules: improvement {:g}% {} codelength {}", (diffCodelength / codelengthBefore) * 100, Console::arrow(), io::toPrecision(codelengthAfter));
+
+      // The recursion below starts from m_hierarchicalCodelength and the leaf modules'
+      // codelength terms. Both still describe the seed tree, and the new sub modules have
+      // no term at all, so re-score the fine-tuned tree.
+      m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
     }
 
     recursivePartition();
@@ -2621,17 +2629,13 @@ void InfomapBase::hierarchicalPartition()
 
   // The recursive search below starts over from the super modules and can end above the
   // super-level tree it threw away (#837). Keep that tree and its codelength to fall back on.
-  // Not under a hard partition: the leaves are then the collapsed hard modules, which have
-  // no node ids, and initTree cannot rebuild the tree from them.
   NodePaths superLevelTree;
   double superLevelCodelength = 0.0;
   if (fastHierarchicalSolution == 0) {
     superLevelCodelength = m_hierarchicalCodelength;
-    if (!haveHardPartition()) {
-      superLevelTree.reserve(numLeafNodes());
-      for (auto it(iterLeafNodes()); !it.isEnd(); ++it)
-        superLevelTree.emplace_back(it->stateId, it.path());
-    }
+    superLevelTree.reserve(numLeafNodes());
+    for (auto it(iterLeafNodes()); !it.isEnd(); ++it)
+      superLevelTree.emplace_back(it->stateId, it.path());
     removeSubModules(true);
     m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
   }
@@ -3017,6 +3021,17 @@ void InfomapBase::checkInvariants(const InfoNode& root, const char* phase) const
 
   if (isMainInfomap() && m_flowSumsToOne && std::abs(sumLeafFlow - 1.0) > tolerance)
     fail(fmt::format(FMT_STRING("the leaf flow sums to {:.12g}, not 1"), sumLeafFlow));
+}
+
+void InfomapBase::failMoveDelta(const char* where, double predictedDelta, double actualDelta) const
+{
+  throw InfomapError(ExitCode::InternalError,
+                     fmt::format(FMT_STRING("Move invariant violated in {}{}: the move was chosen on a codelength change of {:.12g} "
+                                            "but changed the codelength by {:.12g}. This is a bug in Infomap."),
+                                 where,
+                                 isMainInfomap() ? "" : " in a sub-partition",
+                                 predictedDelta,
+                                 actualDelta));
 }
 #endif
 

@@ -540,6 +540,8 @@ private:
   // INFOMAP_CHECK_INVARIANTS is set (debug, sanitizer and fuzz builds); a no-op otherwise.
 #if INFOMAP_CHECK_INVARIANTS
   void checkInvariants(const InfoNode& root, const char* phase) const;
+  // Throws the InfomapOptimizer::checkMoveDelta violation, formatted here rather than in the header.
+  [[noreturn]] void failMoveDelta(const char* where, double predictedDelta, double actualDelta) const;
 #else
   void checkInvariants(const InfoNode& /*root*/, const char* /*phase*/) const {}
 #endif
