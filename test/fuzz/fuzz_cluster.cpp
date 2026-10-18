@@ -160,9 +160,13 @@ bool contains(const char* haystack, const char* needle) { return std::strstr(hay
 
 // The flow invariants, and the negative-flow guards on the finished tree, say in
 // their message that they are a bug.
-bool isBug(const char* message)
+// Only an internal error counts: an input error can quote the fuzzed line back,
+// and that line can hold the same words (#1263).
+bool isBug(const infomap::InfomapError& e)
 {
-  return contains(message, "Flow invariant violated") || contains(message, "is a bug in");
+  const char* message = e.what();
+  return e.code() == infomap::ExitCode::InternalError
+      && (contains(message, "Flow invariant violated") || contains(message, "is a bug in"));
 }
 
 // A failed check of the harness's own, raised as a bug.
@@ -408,12 +412,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     applyMetaData(im, options.metaData);
     im.run();
   } catch (const infomap::InfomapError& e) {
-    if (isBug(e.what()) && !isKnownFinding(im, e.what()))
+    if (isBug(e) && !isKnownFinding(im, e.what()))
       reportBug(options, clusterText, e.what());
     // Otherwise an expected rejection of the cluster data.
     return 0;
   } catch (const std::runtime_error&) {
-    // The cluster data readers throw a plain runtime_error on malformed input.
+    // Validation that throws a plain runtime_error: also a rejection.
     return 0;
   } catch (const std::exception& e) {
     // A logic_error (out_of_range, invalid_argument, ...) or bad_alloc on a
