@@ -2381,7 +2381,11 @@ void InfomapBase::generateSubNetwork(Network& network)
   unsigned int maxDegree = 0;
   unsigned int maxOutDegree = 0;
   unsigned int maxInDegree = 0;
-  double totDegree = network.sumDegree();
+  // Count a pair listed as a b and b a once on undirected input, as --regularized and the
+  // entropy correction do (#1203, #1264). The multilayer expansion lists undirected links in
+  // both directions itself, so it keeps its count.
+  const bool undirectedLinks = flowModel == FlowModel::undirected && !isMultilayerNetwork();
+  double totDegree = undirectedLinks ? network.sumUndirectedDegree() : network.sumDegree();
   std::vector<double> entropies(numNodes, 0);
 
   for (unsigned i = 0; i < numNodes; ++i) {
@@ -2428,11 +2432,14 @@ void InfomapBase::generateSubNetwork(Network& network)
       InfoNode& node = *m_leafNodes[i];
       double localScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[i]), -damping) : infomath::linlog(std::max(minLocalScale, node.data.flow * totDegree), damping);
       for (InfoEdge* e : node.outEdges()) {
+        // Under undirected flow a link takes the larger scale of its two ends. Keep it per link,
+        // so the scale does not depend on the links listed before it (#1264).
+        double linkLocalScale = localScale;
         if (isUndirectedFlow()) {
           double oppositeLocalScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[nodeIndexMap[e->target->stateId]]), -damping) : infomath::linlog(std::max(minLocalScale, e->target->data.flow * totDegree), damping);
-          localScale = std::max(localScale, oppositeLocalScale);
+          linkLocalScale = std::max(localScale, oppositeLocalScale);
         }
-        double localMarkovTimeScale = maxScale / std::max(minLocalScale, localScale);
+        double localMarkovTimeScale = maxScale / std::max(minLocalScale, linkLocalScale);
         e->data.flow *= localMarkovTimeScale;
         // Note: deliberately do NOT write the scaled flow back into the shared StateNetwork
         // (network.nodeLinkMap()). The optimizer and output use only the per-instance InfoEdge
