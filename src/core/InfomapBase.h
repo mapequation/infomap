@@ -548,6 +548,11 @@ private:
   void checkInvariants(const InfoNode& root, const char* phase) const;
   // Throws the InfomapOptimizer::checkMoveDelta violation, formatted here rather than in the header.
   [[noreturn]] void failMoveDelta(const char* where, double predictedDelta, double actualDelta) const;
+  // The codelength the search tracked must be the one the objective prices on the partition it
+  // ended on, and the codelength that recursivePartition compared for a module must be the one
+  // of the subtree it kept (#1279). Throws InfomapError naming `phase` on a mismatch.
+  void checkCodelength(double tracked, double priced, const char* phase) const;
+  void checkPartitionCodelength() const;
 #else
   void checkInvariants(const InfoNode& /*root*/, const char* /*phase*/) const {}
 #endif

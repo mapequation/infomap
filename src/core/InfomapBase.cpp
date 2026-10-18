@@ -2825,6 +2825,9 @@ void InfomapBase::partition()
   if (m_numNonTrivialTopModules != numTopModules())
     nonTrivialSummary = fmt::format(FMT_STRING(" ({} non-trivial)"), m_numNonTrivialTopModules);
   progress.finish(fmt::format(FMT_STRING("{} {} codelength {}, {} modules{}"), compressionSummary(prettyCompression), Console::arrow(), io::toPrecision(getCodelength()), numTopModules(), nonTrivialSummary));
+#if INFOMAP_CHECK_INVARIANTS
+  checkPartitionCodelength();
+#endif
   const bool regularizedPriorOnly = usesRegularizedFlow() && network().numLinks() == 0;
   double oneModuleCodelength = getOneLevelCodelength();
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
@@ -3210,6 +3213,54 @@ void InfomapBase::checkInvariants(const InfoNode& root, const char* phase) const
 
   if (isMainInfomap() && m_flowSumsToOne && std::abs(sumLeafFlow - 1.0) > tolerance)
     fail(fmt::format(FMT_STRING("the leaf flow sums to {:.12g}, not 1"), sumLeafFlow));
+}
+
+void InfomapBase::checkCodelength(double tracked, double priced, const char* phase) const
+{
+  // Like checkMoveDelta: the tracked value is a difference of running plogp sums, whose
+  // rounding scales with the codelength and, through the enter and exit flow, with the Markov time.
+  constexpr double tolerance = 1e-9;
+  const double scale = std::max({ 1.0, std::abs(tracked), std::abs(priced), rateScale() });
+  if (std::abs(tracked - priced) > tolerance * scale)
+    throw InfomapError(ExitCode::InternalError,
+                       fmt::format(FMT_STRING("Codelength invariant violated after {}{}: the search has {:.12g} bits, "
+                                              "the tree it ended on {:.12g}. This is a bug in Infomap."),
+                                   phase,
+                                   isMainInfomap() ? "" : " in a sub-partition",
+                                   tracked,
+                                   priced));
+}
+
+// The objective tracks the codelength through running sums of its terms, and the search
+// compares that value: against the one-level codelength here, and, in a sub-partition,
+// through the sub-Infomap's codelength against the module's own term in recursivePartition.
+// Every reported codelength is instead priced again node by node on the tree, so a fault in
+// the running terms steers those decisions without showing in any result (#1279). Hence the
+// two must agree on the two-level tree the search ended on. The root's term is the index
+// codebook. In a sub-partition it has the module's exit codeword, as the module's own term
+// does in the parent tree, so the two price that codeword alike.
+void InfomapBase::checkPartitionCodelength() const
+{
+  // A hard partition searches the hard modules as leaves, so its codelength leaves out
+  // their own codebooks, which the tree under the root still has (#1207).
+  if (haveHardPartition())
+    return;
+  // Known gaps, each skipped until its fix:
+  // - a sub-search of a memory network has no exit codeword in its index codebook (#1282);
+  // - an entropy-corrected sub- or super-search charges the parameters of the whole network (#1283);
+  // - a trial after a restored tree starts from the module network's terms (#1284);
+  // - a network with zero flow, entered all the same, is priced at zero (#1290);
+  // - a single node is never searched, so the objective never priced it (#1293).
+  if (!isMainInfomap() && (haveMemory() || entropyBiasCorrection))
+    return;
+  if (m_root.data.flow < 1e-16 || numLeafNodes() < 2)
+    return;
+  if (isMainInfomap() && !m_objectiveTermsAreForLeafNetwork)
+    return;
+  double priced = calcCodelength(m_root) + calcTreeCodelengthCost(numTopModules());
+  for (const InfoNode& module : m_root)
+    priced += calcCodelength(module);
+  checkCodelength(getCodelength(), priced, "the two-level partition");
 }
 
 void InfomapBase::failMoveDelta(const char* where, double predictedDelta, double actualDelta) const
@@ -4120,6 +4171,9 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   double subModuleCodelength = subCodelength - subIndexCodelength;
   InfoNode& subRoot = *module.getInfomapRoot();
   unsigned int numSubModules = subRoot.childDegree();
+#if INFOMAP_CHECK_INVARIANTS
+  const double subTreeCodelengthCost = subInfomap.calcTreeCodelengthCost(numSubModules);
+#endif
   bool trivialSubPartition = numSubModules == 1 || numSubModules == module.childDegree();
   // #308: bias the refinement accept test by the local recursion depth (level + 1).
   const double subPrefBias = twoLevel
@@ -4201,6 +4255,27 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
     module.disposeInfomap();
     module.codelength = calcCodelength(module);
   }
+#if INFOMAP_CHECK_INVARIANTS
+  // The sub-partition was kept on subCodelength, so the subtree now in its place must price
+  // to it (#1279). Only the sub-module terms compare like with like. The index term moved from
+  // the sub-Infomap root to module, which prices the same codewords except under the entropy
+  // correction: the root has no exit codeword and module does (#1176). The sub-Infomap's
+  // tree-level term charges its module count against --preferred-number-of-modules, which the
+  // parent tree charges at the top level only (#1292), so it is left out too.
+  // oldModuleCodelength is calcCodelength(module) by construction above.
+  {
+    double pricedSubModuleCodelength = 0.0;
+    for (const InfoNode* subModule : materializedSubModules)
+      pricedSubModuleCodelength += calcCodelength(*subModule);
+    try {
+      checkCodelength(subModuleCodelength - subTreeCodelengthCost, pricedSubModuleCodelength, "keeping a sub-partition");
+    } catch (const std::exception&) {
+      // Inside an OpenMP task: record it, recursivePartition rethrows after the region.
+      record.error = std::current_exception();
+      return;
+    }
+  }
+#endif
   record.indexCodelength = module.codelength;
 
   // Spawn the largest sub-modules first so the dominant subtrees start immediately.
