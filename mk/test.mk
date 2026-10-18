@@ -203,7 +203,7 @@ test-tsan:
 		-DINFOMAP_EXTRA_LINK_FLAGS="$(LDFLAGS)" \
 		$(TSAN_CMAKE_ARGS)
 	@"$(CMAKE)" --build $(TSAN_BUILD_DIR) --target $(CMAKE_TEST_TARGET) --parallel $(JOBS)
-	@OMP_TOOL_LIBRARIES="$(TSAN_ARCHER_LIB)" OMP_NUM_THREADS=$(TSAN_OMP_NUM_THREADS) \
+	@OMP_TOOL_LIBRARIES="$(abspath $(TSAN_ARCHER_LIB))" OMP_NUM_THREADS=$(TSAN_OMP_NUM_THREADS) \
 		TSAN_OPTIONS="ignore_noninstrumented_modules=1 abort_on_error=0 second_deadlock_stack=1 suppressions=$(TSAN_SUPPRESSIONS)" \
 		"$(CTEST)" --test-dir $(TSAN_BUILD_DIR) --output-on-failure $(CTEST_ARGS)
 
