@@ -172,15 +172,12 @@ struct Finding : std::runtime_error {
 
 // Open bugs the target would otherwise report on every run. Each needs its options
 // and its kind of failure, so an unrelated failure under the same options is still
-// reported. Drop the entry when the bug is fixed so the fuzzer guards the fix.
-bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
+// reported. Each names its issue as "#N" in a comment and is pinned as a should_fail
+// case with "(#N)" in its name in test/cpp/test_partition.cpp ("Fuzz finding:");
+// test/python/test_known_findings.py checks the pairing. Drop the entry when the bug
+// is fixed so the fuzzer guards the fix.
+bool isKnownFinding(const infomap::InfomapWrapper& /*im*/, const char* /*message*/)
 {
-  const bool misreported = contains(message, "reported codelength");
-  // #1207: the tree is not scored again after the hard partition is restored: a module that held
-  // a single hard module is left without that module's codebook, and a hard module
-  // directly under the root (all of them under --no-infomap) is replaced by its nodes there.
-  if (im.clusterDataIsHard && misreported)
-    return true;
   return false;
 }
 
