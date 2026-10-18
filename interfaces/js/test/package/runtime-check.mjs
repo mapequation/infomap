@@ -173,6 +173,24 @@ for (const { label, run } of [
   } finally {
     fs.rmSync(nativeDir, { recursive: true, force: true });
   }
+
+  // A file inside the directory that holds the network and the outputs could
+  // overwrite the network or be read back as output (#903), so it is refused.
+  for (const name of [
+    "/work/network.clu",
+    "/work/input/network.net",
+    "work/network.clu",
+    "./x/../work/network.clu",
+  ]) {
+    await assert.rejects(
+      nodeModule.run(network, {
+        args: ["--cluster-data", name, "--no-infomap", "-o", "tree"],
+        files: { [name]: files["init.clu"] },
+      }),
+      /reserved \/work directory/,
+      `files["${name}"] was not refused`,
+    );
+  }
 }
 
 // Exercise the `infomap` bin on real files, like the native binary.

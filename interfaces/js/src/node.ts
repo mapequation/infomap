@@ -52,6 +52,19 @@ function basenameWithoutExtension(filename: string) {
   return filename.replace(/\.[^./\\]+$/, "");
 }
 
+// Resolve a virtual path against the working directory "/", folding "." and "..".
+function resolveVirtualPath(name: string) {
+  const parts: string[] = [];
+  for (const part of name.split("/")) {
+    if (part === "..") {
+      parts.pop();
+    } else if (part && part !== ".") {
+      parts.push(part);
+    }
+  }
+  return `/${parts.join("/")}`;
+}
+
 function exitStatusCode(error: unknown) {
   if (error && typeof error === "object" && "status" in error) {
     return Number((error as { status: unknown }).status) || 0;
@@ -88,6 +101,18 @@ export async function run(
     extraArgs.push("--out-name", outName);
   }
 
+  const workDir = "/work";
+  // The network and the outputs live under ${workDir}. An extra file there could
+  // overwrite the network or be read back as output (#903), so refuse it.
+  for (const name of Object.keys(files)) {
+    const resolved = resolveVirtualPath(name);
+    if (resolved === workDir || resolved.startsWith(`${workDir}/`)) {
+      throw new Error(
+        `run(network, options): files["${name}"] is inside the reserved ${workDir} directory`,
+      );
+    }
+  }
+
   const { default: createInfomapModule } = await import("./infomap.node.mjs");
 
   const stdout: string[] = [];
@@ -102,7 +127,6 @@ export async function run(
     },
   });
 
-  const workDir = "/work";
   Module.FS.mkdir(workDir);
   // The input goes in its own directory so it cannot be read back as output: the out
   // name is the input filename minus its extension, so ${workDir}/${base}.net was the
