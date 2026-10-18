@@ -169,6 +169,36 @@ TEST_CASE("A module preference reaches a deep tree from the recursive search [fa
   REQUIRE(numDeepTreesOffPreference > 0);
 }
 
+// A single node is never moved, so the search never initialised the objective's terms
+// and reported 0 bits for a tree that prices to |1 - K_pref| (#1293).
+TEST_CASE("A module preference reaches a one-node network (#1293) [fast][core][mapeq][biased]")
+{
+  const std::vector<std::string> flagSets {
+    "",
+    "--two-level",
+    "--directed",
+    "--regularized",
+    "--entropy-corrected",
+  };
+  for (const auto& flags : flagSets) {
+    for (const bool selfLink : { true, false }) {
+      // Entropy correction on a network without links is a separate gap.
+      if (!selfLink && flags == "--entropy-corrected")
+        continue;
+      InfomapWrapper im(defaultFlags("--preferred-number-of-modules 4 " + flags));
+      if (selfLink)
+        im.addLink(1, 1);
+      else
+        im.addNode(1);
+      im.run();
+      INFO("flags '" << flags << "', self-link " << selfLink);
+      REQUIRE(im.numLeafNodes() == 1);
+      CHECK(im.codelength() == doctest::Approx(3.0));
+      checkApproxCodelength(im.codelength(), im.calcCodelengthOnTree(im.root(), true));
+    }
+  }
+}
+
 TEST_CASE("MapEquation invariant: MemMapEquation (memory), tracked == recompute [fast][core][mapeq][mem]")
 {
   InfomapWrapper im(defaultFlags("--two-level"));

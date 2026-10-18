@@ -2770,6 +2770,13 @@ void InfomapBase::partition()
   double oldCodelength = initialCodelength;
 
   m_tuneIterationIndex = 0;
+  // A single node is never moved, so findTopModulesRepeatedly never initialises the
+  // objective's terms for it, and the run reported 0 instead of the codelength of the
+  // tree it returns, including the term for the number of modules (#1293).
+  if (numTopModules() == 1 && !haveModules()) {
+    setActiveNetworkFromLeafs();
+    initPartition();
+  }
   findTopModulesRepeatedly(levelAggregationLimit);
 
   double newCodelength = getCodelength();
@@ -3248,11 +3255,8 @@ void InfomapBase::checkPartitionCodelength() const
   // Known gaps, each skipped until its fix:
   // - a sub-search of a memory network has no exit codeword in its index codebook (#1282);
   // - an entropy-corrected sub- or super-search charges the parameters of the whole network (#1283);
-  // - a trial after a restored tree starts from the module network's terms (#1284);
-  // - a single node is never searched, so the objective never priced it (#1293).
+  // - a trial after a restored tree starts from the module network's terms (#1284).
   if (!isMainInfomap() && (haveMemory() || entropyBiasCorrection))
-    return;
-  if (numLeafNodes() < 2)
     return;
   if (isMainInfomap() && !m_objectiveTermsAreForLeafNetwork)
     return;
