@@ -7,7 +7,7 @@ name: Bindings sanitizers
 # so this is the only run that sees the SWIG layers and how the bindings hold
 # on to core objects (#954, #1099). A separate workflow so it never gates PRs
 # while it settles in, but it goes RED on a report. Same pattern as fuzz.yml
-# and tsan.yml -- do NOT add continue-on-error, that would mask the alert.
+# -- do NOT add continue-on-error, that would mask the alert.
 #
 # PRs run it when they touch the bindings or this setup, where lifetime bugs
 # come from. src/ changes are left to the weekly run: the blocking C++
