@@ -11,6 +11,8 @@
 #include "InfomapBase.h"
 #include "ObjectPool.h"
 #include <algorithm>
+#include <cstdint>
+#include <cstring>
 
 namespace infomap {
 
@@ -437,29 +439,62 @@ void InfoNode::initClean() noexcept
   physicalNodes.clear();
 }
 
+namespace {
+  // The flow rounded to 32 significant bits. Flows that differ only in rounding
+  // (FMA contraction on arm64 clang but not in wasm, or a different summation
+  // order) then share a key, so their order no longer depends on the build
+  // (#1325). Unlike a tolerance comparison this is a strict weak ordering.
+  std::uint64_t flowSortKey(double flow) noexcept
+  {
+    if (!(flow > 0.0))
+      return 0;
+    std::uint64_t bits = 0;
+    std::memcpy(&bits, &flow, sizeof bits);
+    constexpr unsigned int droppedBits = 20;
+    return (bits + (std::uint64_t(1) << (droppedBits - 1))) >> droppedBits;
+  }
+
+  // The smallest state id below a node, a tie-break that depends on the tree
+  // alone rather than on the order the search left the children in.
+  unsigned int firstStateId(const InfoNode& node) noexcept
+  {
+    auto infomapRoot = node.getInfomapRoot();
+    const InfoNode& root = infomapRoot ? *infomapRoot : node;
+    if (root.isLeaf())
+      return root.stateId;
+    unsigned int minId = std::numeric_limits<unsigned int>::max();
+    for (const InfoNode& child : root.children())
+      minId = std::min(minId, firstStateId(child));
+    return minId;
+  }
+
+  struct FlowSortEntry {
+    std::uint64_t flowKey;
+    unsigned int firstStateId;
+    InfoNode* node;
+  };
+} // namespace
+
 void InfoNode::sortChildrenOnFlow(bool recurse) noexcept
 {
   if (childDegree() == 0)
     return;
-  std::vector<InfoNode*> nodes(childDegree());
-  double lastFlow = 1.0;
-  bool isSorted = true;
-  unsigned int i = 0;
-  for (InfoNode& child : children()) {
-    if (child.data.flow > lastFlow) {
-      isSorted = false;
-    }
-    nodes[i] = &child;
-    lastFlow = child.data.flow;
-    ++i;
-  }
-  if (!isSorted) {
-    std::sort(nodes.begin(), nodes.end(), [](const InfoNode* a, const InfoNode* b) {
-      return b->data.flow < a->data.flow;
-    });
+  // Descending flow, then ascending first state id. std::sort alone left equal
+  // flows in an order that differs between standard libraries (#1318).
+  std::vector<FlowSortEntry> entries;
+  entries.reserve(childDegree());
+  for (InfoNode& child : children())
+    entries.push_back({ flowSortKey(child.data.flow), firstStateId(child), &child });
+  const auto before = [](const FlowSortEntry& a, const FlowSortEntry& b) {
+    if (a.flowKey != b.flowKey)
+      return a.flowKey > b.flowKey;
+    return a.firstStateId < b.firstStateId;
+  };
+  if (!std::is_sorted(entries.begin(), entries.end(), before)) {
+    std::sort(entries.begin(), entries.end(), before);
     releaseChildren();
-    for (auto node : nodes) {
-      addChild(node);
+    for (const auto& entry : entries) {
+      addChild(entry.node);
     }
   }
   if (recurse) {
