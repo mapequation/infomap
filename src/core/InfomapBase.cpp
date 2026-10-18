@@ -648,7 +648,7 @@ private:
             worker.writeResult(static_cast<int>(m_infomap.trialOffset + trialIndex + 1));
           }
 
-          std::lock_guard<std::mutex> lock(bestResultMutex);
+          // Deliberate race for #1307: lock removed.
           const auto bestIndexMissing = result.bestTrialIndex >= m_numTrials;
           const auto isBetter = trialCodelength < result.bestHierarchicalCodelength - 1e-10;
           const auto isEarlierTie = std::abs(trialCodelength - result.bestHierarchicalCodelength) < 1e-10 && trialIndex < result.bestTrialIndex;
