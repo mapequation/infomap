@@ -77,6 +77,10 @@ NATIVE_BENCHMARK_WARMUP_RUNS ?= 0
 NATIVE_BENCHMARK_ITERATIONS ?= 1
 NATIVE_BENCHMARK_FLAGS ?=
 NATIVE_BENCHMARK_GENERATED_DIR ?=
+# The correctness sweep over the benchmark networks (#1256) runs a debug build, which checks
+# the flow invariants, from its own path so it does not replace ./Infomap.
+BENCH_CORRECTNESS_BINARY ?= build/bench-correctness/Infomap
+BENCH_CORRECTNESS_ARGS ?=
 
 define warn_cmake_build_type_mismatch
 	@if [ "$(MODE)" = "debug" ] && [ "$(CMAKE_BUILD_TYPE)" != "Debug" ]; then \
@@ -87,7 +91,7 @@ define warn_cmake_build_type_mismatch
 	fi
 endef
 
-.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers test-tsan test-python-asan test-r-asan test-r-valgrind fuzz coverage bench-python bench-native
+.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers test-tsan test-python-asan test-r-asan test-r-valgrind fuzz coverage bench-python bench-native bench-correctness
 
 configure-cpp-dev:
 	@generator_args=""; \
@@ -339,6 +343,11 @@ endif
 	"$(LLVM_COV)" report $$cov_args -show-branch-summary $(CURDIR)/src > $(COVERAGE_BUILD_DIR)/summary.txt && \
 	tail -n 1 $(COVERAGE_BUILD_DIR)/summary.txt && \
 	printf "%s\n" "coverage: $(COVERAGE_BUILD_DIR)/report/index.html and $(COVERAGE_BUILD_DIR)/summary.txt"
+
+bench-correctness:
+	@mkdir -p $(dir $(BENCH_CORRECTNESS_BINARY))
+	@$(MAKE) build-native MODE=debug OPENMP=0 NATIVE_BINARY=$(BENCH_CORRECTNESS_BINARY)
+	@$(PYTHON) scripts/benchmarks/run_correctness_sweep.py --binary $(BENCH_CORRECTNESS_BINARY) $(BENCH_CORRECTNESS_ARGS)
 
 bench-python:
 	@mkdir -p $(dir $(BENCHMARK_OUTPUT))

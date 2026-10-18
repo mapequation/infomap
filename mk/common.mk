@@ -179,6 +179,7 @@ help:
 		"  coverage              Build a one-off llvm-cov coverage map of src/ (tests, CLI, fuzz)." \
 		"  bench-native          Run the native benchmark and memory baseline harness." \
 		"  bench-python          Run the nightly-style Python benchmark harness." \
+		"  bench-correctness     Run a debug build over the benchmark networks and re-score every tree." \
 		"" \
 		"Dev" \
 		"  help                  Show this guide." \
