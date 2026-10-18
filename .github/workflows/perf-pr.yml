@@ -145,6 +145,12 @@ jobs:
             --fail-on-regression \
             --fail-on-output-change || comparison_status=$?
           cat "$GITHUB_WORKSPACE/artifacts/perf-summary.md" >> "$GITHUB_STEP_SUMMARY"
+          # An intended output change also gets a row in RESULT_CHANGES.csv (#1260).
+          # A reminder, not a gate: the row may cover a change this gate cannot see.
+          if grep -qiE '^[[:blank:]]*Output-change:[[:blank:]]*[^[:space:]]' "$pr_description" \
+            && git -C "$GITHUB_WORKSPACE/head" diff --quiet HEAD^1 HEAD -- RESULT_CHANGES.csv; then
+            echo "::warning::The description has an Output-change line, but RESULT_CHANGES.csv has no new row for it."
+          fi
           exit "$comparison_status"
 
       - name: Upload comparison artifacts

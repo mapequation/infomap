@@ -66,6 +66,7 @@ examples/cpp/Infomap-igraph-interface-library/lib/
 *.nwk
 *.csv
 !examples/notebooks/data/benchmark-results.csv
+!/RESULT_CHANGES.csv
 /*.net
 test/tmp/
 
