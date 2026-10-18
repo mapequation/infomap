@@ -610,7 +610,7 @@ def _scorer(net_path: Path, options):
             no_infomap=True,
             two_level=two_level,
             **options,
-            **SERIAL,
+            **THREADS,
         ).codelength
 
     return score
@@ -633,7 +633,7 @@ def test_a_tree_codes_no_worse_than_its_flattenings(tmp_path, name, variant):
     # tree are compared.
     options = VARIANTS[variant]
     path = network(name).write(tmp_path / "net.net")
-    result = run(str(path), silent=True, num_trials=2, seed=3, **options, **SERIAL)
+    result = run(str(path), silent=True, num_trials=2, seed=3, **options, **THREADS)
     tree = tmp_path / "run.tree"
     result.write_tree(str(tree))
     found = flattenings(tree, _scorer(path, options))
@@ -658,7 +658,7 @@ def test_multilevel_codes_no_worse_than_two_level_with_the_same_seed(
                 seed=seed,
                 **levels,
                 **options,
-                **SERIAL,
+                **THREADS,
             )
             for levels in ({}, {"two_level": True})
         )
