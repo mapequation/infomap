@@ -57,8 +57,11 @@ void MemMapEquation::initSuperNetwork(InfoNode& /*root*/)
   // TODO: How use enterFlow instead of flow
 }
 
-void MemMapEquation::initSubNetwork(InfoNode& /*root*/)
+void MemMapEquation::initSubNetwork(InfoNode& root)
 {
+  // The module's exit codeword in the index codebook of the sub-network, as for
+  // MapEquation. initNetwork has already set up the physical nodes (#1282).
+  Base::initSubNetwork(root);
 }
 
 void MemMapEquation::initPartition(std::vector<InfoNode*>& nodes)
