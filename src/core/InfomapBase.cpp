@@ -859,6 +859,12 @@ private:
     }
 
     if (m_network.haveDirectedInput() && m_infomap.isUndirectedFlow()) {
+      // Only multilayer input with intra-layer links sets haveDirectedInput: the inter-layer links
+      // break the symmetry, so the intra-layer links are expanded to both directions and run with
+      // the directed model. That is the undirected multilayer flow, and undirdir was replaced by it
+      // with only the note below to show for it (#1233). outdirdir and rawdir are not replaced.
+      if (m_infomap.flowModel == FlowModel::undirdir)
+        Console::warn(0, "The undirdir flow model has no effect on multilayer input with intra-layer links: the links are expanded to both directions and run with the directed model, which is the flow of the default undirected model.");
       Console::note(1, "Directed input found, changing flow model from '{}' to '{}'.", m_infomap.flowModel, FlowModel(FlowModel::directed));
       m_infomap.flowModel = FlowModel::directed;
     }
@@ -975,6 +981,26 @@ private:
 
     if (zeroFlowIsExpected)
       return;
+
+    // The node flow can come from somewhere else than the walk: --use-node-weights-as-flow
+    // replaces it with the node weights after the flow model has run. The case above then
+    // passed with a walk that takes no link steps and teleports into no node, and the run
+    // reported a codelength for it (#1232). Check the walk itself as well.
+    double sumLinkFlow = 0.0;
+    m_network.forEachLink([&](unsigned int, unsigned int, double, double& flow) { sumLinkFlow += flow; });
+    double sumTeleportWeight = 0.0;
+    for (const auto& nodeIt : m_network.nodes())
+      sumTeleportWeight += nodeIt.second.weight;
+    if (sumLinkFlow <= 0 && sumTeleportWeight <= 0)
+      throw InfomapError(ExitCode::InputError,
+                         fmt::format(FMT_STRING("Degenerate flow: the {} links carry no flow and no node is reached by "
+                                                "teleportation, so the walk takes no steps and no codelength is defined. "
+                                                "Node weights used as flow set the visit rates but not the steps between "
+                                                "nodes. This happens when the flow model cannot distribute flow over the "
+                                                "network -- for example a directed flow model with recorded teleportation "
+                                                "on a bipartite network whose links all point from the primary side to the "
+                                                "feature side."),
+                                     m_network.numLinks()));
 
     checkNoNegativeFlow();
 
@@ -1247,8 +1273,12 @@ private:
     else
       infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
 
-    if (infomap.haveHardPartition())
+    if (infomap.haveHardPartition()) {
       infomap.restoreHardPartition();
+      // The hard modules were leaves while the run scored the tree, so their own codebooks
+      // were not in its codelength. Score the tree that is returned (#1207).
+      infomap.m_hierarchicalCodelength = infomap.calcCodelengthOnTree(infomap.root(), true);
+    }
 
     checkNoNegativeModuleFlow(infomap.root());
     infomap.checkInvariants(infomap.root(), "the finished tree");
@@ -2575,7 +2605,12 @@ void InfomapBase::hierarchicalPartition()
       restoreSilent.restore();
 
       const double diffCodelength = codelengthBefore - codelengthAfter;
-      Console::detail(1, "fine-tune bottom modules: improvement {:g}% {} codelength {}", (diffCodelength / codelengthBefore) * 100, Console::arrow(), io::toPrecision(codelengthAfter));
+      Console::detail(1, "fine-tune bottom modules: improvement {:g}% {} codelength {}", (codelengthBefore < 1e-16 ? 0.0 : diffCodelength / codelengthBefore * 100), Console::arrow(), io::toPrecision(codelengthAfter));
+
+      // The recursion below starts from m_hierarchicalCodelength and the leaf modules'
+      // codelength terms. Both still describe the seed tree, and the new sub modules have
+      // no term at all, so re-score the fine-tuned tree.
+      m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
     }
 
     recursivePartition();
@@ -2747,7 +2782,10 @@ void InfomapBase::restoreHardPartition()
   for (InfoNode* node : leafNodes) {
     ++numExpandedNodes;
     numExpandedChildren += node->expandChildren();
-    node->replaceWithChildren();
+    // A hard module directly under the root, as every one is under --no-infomap, stays a
+    // module. Replaced by its nodes there, the partition it was part of would be lost.
+    if (!node->parent->isRoot())
+      node->replaceWithChildren();
   }
 
   // Swap back original leaf nodes
@@ -3030,6 +3068,17 @@ void InfomapBase::checkInvariants(const InfoNode& root, const char* phase) const
 
   if (isMainInfomap() && m_flowSumsToOne && std::abs(sumLeafFlow - 1.0) > tolerance)
     fail(fmt::format(FMT_STRING("the leaf flow sums to {:.12g}, not 1"), sumLeafFlow));
+}
+
+void InfomapBase::failMoveDelta(const char* where, double predictedDelta, double actualDelta) const
+{
+  throw InfomapError(ExitCode::InternalError,
+                     fmt::format(FMT_STRING("Move invariant violated in {}{}: the move was chosen on a codelength change of {:.12g} "
+                                            "but changed the codelength by {:.12g}. This is a bug in Infomap."),
+                                 where,
+                                 isMainInfomap() ? "" : " in a sub-partition",
+                                 predictedDelta,
+                                 actualDelta));
 }
 #endif
 
@@ -3319,8 +3368,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 
     workingHierarchicalCodelength += superCodelength - oldIndexLength;
 
-    const double superCompression = ((hierarchicalCodelength - workingHierarchicalCodelength)
-                                     / hierarchicalCodelength * 100);
+    const double superCompression = hierarchicalCodelength < 1e-16 ? 0.0 : (hierarchicalCodelength - workingHierarchicalCodelength) / hierarchicalCodelength * 100;
     prettyCompression.push_back(Console::percent(superCompression));
     progress.update(fmt::format(FMT_STRING("working… codelength {} · {} top modules"), io::toPrecision(workingHierarchicalCodelength), numSuperModules));
     Console::detail(1, "super iter {}: found {} super modules, codelength {:g} + {:g} + {:g} = {:g}", numLevelsCreated + 1, numSuperModules, superIndexCodelength, superCodelength - superIndexCodelength, workingHierarchicalCodelength - superCodelength, workingHierarchicalCodelength);
@@ -3412,7 +3460,7 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
 
     workingHierarchicalCodelength += codelength - oldIndexLength;
 
-    Log(1) << hideIf(!acceptSolution) << ((hierarchicalCodelength - workingHierarchicalCodelength) / hierarchicalCodelength * 100) << "% " << std::flush;
+    Log(1) << hideIf(!acceptSolution) << (hierarchicalCodelength < 1e-16 ? 0.0 : (hierarchicalCodelength - workingHierarchicalCodelength) / hierarchicalCodelength * 100) << "% " << std::flush;
     Console::note(1, "Found {} super modules in {} effective loops with hierarchical codelength {:g} + {:g} = {:g}{}", numActiveModules(), numEffectiveLoops, indexCodelength, workingHierarchicalCodelength - indexCodelength, workingHierarchicalCodelength, acceptSolution ? "" : ", discarding the solution.");
     Log(1) << std::flush;
     Log(1).print("{:g} -> {}\n", oldIndexLength, io::stringify(*this));
@@ -3687,7 +3735,7 @@ unsigned int InfomapBase::recursivePartition()
     sumConsolidatedCodelength += sumIndexCodelength + sumLeafCodelength;
     double limitCodelength = sumConsolidatedCodelength + leftToImprove;
 
-    const double recursiveCompression = ((hierarchicalCodelength - limitCodelength) / hierarchicalCodelength) * 100;
+    const double recursiveCompression = hierarchicalCodelength < 1e-16 ? 0.0 : (hierarchicalCodelength - limitCodelength) / hierarchicalCodelength * 100;
     prettyCompression.push_back(Console::percent(recursiveCompression));
     progress.update(fmt::format(FMT_STRING("working… {} levels · codelength {}"), levelNum, io::toPrecision(limitCodelength)));
     Console::detail(1, "level {}: {} modules ({:g}% flow) {} codelength {:.6g} + {:.6g} (+{:.6g} to improve) = {} bits", levelNum, levelModules, levelFlowPct, Console::arrow(), sumIndexCodelength, sumLeafCodelength, leftToImprove, io::toPrecision(limitCodelength));

@@ -179,20 +179,14 @@ NetworkShape networkShape(const infomap::Network& network)
 
 // Open bugs the target would otherwise report on every run. Each needs its options,
 // its kind of failure and, where it has one, its network shape, so an unrelated
-// failure under the same options is still reported. Each names its issue and, except
-// #1232, is pinned as a should_fail case in test/cpp/test_map_equation_invariants.cpp
-// ("Fuzz finding:"); drop the entry when the bug is fixed so the fuzzer guards the fix.
+// failure under the same options is still reported. Each names its issue and is pinned
+// as a should_fail case in test/cpp/test_map_equation_invariants.cpp ("Fuzz finding:");
+// drop the entry when the bug is fixed so the fuzzer guards the fix.
 bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
 {
   const bool negative = contains(message, "Negative");
-  const bool unbalanced = contains(message, "do not balance");
   const auto shape = networkShape(im.network());
 
-  // #1232: directed recorded teleportation to links gives every teleport weight to the feature
-  // nodes of bipartite input, so none is left once they are uncoded. Such a run is refused as
-  // degenerate, but --use-node-weights-as-flow gets past that check. Drop with #1239.
-  if (im.network().isBipartite() && im.flowModel == infomap::FlowModel::directed && im.recordedTeleportation && !im.teleportToNodes && im.useNodeWeightsAsFlow && (negative || unbalanced))
-    return true;
   // #1191: --variable-markov-time with --use-node-weights-as-flow: negative enter flow when an
   // isolated node holds the largest flow.
   return im.variableMarkovTime && im.useNodeWeightsAsFlow && shape.isolatedNode && negative;
