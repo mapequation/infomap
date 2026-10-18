@@ -28,6 +28,8 @@ Splitting a link into two with the same summed weight
     the same for every objective, the ones that count links included. In an
     undirected network ``a b`` and ``b a`` are the same link, so splitting it
     into one of each must give the same as splitting it into two ``a b``.
+    This holds under ``--variable-markov-time`` too, for an edge listed once,
+    reversed, in both directions or in any order.
 
 Adding an isolated node
     With no teleportation onto it, the node gets no flow. Its codeword is never
@@ -406,6 +408,35 @@ def test_undirected_split_does_not_depend_on_direction(tmp_path, name, variant):
     original = score(tmp_path, net, paths, options)
     _same(score(tmp_path, same, paths, options).codelength, original.codelength)
     _same(score(tmp_path, reverse, paths, options).codelength, original.codelength)
+
+
+def _undirected_listings(net: Net, rng) -> dict[str, Net]:
+    edges = _undirected(net)
+    order = rng.permutation(len(edges.links))
+    halves = [(s, t, w / 2) for s, t, w in edges.links]
+    return {
+        "reversed": Net(net.nodes, [(t, s, w) for s, t, w in edges.links], net.weights),
+        "both-ways": Net(
+            net.nodes, halves + [(t, s, w) for s, t, w in halves], net.weights
+        ),
+        "shuffled": Net(net.nodes, [edges.links[i] for i in order], net.weights),
+    }
+
+
+@pytest.mark.parametrize("damping", [1.0, 0.0])
+@pytest.mark.parametrize("name", ["ninetriangles.net", "modular_w.net"])
+def test_variable_markov_time_does_not_depend_on_the_listing(tmp_path, name, damping):
+    # Each link takes the larger local scale of its two ends, and the degree counts
+    # a pair listed both ways once, so the listing does not matter (#1264).
+    options = {"variable_markov_time": True, "variable_markov_damping": damping}
+    net = _undirected(network(name))
+    paths = found_tree(tmp_path, net, options)
+    original = score(tmp_path, net, paths, options)
+    for tag, listing in _undirected_listings(net, np.random.default_rng(1)).items():
+        _same(
+            score(tmp_path, listing, paths, options, tag=tag).codelength,
+            original.codelength,
+        )
 
 
 # --- adding an isolated node -------------------------------------------------------
