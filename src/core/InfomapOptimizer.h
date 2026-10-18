@@ -78,6 +78,8 @@ public:
 
   void inheritNetworkPropertiesFrom(const InfomapOptimizerBase& parent) override;
 
+  void setNumNetworkNodes(unsigned int numNodes) override;
+
   void inheritObjectiveParametersFrom(const InfomapOptimizerBase& parent) override;
 
   bool implementsObjectiveParameters() const override;
@@ -257,6 +259,17 @@ inline void InfomapOptimizer<BiasedMapEquation>::inheritNetworkPropertiesFrom(co
   // the same entropy bias correction normalization the shared static used to provide.
   if (const auto* p = dynamic_cast<const InfomapOptimizer<BiasedMapEquation>*>(&parent))
     m_objective.setNetworkPropertiesFrom(p->m_objective);
+}
+
+template <typename Objective>
+inline void InfomapOptimizer<Objective>::setNumNetworkNodes(unsigned int /*numNodes*/)
+{
+}
+
+template <>
+inline void InfomapOptimizer<BiasedMapEquation>::setNumNetworkNodes(unsigned int numNodes)
+{
+  m_objective.setNumNodes(numNodes);
 }
 
 template <typename Objective>
