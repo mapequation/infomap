@@ -105,8 +105,9 @@ def check_properties(net: GeneratedNetwork, search: dict) -> None:
         assert scored.codelength == pytest.approx(
             result.codelength, rel=TOLERANCE, abs=TOLERANCE
         )
-        # A lone node is written at the root and read back into a module (#1316).
-        if len(leaves) > 1:
+        # A lone leaf is written at the root and read back into a module (#1316).
+        written = [n for n in result.tree(states=net.has_states) if n.is_leaf]
+        if len(written) > 1:
             assert _modules(scored, net.has_states) == _modules(result, net.has_states)
 
 
