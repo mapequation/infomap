@@ -513,6 +513,17 @@ INFOMAP_HOT unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestMod
   nodeEnumeration.resize(network.size());
   m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
+  // PLANTED for #1259: extra work and heap to check that perf-pr reports them. Revert before merging.
+  {
+    volatile double plantedSum = 0.0;
+    for (unsigned int k = 0; k < 24; ++k)
+      for (auto index : nodeEnumeration)
+        plantedSum = plantedSum + network[index]->data.flow;
+    static std::vector<double> plantedHeap;
+    if (plantedHeap.size() < 8 * nodeEnumeration.size())
+      plantedHeap.resize(8 * nodeEnumeration.size());
+  }
+
   unsigned int numNodes = nodeEnumeration.size();
   unsigned int numMoved = 0;
   unsigned int numRandomMoves = std::min(m_infomap->numRandomMoves, numNodes);
