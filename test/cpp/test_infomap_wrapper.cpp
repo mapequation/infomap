@@ -3,10 +3,12 @@
 #include "Infomap.h"
 #include "io/InfomapError.h"
 #include "io/OutputView.h"
+#include "utils/FaultInjection.h"
 #include "utils/Log.h"
 
 #include "TestUtils.h"
 
+#include <algorithm>
 #include <atomic>
 #include <cstdio>
 #include <iostream>
@@ -380,6 +382,64 @@ TEST_CASE("Cancelling a recursive run from another thread never terminates [fast
   INFO("run outcome: " << outcome);
   CHECK(outcome.rfind("wrong-type:", 0) != 0);
 }
+
+#ifdef INFOMAP_FAULT_INJECTION
+// A throw inside any OpenMP region must reach the caller after the join, not end
+// in std::terminate (#1252). No known input throws there, so a test-only hook does.
+struct ArmedFault {
+  explicit ArmedFault(infomap::faultinjection::Site site) { infomap::faultinjection::arm(site); }
+  ~ArmedFault() { infomap::faultinjection::disarm(); }
+  ArmedFault(const ArmedFault&) = delete;
+  ArmedFault& operator=(const ArmedFault&) = delete;
+};
+
+// Runs once with the fault armed, expecting it to surface, then again without
+// it, expecting the instance to have recovered.
+void checkFaultReachesCaller(InfomapWrapper& im, infomap::faultinjection::Site site)
+{
+  {
+    ArmedFault armed(site);
+    CHECK_THROWS_WITH(im.run(), doctest::Contains("injected fault"));
+  }
+  im.run();
+  infomap::test::checkRunSanity(im);
+}
+
+TEST_CASE("A throw while setting up a parallel-trials worker reaches the caller [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im("--silent --seed 1 --num-trials 4 --parallel-trials --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  checkFaultReachesCaller(im, infomap::faultinjection::Site::ParallelTrialWorkerSetup);
+}
+
+TEST_CASE("A throw while building a recursive task's sub-network reaches the caller [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  checkFaultReachesCaller(im, infomap::faultinjection::Site::RecursiveSubNetwork);
+}
+
+TEST_CASE("A throw while materializing a recursive task's sub-modules reaches the caller [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  checkFaultReachesCaller(im, infomap::faultinjection::Site::RecursiveMaterialize);
+  CHECK(im.numLevels() == 3);
+}
+
+#ifdef _OPENMP
+TEST_CASE("A throw in the inner-parallel move loop reaches the caller [fast][core][lifecycle][crash]")
+{
+  // The parallel sweep needs two threads and minNetworkSizeForInnerParallelization nodes.
+  const int previousThreads = omp_get_max_threads();
+  omp_set_num_threads(std::max(2, previousThreads));
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --two-level --inner-parallelization --no-file-output");
+  buildClusteredNetwork(im, 2600);
+  checkFaultReachesCaller(im, infomap::faultinjection::Site::InnerParallelMoveLoop);
+  omp_set_num_threads(previousThreads);
+}
+#endif
+#endif
 
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
 {

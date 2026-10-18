@@ -8,6 +8,7 @@ option(INFOMAP_FP_TRAPS "Trap invalid operations and division by zero in the C++
 option(INFOMAP_BUILD_FUZZERS "Build libFuzzer harnesses for the network intake and full runs (Clang only)." OFF)
 option(INFOMAP_ENABLE_COVERAGE "Instrument for Clang source-based coverage (llvm-cov). Run via make coverage." OFF)
 option(INFOMAP_CHECK_INVARIANTS "Compile in the flow invariant checks (InfomapBase::checkInvariants). Always on with sanitizers, fuzzers or INFOMAP_MODE=debug." OFF)
+option(INFOMAP_FAULT_INJECTION "Compile in the test-only fault injection hooks (utils/FaultInjection.h). Always on with sanitizers, TSan or INFOMAP_MODE=debug." OFF)
 option(INFOMAP_NATIVE_ARCH "Enable -march=native, LTO, and loop unrolling for the host CPU. Produces non-portable binaries; opt-in for local builds only." OFF)
 set(INFOMAP_MODE "release" CACHE STRING "Build mode shared with the Make-based native build policy.")
 set_property(CACHE INFOMAP_MODE PROPERTY STRINGS release debug)
@@ -136,6 +137,11 @@ target_compile_definitions(infomap_core PUBLIC ${INFOMAP_ENABLED_FEATURE_DEFINES
 # consumer of the headers has to see the same value. Never set for release builds.
 if(INFOMAP_CHECK_INVARIANTS OR INFOMAP_ENABLE_SANITIZERS OR INFOMAP_BUILD_FUZZERS OR INFOMAP_MODE STREQUAL "debug")
     target_compile_definitions(infomap_core PUBLIC INFOMAP_CHECK_INVARIANTS=1)
+endif()
+# PUBLIC so the tests that arm the hooks see the same value as the core. Never set for
+# release builds or the benchmarks.
+if(INFOMAP_FAULT_INJECTION OR INFOMAP_ENABLE_SANITIZERS OR INFOMAP_ENABLE_TSAN OR INFOMAP_MODE STREQUAL "debug")
+    target_compile_definitions(infomap_core PUBLIC INFOMAP_FAULT_INJECTION=1)
 endif()
 target_link_options(infomap_core PUBLIC ${INFOMAP_LINK_FLAGS})
 
