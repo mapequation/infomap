@@ -506,8 +506,9 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
   Log(1) << std::flush;
   double relaxRate = m_config.multilayerRelaxRate;
 
-  unsigned int L = m_networks.size();
-  int maxRelaxLimit = L;
+  // A negative limit means no limit. Layer ids can have gaps, so no limit is
+  // not the number of layers but the largest difference (#1322).
+  int maxRelaxLimit = std::numeric_limits<int>::max();
   int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
   int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
   int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
@@ -522,9 +523,9 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
     Console::detail(1, "relax limit: {}", m_config.multilayerRelaxLimit);
   }
 
-  auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](auto& layer1, auto& layer2) {
-    int diff = layer1 - layer2;
-    return layer1 >= layer2 ? diff <= relaxLimitDown : -diff <= relaxLimitUp;
+  // The limits are non-negative here; compare unsigned so far apart ids cannot overflow
+  auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](unsigned int layer1, unsigned int layer2) {
+    return layer1 >= layer2 ? layer1 - layer2 <= static_cast<unsigned int>(relaxLimitDown) : layer2 - layer1 <= static_cast<unsigned int>(relaxLimitUp);
   };
 
   for (auto& it1 : m_networks) {
@@ -614,7 +615,8 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
 
   unsigned int L = m_networks.size();
   // unsigned int N = numPhysicalNodes();
-  int maxRelaxLimit = L;
+  // A negative limit means no limit, also across gaps in the layer ids (#1322).
+  int maxRelaxLimit = std::numeric_limits<int>::max();
   int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
   int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
   int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
@@ -640,9 +642,9 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
     throw std::runtime_error("Relax limits not implemented for regularized flow");
   }
 
-  auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](auto& layer1, auto& layer2) {
-    int diff = layer1 - layer2;
-    return layer1 >= layer2 ? diff <= relaxLimitDown : -diff <= relaxLimitUp;
+  // The limits are non-negative here; compare unsigned so far apart ids cannot overflow
+  auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](unsigned int layer1, unsigned int layer2) {
+    return layer1 >= layer2 ? layer1 - layer2 <= static_cast<unsigned int>(relaxLimitDown) : layer2 - layer1 <= static_cast<unsigned int>(relaxLimitUp);
   };
 
   for (auto& it1 : m_networks) {
