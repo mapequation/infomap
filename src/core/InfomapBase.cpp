@@ -1261,7 +1261,7 @@ private:
       if (numNodesNotInNetwork > 0)
         Console::note(1, "{} nodes in embedded initial-partition paths not found in network.", numNodesNotInNetwork);
       InfomapBase::validateClusterDataTreeShape(normalizedTree);
-      infomap.initTree(normalizedTree);
+      infomap.initTreeInput(normalizedTree, infomap.clusterDataIsHard);
     }
   }
 
@@ -1710,7 +1710,7 @@ InfomapBase& InfomapBase::initPartition(const ClusterMap& clusterMap, bool hard)
       Console::note(1, "{} physical nodes in tree not found in network.", numTreeNodesNotInNetwork);
     }
     validateClusterDataTreeShape(normalizedTree);
-    initTree(normalizedTree);
+    initTreeInput(normalizedTree, hard);
   } else if (ext == "clu") {
     // Repeated ids in this file are reported once per run by
     // RunSession::reportClusterDataIssues, not here: this runs per trial, and per
@@ -1873,6 +1873,29 @@ void InfomapBase::validateClusterDataTreeShape(const NodePaths& tree)
                                    modulePath,
                                    modulePath));
   }
+}
+
+// A hard partition keeps each of its modules whole, which a tree only defines for
+// one level of modules. A deeper tree is refused rather than read as one of its
+// levels. A one-level tree is the partition a .clu file gives, and is applied the
+// same way; initTree has no hard partition and ran it as a soft one (#1244).
+InfomapBase& InfomapBase::initTreeInput(const NodePaths& tree, bool hard)
+{
+  if (!hard)
+    return initTree(tree);
+  std::map<unsigned int, unsigned int> clusterIds;
+  for (const auto& nodePath : tree) {
+    const auto& path = nodePath.second;
+    if (path.empty())
+      continue;
+    if (path.size() > 2)
+      throw InfomapError(ExitCode::InputError,
+                         fmt::format(FMT_STRING("A hard partition from a tree must be one level deep, but node {} is "
+                                                "in a sub-module. Give only the top-level modules, as a .clu file does."),
+                                     nodePath.first));
+    clusterIds[nodePath.first] = path[0];
+  }
+  return initPartition(clusterIds, true);
 }
 
 InfomapBase& InfomapBase::initTree(const NodePaths& tree)
