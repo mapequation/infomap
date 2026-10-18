@@ -4239,18 +4239,22 @@ void InfomapBase::partitionModule(InfoNode& module, unsigned int level, detail::
   // different edge order than the lazy clone path, so the order-sensitive greedy
   // optimizer can settle on a different (quality-equivalent) optimum on deep
   // networks; output is byte-identical only where recursion stays shallow.
-  // New module nodes use raw `new` (NOT the instance pool): the
+  // New module nodes are heap-allocated (NOT the instance pool): the
   // task graph runs this function concurrently and ObjectPool is per-instance,
   // not thread-safe; malloc is. They are few, and InfoNode teardown deletes
-  // non-pool nodes via `delete`.
+  // non-pool nodes via `delete`. Until they are attached they are owned here, and
+  // everything that can throw runs before `module` lets go of its leaves, so a
+  // failure leaves the tree as it was and frees what was built (#1252).
   std::vector<InfoNode*> materializedSubModules(numSubModulesQueued, nullptr);
   {
-    faultinjection::inject(faultinjection::Site::RecursiveMaterialize);
+    std::vector<std::unique_ptr<InfoNode>> ownedSubModules;
+    ownedSubModules.reserve(numSubModulesQueued);
     std::unordered_map<const InfoNode*, InfoNode*> cloneToMaterialized;
     cloneToMaterialized.reserve(numSubModulesQueued);
     for (unsigned int k = 0; k < numSubModulesQueued; ++k) {
       const InfoNode* cloneSubModule = subQueue[k];
-      auto* newSubModule = new InfoNode(cloneSubModule->data);
+      ownedSubModules.push_back(std::make_unique<InfoNode>(cloneSubModule->data));
+      InfoNode* newSubModule = ownedSubModules.back().get();
       newSubModule->codelength = cloneSubModule->codelength;
       // So the materialized node is equivalent to the lazy sub-Infomap module node.
       copyModuleAggregates(*newSubModule, *cloneSubModule);
@@ -4263,8 +4267,6 @@ void InfomapBase::partitionModule(InfoNode& module, unsigned int level, detail::
     for (auto& child : module)
       originalLeaves.push_back(&child);
 
-    module.releaseChildren();
-
     // The sub-Infomap clones `module`'s leaves 1:1 in the same order, so clone
     // leaf i corresponds to original leaf i. Assert that invariant explicitly:
     // an indexed loop with a size check fails fast with a clear error if future
@@ -4273,13 +4275,18 @@ void InfomapBase::partitionModule(InfoNode& module, unsigned int level, detail::
     const auto& cloneLeaves = subInfomap.leafNodes();
     if (cloneLeaves.size() != originalLeaves.size())
       throw std::logic_error("InfomapBase::partitionModuleRecursively(): sub-Infomap leaf count does not match the module's original leaves");
-    for (std::size_t i = 0; i < originalLeaves.size(); ++i) {
-      const InfoNode* cloneSubModule = cloneLeaves[i]->parent;
-      cloneToMaterialized.at(cloneSubModule)->addChild(originalLeaves[i]);
-    }
+    std::vector<InfoNode*> leafParents(originalLeaves.size());
+    for (std::size_t i = 0; i < originalLeaves.size(); ++i)
+      leafParents[i] = cloneToMaterialized.at(cloneLeaves[i]->parent);
 
-    for (InfoNode* newSubModule : materializedSubModules)
-      module.addChild(newSubModule);
+    faultinjection::inject(faultinjection::Site::RecursiveMaterialize);
+
+    // Nothing below throws until the sub-Infomap is disposed.
+    module.releaseChildren();
+    for (std::size_t i = 0; i < originalLeaves.size(); ++i)
+      leafParents[i]->addChild(originalLeaves[i]);
+    for (auto& newSubModule : ownedSubModules)
+      module.addChild(newSubModule.release());
 
     // module now plays the role the sub-Infomap root did under getInfomapRoot(),
     // but priced where it sits: the sub-Infomap root has no exit codeword, module

@@ -8,7 +8,6 @@
 
 #include "TestUtils.h"
 
-#include <algorithm>
 #include <atomic>
 #include <cstdio>
 #include <iostream>
@@ -432,12 +431,9 @@ TEST_CASE("A throw while setting up a parallel-trials worker reaches the caller 
 TEST_CASE("A throw in the inner-parallel move loop reaches the caller [fast][core][lifecycle][crash]")
 {
   // The parallel sweep needs two threads and minNetworkSizeForInnerParallelization nodes.
-  const int previousThreads = omp_get_max_threads();
-  omp_set_num_threads(std::max(2, previousThreads));
-  InfomapWrapper im("--silent --seed 1 --num-trials 1 --two-level --inner-parallelization --no-file-output");
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --num-threads 2 --two-level --inner-parallelization --no-file-output");
   buildClusteredNetwork(im, 2600);
   checkFaultReachesCaller(im, infomap::faultinjection::Site::InnerParallelMoveLoop);
-  omp_set_num_threads(previousThreads);
 }
 #endif
 #endif
