@@ -51,6 +51,14 @@ jobs:
         with:
           filters: .github/filters.yml
 
+      # A reference oracle changed together with the core it checks is no longer
+      # independent of it, so the two land in separate pull requests (#1261).
+      - name: Keep reference oracle edits apart from src/
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: python3 scripts/check_reference_edits.py "origin/$BASE_REF"
+
   pre-commit:
     needs: changes
     # Gated on every filter output: pre-commit is the base hygiene/lint gate

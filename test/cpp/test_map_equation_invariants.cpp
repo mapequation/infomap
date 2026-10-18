@@ -284,6 +284,43 @@ TEST_CASE("Entropy correction charges every codebook of a deep tree (repro #1176
   REQUIRE(numDeepTrees > 0);
 }
 
+// A sub-Infomap searches the nodes of one module, and a super-Infomap the modules of
+// its parent, so each module codebook it builds has a free parameter per node of that
+// network. Both used to take the node count of the whole network from their parent, so
+// the tracked codelength charged N - n parameters more than the tree it describes
+// (#1283: on twotriangles a sub-search of one triangle charged 6 node parameters, its
+// tree 3). The one-level codelength is priced on the tree, so a search compared an
+// overcharged partition against a correctly priced single module and kept too few levels.
+TEST_CASE("Entropy-corrected sub- and super-searches charge their own nodes (repro #1283) [fast][core][mapeq][entropy-corrected]")
+{
+  InfomapWrapper im(defaultFlags("--two-level --no-infomap --entropy-corrected --cluster-data "
+                                 + clusterFixturePath("twotriangles_two_modules.clu")));
+  im.readInputData(repoPath("examples/networks/twotriangles.net"));
+  im.run();
+  REQUIRE(im.numTopModules() == 2);
+
+  // The tracked codelength of a pinned partition against the same partition priced on the tree.
+  const auto checkPinned = [](InfomapBase& infomap, std::vector<unsigned int> modules) {
+    infomap.initPartition(modules);
+    double priced = infomap.calcCodelength(infomap.root());
+    for (const auto& module : infomap.root())
+      priced += infomap.calcCodelength(module);
+    INFO(modules.size() << " nodes in " << infomap.numTopModules() << " modules: tracked=" << infomap.getCodelength() << " priced=" << priced);
+    checkApproxCodelength(infomap.getCodelength(), priced);
+  };
+
+  InfoNode& triangle = *im.root().firstChild;
+  REQUIRE(triangle.childDegree() == 3);
+  auto& subInfomap = im.getSubInfomap(triangle).initNetwork(triangle);
+  checkPinned(subInfomap, { 0, 0, 0 });
+  checkPinned(subInfomap, { 0, 0, 1 });
+
+  InfoNode superOwner(im.root().data);
+  auto& superInfomap = im.getSuperInfomap(superOwner).initNetwork(im.root(), true);
+  checkPinned(superInfomap, { 0, 0 });
+  checkPinned(superInfomap, { 0, 1 });
+}
+
 // The size of the correction, on a partition pinned from a file so no search
 // enters the comparison. twotriangles has N = 6 nodes and total degree D = 14,
 // and the codebooks of an m-module partition hold m - 1 + N free parameters:

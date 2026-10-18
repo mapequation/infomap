@@ -158,6 +158,10 @@ if(INFOMAP_ENABLE_TSAN)
     if(INFOMAP_ENABLE_SANITIZERS)
         message(FATAL_ERROR "INFOMAP_ENABLE_TSAN cannot be combined with INFOMAP_ENABLE_SANITIZERS.")
     endif()
+    # The fuzz build adds AddressSanitizer to the core on its own.
+    if(INFOMAP_BUILD_FUZZERS)
+        message(FATAL_ERROR "INFOMAP_ENABLE_TSAN cannot be combined with INFOMAP_BUILD_FUZZERS.")
+    endif()
     # Clang only: TSan needs the OpenMP runtime to report its synchronisation,
     # which LLVM's libomp does through Archer (OMP_TOOL_LIBRARIES). GCC's
     # libgomp has no OMPT support for Archer to attach to, so every barrier

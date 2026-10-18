@@ -275,6 +275,28 @@ namespace {
     orderChildrenAsRows(root, rowOfState);
   }
 
+  // Copy the objective-specific module aggregates from a sub-Infomap module onto the
+  // main-tree module node made from it. calcCodelength and the deeper recursion read
+  // these on module nodes (e.g. MemMapEquation reads parent.physicalNodes); without
+  // them, higher-order and feature builds price the module wrongly (#1262).
+  void copyModuleAggregates(InfoNode& module, const InfoNode& subModule)
+  {
+    module.physicalNodes = subModule.physicalNodes;
+    module.stateNodes = subModule.stateNodes;
+#ifndef SWIG
+    // #659 moved these feature-only fields out-of-line into InfoNodeExtras; only
+    // allocate extras when the source actually carries them (preserve the shrink).
+    if (!subModule.layerTeleFlowData().empty())
+      module.ensureExtras().layerTeleFlowData = subModule.layerTeleFlowData();
+    if (subModule.hasMetaCollection())
+      module.ensureMetaCollection() = subModule.metaCollection();
+#endif
+#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
+    module.lossyEntropy = subModule.lossyEntropy;
+    module.lossyFlowLogFlow = subModule.lossyFlowLogFlow;
+#endif
+  }
+
 } // namespace
 
 class InfomapBase::RunSession {
@@ -776,7 +798,11 @@ private:
       return;
     }
 
-    if (m_network.isMultilayerNetwork()) {
+    // The writers add the layer id column only when the run is multilayer, and a
+    // multilayer network whose expansion is the identity runs first-order (no memory
+    // input, so configureNetworkMode() never sets it). Read with the same test, or
+    // Infomap cannot read its own output back (#1273).
+    if (m_network.isMultilayerNetwork() && m_infomap.isMultilayerNetwork()) {
       const auto& map = m_network.layerNodeToStateId();
       m_clusterData.readClusterData(m_infomap.clusterDataFile, false, &map);
     } else {
@@ -1223,6 +1249,12 @@ private:
   {
     seedTrial(trialIndex);
     m_infomap.removeModules();
+    // A previous trial can leave the objective's network-level terms for a module network,
+    // as the restore of its super-level tree does (#837). A trial without an initial
+    // partition starts from the leaves on them, tracking a codelength off by a constant
+    // that the one-level comparison in partition() reads. Restore them here, as init()
+    // set them for the first trial (#1284).
+    m_infomap.restoreLeafNetworkTerms();
     auto startDate = Date();
     Stopwatch timer(true);
 
@@ -1706,6 +1738,9 @@ InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
   if (asSuperNetwork)
     transformNodeFlowToEnterFlow(m_root);
 
+  // Before init() prices the one-level codelength with it (#1283).
+  m_optimizer->setNumNetworkNodes(numLeafNodes());
+
   init();
   return *this;
 }
@@ -1713,7 +1748,8 @@ InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
 InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool hard, const Network* network)
 {
   ClusterMap clusterMap;
-  if (network != nullptr && network->isMultilayerNetwork()) {
+  // Same test as readClusterData() in the run path (#1273).
+  if (network != nullptr && network->isMultilayerNetwork() && isMultilayerNetwork()) {
     const auto& map = network->layerNodeToStateId();
     clusterMap.readClusterData(clusterDataFile, false, &map);
   } else {
@@ -2260,8 +2296,7 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
   // initNetwork() reads. Skip it when the terms already describe the leaf network: the
   // walk is over every leaf through the sibling chain, and paying it per trial costs
   // web-NotreDame --two-level --columnar ~2.5% for nothing.
-  if (!m_objectiveTermsAreForLeafNetwork)
-    initNetwork();
+  restoreLeafNetworkTerms();
   initPartition(); // TODO: confusing same name, should be able to init default without arguments here too
   moveActiveNodesToPredefinedModules(modules);
   consolidateModules(false);
@@ -2381,7 +2416,6 @@ void InfomapBase::generateSubNetwork(Network& network)
   unsigned int maxDegree = 0;
   unsigned int maxOutDegree = 0;
   unsigned int maxInDegree = 0;
-  double totDegree = network.sumDegree();
   std::vector<double> entropies(numNodes, 0);
 
   for (unsigned i = 0; i < numNodes; ++i) {
@@ -2415,6 +2449,14 @@ void InfomapBase::generateSubNetwork(Network& network)
   double minLocalScale = variableMarkovTimeMinLocalScale;
   double damping = variableMarkovTimeDamping;
 
+  // Count a pair listed as a b and b a once on undirected input, as --regularized and the
+  // entropy correction do (#1203, #1264). The multilayer expansion lists undirected links in
+  // both directions itself, so it keeps its count. The count scans every link, so only take it
+  // when it is used.
+  const bool undirectedLinks = flowModel == FlowModel::undirected && !isMultilayerNetwork();
+  double totDegree = !variableMarkovTime ? 0.0 : undirectedLinks ? network.sumUndirectedDegree()
+                                                                 : network.sumDegree();
+
   // No links means nothing to rescale, and maxFlow * totDegree = 0 would give linlog(0) = log2(0).
   if (variableMarkovTime && totDegree > 0) {
     // maxFlow * totDegree is the largest effective degree. With the walk's own flow it is at
@@ -2428,11 +2470,14 @@ void InfomapBase::generateSubNetwork(Network& network)
       InfoNode& node = *m_leafNodes[i];
       double localScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[i]), -damping) : infomath::linlog(std::max(minLocalScale, node.data.flow * totDegree), damping);
       for (InfoEdge* e : node.outEdges()) {
+        // Under undirected flow a link takes the larger scale of its two ends. Keep it per link,
+        // so the scale does not depend on the links listed before it (#1264).
+        double linkLocalScale = localScale;
         if (isUndirectedFlow()) {
           double oppositeLocalScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[nodeIndexMap[e->target->stateId]]), -damping) : infomath::linlog(std::max(minLocalScale, e->target->data.flow * totDegree), damping);
-          localScale = std::max(localScale, oppositeLocalScale);
+          linkLocalScale = std::max(localScale, oppositeLocalScale);
         }
-        double localMarkovTimeScale = maxScale / std::max(minLocalScale, localScale);
+        double localMarkovTimeScale = maxScale / std::max(minLocalScale, linkLocalScale);
         e->data.flow *= localMarkovTimeScale;
         // Note: deliberately do NOT write the scaled flow back into the shared StateNetwork
         // (network.nodeLinkMap()). The optimizer and output use only the per-instance InfoEdge
@@ -2641,7 +2686,9 @@ void InfomapBase::hierarchicalPartition()
             InfoNode* leaf = leafs[j];
             unsigned int moduleIndex = modules[j];
             if (subModules[moduleIndex] == nullptr) {
-              subModules[moduleIndex] = &allocNode(subInfomap.leafNodes()[j]->parent->data);
+              const InfoNode& subModule = *subInfomap.leafNodes()[j]->parent;
+              subModules[moduleIndex] = &allocNode(subModule.data);
+              copyModuleAggregates(*subModules[moduleIndex], subModule);
               subModules[moduleIndex]->index = moduleIndex;
               module.addChild(subModules[moduleIndex]);
             }
@@ -2779,7 +2826,20 @@ void InfomapBase::partition()
     nonTrivialSummary = fmt::format(FMT_STRING(" ({} non-trivial)"), m_numNonTrivialTopModules);
   progress.finish(fmt::format(FMT_STRING("{} {} codelength {}, {} modules{}"), compressionSummary(prettyCompression), Console::arrow(), io::toPrecision(getCodelength()), numTopModules(), nonTrivialSummary));
   const bool regularizedPriorOnly = usesRegularizedFlow() && network().numLinks() == 0;
-  if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > getOneLevelCodelength()) {
+  double oneModuleCodelength = getOneLevelCodelength();
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  // The regularized multilayer objective prices one module holding every node with
+  // exit flow, while the one-level codelength prices the root with none. Compare
+  // with, and report, the codelength the one-module tree has (#1285).
+  const bool regularizedMultilayerRoot = isMainInfomap() && !haveMetaData() && haveMemory() && isRegularizedMultilayerFlow();
+  double oneModuleExitFlow = 0.0;
+  if (regularizedMultilayerRoot) {
+    oneModuleExitFlow = calcRegularizedMultilayerOneModuleExitFlow();
+    const double flow = m_root.data.flow;
+    oneModuleCodelength += infomath::plogp(flow + oneModuleExitFlow) - infomath::plogp(flow) - infomath::plogp(oneModuleExitFlow);
+  }
+#endif
+  if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > oneModuleCodelength) {
     Console::detail(1, "worse codelength than one-level, putting all nodes in one module");
 
     // Create new single module between modules and root
@@ -2791,12 +2851,18 @@ void InfomapBase::partition()
     module.lossyEntropy = m_root.lossyEntropy;
     module.lossyFlowLogFlow = m_root.lossyFlowLogFlow;
 #endif
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+    if (regularizedMultilayerRoot) {
+      module.data.enterFlow = oneModuleExitFlow;
+      module.data.exitFlow = oneModuleExitFlow;
+    }
+#endif
     module.index = 0;
     for (auto& node : module) {
       node.index = 0;
     }
-    module.codelength = getOneLevelCodelength();
-    m_hierarchicalCodelength = getOneLevelCodelength();
+    module.codelength = oneModuleCodelength;
+    m_hierarchicalCodelength = oneModuleCodelength;
     // calcCodelengthOnTree(root(), true);
     m_root.codelength = 0.0;
     m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
@@ -2939,6 +3005,31 @@ void InfomapBase::initEnterExitFlow()
     }
   }
 }
+
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+double InfomapBase::calcRegularizedMultilayerOneModuleExitFlow() const
+{
+  // The leaf exit flow less what RegularizedMultilayerMapEquation cancels when all
+  // leaf nodes share one module: the link flow between them and, per layer, the
+  // teleportation T_i (W - w_i) to the other nodes in the layer. What remains is
+  // flow the leaf exit flow carries that no link or teleportation term inside the
+  // module accounts for.
+  std::map<unsigned int, double> layerTeleportWeight;
+  for (const auto* node : m_leafNodes) {
+    for (const auto& layerData : node->layerTeleFlowData())
+      layerTeleportWeight[layerData.layerId] += layerData.teleportWeight;
+  }
+  double exitFlow = 0.0;
+  for (auto* node : m_leafNodes) {
+    exitFlow += node->data.exitFlow;
+    for (const InfoEdge* edge : node->outEdges())
+      exitFlow -= edge->data.flow;
+    for (const auto& layerData : node->layerTeleFlowData())
+      exitFlow -= layerData.teleportFlow * (layerTeleportWeight[layerData.layerId] - layerData.teleportWeight);
+  }
+  return std::max(exitFlow, 0.0);
+}
+#endif
 
 // Aggregate node and enter/exit flow to all tree nodes
 void InfomapBase::aggregateFlowValuesFromLeafToRoot()
@@ -4075,26 +4166,8 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
       const InfoNode* cloneSubModule = subQueue[k];
       auto* newSubModule = new InfoNode(cloneSubModule->data);
       newSubModule->codelength = cloneSubModule->codelength;
-      // Copy the objective-specific module aggregates the lazy sub-Infomap module
-      // node carried, so the materialized node is equivalent: calcCodelength and
-      // the deeper recursion read these on module nodes (e.g. MemMapEquation reads
-      // parent.physicalNodes). Without them, feature/higher-order builds compute
-      // wrong codelengths.
-      newSubModule->physicalNodes = cloneSubModule->physicalNodes;
-      newSubModule->stateNodes = cloneSubModule->stateNodes;
-#ifndef SWIG
-      // #659 moved these feature-only fields out-of-line into InfoNodeExtras;
-      // route the materialize-copy through the extras API and only allocate
-      // extras when the clone actually carries them (preserve the shrink).
-      if (!cloneSubModule->layerTeleFlowData().empty())
-        newSubModule->ensureExtras().layerTeleFlowData = cloneSubModule->layerTeleFlowData();
-      if (cloneSubModule->hasMetaCollection())
-        newSubModule->ensureMetaCollection() = cloneSubModule->metaCollection();
-#endif
-#if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
-      newSubModule->lossyEntropy = cloneSubModule->lossyEntropy;
-      newSubModule->lossyFlowLogFlow = cloneSubModule->lossyFlowLogFlow;
-#endif
+      // So the materialized node is equivalent to the lazy sub-Infomap module node.
+      copyModuleAggregates(*newSubModule, *cloneSubModule);
       cloneToMaterialized[cloneSubModule] = newSubModule;
       materializedSubModules[k] = newSubModule;
     }

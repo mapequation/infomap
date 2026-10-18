@@ -353,10 +353,10 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
 
   if (network.haveFileInput()) {
     if (network.haveMemoryInput() && !network.haveStateNodeWeights()) {
-      throw std::runtime_error("Missing node flow in input data. Should be passed as a third field under a *States section.");
+      throw InfomapError(ExitCode::InputError, "Missing node flow in input data. Should be passed as a third field under a *States section.");
     }
     if (!network.haveMemoryInput() && !network.haveNodeWeights()) {
-      throw std::runtime_error("Missing node flow in input data. Should be passed as a third field under a *Vertices section.");
+      throw InfomapError(ExitCode::InputError, "Missing node flow in input data. Should be passed as a third field under a *Vertices section.");
     }
   }
 
@@ -372,7 +372,7 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
   addFlowNote(fmt::format(FMT_STRING("Total node flow {:g}"), sumFlow));
 
   if (infomath::isEqual(sumFlow, 0)) {
-    throw std::runtime_error("Missing node flow. Set it on the node weight property.");
+    throw InfomapError(ExitCode::InputError, "Missing node flow. Set it on the node weight property.");
   }
   if (!infomath::isEqual(sumFlow, 1)) {
     if (infomath::isEqual(sumFlow, numNodes) && infomath::isEqual(nodeFlow[0], 1)) {

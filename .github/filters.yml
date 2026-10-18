@@ -36,6 +36,7 @@ policy:
   - "interfaces/swig/**"
   - "interfaces/R/generated/**"
   - "scripts/check_cpp_stream_policy.py"
+  - "scripts/check_reference_edits.py"
   - ".github/workflows/ci.yml"
   - ".github/filters.yml"
 
@@ -62,6 +63,7 @@ python-core:
   - "examples/notebooks/**"
   - "examples/networks/**"
   - "test/python/**"
+  - "RESULT_CHANGES.csv"
   - "test/scripts/**"
   - "test/schemas/**"
   - "scripts/build_config.py"
@@ -176,6 +178,7 @@ docs:
   - ".github/workflows/ci.yml"
   - "README.rst"
   - "BUILD.md"
+  - "RESULT_CHANGES.csv"
   - "pyproject.toml"
   - "setup.py"
   - "examples/notebooks/**"
@@ -202,6 +205,7 @@ docker:
 notebooks:
   - "interfaces/python/**"
   - "test/python/**"
+  - "RESULT_CHANGES.csv"
   - "examples/notebooks/**"
   - "scripts/notebook_manifest.py"
   - ".github/actions/setup-python-build/action.yml"
@@ -218,9 +222,11 @@ notebooks:
 meta:
   - ".github/**"
   - ".pre-commit-config.yaml"
-  # The fuzz harness and the native benchmark sources are built only by
-  # schedule-triggered or opt-in targets (make fuzz, bench-native), so they match
+  # The fuzz harness, the native benchmark sources and the mutation script are
+  # run only by schedule-triggered or opt-in targets (make fuzz, bench-native,
+  # test/mutation/oracle_mutants.py), so they match
   # no lane filter. Without them here a PR that only edits them runs zero jobs --
   # not even the pre-commit hygiene gate -- and ci-summary reports green.
   - "test/fuzz/**"
   - "test/bench/**"
+  - "test/mutation/**"

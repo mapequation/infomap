@@ -21,7 +21,10 @@
 //   * scoring the finished tree again, written as a .tree file and read with
 //     --no-infomap by a fresh instance, must give the same codelength;
 //   * --no-infomap must keep the partition it was given, and a hard partition
-//     must keep each of its modules together.
+//     must keep each of its modules together;
+//   * a multilevel search must not end in a tree that codes worse than its
+//     flattening to top modules or to leaf modules, each scored with --two-level
+//     --no-infomap by a fresh instance (#1257, test/python/flattening.py).
 // A known open bug is recognised and swallowed rather than reported again: see
 // isKnownFinding().
 //
@@ -93,6 +96,7 @@ struct Options {
   bool hard = false;
   bool noInfomap = false;
   bool metaData = false;
+  unsigned int fastLevels = 0; // --fast-hierarchical-solution
   std::string flags; // without the network and the cluster data file
 };
 
@@ -136,7 +140,8 @@ Options optionsFromHeader(const uint8_t* h)
 
   // Byte 2: seed (bits 0-5) and how many fast hierarchical levels (bits 6-7).
   static const std::array<const char*, 4> fastLevels = { "", " -F", " -FF", " -FFF" };
-  flags += fastLevels[h[2] >> 6];
+  options.fastLevels = h[2] >> 6;
+  flags += fastLevels[options.fastLevels];
   flags += " --seed " + std::to_string(1 + (h[2] & 0x3f));
   return options;
 }
@@ -160,9 +165,13 @@ bool contains(const char* haystack, const char* needle) { return std::strstr(hay
 
 // The flow invariants, and the negative-flow guards on the finished tree, say in
 // their message that they are a bug.
-bool isBug(const char* message)
+// Only an internal error counts: an input error can quote the fuzzed line back,
+// and that line can hold the same words (#1263).
+bool isBug(const infomap::InfomapError& e)
 {
-  return contains(message, "Flow invariant violated") || contains(message, "is a bug in");
+  const char* message = e.what();
+  return e.code() == infomap::ExitCode::InternalError
+      && (contains(message, "Flow invariant violated") || contains(message, "is a bug in"));
 }
 
 // A failed check of the harness's own, raised as a bug.
@@ -172,15 +181,12 @@ struct Finding : std::runtime_error {
 
 // Open bugs the target would otherwise report on every run. Each needs its options
 // and its kind of failure, so an unrelated failure under the same options is still
-// reported. Drop the entry when the bug is fixed so the fuzzer guards the fix.
-bool isKnownFinding(const infomap::InfomapWrapper& im, const char* message)
+// reported. Each names its issue as "#N" in a comment and is pinned as a should_fail
+// case with "(#N)" in its name in test/cpp/test_partition.cpp ("Fuzz finding:");
+// test/python/test_known_findings.py checks the pairing. Drop the entry when the bug
+// is fixed so the fuzzer guards the fix.
+bool isKnownFinding(const infomap::InfomapWrapper& /*im*/, const char* /*message*/)
 {
-  const bool misreported = contains(message, "reported codelength");
-  // #1207: the tree is not scored again after the hard partition is restored: a module that held
-  // a single hard module is left without that module's codebook, and a hard module
-  // directly under the root (all of them under --no-infomap) is replaced by its nodes there.
-  if (im.clusterDataIsHard && misreported)
-    return true;
   return false;
 }
 
@@ -236,7 +242,12 @@ std::vector<Leaf> leavesOf(const infomap::InfoNode& root)
   return leaves;
 }
 
-bool sameCodelength(double a, double b) { return std::abs(a - b) <= 1e-9 * std::max({ 1.0, std::abs(a), std::abs(b) }); }
+// A non-finite score never matches: with one side infinite the scaled tolerance is
+// infinite too.
+bool sameCodelength(double a, double b)
+{
+  return std::isfinite(a) && std::isfinite(b) && std::abs(a - b) <= 1e-9 * std::max({ 1.0, std::abs(a), std::abs(b) });
+}
 
 std::string formatCodelength(double value)
 {
@@ -354,20 +365,60 @@ void checkKeepsHardModules(infomap::InfomapWrapper& im, const std::string& clust
 
 // Scores the finished tree in a fresh instance: written as a .tree file and read
 // back with --no-infomap. Returns false when that run rejects the tree.
-bool rescore(const Options& options, const std::string& networkPath, const std::vector<Leaf>& leaves, const infomap::Network& network, double& codelength, std::string& flags)
+bool rescore(const Options& options, const std::string& networkPath, const std::vector<Leaf>& leaves, const infomap::Network& network, double& codelength, std::string& flags, const char* extraFlags = "")
 {
   const std::string text = treeText(leaves, network);
   TempFile tree { writeTemp("rescore", ".tree", text.data(), text.size()) };
   if (tree.path.empty())
     return false;
   // -N 1: the tree is scored as it is, the trials would only repeat that.
-  flags = options.flags + " --no-infomap -N 1 -c " + tree.path;
+  flags = options.flags + extraFlags + " --no-infomap -N 1 -c " + tree.path;
   infomap::InfomapWrapper im(flags);
   im.readInputData(networkPath);
   applyMetaData(im, options.metaData);
   im.run();
   codelength = im.codelength();
   return true;
+}
+
+// The finished tree flattened to two levels: each leaf in its top module, or in its
+// leaf module, the module right above it.
+std::vector<Leaf> flattened(const std::vector<Leaf>& leaves, bool toTopModules)
+{
+  std::map<const infomap::InfoNode*, unsigned int> moduleIndex;
+  std::map<unsigned int, unsigned int> moduleSize;
+  std::vector<Leaf> flat;
+  flat.reserve(leaves.size());
+  for (const auto& leaf : leaves) {
+    const infomap::InfoNode* module = leaf.parent;
+    if (toTopModules) {
+      while (module->parent != nullptr && module->parent->parent != nullptr)
+        module = module->parent;
+    }
+    const auto index = moduleIndex.insert({ module, static_cast<unsigned int>(moduleIndex.size() + 1) }).first->second;
+    flat.push_back({ leaf.node, module, { index, ++moduleSize[index] } });
+  }
+  return flat;
+}
+
+// A multilevel search never ends in a tree that codes worse than its flattenings
+// (test/python/flattening.py has why). Not checked where no search shapes the tree
+// (--no-infomap, a hard partition), nor under --fast-hierarchical-solution 2 or
+// more, which keeps a super level without comparing it with its top modules flat.
+void checkFlattenings(const Options& options, const std::string& networkPath, const std::vector<Leaf>& leaves, const infomap::InfomapWrapper& im)
+{
+  if (options.noInfomap || options.hard || im.twoLevel || options.fastLevels >= 2)
+    return;
+  const double hierarchy = im.codelength();
+  const double slack = 1e-9 * std::max(1.0, std::abs(hierarchy));
+  for (const bool toTopModules : { true, false }) {
+    double flat = 0.0;
+    std::string flags;
+    if (!rescore(options, networkPath, flattened(leaves, toTopModules), im.network(), flat, flags, " --two-level"))
+      continue;
+    if (hierarchy > flat + slack)
+      throw Finding("the finished tree codes " + formatCodelength(hierarchy) + " bits, more than its flattening to " + (toTopModules ? "top" : "leaf") + " modules, " + formatCodelength(flat) + " bits with " + flags);
+  }
 }
 
 // Prints what the CLI needs to replay the finding, then aborts.
@@ -411,12 +462,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     applyMetaData(im, options.metaData);
     im.run();
   } catch (const infomap::InfomapError& e) {
-    if (isBug(e.what()) && !isKnownFinding(im, e.what()))
+    if (isBug(e) && !isKnownFinding(im, e.what()))
       reportBug(options, clusterText, e.what());
     // Otherwise an expected rejection of the cluster data.
     return 0;
   } catch (const std::runtime_error&) {
-    // The cluster data readers throw a plain runtime_error on malformed input.
+    // Validation that throws a plain runtime_error: also a rejection.
     return 0;
   } catch (const std::exception& e) {
     // A logic_error (out_of_range, invalid_argument, ...) or bad_alloc on a
@@ -445,6 +496,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
       std::string flags;
       if (rescore(options, networkFile.path, leaves, im.network(), rescored, flags) && !sameCodelength(reported, rescored))
         throw Finding("reported codelength " + formatCodelength(reported) + " but the finished tree, read back with " + flags + ", scores " + formatCodelength(rescored));
+      checkFlattenings(options, networkFile.path, leaves, im);
     }
   } catch (const Finding& e) {
     if (!isKnownFinding(im, e.what()))
