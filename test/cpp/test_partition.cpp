@@ -870,6 +870,45 @@ TEST_CASE("Fast hierarchical search on a state network reports the codelength of
   std::remove(resultPath.c_str());
 }
 
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+TEST_CASE("Regularized multilayer one-module fallback reports the codelength of its tree (#1285) [fast][core][partition][tree][regularized]")
+{
+  // The regularized multilayer objective gives one module holding every node exit flow,
+  // while the one-level codelength prices the root with none. The fallback compared the
+  // search with the one-level codelength and reported it: 2.284 bits for a one-module
+  // tree that reads back as 2.699, and the search had found 2.667 with two modules.
+  struct Case {
+    std::string flags;
+    unsigned int numTopModules;
+    double codelength;
+  };
+  const std::vector<Case> cases = {
+    { "--regularized", 2, 2.667330579 }, // was 2.284010969 with 1 module
+    { "--regularized --directed", 1, 2.851861954 }, // the search itself ends at one module
+  };
+  const std::string resultPath = "regularized_multilayer_one_module_result.tree";
+  for (const auto& c : cases) {
+    CAPTURE(c.flags);
+    double codelength = 0.0;
+    {
+      InfomapWrapper im(infomap::test::defaultFlags(c.flags));
+      im.readInputData(infomap::test::repoPath("examples/networks/multilayer_intra.net"));
+      im.run();
+      codelength = im.codelength();
+      CHECK(im.numTopModules() == c.numTopModules);
+      infomap::writeTree(im, im.network(), resultPath, true);
+    }
+
+    InfomapWrapper reader(infomap::test::defaultFlags(c.flags + " --no-infomap --cluster-data " + resultPath));
+    reader.readInputData(infomap::test::repoPath("examples/networks/multilayer_intra.net"));
+    reader.run();
+    infomap::test::checkApproxCodelength(reader.codelength(), codelength, 1e-9);
+    infomap::test::checkApproxCodelength(codelength, c.codelength, 1e-9);
+  }
+  std::remove(resultPath.c_str());
+}
+#endif
+
 TEST_CASE("An unknown node id in cluster data leaves the partition alone [fast][core][partition][parser]")
 {
   // std::map::operator[] inserted the unknown id with a default index of 0, so it
