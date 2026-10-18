@@ -2668,6 +2668,10 @@ TEST_CASE("A meta-data search ending at singleton modules falls back to one modu
       CHECK(im.getOneLevelCodelength() == doctest::Approx(2.789582133).epsilon(1e-9));
       CHECK(im.codelength() <= im.getOneLevelCodelength() + 1e-10);
       CHECK(im.numTopModules() == 1);
+      // The components describe the one-module tree too, not the singletons it replaced.
+      CHECK(im.getIndexCodelength() == doctest::Approx(0.0).epsilon(1e-12));
+      CHECK(im.getMetaCodelength() == doctest::Approx(0.950257077719).epsilon(1e-9));
+      CHECK(im.getCodelength() == doctest::Approx(im.codelength()).epsilon(1e-12));
     }
   }
 }

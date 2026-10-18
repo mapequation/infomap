@@ -2881,6 +2881,17 @@ void InfomapBase::partition()
     m_root.codelength = 0.0;
     m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
 
+    // The objective still holds the discarded partition's terms, which the run reports as
+    // its index and meta-data codelengths. With one trial no best-tree restore rebuilds
+    // them, so move the objective to one module too. Callers of a sub-search read only
+    // its tree and codelengths.
+    if (isMainInfomap()) {
+      setActiveNetworkFromLeafs();
+      initPartition();
+      std::vector<unsigned int> oneModule(numLeafNodes(), 0);
+      moveActiveNodesToPredefinedModules(oneModule);
+    }
+
   } else {
     // Set consolidated cluster index on nodes and modules
     for (auto clusterIt = m_root.begin_tree(); !clusterIt.isEnd(); ++clusterIt) {
