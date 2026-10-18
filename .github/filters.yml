@@ -222,9 +222,11 @@ notebooks:
 meta:
   - ".github/**"
   - ".pre-commit-config.yaml"
-  # The fuzz harness and the native benchmark sources are built only by
-  # schedule-triggered or opt-in targets (make fuzz, bench-native), so they match
+  # The fuzz harness, the native benchmark sources and the mutation script are
+  # run only by schedule-triggered or opt-in targets (make fuzz, bench-native,
+  # test/mutation/oracle_mutants.py), so they match
   # no lane filter. Without them here a PR that only edits them runs zero jobs --
   # not even the pre-commit hygiene gate -- and ci-summary reports green.
   - "test/fuzz/**"
   - "test/bench/**"
+  - "test/mutation/**"
