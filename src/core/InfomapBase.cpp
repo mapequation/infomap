@@ -702,12 +702,13 @@ private:
     }
 
     if (firstError) {
-      std::string message = "unknown error";
+      std::string message;
       try {
         std::rethrow_exception(firstError);
       } catch (const std::exception& e) {
         message = e.what();
       } catch (...) {
+        message = "unknown error";
       }
       throw std::runtime_error(fmt::format(FMT_STRING("Parallel trial {}/{} failed: {}"), firstErrorTrial + 1, m_numTrials, message));
     }

@@ -10,6 +10,8 @@
 #ifndef INFOMAP_FAULT_INJECTION_H_
 #define INFOMAP_FAULT_INJECTION_H_
 
+#include <cstdint>
+
 #ifdef INFOMAP_FAULT_INJECTION
 #include <atomic>
 #include <stdexcept>
@@ -22,7 +24,7 @@ namespace faultinjection {
   // exception reaches the caller instead of ending in std::terminate (#1252).
   // Compiled in only where CMake defines INFOMAP_FAULT_INJECTION (debug,
   // sanitizer and TSan builds). Elsewhere inject() is an empty inline function.
-  enum class Site : int {
+  enum class Site : std::uint8_t {
     None = 0,
     ParallelTrialWorkerSetup,
     RecursiveSubNetwork,
