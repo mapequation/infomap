@@ -41,6 +41,9 @@ that is fixed, remove `order` from `UNCHECKED` in `differential.py` and list
 the order differences that remain. Against v2.15.1, three `--num-trials` cases
 differ in order only, from #1213.
 
+The RNG also makes the release list platform-specific: `ninetriangles --directed`
+differs from v2.15.1 on macOS (#1159) but not on ubuntu, which the list holds.
+
 The JavaScript Node API cannot pass other input files (#1327), so the
 `meta_data` cases are skipped there.
 
