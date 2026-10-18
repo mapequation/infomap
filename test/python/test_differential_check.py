@@ -107,10 +107,13 @@ def test_frontend_check_skips_and_lists(tmp_path):
     (js / "twotriangles-meta.skip").write_text("no input files\n")
     expected = tmp_path / "frontend_differences.tsv"
 
-    expected.write_text(
-        "id\trun\tchanges\texplained_by\ntwotriangles\tjs\torder\t#1325\n"
-    )
+    expected.write_text("id\trun\tchanges\texplained_by\n")
+    # An order difference is shown but not checked yet (#1325).
     assert differential.compare([cli, js], expected) == 0
 
-    expected.write_text("id\trun\tchanges\texplained_by\n")
+    _write(js, "twotriangles", TREE_MOVED, 2.4)
     assert differential.compare([cli, js], expected) == 1
+    expected.write_text(
+        "id\trun\tchanges\texplained_by\ntwotriangles\tjs\tcodelength,tree\t#1325\n"
+    )
+    assert differential.compare([cli, js], expected) == 0

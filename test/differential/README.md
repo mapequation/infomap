@@ -34,6 +34,13 @@ state-level tree. Differences are named
 - `order`: the same modules, with other module ids or another order,
 - `flow`: the same tree, with other node flows.
 
+`order` differences are shown but not checked for now, and are not listed. The
+order of modules and nodes with equal flow depends on the last bit of their
+flow, which differs between the native and the JavaScript build (#1325). Once
+that is fixed, remove `order` from `UNCHECKED` in `differential.py` and list
+the order differences that remain. Against v2.15.1, three `--num-trials` cases
+differ in order only, from #1213.
+
 The JavaScript Node API cannot pass other input files (#1327), so the
 `meta_data` cases are skipped there.
 

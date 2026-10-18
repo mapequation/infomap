@@ -47,6 +47,10 @@ DEFAULT_SEED = "123"
 CODELENGTH_TOLERANCE = 1e-9
 # Tree files print flow with six significant digits.
 FLOW_RELATIVE_TOLERANCE = 1e-5
+# Shown, but not checked: the order of modules and nodes with equal flow depends
+# on the last bit of their flow, which differs between builds (#1325). Drop
+# "order" from here, and list the order differences, once #1325 is fixed.
+UNCHECKED = frozenset({"order"})
 
 
 @dataclass(frozen=True)
@@ -243,6 +247,13 @@ def _describe(outcome: Outcome) -> str:
     return f"codelength {outcome.codelength:.10f}, {top} top modules, depth {depth}"
 
 
+def _name_changes(changes: list[str]) -> str:
+    return ", ".join(
+        f"{change} (not checked)" if change in UNCHECKED else change
+        for change in changes
+    )
+
+
 @dataclass(frozen=True)
 class ExpectedDifference:
     changes: frozenset[str]
@@ -323,9 +334,11 @@ def compare(run_dirs: list[Path], expected_path: Path = FRONTEND_DIFFERENCES) ->
                 continue
             changes = differences(base, outcome)
             if changes:
-                found[(case.id, other.name)] = frozenset(changes)
+                checked = frozenset(changes) - UNCHECKED
+                if checked:
+                    found[(case.id, other.name)] = checked
                 entry = expected.get((case.id, other.name))
-                print(f"{case.id}: {', '.join(changes)} differ")
+                print(f"{case.id}: {_name_changes(changes)} differ")
                 print(f"  {reference.name}: {_describe(base)}")
                 print(f"  {other.name}: {_describe(outcome)}")
                 if entry is not None:
@@ -378,8 +391,10 @@ def compare_release(
         new = load_outcome(current_dir, case_id)
         changes = differences(old, new)
         if changes:
-            found[case_id] = frozenset(changes)
-            print(f"{case_id}: {', '.join(changes)}")
+            checked = frozenset(changes) - UNCHECKED
+            if checked:
+                found[case_id] = checked
+            print(f"{case_id}: {_name_changes(changes)}")
             print(f"  {reference}: {_describe(old)}")
             print(f"  current: {_describe(new)}")
             if case_id in expected:

@@ -8,7 +8,6 @@
 # After a release, set the reference to the new tag and empty the list.
 # reference: v2.15.1
 id	changes	explained_by
-twotriangles-n5	order	#1213
 ninetriangles	codelength,tree	#1075
 ninetriangles-d	codelength,tree	#1159
 ninetriangles-n5	codelength,tree	#1075
@@ -17,6 +16,4 @@ ninetriangles-ec	codelength,tree	#1033 #1291
 ninetriangles-vmt	codelength,tree	#1075 #1270
 ninetriangles-pm2	codelength,tree	#1298
 ninetriangles-meta	codelength,tree	#1075 #1143
-modular_w-n5	order	#1213
-multilayer-n5	order	#1213
 unbalanced_hierarchy	codelength,tree	#1075

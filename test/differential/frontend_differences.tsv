@@ -5,6 +5,3 @@
 # on a disagreement that is not listed and on a listed one that no longer
 # shows, so fixing the issue means removing its lines here.
 id	run	changes	explained_by
-states-d	js	order	#1325
-multilayer-d	js	order	#1325
-multilayer_intra-self	js	order	#1325
