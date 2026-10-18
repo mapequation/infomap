@@ -79,10 +79,11 @@ def run_limited(network: Path, timeout: float, **options) -> dict:
     """Run Infomap on ``network`` in a child process and return what it reports."""
     out = network.with_suffix(".pickle")
     env = {**os.environ}
-    # A fixed thread budget, so the time limit does not depend on the runner.
+    # A fixed thread budget, so the time limit does not depend on the runner, and
+    # two threads, so inner parallelization does not fall back to the serial loop.
     env.pop("INFOMAP_NUM_THREADS", None)
     env.pop("SLURM_CPUS_PER_TASK", None)
-    env.setdefault("OMP_NUM_THREADS", "2")
+    env["OMP_NUM_THREADS"] = "2"
     try:
         proc = subprocess.run(
             [sys.executable, "-c", CHILD, str(network), str(out), repr(options)],
@@ -106,6 +107,8 @@ def check_invariants(data: dict, nodes: set[int], *, undirected: bool) -> Partit
     node_ids = [node_id for _, node_id, _, _ in leaves]
     assert len(node_ids) == len(set(node_ids)), "a node is in the tree twice"
     assert set(node_ids) == nodes
+    paths = [path for _, _, path, _ in leaves]
+    assert len(paths) == len(set(paths)), "two leaves share a path"
 
     flows = np.array([flow for _, _, _, flow in leaves])
     assert (flows >= 0).all()
