@@ -21,7 +21,7 @@ version,flags,changes,description,issue,pr
 2.16.0,--meta-data,codelength partition,Each consolidated module keeps its own metadata collection during coarse-tune. Metadata runs optimise the right objective; air30k is about 2.5% shorter.,1138,1143
 2.16.0,--timing-json,output,threads_used reports the largest OpenMP team the run started. The console Runtime line no longer prints a thread count.,1145,1148
 2.16.0,--regularized --regularization-strength,codelength partition runs,"Strength 0 on networks with nodes without out-links: directed runs no longer fail with degenerate flow, and undirected isolated nodes no longer get NaN flow.",1144,1149
-2.16.0,,codelength partition levels,"State (memory) input, multilevel runs: when the recursive search ends above the super-level tree, that tree is reported instead. The codelength never rises.",837,1159
+2.16.0,,codelength partition levels,"Multilevel runs at the default --fast-hierarchical-solution 0, not from a seed tree deeper than two levels: when the recursive search ends above the super-level tree, that tree is reported instead. The codelength never rises. Seen mostly on state (memory) input; 1 of 60 first-order seeds changed.",837,1159
 2.16.0,--meta-data,codelength partition,"Scoring a move no longer leaves rounding residue in the module's metadata. Near-ties can break differently, within 0.001%.",1134,1160
 2.16.0,--regularized,codelength partition runs,Parallel self-links count once in the degree sum. A node with only parallel self-links no longer gives negative flow or codelength 0.,,1162
 2.16.0,,output,The input fingerprint is XXH64 (the same value as xxhsum -H64). It differs from 2.15 and from #1096.,1167,1172
@@ -33,7 +33,7 @@ version,flags,changes,description,issue,pr
 2.16.0,--recorded-teleportation,codelength partition,A node whose only out-link is a self-link is not dangling. Only networks with such a node change.,1182,1186
 2.16.0,--markov-time,runs,Markov time 1e7 and above is no longer refused for negative module flow.,1192,1193
 2.16.0,--recorded-teleportation --flow-model,codelength partition warning,"Under undirdir, outdirdir, rawdir and precomputed, --recorded-teleportation has no effect and warns.",1188,1194
-2.16.0,--recorded-teleportation --num-trials,output,Undirected flow: the codelength written to tree files for a restored best trial matches the reported codelength.,1210,1194
+2.16.0,--recorded-teleportation,codelength output,"Undirected flow: a tree of three or more levels built from --cluster-data, a deep seed or a restored best trial is scored as without the option. The reported and written codelengths match, also with --no-infomap.",1210,1194
 2.16.0,--regularized --flow-model,codelength partition warning,"Under undirdir, outdirdir, rawdir and precomputed, --regularized has no effect and warns.",1189,1196
 2.16.0,,error,Bipartite input: a link that does not cross the bipartite start id is refused (exit 2).,1190,1198
 2.16.0,--multilayer-relax-to-self,codelength partition,Applies only to multilayer input. On state input it has no effect.,1191,1199
@@ -46,18 +46,18 @@ version,flags,changes,description,issue,pr
 2.16.0,,codelength partition,"Hard partitions (library API, clusterDataIsHard): the run reports the codelength of the tree it returns, and --no-infomap returns the hard modules.",1207,1218
 2.16.0,,codelength partition,"Hard partitions (library API, clusterDataIsHard): the super-level fallback from #1159 also applies.",1229,1222
 2.16.0,--fast-hierarchical-solution --cluster-data,runs,A ragged seed tree deeper than two levels no longer crashes.,1216,1223
-2.16.0,--directed --recorded-teleportation --use-node-weights-as-flow,error,Bipartite input whose links all run from the primary to the feature side is refused with degenerate flow.,1232,1239
+2.16.0,--directed --recorded-teleportation --use-node-weights-as-flow,error,Teleportation to links (not --to-nodes): bipartite input whose links all run from the primary to the feature side is refused with degenerate flow.,1232,1239
 2.16.0,--flow-model,warning,undirdir on multilayer input with intra-layer links warns that it has no effect.,1233,1240
 2.16.0,--cluster-data,codelength partition,"State or multilayer input with a seed tree deeper than two levels: every module of the tree gets its physical nodes, so the reported codelength is that of the tree.",1209,1241
 2.16.0,--recorded-teleportation,codelength partition,"Recorded link flow uses the configured teleportation rate. Codelengths move by at most 4e-11, and near-ties can pick another partition.",1184,1242
-2.16.0,--teleportation-probability,codelength partition,"At -p 1, node flow is exactly the teleportation distribution, which can change the search outcome.",1184,1242
+2.16.0,--teleportation-probability,codelength partition,"Directed flow at -p 1: the teleportation rate is kept at or below 1 inside the power iteration, so flow no longer drifts. This can change the search outcome.",1184,1242
 2.16.0,--fast-hierarchical-solution --cluster-data,codelength partition,"With a seed tree deeper than two levels, the reported codelength is that of the returned tree. Best-of-N can pick a different trial.",1230,1243
-2.16.0,--recorded-teleportation --to-nodes,codelength partition,Bipartite input: teleportation weights are renormalised after the feature nodes are uncoded.,1175,1246
+2.16.0,--recorded-teleportation,codelength partition,Bipartite input: teleportation weights are renormalised after the feature nodes are uncoded. Most visible with --to-nodes; teleportation to links changes when the coded nodes have teleportation weight.,1175,1246
 2.16.0,--regularized,codelength partition error runs,"Bipartite input: teleportation weights are renormalised after the feature nodes are uncoded, and leaf enter and exit flow come from the links.",1175,1246 1247
 2.16.0,--regularized --use-node-weights-as-flow,codelength partition runs,Leaf enter and exit flow come from the links. Some runs refused for negative flow before now run.,1189,1247
 2.16.0,--regularized --markov-time,codelength partition runs,Markov time other than 1: leaf enter and exit flow come from the links. Most runs at t > 1 were refused before and now run.,1231,1247
 2.16.0,--regularized --variable-markov-time,codelength partition runs,Leaf enter and exit flow come from the links. Some runs refused for negative flow before now run.,1191,1247
 2.16.0,,partition error,"Hard partitions (library API, clusterDataIsHard) from a .tree, .ftree or JSON path: a one-level tree stays hard, and a deeper tree is refused.",1244,1251
-2.16.0,--directed --recorded-teleportation --use-node-weights-as-flow,error,A network without links is refused with degenerate flow. It used to report a codelength above the one-level codelength.,1253,1254
+2.16.0,--directed --recorded-teleportation --use-node-weights-as-flow,error,Teleportation to links (not --to-nodes): a network without links is refused with degenerate flow. It used to report a codelength above the one-level codelength.,1253,1254
 2.16.0,--variable-markov-time --use-node-weights-as-flow,codelength runs,The scale is floored at an effective degree of 1. Networks with isolated nodes are no longer refused for negative flow.,1191,1255
 2.16.0,--variable-markov-time --regularized,codelength partition,The scale is floored at an effective degree of 1. Networks with isolated nodes no longer run on negative link flow.,1191,1255
