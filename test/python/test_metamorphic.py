@@ -67,6 +67,11 @@ Thread count
     gives trial ``i`` the seed it has in a serial run. Nor may an Infomap
     object that runs twice give two results. ``--inner-parallelization`` is
     documented to change the partition and is not covered.
+
+Flattening the tree
+    A returned hierarchy codes no worse than its flattening to top modules or to
+    leaf modules, and multilevel search codes no worse than two-level search
+    with the same seed. ``flattening.py`` has the reasoning (#1257).
 """
 
 from __future__ import annotations
@@ -82,6 +87,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from flattening import codes_no_worse, flatten_tree, flattenings
 from infomap import Infomap, run
 from reference_codelength import total_degree
 
@@ -96,8 +102,9 @@ ABS = 1e-12
 # How far apart the best codelengths of two seed sweeps may be.
 SEARCH_NOISE = 0.01
 # The networks are tiny, so starting threads costs more than the run; the
-# thread count has its own tests at the end.
-SERIAL = {"num_threads": 1}
+# thread count has its own tests at the end. The weekly thread job
+# (make test-python-threads) sets INFOMAP_NUM_THREADS to run them threaded.
+THREADS = {"num_threads": int(os.environ.get("INFOMAP_NUM_THREADS", "1"))}
 
 FILES = [
     EXAMPLES / "twotriangles.net",
@@ -180,7 +187,7 @@ def _vertex_weights(path: Path) -> dict[int, float]:
 
 def _read(path: Path) -> Net:
     # Infomap parses the file; the links come back as given (duplicates summed).
-    result = run(str(path), silent=True, no_infomap=True, directed=True, **SERIAL)
+    result = run(str(path), silent=True, no_infomap=True, directed=True, **THREADS)
     nodes = sorted(node.node_id for node in result.tree() if node.is_leaf)
     weights = _vertex_weights(path)
     return Net(nodes, result.links("weight"), {n: weights.get(n, 1.0) for n in nodes})
@@ -228,7 +235,9 @@ def _tree(result) -> dict[int, tuple[int, ...]]:
 def found_tree(tmp_path, net: Net, options) -> dict[int, tuple[int, ...]]:
     """A tree to score: the one a short search finds on ``net``."""
     path = net.write(tmp_path / "search.net")
-    return _tree(run(str(path), silent=True, num_trials=2, seed=3, **options, **SERIAL))
+    return _tree(
+        run(str(path), silent=True, num_trials=2, seed=3, **options, **THREADS)
+    )
 
 
 def score(tmp_path, net: Net, paths, options, tag="scored"):
@@ -241,14 +250,14 @@ def score(tmp_path, net: Net, paths, options, tag="scored"):
         cluster_data=str(tree_path),
         no_infomap=True,
         **options,
-        **SERIAL,
+        **THREADS,
     )
 
 
 def best_of_seeds(tmp_path, net: Net, options, seeds=range(1, 7), tag="sweep"):
     path = net.write(tmp_path / f"{tag}.net")
     results = [
-        run(str(path), silent=True, num_trials=1, seed=seed, **options, **SERIAL)
+        run(str(path), silent=True, num_trials=1, seed=seed, **options, **THREADS)
         for seed in seeds
     ]
     return min(results, key=lambda r: r.codelength)
@@ -587,6 +596,75 @@ def test_undirected_equals_both_directions_best_codelength(tmp_path, name):
     assert directed.codelength == pytest.approx(undirected.codelength, rel=SEARCH_NOISE)
 
 
+# --- flattenings ----------------------------------------------------------------
+
+
+def _scorer(net_path: Path, options):
+    """A ``score`` for ``flattening.flattenings``: the tree file under ``options``."""
+
+    def score(tree: Path, two_level: bool) -> float:
+        return run(
+            str(net_path),
+            silent=True,
+            cluster_data=str(tree),
+            no_infomap=True,
+            two_level=two_level,
+            **options,
+            **SERIAL,
+        ).codelength
+
+    return score
+
+
+def test_flatten_tree_rewrites_only_the_path():
+    tree = '# a state tree\n1:1:1 0.3 "a b" 7 1\n1:1:2 0.2 "c" 8 1\n1:2:1 0.4 "d" 9 2\n2:1 0.1 "e" 10 3\n'
+    assert flatten_tree(tree, 1) == (
+        '# a state tree\n1:1 0.3 "a b" 7 1\n1:2 0.2 "c" 8 1\n1:3 0.4 "d" 9 2\n2:1 0.1 "e" 10 3\n'
+    )
+    assert flatten_tree(tree, -1) == (
+        '# a state tree\n1:1 0.3 "a b" 7 1\n1:2 0.2 "c" 8 1\n2:1 0.4 "d" 9 2\n3:1 0.1 "e" 10 3\n'
+    )
+
+
+@pytest.mark.parametrize("variant", VARIANTS)
+@pytest.mark.parametrize("name", NETWORK_IDS)
+def test_a_tree_codes_no_worse_than_its_flattenings(tmp_path, name, variant):
+    # See flattening.py for why, and for how the objectives that price the
+    # tree are compared.
+    options = VARIANTS[variant]
+    path = network(name).write(tmp_path / "net.net")
+    result = run(str(path), silent=True, num_trials=2, seed=3, **options, **SERIAL)
+    tree = tmp_path / "run.tree"
+    result.write_tree(str(tree))
+    found = flattenings(tree, _scorer(path, options))
+    _same(found.hierarchy, result.codelength)
+    assert not found.violations()
+
+
+@pytest.mark.parametrize("variant", SEARCH_VARIANTS)
+@pytest.mark.parametrize("name", NETWORK_IDS)
+def test_multilevel_codes_no_worse_than_two_level_with_the_same_seed(
+    tmp_path, name, variant
+):
+    # Multilevel search starts from the two-level search of the same seed.
+    options = SEARCH_VARIANTS[variant]
+    path = network(name).write(tmp_path / "net.net")
+    for seed in (1, 2):
+        multilevel, two_level = (
+            run(
+                str(path),
+                silent=True,
+                num_trials=1,
+                seed=seed,
+                **levels,
+                **options,
+                **SERIAL,
+            )
+            for levels in ({}, {"two_level": True})
+        )
+        assert codes_no_worse(multilevel.codelength, two_level.codelength), seed
+
+
 # --- thread count ----------------------------------------------------------------
 
 THREAD_NETWORKS = [
@@ -629,8 +707,10 @@ def test_thread_count_does_not_change_the_result(tmp_path, name, variant):
         )
         # A worker rebuilds the network for each trial, so a sum can come out in
         # the last bit.
-        assert parallel.codelengths == pytest.approx(serial.codelengths, rel=1e-14)
-        assert parallel.codelength == pytest.approx(serial.codelength, rel=1e-14)
+        assert parallel.codelengths == pytest.approx(
+            serial.codelengths, rel=1e-14, abs=0
+        )
+        assert parallel.codelength == pytest.approx(serial.codelength, rel=1e-14, abs=0)
         # The same tree, though not always in the same order (see below).
         assert _modules(parallel) == _modules(serial), threads
 
@@ -646,7 +726,9 @@ def test_omp_num_threads_does_not_change_the_result(tmp_path):
     outputs = []
     for threads in ("1", "4"):
         env = {**os.environ, "OMP_NUM_THREADS": threads}
+        # Both outrank OMP_NUM_THREADS in the thread budget.
         env.pop("INFOMAP_NUM_THREADS", None)
+        env.pop("SLURM_CPUS_PER_TASK", None)
         outputs.append(
             subprocess.run(
                 [sys.executable, "-c", script, str(path)],
@@ -743,7 +825,7 @@ def test_restored_tree_is_sorted_on_flow(tmp_path, extra):
     )
     clu = tmp_path / "modules.clu"
     clu.write_text("".join(f"{n} {1 if n <= 3 else 2}\n" for n in range(1, 10)))
-    options = {"two_level": True, "cluster_data": str(clu), "seed": 1, **SERIAL}
+    options = {"two_level": True, "cluster_data": str(clu), "seed": 1, **THREADS}
     one_trial = run(str(path), silent=True, num_trials=1, **options)
     assert one_trial.num_top_modules == 2
     result = run(str(path), silent=True, **options, **extra)

@@ -15,6 +15,8 @@ that covers it:
 - the reported codelength is the codelength the independent reference
   (``reference_codelength``) gives for the returned tree;
 - the tree written out and read back with ``--no-infomap`` scores the same;
+- a multilevel tree codes no worse than its flattenings to top and to leaf
+  modules (``flattening.py``);
 - node and link flow match the independent flow oracle (``reference_flow``).
 
 The default run checks every row on one network and one seed. The full sweep
@@ -99,6 +101,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from flattening import flattenings
 from infomap import Infomap
 from infomap._logging import engine_log_routing
 from infomap.errors import InfomapError, _translate_engine_errors
@@ -792,6 +795,30 @@ def evaluate(case: Case, tmp: Path) -> Outcome:
                 f"reported {result.codelength:.12g}, read back {back.codelength:.12g}"
             )
 
+    # The tree against its flattenings to top and to leaf modules.
+    if row["levels"] == "multilevel":
+        outcome.checked.add("flattenings")
+
+        def score(path: Path, two_level: bool) -> float:
+            scored, _ = _run(
+                net,
+                {
+                    **back_opts,
+                    "cluster_data": str(path),
+                    "no_infomap": True,
+                    "two_level": two_level,
+                },
+            )
+            return scored.codelength
+
+        try:
+            found = flattenings(tree, score)
+        except InfomapError as error:
+            outcome.failures["flattenings"] = f"refused: {error}"
+        else:
+            if found.violations():
+                outcome.failures["flattenings"] = "; ".join(found.violations())
+
     # The flow oracle.
     if covers_flow(case, exp):
         outcome.checked.add("flow")
@@ -848,6 +875,7 @@ KNOWN: dict[str, list[Known]] = {
     "runs": [],
     "codelength": [],
     "read back": [],
+    "flattenings": [],
 }
 
 

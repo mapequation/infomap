@@ -8,6 +8,7 @@
 #include "TestUtils.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <limits>
@@ -790,6 +791,82 @@ TEST_CASE("Fast hierarchical search reports the codelength of the tree it return
   infomap::test::checkApproxCodelength(reader.codelength(), codelength, 1e-9);
   infomap::test::checkApproxCodelength(codelength, 3.371875026, 1e-9);
 
+  std::remove(resultPath.c_str());
+}
+
+TEST_CASE("Fast hierarchical search on a state network reports the codelength of the tree it returns (#1262) [fast][core][partition][tree]")
+{
+  // -F made the fine-tuned sub modules with the flow data only, not the physical nodes the
+  // memory map equation prices a module by, so it priced them as if each state were its own
+  // node: 4.498 bits reported for a tree of 3.472.
+  // Second-order ninetriangles: state (w->u) sits in physical node u and links to (u->v) for
+  // every neighbour v of u, the step back to w with weight 0.2.
+  std::vector<std::pair<unsigned int, unsigned int>> edges;
+  {
+    std::ifstream in(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    std::string line;
+    while (std::getline(in, line)) {
+      std::istringstream fields(line);
+      unsigned int a = 0, b = 0;
+      if (!line.empty() && std::isdigit(static_cast<unsigned char>(line[0])) && (fields >> a >> b))
+        edges.emplace_back(a, b);
+    }
+  }
+  std::vector<unsigned int> nodeOrder;
+  std::map<unsigned int, std::vector<unsigned int>> neighbours;
+  for (const auto& edge : edges) {
+    for (auto pair : { edge, std::make_pair(edge.second, edge.first) }) {
+      if (neighbours.find(pair.first) == neighbours.end())
+        nodeOrder.push_back(pair.first);
+      neighbours[pair.first].push_back(pair.second);
+    }
+  }
+  std::map<std::pair<unsigned int, unsigned int>, unsigned int> stateId;
+  std::vector<std::pair<unsigned int, unsigned int>> states;
+  for (auto u : nodeOrder)
+    for (auto w : neighbours[u]) {
+      states.emplace_back(w, u);
+      stateId[{ w, u }] = static_cast<unsigned int>(states.size());
+    }
+  const auto addInput = [&](InfomapWrapper& im) {
+    for (unsigned int i = 0; i < states.size(); ++i)
+      im.addStateNode(i + 1, states[i].second);
+    for (const auto& state : states)
+      for (auto v : neighbours[state.second])
+        im.addLink(stateId[state], stateId[{ state.second, v }], v == state.first ? 0.2 : 1.0);
+  };
+
+  // The three-level tree a search with -N 5 finds, on physical node ids.
+  const std::string seedPath = "fast_hierarchical_states_seed.tree";
+  const std::string resultPath = "fast_hierarchical_states_result.tree";
+  {
+    std::ofstream out(seedPath.c_str());
+    const std::vector<std::pair<std::string, unsigned int>> rows = {
+      { "1:1:1", 19 }, { "1:1:2", 20 }, { "1:1:3", 21 }, { "1:2:1", 22 }, { "1:2:2", 23 }, { "1:2:3", 24 }, { "1:3:1", 25 }, { "1:3:2", 26 }, { "1:3:3", 27 },
+      { "2:1:1", 10 }, { "2:1:2", 11 }, { "2:1:3", 12 }, { "2:2:1", 16 }, { "2:2:2", 17 }, { "2:2:3", 18 }, { "2:3:1", 13 }, { "2:3:2", 14 }, { "2:3:3", 15 },
+      { "3:1", 4 }, { "3:2", 5 }, { "3:3", 6 }, { "4:1", 7 }, { "4:2", 8 }, { "4:3", 9 }, { "5:1", 1 }, { "5:2", 2 }, { "5:3", 3 }
+    };
+    for (const auto& row : rows)
+      out << row.first << " 0 \"" << row.second << "\" " << row.second << "\n";
+  }
+
+  double codelength = 0.0;
+  {
+    InfomapWrapper im(infomap::test::defaultFlags("--directed -F --cluster-data " + seedPath));
+    addInput(im);
+    im.run();
+    infomap::test::checkRunSanity(im);
+    codelength = im.codelength();
+    infomap::writeTree(im, im.network(), resultPath, true);
+  }
+
+  InfomapWrapper reader(infomap::test::defaultFlags("--directed --no-infomap --cluster-data " + resultPath));
+  addInput(reader);
+  reader.run();
+  infomap::test::checkApproxCodelength(reader.codelength(), codelength, 1e-9);
+  CHECK(codelength == doctest::Approx(3.4716).epsilon(1e-4)); // was 4.49806
+
+  std::remove(seedPath.c_str());
   std::remove(resultPath.c_str());
 }
 
