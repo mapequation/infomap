@@ -35,12 +35,15 @@ def mixed(paths: Iterable[str]) -> tuple[list[str], list[str]]:
     return [], []
 
 
-def changed(base: str) -> list[str]:
+def changed(base: str, cwd: str | None = None) -> list[str]:
+    # Without rename detection a moved file is listed at both paths, so a move
+    # out of src/ or out of a reference module counts too.
     out = subprocess.run(
-        ["git", "diff", "--name-only", f"{base}...HEAD"],
+        ["git", "diff", "--name-only", "--no-renames", f"{base}...HEAD"],
         check=True,
         capture_output=True,
         text=True,
+        cwd=cwd,
     ).stdout
     return out.splitlines()
 
