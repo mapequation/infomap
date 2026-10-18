@@ -847,18 +847,18 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
                 and _negative_flow(o)
             ),
         ),
-        # Bipartite input with recorded teleportation.
+        # Bipartite input under --regularized.
         (
             "#1175",
             lambda o: (
                 o.case.net.kind == "bipartite"
-                and o.exp.recorded
+                and o.exp.regularized
                 and (_negative_flow(o) or _unbalanced_flow(o))
             ),
         ),
     ],
     "codelength": [
-        ("#1175", lambda o: o.case.net.kind == "bipartite" and o.exp.recorded),
+        ("#1175", lambda o: o.case.net.kind == "bipartite" and o.exp.regularized),
         # --regularized with Markov time below 1 (see the pinned test below).
         (
             "#1231",
@@ -877,7 +877,7 @@ KNOWN: dict[str, list[tuple[str, Callable[[Outcome], bool]]]] = {
         ),
     ],
     "read back": [
-        ("#1175", lambda o: o.case.net.kind == "bipartite" and o.exp.recorded),
+        ("#1175", lambda o: o.case.net.kind == "bipartite" and o.exp.regularized),
         (
             "#1231",
             lambda o: o.exp.regularized and _markov_below_one(o),

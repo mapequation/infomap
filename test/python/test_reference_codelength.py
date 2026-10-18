@@ -517,17 +517,18 @@ def test_regularized(network):
     _assert_matches(result, _with_reported_teleportation(result, partition))
 
 
-@pytest.mark.xfail(
-    reason="bipartite input with recorded teleportation: the feature nodes are taken out of "
-    "the teleportation without renormalising the other targets, so the teleport weights sum "
-    "to less than 1, teleportation leaks out of every module and enter and exit flow no "
-    "longer balance (#1175)",
-    strict=True,
-)
 @pytest.mark.parametrize(
     "options",
     [
-        {"regularized": True},
+        pytest.param(
+            {"regularized": True},
+            marks=pytest.mark.xfail(
+                reason="under --regularized the leaves' enter and exit flow come from the "
+                "node flow, and the uncoded feature nodes keep 0 while their links carry "
+                "flow, so module enter and exit flow do not balance (#1175)",
+                strict=True,
+            ),
+        ),
         {"directed": True, "recorded_teleportation": True, "to_nodes": True},
     ],
     ids=["regularized", "recorded-to-nodes"],
