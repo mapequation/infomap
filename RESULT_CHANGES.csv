@@ -74,4 +74,6 @@ version,flags,changes,description,issue,pr
 2.16.0,--preferred-number-of-modules,codelength,"A network with one node reports the codelength of its tree, |1 - K_pref| bits. It reported 0.",1293,1297
 2.16.0,--preferred-number-of-modules,codelength partition,"The preference counts the top modules only. Sub-searches, including the coarse-tune ones of a two-level run, no longer charge it on their own module count, so a module of modules no longer gets exactly K children. Most changed runs end lower.",1292,1298
 2.16.0,--entropy-corrected,codelength partition,"A network without links reports the codelength it has without the correction, one module at 0 bits, and writes its tree. It reported inf or nan and wrote nothing.",1296,1300
+2.16.0,--directed --bipartite-teleportation --recorded-teleportation,codelength partition,"Feature -> primary links carry the flow through the feature, split by link weight. They had zero flow.",1310,1321
+2.16.0,--directed --bipartite-teleportation,codelength,"Unrecorded teleportation with a dangling primary node: node flow sums to 1. It summed to 1 minus the dangling flow, with a warning.",1309,1321
 2.16.0,--cluster-data,error,"A tree with state ids that repeats a state id is refused (exit 2). A multi-level tree crashed, and a two-level tree kept the last row.",1335,1341
