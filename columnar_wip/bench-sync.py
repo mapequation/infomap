@@ -3,11 +3,16 @@
 current snapshot, on BOTH engines. A sync changes shared code, so unlike a columnar sub-PR it
 can move the object-oriented numbers too, and the OO arms are measured rather than carried.
 
-    bench-sync.py <out.tsv> old=<binary> new=<binary> [--rows <results.tsv>] [--dry-run]
+    bench-sync.py <out.tsv> old=<binary> new=<binary> [--rows <results.tsv>]
+                  [--carry-oo <results.tsv>] [--dry-run]
 
 --rows     the results TSV whose old/new rows define the row set (default: the current
            snapshot's, columnar_wip/1042-ab-results.tsv). Its flags are taken as run, already
            resolved to the fetched inputs and the planted .clu paths.
+--carry-oo do not run the object-oriented arms; copy them from a previous session's TSV. For a
+           change that cannot move the OO engine (a columnar sub-PR): each OO row's "new" arm there
+           is the OO engine at this branch's tip, so it is written here as both arms, its note
+           marked "carried".
 --dry-run  print rows and runs per key and check every input path; runs nothing, exits non-zero
            if an input, a flag path or a binary is missing.
 
@@ -96,13 +101,15 @@ def net_of_label(path):
 
 
 def parse_args(argv):
-    out, bins, rows, dry = None, {}, ROWS, False
+    out, bins, rows, carry, dry = None, {}, ROWS, None, False
     it = iter(argv)
     for a in it:
         if a == "--dry-run":
             dry = True
         elif a == "--rows":
             rows = os.path.abspath(next(it))
+        elif a == "--carry-oo":
+            carry = os.path.abspath(next(it))
         elif "=" in a and a.split("=", 1)[0] in ARMS:
             arm, path = a.split("=", 1)
             bins[arm] = os.path.abspath(path)
@@ -112,7 +119,28 @@ def parse_args(argv):
             sys.exit(f"unknown argument {a!r}\n\n{__doc__}")
     if out is None or set(bins) != set(ARMS):
         sys.exit(__doc__)
-    return out, bins, rows, dry
+    return out, bins, rows, carry, dry
+
+
+def carry_oo(path, out, done, dry):
+    """Append the OO rows' "new" arm from `path` to `out` as both arms; mark them done.
+
+    A dry run only marks them done, so it does not list them as runs."""
+    oo = set(OO_KEYS.values())
+    with open(path) as f:
+        rows = [line.rstrip("\n").split("\t") for line in f]
+    with open(os.devnull if dry else out, "a") as f:
+        for p in rows:
+            if len(p) < 12 or p[0] not in oo or p[2] != "new" or p[5] == "NA":
+                continue
+            for arm in ARMS:
+                if (p[0], p[1], arm, p[3]) in done:
+                    continue
+                f.write(
+                    "\t".join([*p[:2], arm, *p[3:10], f"{p[10]} (carried)", *p[11:]])
+                    + "\n"
+                )
+                done.add((p[0], p[1], arm, p[3]))
 
 
 def grab(pattern, text):
@@ -121,7 +149,7 @@ def grab(pattern, text):
 
 
 def main():
-    out, bins, rows_path, dry = parse_args(sys.argv[1:])
+    out, bins, rows_path, carry, dry = parse_args(sys.argv[1:])
     configs = read_rows(rows_path)
 
     done = set()
@@ -133,6 +161,8 @@ def main():
                 if len(p) >= 6 and p[5] != "NA":
                     done.add((p[0], p[1], p[2], p[3]))
 
+    if carry:
+        carry_oo(carry, out, done, dry)
     if dry:
         sys.exit(dry_run(configs, bins, done))
     note = {arm: f"bench-sync {arm} md5 {md5(bins[arm])[:8]}" for arm in bins}

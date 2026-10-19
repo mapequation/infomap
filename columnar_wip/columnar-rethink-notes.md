@@ -5660,3 +5660,31 @@ batch only; across batches only the large moves survive (air30k −7%/−8%, mal
 
 **OO air30k (meta) finishes now** (8.243378829 bits `-N10` in 24.9 s; 9.225476493 `-2 -N10`), and is
 no comparison for the columnar row: see the F39 addendum.
+
+### F70 — The columnar trial printed the object-oriented rescore as its "Initial" partition (2026-10-19)
+
+At default verbosity, a `-C` trial printed one line: `Initial  codelength …, N top modules`. That line
+comes from `initTree`, which the trial calls *after* the search to turn the result into the output tree.
+So it showed the search result, scored by the object-oriented objective, under the label for an input
+partition. At `-v` the closing `columnar: codelength X, materialized Y, N levels` was printed after the
+one-level fallback. It paired the fallback's codelength with the rescore of the tree the fallback had
+just replaced. The run-level passes (flat rescue, deep repair, dissolve) printed under the last trial's
+`Output` lines. The columnar trial now prints a `Columnar` status line with the engine's own value and a
+`Fallback` line. The passes have a `Post-processing` section of their own. The rescore is a `-v` line,
+shown only where it differs at printed precision.
+
+How far apart the two scores get: on an N512 om7 E300000 network outside the set, the
+connected-component partition scores 9.072942334 under `-C` and 9.072942349 under OO, but only with
+`--regularized`; with `--recorded-teleportation` alone the two agree to every printed digit. On om3 E50k,
+om8 E100k and the N512 network the package generates from the same parameters, they agree to every
+printed digit; on om7 E100k they differ by 1e-9. At 1.6e-9 of the codelength, rounding cannot be told
+apart from a formula difference. On that network the trial ends *exactly* on the component partition, as
+it does on 8 of the 14 om rows under `-2d --regularized -C -N1`. That is #1348.
+
+**Measurement.** The snapshot carries OO with `bench-sync.py --carry-oo`, the rule for a change the OO
+engine cannot feel. Under a 1-minute load of 8–29 from interactive applications, single `-N10` runs spread
+from −12.6% to +19.1% in seconds (5th–95th percentile) on two arms whose instructions agree to a median of
+−0.009%. The eight slowest, re-run interleaved as the minimum of 5 per arm, land between −4.8% and +2.1%.
+The whole set's summed seconds go from +1.36% to −1.62% once those eight take their interleaved values.
+Under that kind of load, a single run's seconds are not evidence. Quote instructions, and re-time the
+outliers interleaved before reading anything into them.
