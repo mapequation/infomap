@@ -247,10 +247,6 @@ def test_jsd_coupling_follows_similarity():
 JSD_LIMIT_LAYERS = _layers((1, 2, 3, 4))
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#1323: relax by JSD reaches limit layers down but limit - 1 up",
-)
 @pytest.mark.parametrize("limit", [1, 2])
 def test_jsd_relax_limit_is_symmetric(limit):
     result = _run(
@@ -268,10 +264,6 @@ def test_jsd_without_limit_couples_all_layers():
     assert _layer_pairs(_state_links(result)) == expected
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#1323: relax by JSD with limit 0 drops the intra-layer links too",
-)
 def test_jsd_relax_limit_zero_keeps_intra_layer_links():
     result = _run(
         JSD_LIMIT_LAYERS, multilayer_relax_by_jsd=True, multilayer_relax_limit=0
@@ -284,10 +276,6 @@ def test_jsd_relax_limit_zero_keeps_intra_layer_links():
     assert set(links) == expected
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#1323: relax by JSD ignores --multilayer-relax-limit-up and -down",
-)
 @pytest.mark.parametrize(
     ("option", "expected"),
     [
