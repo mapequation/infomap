@@ -159,6 +159,11 @@ def _base_compile_flags(compiler_family):
         "-pedantic",
         "-Wnon-virtual-dtor",
         f"-std={CXX_STANDARD}",
+        # No fused multiply-add contraction. GCC and clang contract differently
+        # on arm64 (x86-64 has no FMA without -march), so the same seed reached
+        # different trees on Apple Silicon and arm64 Linux (#1344). MSVC does
+        # not contract under its default /fp:precise.
+        "-ffp-contract=off",
     ]
     if compiler_family == "clang":
         flags.append("-Wshadow")

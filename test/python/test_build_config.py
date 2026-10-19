@@ -83,6 +83,21 @@ def test_clang_debug_and_release_share_warning_policy():
     assert "-O3" in release_config["compile_flags"]
 
 
+def test_gcc_and_clang_builds_do_not_contract_to_fma():
+    # Contraction differs between compilers on arm64, so the same seed reached
+    # different trees (#1344). Every build that goes through this config,
+    # Make, CMake and setuptools, compiles without it.
+    for compiler in ["g++", "clang++"]:
+        for mode in ["debug", "release"]:
+            config = resolve_build_config(
+                platform_name="linux", compiler=compiler, mode=mode, openmp=False
+            )
+            assert "-ffp-contract=off" in config["compile_flags"]
+            assert "-ffp-contract=off" in config["cmake_compile_flags"]
+    msvc = resolve_build_config(platform_name="win32", compiler="cl.exe", openmp=True)
+    assert "-ffp-contract=off" not in msvc["compile_flags"]
+
+
 def test_debug_builds_compile_in_the_flow_invariants():
     # CMake sets the define itself, so only the Make and setuptools flags carry it.
     configs = {
