@@ -210,11 +210,6 @@ def test_directed_recorded_to_links_spread(inter):
     _assert_spread_flow(LAYERS, inter, "recorded-to-links", to_self=False)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#1313: recorded teleportation to links lands by the compact "
-    "network's in-weights, not spread's",
-)
 @pytest.mark.parametrize("inter", [(), INTER], ids=["simulated", "inter-links"])
 def test_directed_recorded_to_links_to_self(inter):
     _assert_spread_flow(LAYERS, inter, "recorded-to-links", to_self=True)
@@ -228,10 +223,5 @@ def test_directed_inter_link_to_absent_node_spread():
     _assert_spread_flow(LAYERS, ABSENT, "unrecorded-to-links", to_self=False)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#1314: to-self keeps the link and loses the flow that crosses "
-    "it, so node flow sums to less than 1",
-)
 def test_directed_inter_link_to_absent_node_to_self():
     _assert_spread_flow(LAYERS, ABSENT, "unrecorded-to-links", to_self=True)
