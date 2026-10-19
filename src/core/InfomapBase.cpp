@@ -2466,6 +2466,11 @@ void InfomapBase::generateSubNetwork(Network& network)
     if (damping < 0) {
       maxScale = infomath::linlog(pow(2.0, maxEntropy), -damping);
     }
+    // Each link divides by a local scale floored at minLocalScale, so floor the largest one
+    // there too. Otherwise, when the largest effective degree is below 2 (the default
+    // minLocalScale, log2(2)), every link was scaled by less than 1, and by 0 at degree 1: two
+    // disjoint links reported 0 bits, and node weights as flow left a walk without steps.
+    maxScale = std::max(minLocalScale, maxScale);
     for (unsigned i = 0; i < numNodes; ++i) {
       InfoNode& node = *m_leafNodes[i];
       double localScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[i]), -damping) : infomath::linlog(std::max(minLocalScale, node.data.flow * totDegree), damping);
