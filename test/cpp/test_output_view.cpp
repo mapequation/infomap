@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
+#include <map>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -57,6 +58,37 @@ std::string outputPath(const std::string& name)
 void removeOutput(const std::string& path)
 {
   std::remove(path.c_str());
+}
+
+// Two 4-cliques joined by two links, one listed from each side, so the stored
+// directions of the links between the modules disagree.
+void addTwoCliquesLinkedBothWays(InfomapWrapper& infomap)
+{
+  for (unsigned int offset : { 0u, 4u }) {
+    for (unsigned int i = 1; i <= 4; ++i) {
+      for (unsigned int j = i + 1; j <= 4; ++j) {
+        infomap.addLink(offset + i, offset + j);
+      }
+    }
+  }
+  infomap.addLink(4, 5);
+  infomap.addLink(7, 2);
+}
+
+struct ModuleLinkRow {
+  double enterFlow = 0.0;
+  double exitFlow = 0.0;
+  infomap::OutputModuleLinkMap links;
+};
+
+std::map<std::string, ModuleLinkRow> moduleLinkRows(InfomapWrapper& im)
+{
+  infomap::OutputView view(im, im.network(), false);
+  std::map<std::string, ModuleLinkRow> rows;
+  view.forEachModule([&](const infomap::OutputModuleRow& module) {
+    rows[module.linkPathLabel] = { module.enterFlow, module.exitFlow, module.links };
+  });
+  return rows;
 }
 
 } // namespace
@@ -353,6 +385,54 @@ TEST_CASE("OutputView owns module-link projection [fast][core][output]")
     }
   }
   CHECK(foundPositiveFlow);
+}
+
+TEST_CASE("Undirected module links aggregate to one row per module pair [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(addTwoCliquesLinkedBothWays, "--two-level");
+  REQUIRE(im->numTopModules() == 2);
+
+  const auto rows = moduleLinkRows(*im);
+  const auto& rootLinks = rows.at("root").links;
+  REQUIRE(rootLinks.size() == 1);
+  CHECK(rootLinks.begin()->first == infomap::OutputModuleLink(1, 2));
+  // Both links between the cliques, both directions combined: 2 * w / W with W = 14.
+  CHECK(rootLinks.begin()->second == doctest::Approx(2.0 / 14));
+  // Without recorded teleportation, each direction carries half of that.
+  for (const auto* module : { "1", "2" }) {
+    CHECK(rows.at(module).enterFlow == doctest::Approx(1.0 / 14));
+    CHECK(rows.at(module).exitFlow == doctest::Approx(1.0 / 14));
+  }
+
+  const auto ftreePath = outputPath("undirected.ftree");
+  removeOutput(ftreePath);
+  im->writeFlowTree(ftreePath);
+  const auto ftreeText = infomap::test::readTextFile(ftreePath);
+  CHECK(ftreeText.find("*Links undirected\n# link flow is both directions combined, one row per module pair\n") != std::string::npos);
+  CHECK(ftreeText.find("*Links root 0 0 1 2\n1 2 0.142857\n") != std::string::npos);
+  removeOutput(ftreePath);
+}
+
+TEST_CASE("Module links under --flow-model undirdir are directed rows [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(addTwoCliquesLinkedBothWays, "--two-level --flow-model undirdir");
+  REQUIRE(im->numTopModules() == 2);
+
+  // The flow is undirected but the clustering is directed, so the two links between
+  // the cliques stay separate rows, each one a module's exit flow.
+  const auto rows = moduleLinkRows(*im);
+  const auto& rootLinks = rows.at("root").links;
+  REQUIRE(rootLinks.size() == 2);
+  CHECK(rootLinks.at({ 1, 2 }) == doctest::Approx(rows.at("1").exitFlow));
+  CHECK(rootLinks.at({ 2, 1 }) == doctest::Approx(rows.at("2").exitFlow));
+
+  const auto ftreePath = outputPath("undirdir.ftree");
+  removeOutput(ftreePath);
+  im->writeFlowTree(ftreePath);
+  const auto ftreeText = infomap::test::readTextFile(ftreePath);
+  CHECK(ftreeText.find("*Links directed\n#*Links path enterFlow exitFlow numEdges numChildren\n") != std::string::npos);
+  CHECK(ftreeText.find("both directions combined") == std::string::npos);
+  removeOutput(ftreePath);
 }
 
 TEST_CASE("OutputView exposes serializable module rows for output adapters [fast][core][output]")
