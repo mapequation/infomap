@@ -409,6 +409,22 @@ public:
       if (result.bestTree.empty())
         return;
     }
+    // The passes below run once, after every trial, on the run's best tree: a phase of
+    // their own, so they get a section of their own. Without it their messages and the
+    // rewritten output landed under the last trial's "Output" lines. The section opens
+    // with the first pass that reports a change, or up front at -v and above, where the
+    // time the passes took is worth a line even when they change nothing; otherwise a run
+    // whose passes have nothing to do (every base-objective -2 run) prints an empty one.
+    const Date postProcessingStart;
+    Stopwatch postProcessingTimer(true);
+    bool postProcessingAnnounced = false;
+    auto announcePostProcessing = [&] {
+      if (!postProcessingAnnounced)
+        logPostProcessingStart(postProcessingStart);
+      postProcessingAnnounced = true;
+    };
+    if (Log(1).isVisible())
+      announcePostProcessing();
     // Run-level rescue (#1041): every trial's hierarchical build ended worse than
     // one-level and the per-trial fallback replaced each with a single module, so
     // the run's answer IS the one-level codelength. On the overlapping state
@@ -442,7 +458,8 @@ public:
       // `-2 -N1` runs on the same seed, and `-N1` must reach it too (#1122).
       m_infomap.m_columnarRegroupEscalated = m_infomap.m_columnarRegroupEscalated || opt.regroupEscalated();
       if (rescued < result.bestHierarchicalCodelength - 1e-10) {
-        Console::detail(0, "columnar: every trial collapsed to one module ({}); the two-level search reaches {}", io::toPrecision(result.bestHierarchicalCodelength), io::toPrecision(rescued));
+        announcePostProcessing();
+        Console().status("Flat rescue", fmt::format(FMT_STRING("every trial collapsed to one module; two-level search {} -> {}"), io::toPrecision(result.bestHierarchicalCodelength), io::toPrecision(rescued)));
         result.bestTree = opt.toNodePaths(m_infomap.m_leafNodes);
         result.bestHierarchicalCodelength = rescued;
         rescuedFlat = true;
@@ -476,8 +493,10 @@ public:
           improved = true;
         }
       }
-      if (improved)
-        Console::detail(0, "columnar: deep repair of the best trial improved {} -> {}", io::toPrecision(before), io::toPrecision(result.bestHierarchicalCodelength));
+      if (improved) {
+        announcePostProcessing();
+        Console().status("Deep repair", fmt::format(FMT_STRING("codelength {} -> {}"), io::toPrecision(before), io::toPrecision(result.bestHierarchicalCodelength)));
+      }
     }
     // Terminal ragged pass, once per run on the settled (deep-repaired) winner: the
     // equal-depth search cannot represent a ragged optimum, so dissolve intermediate
@@ -489,7 +508,8 @@ public:
       double runnerUpL = bar;
       if (!m_infomap.dissolveColumnarBest(result.runnerUpTree, runnerUpL, false))
         return false;
-      Console::detail(0, "columnar: dissolving trial {} improved {} -> {}", result.runnerUpTrialIndex + 1, io::toPrecision(result.bestHierarchicalCodelength), io::toPrecision(runnerUpL));
+      announcePostProcessing();
+      Console().status("Dissolve", fmt::format(FMT_STRING("trial {}: codelength {} -> {}"), result.runnerUpTrialIndex + 1, io::toPrecision(result.bestHierarchicalCodelength), io::toPrecision(runnerUpL)));
       result.bestTree = std::move(result.runnerUpTree);
       result.runnerUpTree.clear();
       result.bestHierarchicalCodelength = runnerUpL;
@@ -519,7 +539,8 @@ public:
       const bool treeIsMaterialized = !improved && !rescuedFlat && !(m_trialsRun > 1 && (result.bestTreeNeedsRestore || result.bestTrialIndex < m_trialsRun - 1));
       const double beforeDissolve = result.bestHierarchicalCodelength;
       if (m_infomap.dissolveColumnarBest(result.bestTree, result.bestHierarchicalCodelength, treeIsMaterialized)) {
-        Console::detail(0, "columnar: dissolving unprofitable levels improved {} -> {}", io::toPrecision(beforeDissolve), io::toPrecision(result.bestHierarchicalCodelength));
+        announcePostProcessing();
+        Console().status("Dissolve", fmt::format(FMT_STRING("unprofitable levels: codelength {} -> {}"), io::toPrecision(beforeDissolve), io::toPrecision(result.bestHierarchicalCodelength)));
         improved = true;
         materializedByDissolve = true; // the tree in memory is the dissolved tree, stamped
       }
@@ -533,33 +554,59 @@ public:
     }
     result.runnerUpTree = NodePaths();
     m_infomap.m_columnarTrialStack.reset(); // the winner's stack has served; free it before output
-    if (!improved && !rescuedFlat)
-      return;
-    // Materialize the repaired tree and refresh the per-level statistics the
-    // summary prints. initTree recomputes a materialized codelength on the
-    // reconstructed tree; the columnar core's value is authoritative (see
-    // columnarPartition), so override it the same way. The dissolve leaves the tree
-    // materialized and stamped itself.
-    if (!materializedByDissolve) {
-      Log::ScopedMute mute;
-      m_infomap.initTree(result.bestTree);
-      // Same re-stamp as restoreBestResult: the per-level table below is rebuilt from
-      // this tree, not captured from a trial, so it reads whatever initTree left on the
-      // nodes -- nothing, or the base map equation -- unless the columnar engine writes
-      // its own charges back first.
-      m_infomap.restampColumnarCodelengths();
+    const bool changed = improved || rescuedFlat;
+    if (changed) {
+      // Materialize the repaired tree and refresh the per-level statistics the
+      // summary prints. initTree recomputes a materialized codelength on the
+      // reconstructed tree; the columnar core's value is authoritative (see
+      // columnarPartition), so override it the same way. The dissolve leaves the tree
+      // materialized and stamped itself.
+      if (!materializedByDissolve) {
+        Log::ScopedMute mute;
+        m_infomap.initTree(result.bestTree);
+        // Same re-stamp as restoreBestResult: the per-level table below is rebuilt from
+        // this tree, not captured from a trial, so it reads whatever initTree left on the
+        // nodes -- nothing, or the base map equation -- unless the columnar engine writes
+        // its own charges back first.
+        m_infomap.restampColumnarCodelengths();
+      }
+      m_infomap.m_hierarchicalCodelength = result.bestHierarchicalCodelength;
+      result.bestSolutionStatistics.str("");
+      result.bestNumLevels = printPerLevelCodelength(m_infomap.root(), result.bestSolutionStatistics);
+      // The tree in m_infomap is current; no restore pass needed even when the
+      // best trial was not the last executed.
+      result.bestTreeNeedsRestore = false;
+      result.bestTreeMaterialized = true;
     }
-    m_infomap.m_hierarchicalCodelength = result.bestHierarchicalCodelength;
-    result.bestSolutionStatistics.str("");
-    result.bestNumLevels = printPerLevelCodelength(m_infomap.root(), result.bestSolutionStatistics);
-    // The tree in m_infomap is current; no restore pass needed even when the
-    // best trial was not the last executed.
-    result.bestTreeNeedsRestore = false;
-    result.bestTreeMaterialized = true;
-    if (!m_infomap.noFinalOutput) {
+    // "Done" before the output, as a trial prints it. Every change above announced the
+    // section, so a rewritten output always lands inside it.
+    if (postProcessingAnnounced)
+      logPostProcessingDone(postProcessingTimer, result.bestHierarchicalCodelength);
+    if (changed && !m_infomap.noFinalOutput) {
       auto outputTimer = m_timing.scope("output_s");
       m_infomap.writeResult();
     }
+  }
+
+  void logPostProcessingStart(const Date& startDate)
+  {
+    if (!m_infomap.isMainInfomap())
+      return;
+    Console console;
+    Log() << "\n"
+          << console.cyan() << "Post-processing" << console.reset()
+          << console.dim() << " started " << startDate << console.reset() << "\n";
+  }
+
+  void logPostProcessingDone(Stopwatch& timer, double codelength)
+  {
+    if (!m_infomap.isMainInfomap())
+      return;
+    Console console;
+    Log() << "\n"
+          << console.green() << "Done" << console.reset()
+          << " post-processing in " << timer.getElapsedTimeInSec() << "s"
+          << " | codelength " << io::toPrecision(codelength) << "\n";
   }
 
   void printSummary(const Result& result)
@@ -3247,6 +3294,10 @@ void InfomapBase::columnarPartition()
   // within grandparents), skipping the full interior-layer refinement. Without
   // either, the default converge search (screen up-build strategies, then refine
   // the winner to the diminishing-returns knee).
+  // The trial's one status line: live while the search runs, then frozen into its
+  // result -- the counterpart of the object-oriented engine's "Two-level" line.
+  auto progress = Console().progress("Columnar");
+  progress.update("working…");
   double columnarL = seeded
       ? opt.optimizeFromSeed(twoLevel, tuneIterationLimit)
       : twoLevel
@@ -3284,7 +3335,13 @@ void InfomapBase::columnarPartition()
     // initTree clears m_columnarIndexCodelength on the way in (the previous trial's tree
     // is gone), and the stamping below sets this trial's -- so no reporting path can read
     // a value belonging to a tree that no longer exists.
-    initTree(paths);
+    {
+      // Muted: initTree announces the tree it builds as the "Initial" partition, which
+      // is what it is for --cluster-data input but not here, where the tree is this
+      // search's result and is announced as such below.
+      Log::ScopedMute mute;
+      initTree(paths);
+    }
     materializedL = m_hierarchicalCodelength;
     m_columnarTrialStackIsTree = true; // the stack IS this tree, until the fallback below says otherwise
   }
@@ -3312,6 +3369,12 @@ void InfomapBase::columnarPartition()
     else
       Console::detail(2, "columnar: stack and materialized tree disagree on depth; per-level table left as initTree scored it");
   }
+
+  progress.finish(fmt::format(FMT_STRING("codelength {}, {} top modules, {} levels"), io::toPrecision(columnarL), numTopModules(), maxTreeDepth()));
+  // The object-oriented objective's rescore of the materialized tree, which the run does
+  // not use (see above). Shown only where it differs at printed precision.
+  if (io::toPrecision(materializedL) != io::toPrecision(columnarL))
+    Console::detail(1, "columnar: the output tree rescores to {} on the object-oriented objective", io::toPrecision(materializedL));
 
   // One-level fallback (#827): the columnar search can, like the OO optimizer,
   // return a modular partition whose codelength is worse than the all-in-one-
@@ -3344,7 +3407,7 @@ void InfomapBase::columnarPartition()
       m_columnarOneLevelCodelength = opt.oneLevelCodelength();
     const double oneModuleL = m_columnarOneLevelCodelength;
     if (columnarL > oneModuleL) {
-      Console::detail(1, "columnar: worse codelength than one-level ({} > {}), putting all nodes in one module", io::toPrecision(columnarL), io::toPrecision(oneModuleL));
+      Console().status("Fallback", fmt::format(FMT_STRING("one module: the one-level codelength {} is shorter"), io::toPrecision(oneModuleL)));
 
       auto& module = root().replaceChildrenWithOneNode();
       // replaceChildrenWithOneNode wraps the root's children under one node and then
@@ -3377,8 +3440,6 @@ void InfomapBase::columnarPartition()
       m_columnarTrialStackIsTree = false; // the stack still holds the search result, not this
     }
   }
-
-  Console::detail(1, "columnar: codelength {}, materialized {}, {} levels", io::toPrecision(m_hierarchicalCodelength), io::toPrecision(materializedL), maxTreeDepth());
 }
 
 bool InfomapBase::columnarNativeInputEligible() const
