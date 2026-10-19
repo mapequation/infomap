@@ -231,10 +231,6 @@ def test_two_way_link_flow_recorded_primary_side(tmp_path, variant):
     _assert_link_flow(result, link, primary_side_only=True)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#1310: recorded teleportation gives feature -> primary links zero flow",
-)
 @pytest.mark.parametrize("variant", RECORDED)
 def test_two_way_link_flow_recorded(tmp_path, variant):
     result = _run(tmp_path, TWO_WAY, variant)
@@ -255,10 +251,6 @@ def test_dangling_primary_node_flow_recorded(tmp_path, variant):
     _assert_node_flow(result, node)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#1309: unrecorded node flow sums to 1 - dangling flow",
-)
 @pytest.mark.parametrize("variant", UNRECORDED)
 def test_dangling_primary_node_flow_unrecorded(tmp_path, variant):
     result = _run(tmp_path, DANGLING_PRIMARY, variant)

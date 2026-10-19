@@ -31,7 +31,8 @@ PYTHON_ASAN_PYTEST_ARGS ?= test/python
 PYTHON_THREADS_NUM_THREADS ?= 4
 PYTHON_THREADS_TESTS ?= $(addprefix $(PYTHON_TEST_DIR)/,test_reference_codelength.py \
 	test_reference_flow.py test_exhaustive_optimum.py test_metamorphic.py \
-	test_pairwise_options.py test_thread_comparison.py)
+	test_pairwise_options.py test_thread_comparison.py \
+	test_network_properties.py)
 R_SANITIZER_CXX ?= clang++
 FUZZ_BUILD_DIR ?= build/fuzz
 FUZZ_SECONDS ?= 60
@@ -225,8 +226,9 @@ test-python-asan:
 	@$(PYTHON) test/scripts/run_python_asan.py --cxx "$(PYTHON_ASAN_CXX)" \
 		--build-dir "$(PYTHON_ASAN_BUILD_DIR)" --jobs $(JOBS) -- $(PYTHON_ASAN_PYTEST_ARGS)
 
-# The oracle-backed Python tests (#1177, #1181, #1200, #1225), slow sweeps
-# included, and the serial-against-threaded comparison (#1258), all with
+# The oracle-backed Python tests (#1177, #1181, #1200, #1225), the property
+# tests on generated networks (#1252), slow sweeps included, and the
+# serial-against-threaded comparison (#1258), all with
 # PYTHON_THREADS_NUM_THREADS threads, against the installed extension. Fails
 # if that extension has no OpenMP. SLURM_CPUS_PER_TASK would outrank the
 # budget, so it is unset.
