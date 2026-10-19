@@ -556,6 +556,17 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
   m_flowMethod = "directed multilayer relax-to-self (two-step)";
   m_teleportation = fmt::format(FMT_STRING("{}, to {}"), config.recordedTeleportation ? "recorded" : "unrecorded", config.teleportToNodes ? "nodes" : "links");
 
+  // Classify links: an inter-layer link connects two states of the same physical node.
+  std::vector<unsigned int> physId(numNodes, 0);
+  for (const auto& nodeIt : network.nodes()) {
+    physId[nodeIndexMap[nodeIt.second.id]] = nodeIt.second.physicalId;
+  }
+  std::vector<char> isInterLayer(flowLinks.size(), 0);
+  for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+    const auto& link = flowLinks[k];
+    isInterLayer[k] = physId[link.source] == physId[link.target] && link.source != link.target;
+  }
+
   // Calculate the teleport rate distribution
   if (config.teleportToNodes) {
     double sumNodeWeights = 0.0;
@@ -567,13 +578,32 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
     }
 
     normalize(nodeTeleportWeights, sumNodeWeights);
-  } else {
-    // Teleport to links
-
-    // Teleport proportionally to out-degree, or in-degree if recorded teleportation.
+  } else if (!config.recordedTeleportation) {
+    // Teleport proportionally to out-degree. A node has the same out-weight here as
+    // in the spread network.
     for (const auto& link : flowLinks) {
-      auto toNode = config.recordedTeleportation ? link.target : link.source;
-      nodeTeleportWeights[toNode] += link.flow / sumLinkWeight;
+      nodeTeleportWeights[link.source] += link.flow / sumLinkWeight;
+    }
+  } else {
+    // Teleport proportionally to in-degree in the spread network, where the weight of
+    // an inter-layer link lands on the target's intra-layer out-neighbours instead of
+    // on the target itself (#1313).
+    std::vector<double> intraOutWeight(numNodes, 0.0);
+    std::vector<double> interInWeight(numNodes, 0.0);
+    for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+      const auto& link = flowLinks[k];
+      if (isInterLayer[k]) {
+        interInWeight[link.target] += link.flow;
+      } else {
+        intraOutWeight[link.source] += link.flow;
+        nodeTeleportWeights[link.target] += link.flow / sumLinkWeight;
+      }
+    }
+    for (unsigned int k = 0; k < flowLinks.size(); ++k) {
+      const auto& link = flowLinks[k];
+      if (!isInterLayer[k] && intraOutWeight[link.source] > 0.0) {
+        nodeTeleportWeights[link.target] += interInWeight[link.source] * link.flow / intraOutWeight[link.source] / sumLinkWeight;
+      }
     }
   }
 
@@ -584,19 +614,11 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
     }
   }
 
-  // Classify links (inter-layer vs intra-layer) and accumulate per-node intra-layer out-mass.
-  std::vector<unsigned int> physId(numNodes, 0);
-  for (const auto& nodeIt : network.nodes()) {
-    physId[nodeIndexMap[nodeIt.second.id]] = nodeIt.second.physicalId;
-  }
-  std::vector<char> isInterLayer(flowLinks.size(), 0);
+  // Accumulate per-node intra-layer out-mass.
   std::vector<double> intraOutSum(numNodes, 0.0);
   for (unsigned int k = 0; k < flowLinks.size(); ++k) {
-    const auto& link = flowLinks[k];
-    if (physId[link.source] == physId[link.target] && link.source != link.target) {
-      isInterLayer[k] = 1;
-    } else {
-      intraOutSum[link.source] += link.flow;
+    if (!isInterLayer[k]) {
+      intraOutSum[flowLinks[k].source] += flowLinks[k].flow;
     }
   }
 

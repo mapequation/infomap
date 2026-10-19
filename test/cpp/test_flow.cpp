@@ -970,6 +970,63 @@ TEST_CASE("multilayer-relax-to-self matches spread on a single-node overlap [fas
   infomap::test::checkApproxCodelength(toself.second, spread.second, 1e-9);
 }
 
+TEST_CASE("multilayer-relax-to-self gives spread's state flow for every teleportation mode (#1313, #1314) [fast][core][flow][multilayer]")
+{
+  // Node 3 is missing from layer 3. With recorded teleportation to links the
+  // teleport weights must be spread's in-weights (#1313), and an explicit
+  // inter-layer link to node 3 in layer 3 must be dropped as spread drops it,
+  // not lose the flow that crosses it (#1314).
+  const std::vector<MultilayerIntraLink> intraLinks {
+    { 1, 1, 2, 1.0 }, { 1, 2, 3, 2.0 }, { 1, 3, 1, 1.0 }, { 1, 3, 4, 0.5 }, { 1, 4, 1, 1.0 },
+    { 2, 1, 3, 1.0 }, { 2, 3, 2, 1.0 }, { 2, 2, 1, 3.0 }, { 2, 2, 4, 1.0 }, { 2, 4, 3, 2.0 },
+    { 3, 4, 1, 1.0 }, { 3, 1, 2, 2.0 }, { 3, 2, 4, 1.0 },
+  };
+  const std::vector<MultilayerIntraLink> interLinks {
+    { 1, 1, 2, 0.5 }, { 2, 1, 1, 0.5 }, { 2, 4, 1, 1.0 }, { 1, 3, 3, 0.3 }, // layer, node, target layer, weight
+  };
+
+  const auto flows = [&](const std::string& flags, bool withInterLinks) {
+    InfomapWrapper im(infomap::test::defaultFlags("--no-infomap --two-level " + flags));
+    addMultilayerIntraLinks(im, intraLinks);
+    if (withInterLinks) {
+      for (const auto& link : interLinks) {
+        im.addMultilayerInterLink(link.layer, link.source, link.target, link.weight);
+      }
+    }
+    im.run();
+    std::map<std::pair<unsigned int, unsigned int>, double> stateFlows;
+    for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+      stateFlows[{ it->layerId, it->physicalId }] += it->data.flow;
+    }
+    return std::make_pair(stateFlows, im.codelength());
+  };
+
+  for (const std::string model : { "--directed", "--flow-model undirected" }) {
+    for (const std::string teleportation : { "", "--to-nodes", "--recorded-teleportation", "--recorded-teleportation --to-nodes" }) {
+      for (const bool withInterLinks : { false, true }) {
+        const auto flags = model + " " + teleportation;
+        CAPTURE(flags);
+        CAPTURE(withInterLinks);
+        const auto spread = flows(flags, withInterLinks);
+        const auto toself = flows(flags + " --multilayer-relax-to-self", withInterLinks);
+
+        double sumFlow = 0.0;
+        for (const auto& state : toself.first) {
+          sumFlow += state.second;
+        }
+        CHECK(sumFlow == doctest::Approx(1.0).epsilon(1e-12));
+        CHECK(toself.first.size() == spread.first.size());
+        for (const auto& state : spread.first) {
+          const auto it = toself.first.find(state.first);
+          REQUIRE(it != toself.first.end());
+          CHECK(it->second == doctest::Approx(state.second).epsilon(1e-10));
+        }
+        infomap::test::checkApproxCodelength(toself.second, spread.second, 1e-9);
+      }
+    }
+  }
+}
+
 // Multilayer input with intra-layer links expands them to both directions and runs the directed
 // model under undirected flow, and undirdir was replaced by that flow with only a -v note (#1233).
 // It now warns. outdirdir and rawdir compute their own flow, and *Multilayer input keeps undirdir.
