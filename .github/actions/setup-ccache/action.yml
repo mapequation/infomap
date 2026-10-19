@@ -1,13 +1,20 @@
 name: Set up ccache
 description: >-
   Install ccache, point CCACHE_DIR at a workspace-local directory, and persist
-  it across runs with a rolling cache. No-op on Windows (the MSVC/MinGW builds
-  do not use ccache). The Make builds auto-detect ccache on PATH and use it as
-  the compiler launcher.
+  it across runs with a rolling cache. Only master saves; other refs restore
+  master's latest entry read-only. No-op on Windows (the MSVC/MinGW builds do
+  not use ccache). The Make builds auto-detect ccache on PATH and use it as the
+  compiler launcher.
 inputs:
   key-prefix:
     description: Cache key namespace, e.g. "python-ubuntu-24.04-py3.14".
     required: true
+  always-save:
+    description: >-
+      Save the cache on every ref, not only master. For jobs that never run on
+      master and so would otherwise never find an entry to restore.
+    required: false
+    default: "false"
 runs:
   using: composite
   steps:
@@ -33,9 +40,23 @@ runs:
         fi
         ccache --version
 
+    # The key is per sha, so every save is a new entry of up to ~800 MB. A PR's
+    # entries are visible only to that PR, and saving them pushed the Actions
+    # cache over its 10 GB limit, evicting master's entries and everything else
+    # (#1235). PRs can read master's entries, so only master saves; a PR
+    # restores master's latest entry through the same restore key.
     - name: Cache ccache directory
-      if: runner.os != 'Windows'
+      if: runner.os != 'Windows' && (github.ref == 'refs/heads/master' || inputs.always-save == 'true')
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ github.workspace }}/.ccache
+        key: ccache-${{ inputs.key-prefix }}-${{ github.sha }}
+        restore-keys: |
+          ccache-${{ inputs.key-prefix }}-
+
+    - name: Restore ccache directory (read-only)
+      if: runner.os != 'Windows' && !(github.ref == 'refs/heads/master' || inputs.always-save == 'true')
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ github.workspace }}/.ccache
         key: ccache-${{ inputs.key-prefix }}-${{ github.sha }}
