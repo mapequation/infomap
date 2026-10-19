@@ -13,6 +13,7 @@
 // exactly like the browser worker package (clu, tree, ftree, json, ...) and
 // contains only the formats Infomap produced.
 import outputFormatsManifest from "../generated/output-formats.json";
+import fileToString, { type FileTypes } from "./filetypes";
 import type { Result } from "./index";
 
 export type { Result };
@@ -25,6 +26,12 @@ export interface RunOptions {
   args?: string | string[];
   /** Override the output basename (passed as --out-name). */
   outName?: string;
+  /**
+   * Extra input files, keyed by the name to refer to them by in `args`, such as
+   * `{ "meta.clu": "1 1\n2 1\n" }` with `--meta-data meta.clu`. Same as the
+   * worker's `files` option: a value is file content or a parsed clu or tree.
+   */
+  files?: { [filename: string]: string | FileTypes };
 }
 
 const formatByKey = new Map(
@@ -43,6 +50,19 @@ const resultFiles = outputFormatsManifest.resultOrder.map((key) => {
 
 function basenameWithoutExtension(filename: string) {
   return filename.replace(/\.[^./\\]+$/, "");
+}
+
+// Resolve a virtual path against the working directory "/", folding "." and "..".
+function resolveVirtualPath(name: string) {
+  const parts: string[] = [];
+  for (const part of name.split("/")) {
+    if (part === "..") {
+      parts.pop();
+    } else if (part && part !== ".") {
+      parts.push(part);
+    }
+  }
+  return `/${parts.join("/")}`;
 }
 
 function exitStatusCode(error: unknown) {
@@ -66,7 +86,7 @@ export async function run(
     throw new TypeError("run(network, options): network must be a string");
   }
 
-  const { filename = "network.net", args = [], outName } = options;
+  const { filename = "network.net", args = [], outName, files = {} } = options;
   const extraArgs =
     typeof args === "string" ? args.split(/\s+/).filter(Boolean) : [...args];
   // --out-name inside args is honoured too, the way the worker entry point reads it, so
@@ -79,6 +99,18 @@ export async function run(
   const base = outName ?? outNameFromArgs ?? basenameWithoutExtension(filename);
   if (outName) {
     extraArgs.push("--out-name", outName);
+  }
+
+  const workDir = "/work";
+  // The network and the outputs live under ${workDir}. An extra file there could
+  // overwrite the network or be read back as output (#903), so refuse it.
+  for (const name of Object.keys(files)) {
+    const resolved = resolveVirtualPath(name);
+    if (resolved === workDir || resolved.startsWith(`${workDir}/`)) {
+      throw new Error(
+        `run(network, options): files["${name}"] is inside the reserved ${workDir} directory`,
+      );
+    }
   }
 
   const { default: createInfomapModule } = await import("./infomap.node.mjs");
@@ -95,7 +127,6 @@ export async function run(
     },
   });
 
-  const workDir = "/work";
   Module.FS.mkdir(workDir);
   // The input goes in its own directory so it cannot be read back as output: the out
   // name is the input filename minus its extension, so ${workDir}/${base}.net was the
@@ -104,6 +135,15 @@ export async function run(
   Module.FS.mkdir(inputDir);
   const inputPath = `${inputDir}/${filename}`;
   Module.FS.writeFile(inputPath, network);
+  // Extra files go in the working directory, so `--meta-data meta.clu` finds them
+  // under the name they were given, as in the worker. That is not ${workDir}, so a
+  // file cannot be read back as output either.
+  for (const [name, file] of Object.entries(files)) {
+    Module.FS.writeFile(
+      name,
+      typeof file === "string" ? file : fileToString(file),
+    );
+  }
 
   let status = 0;
   try {
