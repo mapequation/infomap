@@ -52,6 +52,13 @@ native:
   - ".github/filters.yml"
   - ".github/actions/setup-ccache/action.yml"
 
+# The TSan job (ci.yml `tsan`) also runs on every `native` change; this adds
+# the inputs only it reads.
+tsan:
+  - "test/tsan.supp"
+  - ".github/workflows/_tsan.yml"
+  - ".github/filters.yml"
+
 python-core:
   - *build_core
   - *cmake_core

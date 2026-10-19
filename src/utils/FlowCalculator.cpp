@@ -1313,28 +1313,34 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
   recordPageRank(result.iterations, result.error, result.converged);
 
   double sumNodeRank = 1.0;
-  double beta = result.beta;
+  const double beta = config.recordedTeleportation ? result.beta : 1.0;
+
+  // The feature flow of the final primary flow. The power iteration resets it to 0 at the
+  // end of each iteration, and the feature -> primary links need it below: without it,
+  // recorded teleportation gave every one of them zero flow (#1310).
+  for (auto link = begin(flowLinks); link != begin(flowLinks) + bipartiteLinkStartIndex; ++link) {
+    nodeFlowTmp[link->target] += beta * link->flow * nodeFlowTmp[link->source];
+  }
 
   if (!config.recordedTeleportation) {
-    // Take one last power iteration excluding the teleportation (and normalize node flow to sum 1.0)
+    // Take one last power iteration excluding the teleportation and normalize node flow
+    // to sum 1.0. The flow that stops at a dangling node never reaches the primary side,
+    // so the sum is less than 1 when there is one (#1309).
     sumNodeRank = 1.0 - danglingRank;
     nodeFlow.assign(numNodes, 0.0);
 
-    for (auto link = begin(flowLinks); link != begin(flowLinks) + bipartiteLinkStartIndex; ++link) {
-      nodeFlowTmp[link->target] += link->flow * nodeFlowTmp[link->source];
-    }
     // Second step back to primary nodes
     for (auto link = begin(flowLinks) + bipartiteLinkStartIndex; link != end(flowLinks); ++link) {
       nodeFlow[link->target] += link->flow * nodeFlowTmp[link->source];
     }
-
-    beta = 1.0;
+    normalize(nodeFlow);
   }
 
-  // Update the links with their global flow from the PageRank values.
-  // Note: beta is set to 1 if unrecorded teleportation
-  for (auto& link : flowLinks) {
-    link.flow *= beta * nodeFlowTmp[link.source] / sumNodeRank;
+  // Update the links with their global flow from the PageRank values. The feature flow
+  // already includes beta, which is 1 if unrecorded teleportation.
+  for (auto link = begin(flowLinks); link != end(flowLinks); ++link) {
+    const auto isPrimarySide = link < begin(flowLinks) + bipartiteLinkStartIndex;
+    link->flow *= (isPrimarySide ? beta : 1.0) * nodeFlowTmp[link->source] / sumNodeRank;
   }
 }
 
