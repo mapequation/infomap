@@ -209,14 +209,14 @@ TEST_CASE("Log output is level-gated and respects verbosity and silent [fast][co
 TEST_CASE("PortableRandom maps integers portably [fast][core][utils]")
 {
   infomap::PortableRandom random(2501);
-  CHECK(random.randInt(0, 10) == 9u);
-  CHECK(random.randInt(1, 3) == 3u);
-  CHECK(random.randInt(7, 19) == 14u);
-  CHECK(random.randInt(0, 1) == 1u);
+  CHECK(random.randInt(0, 10) == 10u);
+  CHECK(random.randInt(1, 3) == 1u);
+  CHECK(random.randInt(7, 19) == 11u);
+  CHECK(random.randInt(0, 1) == 0u);
   CHECK(random.randInt(42, 42) == 42u);
-  CHECK(random.randInt(0, 999) == 695u);
+  CHECK(random.randInt(0, 999) == 880u);
   CHECK(random.randInt(0, std::numeric_limits<unsigned int>::max()) == 3859750371u);
-  CHECK(random.randInt(100, 100000) == 3169u);
+  CHECK(random.randInt(100, 100000) == 9083u);
 }
 
 TEST_CASE("PortableRandom index vectors are portable [fast][core][utils]")
@@ -225,20 +225,36 @@ TEST_CASE("PortableRandom index vectors are portable [fast][core][utils]")
   std::vector<unsigned int> order(16);
   random.getRandomizedIndexVector(order);
 
-  CHECK(order == std::vector<unsigned int> { 9, 0, 5, 14, 7, 15, 4, 12, 3, 8, 10, 11, 13, 2, 1, 6 });
+  CHECK(order == std::vector<unsigned int> { 15, 4, 7, 9, 1, 14, 5, 2, 6, 13, 8, 11, 3, 12, 0, 10 });
 }
 
-TEST_CASE("Random keeps the standard library distribution by default [fast][core][utils]")
+TEST_CASE("Random uses the portable distribution by default [fast][core][utils]")
 {
   infomap::Random random(2501);
-  CHECK(random.randInt(42, 42) == 42u);
-
-  for (unsigned int i = 0; i < 32; ++i) {
-    const auto value = random.randInt(7, 19);
-    CHECK(value >= 7u);
-    CHECK(value <= 19u);
+  infomap::PortableRandom portable(2501);
+  for (unsigned int i = 0; i < 64; ++i) {
+    const unsigned int max = (i * 2654435761u) >> (i % 32);
+    CHECK(random.randInt(0, max) == portable.randInt(0, max));
   }
 }
+
+#if defined(__GLIBCXX__) && defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE >= 11
+// The portable mapping is the one libstdc++ has used since GCC 11, so builds
+// against it (Linux, MinGW, Rtools) keep the trees std::uniform_int_distribution
+// gave them.
+TEST_CASE("PortableRandom matches libstdc++'s uniform_int_distribution [fast][core][utils]")
+{
+  infomap::PortableRandom portable(2501);
+  infomap::RandGen reference(2501);
+  infomap::StdUniformUIntDistribution dist;
+  for (unsigned int i = 0; i < 4096; ++i) {
+    const unsigned int min = i % 100;
+    const unsigned int max = min + ((i * 2654435761u) >> (i % 32));
+    const auto expected = dist(reference, infomap::StdUniformUIntDistribution::param_type(min, max));
+    CHECK(portable.randInt(min, max) == expected);
+  }
+}
+#endif
 
 TEST_CASE("FileURI splits valid paths and rejects invalid ones [fast][core][utils][io]")
 {

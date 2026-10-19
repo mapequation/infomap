@@ -161,6 +161,13 @@ jobs:
         env:
           INFOMAP_EXPECTED_FEATURES: ${{ inputs.features }}
 
+      # The only MSVC build in PR CI. Pins the seeded trees the C++ tests pin
+      # on Linux, macOS and MinGW, so a seed means the same tree with every
+      # standard library (#1252).
+      - name: Run portable seed test
+        if: matrix.smoke-only
+        run: python -m pytest test/python/test_portable_seed.py
+
       - name: Run Python unit tests
         if: ${{ !matrix.smoke-only }}
         run: make test-python-unit

@@ -33,21 +33,31 @@ public:
     unsigned int max;
   };
 
-  // Portable unbiased bounded integer mapping, independent of std::uniform_int_distribution internals.
+  // Portable unbiased bounded integer mapping, independent of
+  // std::uniform_int_distribution internals (implementation-defined, #342).
+  // Lemire's nearly divisionless method: scale a 32-bit draw by the range with
+  // one 64-bit multiply and reject the few low products that would bias it.
+  // This is the algorithm libstdc++ (GCC 11 and later) uses for a 32-bit
+  // generator, so libstdc++ builds keep their sequence bit for bit, and libc++,
+  // MSVC and Emscripten builds now draw the same one.
   unsigned int operator()(RandGen& randGen, const param_type& params)
   {
-    const auto min = params.min;
-    const auto max = params.max;
-    const std::uint64_t range = static_cast<std::uint64_t>(max) - min + 1u;
-    const std::uint64_t generatorRange = static_cast<std::uint64_t>(RandGen::max()) - RandGen::min() + 1u;
-    const std::uint64_t limit = generatorRange - (generatorRange % range);
+    static_assert(RandGen::min() == 0 && RandGen::max() == 0xffffffffu, "Lemire's method needs a 32-bit generator.");
+    const std::uint32_t range = params.max - params.min;
+    if (range == 0xffffffffu)
+      return params.min + static_cast<std::uint32_t>(randGen());
 
-    std::uint64_t value = 0;
-    do {
-      value = static_cast<std::uint64_t>(randGen()) - RandGen::min();
-    } while (value >= limit);
-
-    return min + static_cast<unsigned int>(value % range);
+    const std::uint32_t numValues = range + 1u;
+    std::uint64_t product = static_cast<std::uint64_t>(static_cast<std::uint32_t>(randGen())) * numValues;
+    std::uint32_t low = static_cast<std::uint32_t>(product);
+    if (low < numValues) {
+      const std::uint32_t threshold = (0u - numValues) % numValues;
+      while (low < threshold) {
+        product = static_cast<std::uint64_t>(static_cast<std::uint32_t>(randGen())) * numValues;
+        low = static_cast<std::uint32_t>(product);
+      }
+    }
+    return params.min + static_cast<unsigned int>(product >> 32);
   }
 };
 
@@ -202,7 +212,7 @@ public:
 
 using StdRandom = BasicRandom<StdUniformUIntDistribution>;
 using PortableRandom = BasicRandom<PortableUniformUIntDistribution>;
-using Random = StdRandom;
+using Random = PortableRandom;
 } // namespace infomap
 
 #endif // RANDOM_H_
