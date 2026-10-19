@@ -95,7 +95,7 @@ define warn_cmake_build_type_mismatch
 	fi
 endef
 
-.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers test-tsan test-python-asan test-python-threads test-r-asan test-r-valgrind fuzz coverage bench-python bench-native bench-correctness
+.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers test-tsan test-python-asan test-python-threads test-python-slow test-r-asan test-r-valgrind fuzz coverage bench-python bench-native bench-correctness
 
 configure-cpp-dev:
 	@generator_args=""; \
@@ -234,6 +234,12 @@ test-python-threads:
 	@env -u SLURM_CPUS_PER_TASK INFOMAP_NUM_THREADS=$(PYTHON_THREADS_NUM_THREADS) \
 		INFOMAP_TEST_REQUIRE_OPENMP=1 \
 		$(PYTEST) --run-slow $(PYTEST_ARGS) $(PYTHON_THREADS_TESTS)
+
+# Every Python test marked slow, wherever it lives, and nothing else (#1252).
+# Single-threaded: test-python-threads runs the same sweeps with 4 threads.
+test-python-slow:
+	@env -u SLURM_CPUS_PER_TASK INFOMAP_NUM_THREADS=1 \
+		$(PYTEST) --run-slow -m slow $(PYTEST_ARGS) $(PYTHON_TEST_DIR)
 
 # CRAN's additional checks, approximated without a sanitizer-built R: the R
 # package's tests, Rd examples and examples/R under ASan/UBSan (the package built

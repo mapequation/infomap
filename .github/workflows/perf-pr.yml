@@ -65,6 +65,9 @@ jobs:
         uses: ./head/.github/actions/setup-ccache
         with:
           key-prefix: perf-pr-ubuntu-24.04
+          # This job runs only on PRs, so no master entry exists to restore. Its
+          # entries are small (~5 MB), so it keeps saving per PR push.
+          always-save: "true"
 
       - name: Build base and head benchmark binaries
         id: build

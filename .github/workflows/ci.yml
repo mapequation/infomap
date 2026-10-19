@@ -29,6 +29,7 @@ jobs:
     outputs:
       policy: ${{ steps.filter.outputs.policy }}
       native: ${{ steps.filter.outputs.native }}
+      tsan: ${{ steps.filter.outputs.tsan }}
       python-core: ${{ steps.filter.outputs.python-core }}
       python-packaging: ${{ steps.filter.outputs.python-packaging }}
       python-swig: ${{ steps.filter.outputs.python-swig }}
@@ -72,6 +73,7 @@ jobs:
       || needs.changes.outputs.meta == 'true'
       || needs.changes.outputs.policy == 'true'
       || needs.changes.outputs.native == 'true'
+      || needs.changes.outputs.tsan == 'true'
       || needs.changes.outputs.python-core == 'true'
       || needs.changes.outputs.python-packaging == 'true'
       || needs.changes.outputs.python-swig == 'true'
@@ -162,6 +164,14 @@ jobs:
         env:
           ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
           UBSAN_OPTIONS: print_stacktrace=1
+
+  # ThreadSanitizer with OpenMP on: the only job that sees the threaded code
+  # (the sanitizers job above builds with OpenMP off). Runs on everything the
+  # native lane builds, plus its own suppressions and setup.
+  tsan:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true' || needs.changes.outputs.tsan == 'true'
+    uses: ./.github/workflows/_tsan.yml
 
   clang-tidy:
     needs: changes
@@ -413,7 +423,7 @@ jobs:
 
   ci-summary:
     name: CI Summary
-    needs: [changes, pre-commit, sanitizers, clang-tidy, native, python, notebooks, javascript, r, differential-release, differential-frontends, docs, docker]
+    needs: [changes, pre-commit, sanitizers, tsan, clang-tidy, native, python, notebooks, javascript, r, differential-release, differential-frontends, docs, docker]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 10
