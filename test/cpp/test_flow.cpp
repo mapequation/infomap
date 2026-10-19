@@ -1099,6 +1099,103 @@ TEST_CASE("Bipartite teleportation runs when the feature side links back [fast][
   CHECK(im.network().flowConverged());
 }
 
+std::map<unsigned int, double> networkNodeFlows(InfomapWrapper& im)
+{
+  std::map<unsigned int, double> flows;
+  for (const auto& node : im.network().nodes()) {
+    flows[node.first] = node.second.flow;
+  }
+  return flows;
+}
+
+std::map<std::pair<unsigned int, unsigned int>, double> networkLinkFlows(InfomapWrapper& im)
+{
+  std::map<std::pair<unsigned int, unsigned int>, double> flows;
+  const auto& network = im.network();
+  network.forEachLink([&](unsigned int s, unsigned int t, double, double flow) {
+    flows[{ network.nodeId(s), network.nodeId(t) }] = flow;
+  });
+  return flows;
+}
+
+TEST_CASE("Bipartite teleportation gives feature -> primary links the flow through the feature (#1310) [fast][core][flow]")
+{
+  // Primary nodes 1 and 2 both link to feature 3, which links back to 1 with weight 3 and
+  // to 2 with weight 1, so every two-step move ends on 1 with probability 3/4. Recorded
+  // teleportation to links teleports by the in-weight from features, also (3/4, 1/4), so
+  // the primary flow is p = (3/4, 1/4) and feature 3 gets beta = 0.85 of it. Every link
+  // carries the flow of its half of the move, doubled for Markov time 2: 2 * 0.85 * 3/4 =
+  // 1.275 and 2 * 0.85 * 1/4 = 0.425 on both sides. The feature -> primary links had
+  // zero flow, as the feature flow was reset before it was used.
+  //
+  // Unrecorded teleportation teleports by out-weight, (1/2, 1/2), so p = 0.15 * (1/2, 1/2) +
+  // 0.85 * (3/4, 1/4) = (0.7125, 0.2875), and the node flow is one more move of it, (3/4,
+  // 1/4). The links carry p without beta: 2 * 0.7125, 2 * 0.2875, 2 * 3/4 and 2 * 1/4.
+  struct Expected {
+    std::string flags;
+    std::map<unsigned int, double> nodes;
+    std::map<std::pair<unsigned int, unsigned int>, double> links;
+  };
+  for (const auto& expected : {
+           Expected { "--recorded-teleportation", { { 1, 0.75 }, { 2, 0.25 }, { 3, 0.0 } }, { { { 1, 3 }, 1.275 }, { { 2, 3 }, 0.425 }, { { 3, 1 }, 1.275 }, { { 3, 2 }, 0.425 } } },
+           Expected { "", { { 1, 0.75 }, { 2, 0.25 }, { 3, 0.0 } }, { { { 1, 3 }, 1.425 }, { { 2, 3 }, 0.575 }, { { 3, 1 }, 1.5 }, { { 3, 2 }, 0.5 } } },
+       }) {
+    CAPTURE(expected.flags);
+    InfomapWrapper im(infomap::test::defaultFlags(std::string("-N 1 --seed 7 --directed --bipartite-teleportation ") + expected.flags));
+    im.network().setBipartiteStartId(3);
+    im.addLink(1, 3);
+    im.addLink(2, 3);
+    im.addLink(3, 1, 3.0);
+    im.addLink(3, 2, 1.0);
+    im.run();
+
+    const auto nodes = networkNodeFlows(im);
+    for (const auto& node : expected.nodes) {
+      CAPTURE(node.first);
+      CHECK(nodes.at(node.first) == doctest::Approx(node.second).epsilon(1e-10));
+    }
+    const auto links = networkLinkFlows(im);
+    REQUIRE(links.size() == expected.links.size());
+    for (const auto& link : expected.links) {
+      CAPTURE(link.first.first);
+      CAPTURE(link.first.second);
+      CHECK(links.at(link.first) == doctest::Approx(link.second).epsilon(1e-10));
+    }
+  }
+}
+
+TEST_CASE("Unrecorded bipartite teleportation normalizes node flow with a dangling primary node (#1309) [fast][core][flow]")
+{
+  // The two-step walk runs 1 -> 2 -> 3, and 3 is dangling. Teleportation lands on nodes 1
+  // and 2 in equal parts, and on node 3 too with --to-nodes, so either way p2 = p1 + beta * p1.
+  // Unrecorded node flow is the flow of one more move, p1 into 2 and p2 into 3, normalized:
+  // 1 / (2 + beta) and (1 + beta) / (2 + beta). It summed to p1 + p2 = 1 - p3. The links
+  // carry the same flow, doubled for Markov time 2.
+  const double beta = 0.85;
+  const double flow2 = 1 / (2 + beta);
+  const double flow3 = (1 + beta) / (2 + beta);
+  for (const auto* flags : { "", "--to-nodes" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(infomap::test::defaultFlags(std::string("-N 1 --seed 7 --directed --bipartite-teleportation ") + flags));
+    im.network().setBipartiteStartId(4);
+    im.addLink(1, 4);
+    im.addLink(2, 5);
+    im.addLink(4, 2);
+    im.addLink(5, 3);
+    im.run();
+
+    const auto nodes = networkNodeFlows(im);
+    CHECK(nodes.at(1) == doctest::Approx(0.0));
+    CHECK(nodes.at(2) == doctest::Approx(flow2).epsilon(1e-10));
+    CHECK(nodes.at(3) == doctest::Approx(flow3).epsilon(1e-10));
+    const auto links = networkLinkFlows(im);
+    CHECK(links.at({ 1, 4 }) == doctest::Approx(2 * flow2).epsilon(1e-10));
+    CHECK(links.at({ 4, 2 }) == doctest::Approx(2 * flow2).epsilon(1e-10));
+    CHECK(links.at({ 2, 5 }) == doctest::Approx(2 * flow3).epsilon(1e-10));
+    CHECK(links.at({ 5, 3 }) == doctest::Approx(2 * flow3).epsilon(1e-10));
+  }
+}
+
 TEST_CASE("Reaching tolerance on the last allowed iteration counts as converged [fast][core][flow]")
 {
   // converged used to mean "the loop stopped before the iteration limit", so a run whose
