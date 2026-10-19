@@ -1,0 +1,7 @@
+# Cases in cases.tsv where a front end disagrees with the CLI, found by
+# `differential.py compare` on macos-15, where every front end builds against
+# libc++. Each line names the front end (the run directory: python, r or js),
+# what differs (see README.md), and the issue that tracks it. The check fails
+# on a disagreement that is not listed and on a listed one that no longer
+# shows, so fixing the issue means removing its lines here.
+id	run	changes	explained_by
