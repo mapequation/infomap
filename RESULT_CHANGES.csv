@@ -76,3 +76,4 @@ version,flags,changes,description,issue,pr
 2.16.0,--entropy-corrected,codelength partition,"A network without links reports the codelength it has without the correction, one module at 0 bits, and writes its tree. It reported inf or nan and wrote nothing.",1296,1300
 2.16.0,--directed --bipartite-teleportation --recorded-teleportation,codelength partition,"Feature -> primary links carry the flow through the feature, split by link weight. They had zero flow.",1310,1321
 2.16.0,--directed --bipartite-teleportation,codelength,"Unrecorded teleportation with a dangling primary node: node flow sums to 1. It summed to 1 minus the dangling flow, with a warning.",1309,1321
+unreleased,,module-ids,"Children with equal flow, or flows equal up to rounding, are written in order of their smallest state id. Their order depended on the standard library and on the build.",1318 1325,1345

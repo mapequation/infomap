@@ -2644,3 +2644,66 @@ TEST_CASE("A tree row whose path is not positive integers separated by ':' is re
 }
 
 } // namespace
+
+TEST_CASE("Children with equal flow are ordered by their first state id (#1318, #1325) [fast][core][partition][tree]")
+{
+  // 1/6 reached two ways, as FMA contraction on arm64 clang and plain wasm
+  // arithmetic do: the flows differ in the last bit only.
+  const double sixthLow = 0.16666666666666666;
+  const double sixthHigh = 0.16666666666666669;
+  REQUIRE(sixthLow != sixthHigh);
+
+  auto leaf = [](unsigned int stateId, double flow) {
+    auto* node = new InfoNode({}, stateId);
+    node->data.flow = flow;
+    return node;
+  };
+
+  InfoNode root;
+  // Two modules of equal flow, added with the larger state ids first.
+  auto* moduleLate = new InfoNode();
+  moduleLate->data.flow = 0.25;
+  moduleLate->addChild(leaf(8, 0.125));
+  moduleLate->addChild(leaf(7, 0.125));
+  auto* moduleEarly = new InfoNode();
+  moduleEarly->data.flow = 0.25;
+  moduleEarly->addChild(leaf(3, 0.125));
+  moduleEarly->addChild(leaf(2, 0.125));
+  root.addChild(leaf(6, sixthHigh));
+  root.addChild(moduleLate);
+  root.addChild(leaf(4, sixthLow));
+  root.addChild(moduleEarly);
+  root.addChild(leaf(5, sixthHigh));
+  root.addChild(leaf(9, 0.5));
+
+  root.sortChildrenOnFlow();
+
+  std::vector<unsigned int> order;
+  for (const InfoNode& child : root.children())
+    order.push_back(child.isLeaf() ? child.stateId : 100 + child.firstChild->stateId);
+  // Larger flow first; equal flows (up to rounding) by the smallest state id below.
+  CHECK(order == std::vector<unsigned int> { 9, 102, 107, 4, 5, 6 });
+}
+
+TEST_CASE("Equal-flow state nodes are written in state id order (#1325) [fast][core][partition][tree]")
+{
+  // Native and wasm builds wrote these in different orders: the flows are all 1/6
+  // but differ in the last bit between builds.
+  const std::vector<std::pair<std::string, std::string>> cases {
+    { "examples/networks/states.net", "--directed" },
+    { "examples/networks/multilayer.net", "--directed" },
+    { "examples/networks/multilayer_intra.net", "--multilayer-relax-to-self" },
+  };
+  for (const auto& run : cases) {
+    InfomapWrapper im(infomap::test::defaultFlags(run.second));
+    im.readInputData(infomap::test::repoPath(run.first));
+    im.run();
+    std::vector<unsigned int> order;
+    for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it)
+      order.push_back(it->stateId);
+    INFO(run.first << " " << run.second);
+    CHECK(im.numTopModules() == 2);
+    REQUIRE(order.size() == 6);
+    CHECK(std::is_sorted(order.begin(), order.end()));
+  }
+}
