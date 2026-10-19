@@ -1,0 +1,77 @@
+name: Slow tests
+
+# Non-blocking: every Python test marked slow (make test-python-slow, #1252),
+# single-threaded against a build without OpenMP. The PR test legs skip them.
+# threads.yml runs the oracle files among them with 4 threads; this run covers
+# the serial path, and picks up a slow test in any file without a list to
+# keep in sync. A separate workflow so it never gates PRs, but it goes RED on
+# a failure. Same pattern as tsan.yml -- do NOT add continue-on-error, that
+# would mask the alert. PRs run it only when they touch this setup.
+on:
+  pull_request:
+    paths:
+      - "test/python/conftest.py"
+      - "mk/test.mk"
+      - ".github/workflows/slow.yml"
+  schedule:
+    - cron: "0 5 * * 6" # Saturdays 05:00 UTC (clear of the Monday-Friday crons)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: slow-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  slow:
+    name: Python slow tests (serial)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+
+      - name: Install editable package
+        # No OpenMP: the serial build. The thread comparison skips here.
+        run: make dev-python-install PIP="uv pip" PYTHON_DEV_EXTRAS=test OPENMP=0
+        env:
+          UV_SYSTEM_PYTHON: "1"
+        shell: bash
+
+      - name: Run the slow tests
+        run: make test-python-slow PYTEST_ARGS="--durations=20"
+        shell: bash
+
+  # Surface a scheduled failure as a tracking issue so it is not lost in the
+  # Actions tab. Only fires for cron runs.
+  report-failure:
+    name: Report scheduled failure
+    needs: [slow]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Open or update the tracking issue
+        uses: ./.github/actions/report-cron-failure
+        with:
+          workflow-name: ${{ github.workflow }}
+          run-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          token: ${{ github.token }}
