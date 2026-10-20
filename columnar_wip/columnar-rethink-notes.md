@@ -5688,3 +5688,87 @@ from −12.6% to +19.1% in seconds (5th–95th percentile) on two arms whose ins
 The whole set's summed seconds go from +1.36% to −1.62% once those eight take their interleaved values.
 Under that kind of load, a single run's seconds are not evidence. Quote instructions, and re-time the
 outliers interleaved before reading anything into them.
+
+### F71 — The module merge priced recorded teleportation as zero, and OO's extra candidates do not stop the collapse (#1357, #1348) (2026-10-20)
+
+**What the deep repair finds on the #1348 row.** On om3_N256_E50k, `-2d --regularized -C -N1 --seed 123`,
+the run-level deep repair ends at 97 modules and 7.919347810 bits. One of them is a core module holding
+93.4% of the giant component's flow and all 335 small components. The other 96 are satellites cut out of
+the giant component, each with at most 0.2% of its flow. So the result is coarser than the component
+partition the trial ends on (the small components are folded in) and finer on the giant component. It is
+not a rung between the trial's 2883 fragments and the 336 components.
+- **The fragments nest in it.** 2790 of the 2883 lie wholly inside one deep-repair module, a flow-weighted
+  purity of 0.98.
+- **Moving each fragment whole to its majority module** scores 7.958357259 bits, below one-level
+  (7.969664223), before any fine-tune.
+- **The same satellites with the small components left as their own modules** (432 modules) score
+  7.976147344, above one-level. So the small components have to join the core.
+
+**Why the trial cannot get there.** Every state of the 335 small components shares its physical node with
+a state of the giant component. Merging any one of them into the giant's module is downhill on its own
+(four random ones: −0.00016 to −0.00035 bits each), so this is not F42's superadditivity. The merge pass
+behind module coarsening, `mergeLeafModulesWithinParents`, never made such a merge, for two reasons.
+- **It proposed only link-connected pairs.** Co-physical partners come only with `COL_COMERGE`, off by
+  default.
+- **It priced every merge from link flow only.** Under recorded teleportation a module's enter and exit
+  also carry (T − t)·w and t·(1 − w), which the move loop and the exact score include. For a component
+  with no links, every merge looked like pure cost.
+
+With both fixed in a throwaway build, the trial coarsens 336 → 1 by itself, 8.028046874 → 7.969664223
+bits, at no measurable time cost. The run's final result does not move (7.919347810 bits): the
+satellites still come only from the deep repair's top-down split.
+
+**Neither half generalizes the same way, and OO's mechanisms do not help.** I swept one throwaway binary
+over the 158 memory and metadata configurations of the set: 73 at `-N1` (fastest of 2) and 85 at `-N10`
+(1 run). Variants were selected by environment variable, interleaved. Two variants answer the question
+whether OO's search mechanisms would help: OO's random moves (5 random target modules for each unit with at
+most 2 links, as in `InfomapOptimizer.h`), and co-physical move candidates. The latter is what OO's
+`MemMapEquation::addMemoryContributions` adds: every module holding a co-physical state becomes a
+candidate. Columnar has done that only under `COL_COMERGE=all`.
+
+| variant | `-N1` better / worse / same | `-N1` s | `-N10` better / worse / same | `-N10` s | worst loss |
+|---|--:|--:|--:|--:|--:|
+| teleport pricing in the merge pass | 15 / 1 / 57 | +1.0% | 11 / 8 / 66 | −1.7% | +0.018% bits |
+| + co-physical merge partners (`COL_COMERGE=merge`) | 42 / 16 / 15 | +71% | 54 / 11 / 20 | +85% | +0.53% bits |
+| + co-physical move candidates (`COL_COMERGE=all`) | 39 / 33 / 1 | +830% | — | — | +0.58% bits |
+| the same, heaviest co-physical module only | 31 / 41 / 1 | +182% | 48 / 32 / 5 | +259% | +4.7% bits |
+| OO random moves | 37 / 36 / 0 | +9% | 57 / 22 / 6 | +19% | +4.9% bits |
+
+The seconds are summed over the rows.
+
+- **The pricing is a defect fix and ships on its own** (this PR).
+- **Co-physical merge partners snowball** through community boundaries, the community-blind pull of F42:
+  om6_N256_E50k `--regularized` collapses to 2 modules (+0.53% bits), om8_N256_E50k to 3 (+0.22%).
+- **Co-physical move candidates find real structure on a few rows,** air30k with metadata −2.9% in bits
+  (0.80 → 1.15 s) and wikispeedia `--regularized` about −0.5%. But they lose as often as they gain on the
+  om rows, at 2–12× the seconds there, and capping them at the heaviest module does not fix that. They
+  stay a knob. The air30k gain is a lead for its own investigation.
+- **Random moves are a coin flip**, with collapses to one module on `--regularized` om rows (om2_N256_E50k
+  +4.9% bits, om4/om6 about +0.7%).
+- **OO has both mechanisms all the time and still collapses on the #1348 row**: one module, 7.969664223
+  bits, in 3.8 s.
+
+So #1348 stays open. The trial's collapse needs a group-level operator: the probe that groups fragments
+is blind to the physical codebook, and the pairwise co-physical merge that sees it snowballs. A pairwise
+candidate is not the operator that fixes it.
+
+**A side note on the regression test.** On the clique-ring fixture with *undirected*
+`--recorded-teleportation`, OO and columnar score the same partition about 0.38 bits apart. That is the
+undirected restore case #1194 fixed on master: undirected flow does not teleport, so the option becomes a
+no-op there. It reaches this branch with the next sync, so the test for this PR uses directed flow:
+ninetriangles with `ninetriangles_crossing.meta`, `--directed --recorded-teleportation --seed 1`, where
+columnar ended at 5.317367595 bits against OO's 5.265907296 and now reaches OO's partition.
+
+**This PR's snapshot.** The fix as committed differs from the throwaway in two ways. It sums each module's
+teleport flow from the leaves, as the exact score does. It also adds the parent's own teleport exit to the
+parent's total use when there is a grandparent level. On the whole set, old (`e0caf82a`) against new
+(`03643cd0`), 36 of the 332 columnar configurations change, all under recorded teleportation; the other
+296 are bit-identical.
+- **27 get shorter in bits**, up to −1.22% (wikispeedia `-d --recorded-teleportation -N1`).
+- **9 get longer, each by less than 0.02%.** Other seeds give both signs, except a +0.013% to +0.018%
+  tilt on om4_N256_E100k `-N10`.
+- **The one real cost in seconds** is om2_N256_E50k `--regularized`: +50% to +61% at `-N1` and +12% at
+  `-N10`, in step with instructions, for −0.33% in bits. All of it is the deep repair accepting more
+  merges.
+- **Every other outlier re-timed interleaved** lands within −7.2% to +7.3%, this session's resolution in
+  seconds.
