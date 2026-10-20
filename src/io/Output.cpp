@@ -355,7 +355,8 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   }
   json["numModules"] = std::move(numModules);
   json["relativeCodelengthSavings"] = im.getRelativeCodelengthSavings();
-  json["directed"] = !im.isUndirectedFlow();
+  // Like the .ftree *Links header: undirdir is clustered, and its module links written, as directed.
+  json["directed"] = !im.isUndirectedClustering();
   json["flowModel"] = flowModelToString(im.flowModel);
   json["higherOrder"] = im.haveMemory();
 

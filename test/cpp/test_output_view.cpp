@@ -433,6 +433,14 @@ TEST_CASE("Module links under --flow-model undirdir are directed rows [fast][cor
   CHECK(ftreeText.find("*Links directed\n#*Links path enterFlow exitFlow numEdges numChildren\n") != std::string::npos);
   CHECK(ftreeText.find("both directions combined") == std::string::npos);
   removeOutput(ftreePath);
+
+  const auto jsonPath = outputPath("undirdir.json");
+  removeOutput(jsonPath);
+  im->writeJsonTree(jsonPath);
+  const auto jsonText = infomap::test::readTextFile(jsonPath);
+  CHECK(jsonText.find("\"directed\":true") != std::string::npos);
+  CHECK(jsonText.find("\"flowModel\":\"undirdir\"") != std::string::npos);
+  removeOutput(jsonPath);
 }
 
 TEST_CASE("OutputView exposes serializable module rows for output adapters [fast][core][output]")
