@@ -349,8 +349,10 @@ class Result(_ResultWritersMixin):
         # directedness off the snapshot, not the live engine. Derived from the
         # effective flow model, not the --directed CLI bool, so
         # ``flow_model="directed"`` (and the datasets loaders that bake it)
-        # export directed graphs just like ``directed=True`` does.
-        object.__setattr__(self, "_directed", not core.isUndirectedFlow())
+        # export directed graphs just like ``directed=True`` does. It follows
+        # the clustering, like the .ftree and JSON headers: ``undirdir`` has
+        # undirected flow but is clustered as directed, so it exports directed.
+        object.__setattr__(self, "_directed", not core.isUndirectedClustering())
         # Eager scalar metrics (O(1), no tree traversal).
         object.__setattr__(self, "_codelength", core.codelength())
         object.__setattr__(self, "_num_top_modules", core.numTopModules())

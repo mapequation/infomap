@@ -4,13 +4,15 @@ from pathlib import Path
 
 import networkx as nx
 import pytest
-from infomap import Infomap
+from infomap import Infomap, datasets
 from infomap._options import LEGACY_SURFACE_WARNING
 from infomap.export import (
     annotate_igraph,
     annotate_igraph_graph,
     annotate_networkx,
     annotate_networkx_graph,
+    to_igraph,
+    to_networkx,
     write_gexf,
     write_graphml,
 )
@@ -166,6 +168,25 @@ def test_networkx_export_requires_mapping_for_string_labels():
 
     annotated = annotate_networkx(graph, im, node_mapping=mapping)
     assert set(nx.get_node_attributes(annotated, "infomap_module")) == {"a", "b"}
+
+
+# undirdir has undirected flow but is clustered as directed, so its result exports
+# as a directed graph, as the .ftree *Links and JSON headers say.
+def test_undirdir_result_exports_a_directed_networkx_graph():
+    result = datasets.modular_w().run(options={"seed": 123, "flow_model": "undirdir"})
+    assert isinstance(to_networkx(result), nx.DiGraph)
+
+    undirected = datasets.modular_w().run(options={"seed": 123})
+    assert not isinstance(to_networkx(undirected), nx.DiGraph)
+
+
+def test_undirdir_result_exports_a_directed_igraph_graph():
+    pytest.importorskip("igraph")
+    result = datasets.modular_w().run(options={"seed": 123, "flow_model": "undirdir"})
+    assert to_igraph(result).is_directed()
+
+    undirected = datasets.modular_w().run(options={"seed": 123})
+    assert not to_igraph(undirected).is_directed()
 
 
 def _igraph_result(graph):
