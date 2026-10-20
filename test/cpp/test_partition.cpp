@@ -310,6 +310,23 @@ TEST_CASE("Columnar search under recorded teleportation is not worse than OO [fa
   }
 }
 
+TEST_CASE("Columnar module merge prices recorded teleportation [fast][core][partition][columnar-differential][meta]")
+{
+  // The merge pass behind module coarsening priced each merge from link flow
+  // only, without the module teleport enter/exit terms the exact score charges,
+  // so it rejected merges the objective rewards (#1357). Here the metadata
+  // correction turns the merge pass on: before the fix columnar ended at
+  // 5.317367595 bits against OO's 5.265907296; with it, at OO's partition.
+  auto search = [](bool columnar) {
+    InfomapWrapper im(std::string("--silent --directed --recorded-teleportation --seed 1 --num-trials 1 --meta-data ")
+                      + infomap::test::fixturePath("meta/ninetriangles_crossing.meta") + (columnar ? " --columnar" : ""));
+    im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    im.run();
+    return im.codelength();
+  };
+  CHECK(search(true) <= search(false) + 1e-9);
+}
+
 //! Sum InfoNode::codelength over every module including the root, i.e. the quantity
 //! calcCodelengthOnTree(root(), true) returns. Leaves carry no codelength of their own.
 double sumModuleCodelengths(const InfoNode& node)

@@ -2888,14 +2888,37 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
         adjIn[t][a] += f;
       }
   }
+  // Recorded teleportation adds a teleport enter (T - t_m) * w_m and exit
+  // t_m * (1 - w_m) to every module's link enter/exit, the same terms the exact
+  // score charges (ColumnarObjectiveScore). They depend only on a module's summed
+  // teleport flow t and weight w, so a merge sums those and recomputes the terms;
+  // `enter`/`exit` above stay link-only and follow the crossing-flow algebra.
+  // Without them the pass priced a merge of modules with little link flow between
+  // them as pure cost and rejected merges the exact score accepts (#1357). Zero
+  // (and bit-identical to link-only pricing) when recorded teleportation is off.
+  std::vector<double> teleFlow(K, 0.0), teleWeight(K, 0.0);
+  if (m_recordedTeleport)
+    for (int i = 0; i < m_nLeaves; ++i) {
+      teleFlow[m_hierAssign[0][i]] += m_leafTeleFlow[i];
+      teleWeight[m_hierAssign[0][i]] += m_leafTeleWeight[i];
+    }
+  auto teleEnter = [&](double tf, double tw) { return m_recordedTeleport ? moduleTeleEnter(tf, tw) : 0.0; };
+  auto teleExit = [&](double tf, double tw) { return m_recordedTeleport ? moduleTeleExit(tf, tw) : 0.0; };
+
   // Parent module-of-modules "total use" = parent exit + sum of child enter.
   // The root's exit is 0 (whole-network codebook).
   std::vector<double> totalUse(numParents, 0.0);
-  if (hasGrandparent)
+  if (hasGrandparent) {
+    std::vector<double> parentTeleFlow(numParents, 0.0), parentTeleWeight(numParents, 0.0);
+    for (int a = 0; a < K; ++a) {
+      parentTeleFlow[parent[a]] += teleFlow[a];
+      parentTeleWeight[parent[a]] += teleWeight[a];
+    }
     for (int p = 0; p < numParents; ++p)
-      totalUse[p] = hierLevel(2).linkExit[p];
+      totalUse[p] = hierLevel(2).linkExit[p] + teleExit(parentTeleFlow[p], parentTeleWeight[p]);
+  }
   for (int a = 0; a < K; ++a)
-    totalUse[parent[a]] += enter[a];
+    totalUse[parent[a]] += enter[a] + teleEnter(teleFlow[a], teleWeight[a]);
 
   std::vector<char> alive(K, 1);
   std::vector<int> mergedInto(K);
@@ -2914,18 +2937,27 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
   auto mergeCost = [&](int a, int b) {
     const double w = crossing(a, b);
     const double flowB2 = flow[a] + flow[b];
-    const double exitB2 = exit[a] + exit[b] - w;
-    const double enterB2 = enter[a] + enter[b] - w;
-    const double Ta = flow[a] + exit[a], Tb = flow[b] + exit[b], Tb2 = flowB2 + exitB2;
+    const double tfB2 = teleFlow[a] + teleFlow[b], twB2 = teleWeight[a] + teleWeight[b];
+    const double teleEnterA = teleEnter(teleFlow[a], teleWeight[a]);
+    const double teleEnterB = teleEnter(teleFlow[b], teleWeight[b]);
+    const double teleEnterB2 = teleEnter(tfB2, twB2);
+    const double exitA = exit[a] + teleExit(teleFlow[a], teleWeight[a]);
+    const double exitB = exit[b] + teleExit(teleFlow[b], teleWeight[b]);
+    const double enterA = enter[a] + teleEnterA, enterB = enter[b] + teleEnterB;
+    const double exitB2 = exit[a] + exit[b] - w + teleExit(tfB2, twB2);
+    const double enterB2 = enter[a] + enter[b] - w + teleEnterB2;
+    const double Ta = flow[a] + exitA, Tb = flow[b] + exitB, Tb2 = flowB2 + exitB2;
     // Level-1 leaf-module term: plogp(T) - plogp(exit) - sum_leaf plogp(flow);
     // the per-leaf sums cancel in the merge, leaving flows/exits only.
     const double dL1 = (plogp(Tb2) - plogp(Ta) - plogp(Tb))
-        - (plogp(exitB2) - plogp(exit[a]) - plogp(exit[b]));
-    // Parent module-of-modules term for the shared parent.
+        - (plogp(exitB2) - plogp(exitA) - plogp(exitB));
+    // Parent module-of-modules term for the shared parent: its total use loses
+    // the crossing flow and the drop in teleport enter.
     const int p = parent[b];
     const double tu = totalUse[p];
-    const double dPar = (plogp(tu - w) - plogp(tu))
-        - (plogp(enterB2) - plogp(enter[a]) - plogp(enter[b]));
+    const double useDrop = w + (teleEnterA + teleEnterB - teleEnterB2);
+    const double dPar = (plogp(tu - useDrop) - plogp(tu))
+        - (plogp(enterB2) - plogp(enterA) - plogp(enterB));
     double d = dL1 + dPar;
     for (auto* c : corr)
       d += c->mergeDelta(a, b);
@@ -2981,7 +3013,11 @@ bool ColumnarTwoLevel::mergeLeafModulesWithinParents()
       const double newEnter = enter[a] + enter[b] - w;
       exit[b] = newExit;
       enter[b] = newEnter;
-      totalUse[parent[b]] -= w;
+      const double tfB2 = teleFlow[a] + teleFlow[b], twB2 = teleWeight[a] + teleWeight[b];
+      totalUse[parent[b]] -= w
+          + (teleEnter(teleFlow[a], teleWeight[a]) + teleEnter(teleFlow[b], teleWeight[b]) - teleEnter(tfB2, twB2));
+      teleFlow[b] = tfB2;
+      teleWeight[b] = twB2;
       for (auto* c : corr)
         c->applyMerge(a, b);
       // Rewire adjacency: fold a's edges into b.
