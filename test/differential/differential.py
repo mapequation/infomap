@@ -379,8 +379,10 @@ def _unreleased_change_refs(reference: str) -> set[str]:
     refs = set()
     with RESULT_CHANGES.open(newline="") as handle:
         for row in csv.DictReader(handle):
-            version = tuple(int(part) for part in row["version"].split("."))
-            if version > released:
+            # A row waiting for the next release is newer than every release.
+            if row["version"] == "unreleased" or (
+                tuple(int(part) for part in row["version"].split(".")) > released
+            ):
                 refs.update(
                     f"#{number}" for number in (row["issue"], row["pr"]) if number
                 )

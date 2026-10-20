@@ -139,6 +139,23 @@ def test_release_check_requires_every_difference_listed_and_explained(tmp_path, 
     )
 
 
+def test_release_check_counts_unreleased_rows(tmp_path, monkeypatch):
+    changes = tmp_path / "RESULT_CHANGES.csv"
+    changes.write_text(
+        "version,flags,changes,description,issue,pr\n"
+        "unreleased,,codelength,Not released yet.,9001,9002\n"
+    )
+    monkeypatch.setattr(differential, "RESULT_CHANGES", changes)
+    old = _write(tmp_path / "old", "twotriangles", TREE)
+    new = _write(tmp_path / "new", "twotriangles", TREE_MOVED, 2.4)
+
+    listed = _release_list(tmp_path, "twotriangles\tcodelength,tree\t#9002\n")
+    assert (
+        differential.compare_release(old, new, case_ids=CASES, expected_path=listed)
+        == 0
+    )
+
+
 def test_release_check_fails_on_a_stale_line(tmp_path, capsys):
     old = _write(tmp_path / "old", "twotriangles", TREE)
     new = _write(tmp_path / "new", "twotriangles", TREE)
