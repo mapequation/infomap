@@ -134,7 +134,7 @@ void Network::printSummary()
   Console console;
   console.section("Network");
   console.metric("Input", m_config.networkFile);
-  console.metric("Direction", m_config.isUndirectedFlow() ? "undirected" : "directed");
+  console.metric("Direction", m_config.isUndirectedClustering() ? "undirected" : "directed");
   if (haveMemoryInput()) {
     console.metric("Type", isMultilayerNetwork() ? "higher-order multilayer" : "higher-order state");
     console.metric("State nodes", fmt::to_string(numNodes()));
