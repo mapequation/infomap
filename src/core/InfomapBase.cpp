@@ -381,7 +381,8 @@ public:
     }
     m_reportNetwork.nodes = m_network.numNodes();
     m_reportNetwork.links = m_network.numLinks();
-    m_reportNetwork.directed = !m_infomap.isUndirectedFlow();
+    // The links as the run treats them: undirdir keeps every link directed as given.
+    m_reportNetwork.directed = !m_infomap.isUndirectedClustering();
     m_runParallelTrials = selectParallelTrialMode();
     m_trialWorkers = m_runParallelTrials ? parallelTrialWorkers() : 1;
     releaseInputLinksIfCli();

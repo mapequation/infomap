@@ -313,7 +313,7 @@ void FlowCalculator::calcUndirectedFlow() noexcept
 
 void FlowCalculator::calcDirdirFlow(const Config& config) noexcept
 {
-  m_flowMethod = config.flowModel == FlowModel::outdirdir ? "ingoing links only" : "undirected links, directed steady state";
+  m_flowMethod = config.flowModel == FlowModel::outdirdir ? "ingoing links only" : "undirected steady state, directed links";
 
   // Take one last power iteration
   const std::vector<double> nodeFlowSteadyState(nodeFlow);
