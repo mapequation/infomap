@@ -877,13 +877,16 @@ TEST_CASE("Regularized multilayer one-module fallback reports the codelength of 
   // while the one-level codelength prices the root with none. The fallback compared the
   // search with the one-level codelength and reported it: 2.284 bits for a one-module
   // tree that reads back as 2.699, and the search had found 2.667 with two modules.
+  // Since #1101 gave each layer its own node count, both searches end at one module
+  // themselves, so neither case reaches the fallback; a module holding every node keeps
+  // exit flow only through the inter-layer self-links (#1287).
   struct Case {
     std::string flags;
     unsigned int numTopModules;
     double codelength;
   };
   const std::vector<Case> cases = {
-    { "--regularized", 2, 2.667330579 }, // was 2.284010969 with 1 module
+    { "--regularized", 1, 2.671639472 }, // 2.667330579 with 2 modules before #1101, and 2.284010969 with 1 before #1285
     { "--regularized --directed", 1, 2.851861954 }, // the search itself ends at one module
   };
   const std::string resultPath = "regularized_multilayer_one_module_result.tree";
