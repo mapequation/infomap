@@ -297,6 +297,16 @@ namespace {
 #endif
   }
 
+  // Flow-weighted effective number of top modules: the perplexity 2^H of the
+  // top modules' flow distribution, as in the Python effective_num_top_modules.
+  double effectiveNumTopModules(const InfoNode& root)
+  {
+    double entropy = 0.0;
+    for (const auto& module : root)
+      entropy -= infomath::plogp(module.data.flow);
+    return std::exp2(entropy);
+  }
+
 } // namespace
 
 class InfomapBase::RunSession {
@@ -450,7 +460,7 @@ public:
     console.metric("Nodes", fmt::to_string(m_infomap.numLeafNodes()));
     console.metric("Links", fmt::to_string(m_network.numLinks()));
     console.metric("Average degree", io::toPrecision(m_network.numLinks() * 2.0 / m_infomap.numLeafNodes(), 1, true));
-    console.metric("Top modules", fmt::format(FMT_STRING("{} ({} non-trivial)"), m_infomap.numTopModules(), m_infomap.numNonTrivialTopModules()));
+    console.metric("Top modules", fmt::format(FMT_STRING("{} ({} non-trivial, {} effective)"), m_infomap.numTopModules(), m_infomap.numNonTrivialTopModules(), io::toPrecision(effectiveNumTopModules(m_infomap.root()), 1, true)));
     console.metric("Levels", fmt::to_string(result.bestNumLevels));
     console.metric("One-level codelength", io::toPrecision(m_infomap.getReferenceOneLevelCodelength()));
     console.metric("Best codelength", io::toPrecision(result.bestHierarchicalCodelength));
