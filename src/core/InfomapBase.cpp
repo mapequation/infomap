@@ -297,6 +297,16 @@ namespace {
 #endif
   }
 
+  // Flow-weighted effective number of top modules: the perplexity 2^H of the
+  // top modules' flow distribution, as in the Python effective_num_top_modules.
+  double effectiveNumTopModules(const InfoNode& root)
+  {
+    double entropy = 0.0;
+    for (const auto& module : root)
+      entropy -= infomath::plogp(module.data.flow);
+    return std::exp2(entropy);
+  }
+
 } // namespace
 
 class InfomapBase::RunSession {
@@ -381,7 +391,8 @@ public:
     }
     m_reportNetwork.nodes = m_network.numNodes();
     m_reportNetwork.links = m_network.numLinks();
-    m_reportNetwork.directed = !m_infomap.isUndirectedFlow();
+    // The links as the run treats them: undirdir keeps every link directed as given.
+    m_reportNetwork.directed = !m_infomap.isUndirectedClustering();
     m_runParallelTrials = selectParallelTrialMode();
     m_trialWorkers = m_runParallelTrials ? parallelTrialWorkers() : 1;
     releaseInputLinksIfCli();
@@ -449,7 +460,7 @@ public:
     console.metric("Nodes", fmt::to_string(m_infomap.numLeafNodes()));
     console.metric("Links", fmt::to_string(m_network.numLinks()));
     console.metric("Average degree", io::toPrecision(m_network.numLinks() * 2.0 / m_infomap.numLeafNodes(), 1, true));
-    console.metric("Top modules", fmt::format(FMT_STRING("{} ({} non-trivial)"), m_infomap.numTopModules(), m_infomap.numNonTrivialTopModules()));
+    console.metric("Top modules", fmt::format(FMT_STRING("{} ({} non-trivial, {} effective)"), m_infomap.numTopModules(), m_infomap.numNonTrivialTopModules(), io::toPrecision(effectiveNumTopModules(m_infomap.root()), 1, true)));
     console.metric("Levels", fmt::to_string(result.bestNumLevels));
     console.metric("One-level codelength", io::toPrecision(m_infomap.getReferenceOneLevelCodelength()));
     console.metric("Best codelength", io::toPrecision(result.bestHierarchicalCodelength));
@@ -2348,6 +2359,23 @@ void InfomapBase::generateSubNetwork(Network& network)
   double sumTeleFlow = 0.0;
   std::unordered_map<unsigned int, unsigned int> nodeIndexMap;
   nodeIndexMap.reserve(numNodes);
+
+  // Every per-layer teleport term the objective adds is a teleport flow times a teleport
+  // weight, or a difference of two such flows, so a network where nothing teleports
+  // contributes nothing at all. Skipping the data there costs one scan and saves an
+  // InfoNodeExtras per leaf node plus a per-module map lookup on every move. It is all
+  // or nothing: a node that does not teleport still pays the flow its module teleports
+  // away, so its own zero is not enough to leave it out.
+  bool haveLayerTeleportFlow = false;
+  if (isRegularizedMultilayerFlow()) {
+    for (auto& nodeIt : network.nodes()) {
+      if (nodeIt.second.intraLayerTeleFlow > 0) {
+        haveLayerTeleportFlow = true;
+        break;
+      }
+    }
+  }
+
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
     auto* node = &allocNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
@@ -2363,7 +2391,7 @@ void InfomapBase::generateSubNetwork(Network& network)
     // Only regularized-multilayer flow consumes layerTeleFlowData; populating it
     // unconditionally would allocate an InfoNodeExtras for every node and defeat
     // the out-of-line shrink (extras must stay null in the common case).
-    if (isRegularizedMultilayerFlow())
+    if (haveLayerTeleportFlow)
       node->ensureExtras().layerTeleFlowData.emplace_back(networkNode.layerId, networkNode.intraLayerTeleFlow, networkNode.intraLayerTeleWeight);
     // Log(1) << "Node " << node->stateId << " (" << node->layerId << "," << node->physicalId << ") data: " << node->data << ", tele-flow: " << networkNode.teleFlow << ", intra-tele: " << networkNode.intraLayerTeleFlow << "\n";
     if (haveMetaData()) {
@@ -2461,6 +2489,11 @@ void InfomapBase::generateSubNetwork(Network& network)
     if (damping < 0) {
       maxScale = infomath::linlog(pow(2.0, maxEntropy), -damping);
     }
+    // Each link divides by a local scale floored at minLocalScale, so floor the largest one
+    // there too. Otherwise, when the largest effective degree is below 2 (the default
+    // minLocalScale, log2(2)), every link was scaled by less than 1, and by 0 at degree 1: two
+    // disjoint links reported 0 bits, and node weights as flow left a walk without steps.
+    maxScale = std::max(minLocalScale, maxScale);
     for (unsigned i = 0; i < numNodes; ++i) {
       InfoNode& node = *m_leafNodes[i];
       double localScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[i]), -damping) : infomath::linlog(std::max(minLocalScale, node.data.flow * totDegree), damping);
@@ -4062,6 +4095,8 @@ unsigned int InfomapBase::dissolveUnprofitableModules()
 
   if (numDissolved > 0) {
     m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+    // A dissolved top module lifts its children to the top level (#1361).
+    m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
     Console::detail(1, "prune: dissolved {} modules, codelength {} {} {}", numDissolved, io::toPrecision(codelengthBefore), Console::arrow(), io::toPrecision(m_hierarchicalCodelength));
   }
   return numDissolved;

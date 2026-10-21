@@ -839,6 +839,31 @@ TEST_CASE("--variable-markov-time keeps link flow non-negative with flow on isol
   }
 }
 
+// Each link's Markov time is the largest local scale over its own, and the local scales are
+// floored at --variable-markov-min-scale (an effective degree of 2 by default). With no node
+// above that floor every node is at it, so every link keeps Markov time 1 and the run is the one
+// without --variable-markov-time. The largest scale was not floored: two disjoint links had
+// every link scaled to 0 and reported 0 bits, and node weights as flow left a walk without
+// link steps (#1191).
+TEST_CASE("--variable-markov-time changes nothing when no node has effective degree 2 (#1191) [fast][core][mapeq]")
+{
+  for (const char* flags : { "", "--directed", "--use-node-weights-as-flow", "--directed --use-node-weights-as-flow" }) {
+    INFO(flags);
+    const auto run = [&](const std::string& extraFlags) {
+      InfomapWrapper im(defaultFlags(std::string(flags) + extraFlags));
+      im.addNode(5);
+      im.addLink(1, 2);
+      im.addLink(3, 4);
+      im.run();
+      for (auto* node : im.leafNodes())
+        for (const auto* edge : node->outEdges())
+          CHECK(edge->data.flow > 0.0);
+      return im.codelength();
+    };
+    CHECK(run(" --variable-markov-time") == doctest::Approx(run("")).epsilon(1e-12));
+  }
+}
+
 // The relax-to-self relay in the flow calculation treated any link between two states of
 // one physical node as a layer switch and relayed its flow onward, on state networks
 // too. Under --regularized that extra link flow left a module with negative enter flow.
