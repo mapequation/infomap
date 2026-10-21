@@ -897,16 +897,16 @@ TEST_CASE("Regularized multilayer one-module fallback reports the codelength of 
   // search with the one-level codelength and reported it: 2.284 bits for a one-module
   // tree that reads back as 2.699, and the search had found 2.667 with two modules.
   // Since #1101 gave each layer its own node count, both searches end at one module
-  // themselves, so neither case reaches the fallback; a module holding every node keeps
-  // exit flow only through the inter-layer self-links (#1287).
+  // themselves, and since the leaf flow leaves out the inter-layer self-links (#1287), that
+  // module has no exit flow and costs the one-level codelength. What is left is the round trip.
   struct Case {
     std::string flags;
     unsigned int numTopModules;
     double codelength;
   };
   const std::vector<Case> cases = {
-    { "--regularized", 1, 2.671639472 }, // 2.667330579 with 2 modules before #1101, and 2.284010969 with 1 before #1285
-    { "--regularized --directed", 1, 2.851861954 }, // the search itself ends at one module
+    { "--regularized", 1, 2.296430569 }, // 2.671639472 before #1287
+    { "--regularized --directed", 1, 2.297836545 }, // 2.851861954 before #1287
   };
   const std::string resultPath = "regularized_multilayer_one_module_result.tree";
   for (const auto& c : cases) {
@@ -928,6 +928,33 @@ TEST_CASE("Regularized multilayer one-module fallback reports the codelength of 
     infomap::test::checkApproxCodelength(codelength, c.codelength, 1e-9);
   }
   std::remove(resultPath.c_str());
+}
+#endif
+
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+TEST_CASE("Regularized multilayer: a module holding every node has no exit flow (#1287) [fast][core][partition][regularized]")
+{
+  // The flow calculator's leaf enter and exit flow counted the inter-layer self-links,
+  // which the tree drops, so a module holding every node kept their flow as exit flow:
+  // 0.0810 on multilayer_intra.net, which priced one module at 2.699 bits against the
+  // one-level 2.284. At Markov time 2 the leaf flow was the walk's at t = 1 while the
+  // links were scaled, and the module got enter flow -0.733, refused by the guard.
+  for (const std::string flags : { "--regularized", "--regularized --directed", "--regularized --markov-time 2", "--regularized --directed --markov-time 2" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(infomap::test::defaultFlags(flags + " --no-infomap"));
+    im.readInputData(infomap::test::repoPath("examples/networks/multilayer_intra.net"));
+    infomap::InfomapBase::InitialPartition partition;
+    for (unsigned int stateId = 0; stateId < 10; ++stateId)
+      partition[stateId] = 1;
+    im.setInitialPartition(partition);
+    im.run();
+    REQUIRE(im.numTopModules() == 1);
+    const auto& module = *im.root().firstChild;
+    CHECK(module.childDegree() == 10);
+    CHECK(std::abs(module.data.exitFlow) < 1e-12);
+    CHECK(std::abs(module.data.enterFlow) < 1e-12);
+    infomap::test::checkApproxCodelength(im.codelength(), im.getOneLevelCodelength(), 1e-9);
+  }
 }
 #endif
 

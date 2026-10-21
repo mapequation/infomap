@@ -2410,12 +2410,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
   m_root.data.flow = sumNodeFlow;
   m_root.data.teleportFlow = sumTeleFlow;
-  // Regularized multilayer flow keeps the flow calculator's enter and exit flow, which carry
-  // the per-layer teleportation terms. Every other model adds them up from the links in
-  // initEnterExitFlow().
-  if (!isRegularizedMultilayerFlow()) {
-    m_calculateEnterExitFlow = true;
-  }
+  m_calculateEnterExitFlow = true;
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Console::warn(1, "Total flow on nodes differs from 1.0 by {:g}.", sumNodeFlow - 1.0);
 
@@ -2870,18 +2865,6 @@ void InfomapBase::partition()
 #endif
   const bool regularizedPriorOnly = usesRegularizedFlow() && network().numLinks() == 0;
   double oneModuleCodelength = getOneLevelCodelength();
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-  // The regularized multilayer objective prices one module holding every node with
-  // exit flow, while the one-level codelength prices the root with none. Compare
-  // with, and report, the codelength the one-module tree has (#1285).
-  const bool regularizedMultilayerRoot = isMainInfomap() && !haveMetaData() && haveMemory() && isRegularizedMultilayerFlow();
-  double oneModuleExitFlow = 0.0;
-  if (regularizedMultilayerRoot) {
-    oneModuleExitFlow = calcRegularizedMultilayerOneModuleExitFlow();
-    const double flow = m_root.data.flow;
-    oneModuleCodelength += infomath::plogp(flow + oneModuleExitFlow) - infomath::plogp(flow) - infomath::plogp(oneModuleExitFlow);
-  }
-#endif
   if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > oneModuleCodelength) {
     Console::detail(1, "worse codelength than one-level, putting all nodes in one module");
 
@@ -2893,12 +2876,6 @@ void InfomapBase::partition()
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
     module.lossyEntropy = m_root.lossyEntropy;
     module.lossyFlowLogFlow = m_root.lossyFlowLogFlow;
-#endif
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-    if (regularizedMultilayerRoot) {
-      module.data.enterFlow = oneModuleExitFlow;
-      module.data.exitFlow = oneModuleExitFlow;
-    }
 #endif
     module.index = 0;
     for (auto& node : module) {
@@ -2980,6 +2957,13 @@ void InfomapBase::initEnterExitFlow()
   if (usesRegularizedFlow()) {
     const double sumTeleportFlow = m_root.data.teleportFlow;
     const bool undirectedLinks = isUndirectedClustering();
+    // Regularized multilayer flow teleports within a layer, so a node's teleportation
+    // enter flow comes from the other nodes in its layer (#1287).
+    std::map<unsigned int, double> layerTeleportFlow;
+    for (const auto* n : m_leafNodes) {
+      for (const auto& layerData : n->layerTeleFlowData())
+        layerTeleportFlow[layerData.layerId] += layerData.teleportFlow;
+    }
     for (auto* n : m_leafNodes) {
       auto& node = *n;
       for (InfoEdge* e : node.outEdges()) {
@@ -2997,6 +2981,10 @@ void InfomapBase::initEnterExitFlow()
       }
       node.data.exitFlow += node.data.teleportFlow * (1.0 - node.data.teleportWeight);
       node.data.enterFlow += (sumTeleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
+      for (const auto& layerData : node.layerTeleFlowData()) {
+        node.data.exitFlow += layerData.teleportFlow * (1.0 - layerData.teleportWeight);
+        node.data.enterFlow += (layerTeleportFlow[layerData.layerId] - layerData.teleportFlow) * layerData.teleportWeight;
+      }
     }
     return;
   }
@@ -3048,31 +3036,6 @@ void InfomapBase::initEnterExitFlow()
     }
   }
 }
-
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-double InfomapBase::calcRegularizedMultilayerOneModuleExitFlow() const
-{
-  // The leaf exit flow less what RegularizedMultilayerMapEquation cancels when all
-  // leaf nodes share one module: the link flow between them and, per layer, the
-  // teleportation T_i (W - w_i) to the other nodes in the layer. What remains is
-  // flow the leaf exit flow carries that no link or teleportation term inside the
-  // module accounts for.
-  std::map<unsigned int, double> layerTeleportWeight;
-  for (const auto* node : m_leafNodes) {
-    for (const auto& layerData : node->layerTeleFlowData())
-      layerTeleportWeight[layerData.layerId] += layerData.teleportWeight;
-  }
-  double exitFlow = 0.0;
-  for (auto* node : m_leafNodes) {
-    exitFlow += node->data.exitFlow;
-    for (const InfoEdge* edge : node->outEdges())
-      exitFlow -= edge->data.flow;
-    for (const auto& layerData : node->layerTeleFlowData())
-      exitFlow -= layerData.teleportFlow * (layerTeleportWeight[layerData.layerId] - layerData.teleportWeight);
-  }
-  return std::max(exitFlow, 0.0);
-}
-#endif
 
 // Aggregate node and enter/exit flow to all tree nodes
 void InfomapBase::aggregateFlowValuesFromLeafToRoot()
