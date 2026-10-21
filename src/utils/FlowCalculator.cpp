@@ -1290,8 +1290,8 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   std::vector<unsigned int> k(N, 0);
   std::vector<double> s(N, 0);
   double sum_s = sumWeightedDegree;
-  // The degree counts a pair listed as a b and b a once, as one listing of a b twice (#1203)
-  unsigned int sum_k = network.sumUndirectedDegree();
+  // An undirected run reads a pair listed as a b and b a as one link (#1203, #1366)
+  unsigned int sum_k = network.sumDegree();
   if (sum_k == 0) {
     const auto uniformFlow = 1.0 / N;
     std::fill(nodeFlow.begin(), nodeFlow.end(), uniformFlow);
@@ -1303,11 +1303,10 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
 
   // Undirected flow keeps the network's node order, so these are its CSR indices
   for (auto& link : flowLinks) {
-    const bool countDegree = !network.isReverseOfLink(link.source, link.target);
-    k[link.source] += countDegree;
+    k[link.source] += 1;
     s[link.source] += link.flow;
     if (link.source != link.target) {
-      k[link.target] += countDegree;
+      k[link.target] += 1;
       s[link.target] += link.flow;
     }
   }
