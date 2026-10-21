@@ -2688,3 +2688,34 @@ TEST_CASE("A tree row whose path is not positive integers separated by ':' is re
 }
 
 } // namespace
+
+// Modules of single nodes score 0 on the meta-data term, so on this network the search
+// ended with every node in its own module at 2.982 bits, above the one-level codelength
+// of 2.790 bits, and the fallback to one module skipped trivial modules (#1320).
+TEST_CASE("A meta-data search ending at singleton modules falls back to one module (#1320) [fast][core][partition]")
+{
+  for (const unsigned int seed : { 1u, 2u, 3u, 5u, 10u }) {
+    for (const unsigned int numTrials : { 1u, 5u }) {
+      CAPTURE(seed);
+      CAPTURE(numTrials);
+      InfomapWrapper im("--directed --silent --no-file-output --seed " + std::to_string(seed) + " --num-trials " + std::to_string(numTrials));
+      const std::vector<std::pair<unsigned int, unsigned int>> links {
+        { 1, 1 }, { 1, 2 }, { 1, 3 }, { 3, 3 }, { 3, 4 }, { 1, 4 }, { 2, 1 }, { 2, 2 }, { 2, 3 }, { 4, 2 }, { 4, 3 }, { 2, 4 }
+      };
+      for (const auto& [source, target] : links)
+        im.addLink(source, target);
+      im.addMetaData(1, 2);
+      im.addMetaData(2, 1);
+      im.addMetaData(3, 1);
+      im.addMetaData(4, 2);
+      im.run();
+      CHECK(im.getOneLevelCodelength() == doctest::Approx(2.789582133).epsilon(1e-9));
+      CHECK(im.codelength() <= im.getOneLevelCodelength() + 1e-10);
+      CHECK(im.numTopModules() == 1);
+      // The components describe the one-module tree too, not the singletons it replaced.
+      CHECK(im.getIndexCodelength() == doctest::Approx(0.0).epsilon(1e-12));
+      CHECK(im.getMetaCodelength() == doctest::Approx(0.950257077719).epsilon(1e-9));
+      CHECK(im.getCodelength() == doctest::Approx(im.codelength()).epsilon(1e-12));
+    }
+  }
+}

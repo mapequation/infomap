@@ -2882,7 +2882,11 @@ void InfomapBase::partition()
     oneModuleCodelength += infomath::plogp(flow + oneModuleExitFlow) - infomath::plogp(flow) - infomath::plogp(oneModuleExitFlow);
   }
 #endif
-  if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > oneModuleCodelength) {
+  // Modules of single nodes score 0 on the meta-data term, so a meta-data run can end
+  // with only those, above the one-level codelength (#1320). On the map term they often
+  // tie with one module up to rounding, so only a margin beyond that counts.
+  const bool metaSingletonsAboveOneModule = isMainInfomap() && haveMetaData() && getCodelength() > oneModuleCodelength + minimumCodelengthImprovement;
+  if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly || metaSingletonsAboveOneModule) && getCodelength() > oneModuleCodelength) {
     Console::detail(1, "worse codelength than one-level, putting all nodes in one module");
 
     // Create new single module between modules and root
@@ -2909,6 +2913,17 @@ void InfomapBase::partition()
     // calcCodelengthOnTree(root(), true);
     m_root.codelength = 0.0;
     m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+
+    // The objective still holds the discarded partition's terms, which the run reports as
+    // its index and meta-data codelengths. With one trial no best-tree restore rebuilds
+    // them, so move the objective to one module too. Callers of a sub-search read only
+    // its tree and codelengths.
+    if (isMainInfomap()) {
+      setActiveNetworkFromLeafs();
+      initPartition();
+      std::vector<unsigned int> oneModule(numLeafNodes(), 0);
+      moveActiveNodesToPredefinedModules(oneModule);
+    }
 
   } else {
     // Set consolidated cluster index on nodes and modules
