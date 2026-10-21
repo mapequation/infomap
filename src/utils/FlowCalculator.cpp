@@ -771,8 +771,13 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     // = 1 for dangling nodes, also at strength 0 where t_i = 0 would make it 0/0 (#1144)
     alpha[i] = s_out[i] > 0 ? t_i / (s_out[i] + t_i) : 1.0;
     if (config.noSelfLinks) {
-      // Inflate to adjust for no self-teleportation
-      // TODO: Check possible side-effects
+      // Inflate to adjust for no self-teleportation. Teleporting at alpha / (1 - w_i) to every
+      // node, the node itself included, sends alpha w_j / (1 - w_i) to each other node j: what
+      // teleporting at alpha to the others only sends. The self part is no step of the walk:
+      // the node follows its links at 1 - alpha (the beta below), and since a node always
+      // shares its module with itself, the map equation never charges it. This keeps each
+      // teleportation flow a source term times a target weight, which the map equation sums
+      // over modules.
       alpha[i] /= 1 - nodeTeleportWeights[i];
     }
   }
@@ -1074,14 +1079,20 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     // of its two parts, leaving an isolated node with no flow to distribute.
     alphaInter[i] = sumOutWeight == 0 ? 0 : inter_out[i] / sumOutWeight;
     if (avoidSelfTeleportation[i]) {
-      // Inflate to adjust for no self-teleportation
-      // TODO: Check possible side-effects
+      // Inflate to adjust for no self-teleportation, as in calcDirectedRegularizedFlow.
+      // The node then follows its links at intraLinkRate below, not at 1 - alpha.
       alpha[i] /= 1 - nodeTeleportWeights[i];
       // alphaInter[i] /= 1 - nodeTeleportWeights[i];
     }
     // Log(1) << i << ": intra: " << alpha[i] << ", inter: " << alphaInter[i] << "\n";
     // Log(1) << i << ": intra: " << alpha[i] << ", inter: " << alphaInter[i] << " (inter_out: " << inter_out[i] << ", s_out: " << s_out[i] << ", intra_prior_out: " << intraOutWeight[i] << ")\n";
   }
+
+  // The share of the intra-step flow that follows the intra-layer links: 1 - alpha before the
+  // inflation above. The power iteration and the link flows written after it both use it.
+  auto intraLinkRate = [this, &alpha, &avoidSelfTeleportation](unsigned int i) {
+    return 1 - alpha[i] * (avoidSelfTeleportation[i] ? 1 - nodeTeleportWeights[i] : 1);
+  };
 
   // Log(1) << "\nLink probabilities:\n";
   // Normalize link weights to probabilities, separate for intra and inter links
@@ -1145,7 +1156,10 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     // }
 
     for (unsigned int i = 0; i < N; ++i) {
-      nodeFlowTmp[i] = nodeTeleportWeights[i] * (layerTeleFlow[layerIndices[i]] - (avoidSelfTeleportation[i] ? (alpha[i] * nodeFlow[i]) : 0));
+      // Without self-teleportation a node receives the teleportation of the other nodes in its
+      // layer: the layer's total less its own, which it sends from its intra-step flow.
+      const double selfTeleFlow = avoidSelfTeleportation[i] ? alpha[i] * ((1 - alphaInter[i]) * nodeFlow[i] + unrecordedInterFlow[i]) : 0;
+      nodeFlowTmp[i] = nodeTeleportWeights[i] * (layerTeleFlow[layerIndices[i]] - selfTeleFlow);
       // nodeFlowTmp[i] = nodeTeleportWeights[i] * layerTeleFlow[layerIndices[i]];
       // Log(1) << i << ": tele flow: " << nodeFlowTmp[i] << "\n";
     }
@@ -1156,9 +1170,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
       if (isInterLink[linkIndex++]) {
         continue;
       }
-      double beta = 1 - alpha[link.source] * (avoidSelfTeleportation[link.source] ? 1 - nodeTeleportWeights[link.source] : 1);
-      // double beta = 1 - alpha[link.source];
-      nodeFlowTmp[link.target] += beta * link.flow * ((1 - alphaInter[link.source]) * nodeFlow[link.source] + unrecordedInterFlow[link.source]);
+      nodeFlowTmp[link.target] += intraLinkRate(link.source) * link.flow * ((1 - alphaInter[link.source]) * nodeFlow[link.source] + unrecordedInterFlow[link.source]);
     }
 
     // Update node flow from the power iteration above and check if converged
@@ -1235,8 +1247,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
       exitFlow[link.source] += link.flow;
       enterFlow[link.target] += link.flow;
     } else {
-      double beta = 1 - alpha[link.source];
-      link.flow = beta * link.flow * intraStepFlow[link.source] / intraStepNorm;
+      link.flow = intraLinkRate(link.source) * link.flow * intraStepFlow[link.source] / intraStepNorm;
       exitFlow[link.source] += link.flow;
       enterFlow[link.target] += link.flow;
     }
@@ -1340,8 +1351,7 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
     // = 1 for isolated nodes, also at strength 0 where t_i = 0 would make it 0/0 (#1144)
     alpha[i] = s[i] > 0 ? t_i / (s[i] + t_i) : 1.0;
     if (config.noSelfLinks) {
-      // Inflate to adjust for no self-teleportation
-      // TODO: No later side effects of cheating here? Need to normalize targets instead?
+      // Inflate to adjust for no self-teleportation, as in calcDirectedRegularizedFlow
       alpha[i] /= 1 - nodeTeleportWeights[i];
     }
     sum_t += t_i;
@@ -1363,7 +1373,7 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   }
 
   for (auto& link : flowLinks) {
-    // TODO: Side effect from inflating alpha, need real alpha here.
+    // 1 - alpha before the inflation above
     double beta = 1 - alpha[link.source] * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
     link.flow *= beta * nodeFlow[link.source] * 2;
   }

@@ -731,6 +731,34 @@ TEST_CASE("Regularized multilayer flow balances over each layer's own nodes [fas
   CHECK(sumFlow == doctest::Approx(1.0).epsilon(1e-12));
 }
 
+TEST_CASE("Regularized multilayer flow without self-links sums to 1 and balances each state (#1363) [fast][core][flow]")
+{
+  // --no-self-links inflates a state's teleportation rate to alpha / (1 - w) and leaves out
+  // the part that lands on the state itself. The power iteration left it out of the state's
+  // flow instead of its intra-step flow, so on multilayer_intra.net the total drifted from 1
+  // and the run stopped. The link flows written after it followed the links at 1 - alpha with
+  // the inflated rate, short of the walk's 1 - alpha (1 - w), so on multilayer_intra_inter.net
+  // a state's enter and exit flow differed by up to 0.01.
+  for (const std::string network : { "multilayer_intra.net", "multilayer_intra_inter.net" }) {
+    for (const std::string flags : { "--regularized --no-self-links", "--regularized --no-self-links --directed" }) {
+      CAPTURE(network);
+      CAPTURE(flags);
+      InfomapWrapper im(infomap::test::defaultFlags(flags + " --no-infomap --two-level"));
+      im.readInputData(infomap::test::repoPath("examples/networks/" + network));
+      REQUIRE_NOTHROW(im.run());
+
+      double sumFlow = 0.0;
+      double maxImbalance = 0.0;
+      for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+        sumFlow += (*it).data.flow;
+        maxImbalance = std::max(maxImbalance, std::abs((*it).data.enterFlow - (*it).data.exitFlow));
+      }
+      CHECK(sumFlow == doctest::Approx(1.0).epsilon(1e-12));
+      CHECK(maxImbalance < 1e-12);
+    }
+  }
+}
+
 TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [fast][core][flow]")
 {
   InfomapWrapper im(infomap::test::defaultFlags(
