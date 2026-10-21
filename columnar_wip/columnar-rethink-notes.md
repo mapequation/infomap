@@ -5772,3 +5772,71 @@ parent's total use when there is a grandparent level. On the whole set, old (`e0
   merges.
 - **Every other outlier re-timed interleaved** lands within −7.2% to +7.3%, this session's resolution in
   seconds.
+
+### F72 — Master sync through #1365: master fixed the flow in code this branch retired (2026-10-21)
+
+Master's flow fixes since #1162 landed in three places this branch had replaced:
+`InfomapBase::initEnterExitFlow()`, the `m_calculateEnterExitFlow` switch and the InfomapBase
+variable-Markov-time block. The branch computes all of that in `FlowCalculator`, so the conflict
+hunks there resolve to the branch, and each master fix had to be checked against what the branch
+computes instead. Twelve of master's fifteen `FlowCalculator` commits change the flow itself and need
+nothing. The rest needed the branch's own form of the fix. Each was measured with a throwaway probe in
+`buildColumnarLeafInput` that compares the columnar leaf's link-only enter/exit (after the teleport
+strip) with each node's actual link-flow sums.
+
+- **Recorded teleportation needs one predicate on both sides.** #1194 made `FlowCalculator` store
+  teleportation in enter/exit only when the walk teleports (`recordsTeleportation()`). The columnar
+  strip and module pricing still read the raw `--recorded-teleportation` flag, so under undirected,
+  undirdir, outdirdir and rawdir flow the strip removed teleportation that was never added: leaf exit
+  1.3e-2 too low on `modular_wd`. Even before the merge, columnar priced teleport steps those walks do
+  not take, from the teleport flow `FlowCalculator` gives every node (α × node flow) whatever the model:
+  `modular_w --recorded-teleportation` 3.932892780 bits against 3.048111860 plain; rawdir, outdirdir
+  and undirdir 3.745619393 against 2.846605320. With the four columnar checks on
+  `recordsTeleportation()`, each equals its plain run, and `--regularized` under a model that does not
+  teleport is ignored as on master (#1196). This also closes the undirected case F71 left for the sync.
+- **Regularized enter/exit from the links, not from node flow.** The tip stored node flow minus
+  self-teleportation minus self-link flow, which equals links plus teleportation only while node flow
+  balances the link flow. Markov time scales the link flow and not the node flow, so the columnar leaf's
+  link crossings were off by 1.6e-2 to 3.6e-2 per node (`-d --regularized` at `--markov-time` 2 and 0.5,
+  `--variable-markov-time`; undirected `--markov-time 2`). Master's branch (#1189), the links plus
+  teleportation to and from other nodes, makes them exact.
+- **Regularized multilayer: two ways the links reached enter/exit wrongly.** #1317 moved master's leaf
+  enter/exit to `initEnterExitFlow()`, from the leaf edges. Here the multilayer flow function wrote them,
+  (a) before global Markov time scaled the links in `finalize()`, so #1287's `--markov-time 2` case got
+  module enter flow −0.663, and (b) with self-links, which it classifies as inter-layer links because
+  both ends share a physical node: on `multilayer_intra_inter.net` with three intra-layer self-links,
+  each such node's enter/exit was master's plus its own self-link flow (0.153312 + 0.009055 = 0.162367).
+  The branch's OO then priced 2.114266699 bits against master's 1.934272461. The function now writes
+  only the teleportation part, and `finalize()` adds the stored link flow without self-links. Leaf
+  enter/exit equal master's on 21 configurations (with and without self-links, `-d`, Markov time 2 and
+  0.5, variable Markov time, `--no-self-links`, two-level), and OO matches master's codelength on all.
+- **Variable Markov time** in `FlowCalculator::applyVariableMarkovTime` still had the three bugs master
+  fixed in the retired block: a running maximum of the undirected opposite scale in link order (#1264),
+  no floor on the largest scale (#1191, #1334), and a pair listed both ways counted twice (#1203). Both
+  engines read that flow: ninetriangles gave 3.389744693 bits against master's 3.402075986, and two
+  disjoint links failed as degenerate flow (0 bits of scale) where master gives 1 bit. Fixed in place;
+  OO matches master on every probe, and columnar too except where its search finds a shorter partition
+  (`modular_wd -d`: 3.197 against 3.267).
+- **The entropy correction's divisor** is static here so both engines share it, and master's #1203 count
+  is a member, so it would not compile. One rule now feeds both: `1 2 0.5` plus `2 1 0.5` scored 2.18735
+  bits against 2.24146 for the summed `1 2 1` on the tip, in both engines, and 2.24146 for both inputs now.
+  Summing the pair on input instead of counting it once at each consumer is #1366 (master).
+
+Left as it was: columnar's regularized multilayer objective has no per-layer teleport prior (#828), so
+on `multilayer_intra.net` it reports 1.70 bits against OO's 2.30 (the tip: 1.73 against 2.28). Not
+introduced here.
+
+**This sync's snapshot** (old `13c27f95`, new `04bae660`, both engines measured). Columnar: 310 of 332
+configurations bit-identical; the 22 that change are all `--regularized`. Cross-scoring the old binary's
+partition with both binaries splits them: on 15 master changed the objective (lazega, every pair listed
+both ways, is #1214's count: +2.6% to +2.8% in bits in both engines), and on 7 (wikispeedia and air30k
+`-d`/`-2d --regularized`) the objective is the same and the columnar leaf input became exact. The tip's
+node-flow shortcut was off by 1.4e-4 on wikispeedia and 7e-8 on air30k at Markov time 1, which is enough
+to change a trajectory: −0.19% to +0.17% in bits at seed 123, and 9 of 10 other `-N10` seeds shorter.
+OO: 10 of 28 change, all longer and faster, from #1282 (memory networks) and #1292 (preferred number of
+modules); master builds on both sides of each commit reproduce the old and new values exactly. The OO
+instruction rise on unchanged results (+2.3% median) is master's too; its base and tip builds reproduce it.
+One cost on unchanged results survives re-timing: on om5–om8 E50k `-d` the output is bit-identical, but
+instructions are +1.3% to +2.4%. A `sample` profile puts it in `MemMapEquation::initPhysicalNodes`, which
+master's #1241 (#1209) now runs over every module of the tree, and which the columnar engine reaches through
+`initTree` on every trial's materialization (0.68% → 2.05% of samples on om8 `-d -N10`). Tracked as #1368.
