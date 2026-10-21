@@ -616,7 +616,9 @@ class Network(_NetworkWritersMixin):
         node_id : int
         name : str, optional
         teleportation_weight : float, optional
-            Used for teleporting between layers in multilayer networks.
+            Node weight, used by ``to_nodes`` teleportation and by
+            ``use_node_weights_as_flow``. A weight read later from a file for
+            the same node replaces it.
         """
         if name is None:
             name = ""

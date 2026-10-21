@@ -186,6 +186,7 @@ private:
   double moduleEntropyBiasCorrection = 0;
   double m_totalDegree = 1;
   unsigned int m_numNodes = 0;
+  bool m_undirectedLinks = false;
 
 public:
   // The divisor of the entropy bias correction: the weighted total degree, floored at the
@@ -193,18 +194,28 @@ public:
   // average link weight is below 1 would otherwise be corrected too hard). Exposed because
   // the columnar engine builds the same correction outside this objective and the two
   // divisors have to be the one figure, not two copies of a rule that can drift.
-  static double entropyBiasTotalDegree(const StateNetwork& network);
+  static double entropyBiasTotalDegree(const StateNetwork& network, bool undirectedLinks);
+  // Count a pair listed as a b and b a once on undirected input (#1203). The multilayer
+  // expansion lists undirected links in both directions itself, so it keeps its count.
+  static bool countsUndirectedLinks(const Config& config) { return config.flowModel == FlowModel::undirected && !config.isMultilayerNetwork(); }
 
   void setNetworkProperties(const StateNetwork& network);
 
   // Copy the whole-network properties from a parent objective. Sub/super Infomap instances
   // partition InfoNodes and have no StateNetwork of their own, but the entropy bias correction
-  // must keep using the full network's total degree and node count (previously a shared static).
+  // must keep using the full network's total degree, the sample size every codebook is
+  // estimated from (previously a shared static).
   void setNetworkPropertiesFrom(const BiasedMapEquation& other)
   {
     m_totalDegree = other.m_totalDegree;
-    m_numNodes = other.m_numNodes;
   }
+
+  // The node count is that of the network this instance partitions: a module codebook has a
+  // free parameter per node it holds, so the modules of a sub- or super-network hold only its
+  // own nodes. With the parent's count, such a search charged every partition it tracked for
+  // the nodes of the whole network, but not the one-level codelength it is compared with,
+  // which is priced on the tree. So it fell back to one module too often (#1283).
+  void setNumNodes(unsigned int numNodes) { m_numNodes = numNodes; }
 
   // Copy what the objective minimises from a parent objective. The super-level Infomap is built
   // without memory, which today means from a default Config, so its objective would otherwise run

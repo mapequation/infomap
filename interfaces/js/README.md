@@ -162,6 +162,18 @@ works with CommonJS:
 const { run } = require("@mapequation/infomap/node");
 ```
 
+Options that read another input file, such as `--meta-data` and
+`--cluster-data`, find it in `options.files`, keyed by the name used in `args`.
+A value is the file content as a string, or a clu or tree array as accepted by
+the browser worker's `files` option:
+
+```js
+const result = await run(network, {
+  args: ["--meta-data", "meta.clu", "-o", "clu"],
+  files: { "meta.clu": "0 1\n1 1\n2 1\n3 2\n4 2\n5 2\n" },
+});
+```
+
 ## Command line
 
 Installing the package provides an `infomap` command that behaves like the

@@ -80,14 +80,28 @@ Configure these integrations before the first release:
    `vX.Y.Z` tag. If a version field did not move, the issue is in
    `release-please-config.json` `extra-files`, not in the PR.
 
+   If `RESULT_CHANGES.csv` has `unreleased` rows, merge a small `docs:` PR
+   that sets them to `X.Y.Z` before you merge the release PR. Release Please
+   does not edit that file.
+
    The R package is not a separate Release Please component. Release Please
    bumps its committed `DESCRIPTION` version as a generic `extra-files` entry so
    release artifacts and repository metadata stay aligned.
    `scripts/stage_r_package.py` also resyncs the staged `DESCRIPTION` from
    `_version.py` whenever `make build-r` or the r-universe `configure` script
    runs.
+
+   Before you merge, run `make bench-correctness` on the release PR's branch.
+   It runs a debug build over the benchmark networks and re-scores every
+   tree, in about two hours with three jobs. It is not in CI because the
+   networks are fetched with the private `mapequation-networks` package; the
+   docstring of `scripts/benchmarks/run_correctness_sweep.py` says how to get
+   them.
 4. Merge the release PR.
 5. Release Please creates the `vX.Y.Z` tag and the GitHub Release.
+   Add a link to the result changes page
+   (`https://mapequation.org/infomap-python-docs/result-changes.html`) to the release
+   notes when the release has rows in `RESULT_CHANGES.csv`.
 6. `.github/workflows/release.yml` runs for that tag and:
    - waits for the CI run on the release commit to have passed
      (`verify-master-ci`) before it publishes anything. That commit's push to

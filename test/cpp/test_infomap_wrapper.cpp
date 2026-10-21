@@ -1,6 +1,7 @@
 #include "vendor/doctest.h"
 
 #include "Infomap.h"
+#include "io/InfomapError.h"
 #include "io/OutputView.h"
 #include "utils/Log.h"
 
@@ -8,6 +9,7 @@
 
 #include <atomic>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -422,6 +424,27 @@ TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][l
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
 }
 
+TEST_CASE("A rerun counts the dangling flow once under recorded teleportation [fast][core][lifecycle][flow]")
+{
+  // The dangling-flow sum behind the recorded teleportation enter flow was never
+  // reset, so a second run charged the dangling nodes twice: 2.9177 against 2.8237
+  // for the same two modules (#1201). Two cycles bridged by one arc, then the
+  // dangling path 6 -> 7 -> 8.
+  InfomapWrapper im(infomap::test::defaultFlags("--directed --recorded-teleportation --two-level --no-file-output"));
+  for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 2 }, { 2, 3 }, { 3, 1 }, { 3, 4 }, { 4, 5 }, { 5, 6 }, { 6, 4 }, { 6, 7 }, { 7, 8 } }) {
+    im.addLink(link.first, link.second);
+  }
+
+  im.run();
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules());
+  const auto firstCodelength = im.codelength();
+
+  im.run();
+
+  REQUIRE(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+}
+
 // A copy-constructible, seedable UniformRandomBitGenerator (a small LCG) that
 // records every seed value it receives and counts every draw — stands in for a
 // host RNG (igraph etc.) to exercise the pluggable-engine seam (issue #411).
@@ -739,6 +762,7 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(timingJson.find("\"thread_source\":\"") != std::string::npos);
   CHECK(timingJson.find("\"thread_source\":\"\"") == std::string::npos); // value is non-empty
   CHECK(timingJson.find("\"network\":{\"nodes\":") != std::string::npos);
+  CHECK(timingJson.find("\"directed\":false") != std::string::npos);
   CHECK(timingJson.find("\"timing\":{") != std::string::npos);
   CHECK(timingJson.find("\"flow_calculation_s\":") != std::string::npos);
   CHECK(timingJson.find("\"init_network_s\":") != std::string::npos);
@@ -756,6 +780,48 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(timingJson.find("\"memory\":{\"rss_peak_mb\":") != std::string::npos);
 
   removeFiles(paths);
+}
+
+TEST_CASE("undirdir keeps its links directed, and the run report, summary and parser say so [fast][core][lifecycle][output]")
+{
+  // undirdir computes the steady state as if the links were undirected, then takes one
+  // directed power step: every link stays directed as given, so 1 2 and 2 1 are two links.
+  const std::string links = "1 2 1\n2 1 3\n2 3 1\n3 1 1\n3 4 1\n4 5 1\n5 6 1\n6 4 1\n";
+  const auto runUndirdir = [&](const std::string& heading, std::string& timingJson) {
+    const std::vector<std::string> paths = { "undirdir_links.net", "undirdir_timing.json" };
+    removeFiles(paths);
+    {
+      std::ofstream network(paths[0]);
+      network << heading << "\n"
+              << links;
+    }
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      // Not defaultFlags: it carries --silent, which mutes the summary and the notes.
+      InfomapWrapper im("--seed 7 --num-trials 1 --no-file-output --flow-model undirdir --timing-json " + paths[1]);
+      im.readInputData(paths[0]);
+      im.run();
+    }
+    timingJson = infomap::test::readTextFile(paths[1]);
+    removeFiles(paths);
+    return captured.str();
+  };
+  const auto directionLine = [](const std::string& log) {
+    const auto start = log.find("Direction");
+    return start == std::string::npos ? std::string() : log.substr(start, log.find('\n', start) - start);
+  };
+
+  std::string timingJson;
+  const auto arcsLog = runUndirdir("*Arcs", timingJson);
+  CHECK(timingJson.find("\"network\":{\"nodes\":6,\"links\":8,\"directed\":true}") != std::string::npos);
+  CHECK(directionLine(arcsLog).find("directed") != std::string::npos);
+  CHECK(directionLine(arcsLog).find("undirected") == std::string::npos);
+  CHECK(arcsLog.find("undirected steady state, directed links") != std::string::npos);
+  CHECK(arcsLog.find("parsed as undirected") == std::string::npos);
+
+  const auto edgesLog = runUndirdir("*Edges", timingJson);
+  CHECK(edgesLog.find("Links marked as undirected but parsed as directed.") != std::string::npos);
 }
 
 TEST_CASE("Timing report counts the threads a run started [fast][core][lifecycle][output][openmp]")
@@ -1388,6 +1454,19 @@ TEST_CASE("Higher-order subnetwork rebuild preserves state identities and intern
   CHECK(std::get<0>(secondRun) == std::get<0>(firstRun));
   CHECK(std::get<1>(secondRun) == doctest::Approx(std::get<1>(firstRun)));
   CHECK(std::get<2>(secondRun) == doctest::Approx(std::get<2>(firstRun)));
+}
+
+TEST_CASE("Meta data input with no records is rejected instead of crashing the run [fast][core][lifecycle][parser][crash]")
+{
+  // With no records there are no meta-data columns, so every node got an empty
+  // meta-data vector and MetaMapEquation read past its end. A directory reads as an
+  // empty stream on POSIX (on Windows it fails to open), so it took the same path.
+  for (const auto& noRecordsPath : { infomap::test::fixturePath("meta/no_records.meta"), infomap::test::fixturePath("meta") }) {
+    CAPTURE(noRecordsPath);
+    InfomapWrapper im(infomap::test::defaultFlags("--meta-data " + noRecordsPath));
+    im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    CHECK_THROWS_AS(im.run(), infomap::InfomapError);
+  }
 }
 
 TEST_CASE("Metadata-bearing subnetwork rebuild preserves leaf metadata [fast][core][lifecycle][subnetwork][parser]")

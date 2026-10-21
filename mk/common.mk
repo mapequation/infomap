@@ -172,8 +172,16 @@ help:
 		"  test-node             Build the Node module and smoke-test its CLI and programmatic API." \
 		"  test-fast             Run the fast native + Python feedback suite." \
 		"  test-sanitizers       Run the C++ test suite under ASan/UBSan." \
+		"  test-tsan             Run the C++ tests and threaded CLI runs under TSan with OpenMP." \
+		"  test-python-asan      Run the Python tests against an ASan/UBSan build of the extension." \
+		"  test-python-threads   Run the oracle-backed Python tests and the thread comparison with 4 threads." \
+		"  test-python-slow      Run every Python test marked slow, single-threaded." \
+		"  test-r-asan           Run the R tests and examples against an ASan/UBSan build." \
+		"  test-r-valgrind       Run the R tests and examples under valgrind (Linux)." \
+		"  coverage              Build a one-off llvm-cov coverage map of src/ (tests, CLI, fuzz)." \
 		"  bench-native          Run the native benchmark and memory baseline harness." \
 		"  bench-python          Run the nightly-style Python benchmark harness." \
+		"  bench-correctness     Run a debug build over the benchmark networks and re-score every tree." \
 		"" \
 		"Dev" \
 		"  help                  Show this guide." \

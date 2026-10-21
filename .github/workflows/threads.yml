@@ -1,0 +1,79 @@
+name: Threads
+
+# Non-blocking: the oracle-backed Python tests and the serial-against-threaded
+# comparison with an OpenMP build and 4 threads (make test-python-threads,
+# #1258). The PR test legs run the oracles with whatever thread count the
+# runner gives and leave out the slow sweeps and the comparison, which needs
+# networks of up to 10,000 nodes. TSan (_tsan.yml) checks the same paths for
+# races, not results. A separate workflow so it never gates PRs while it
+# settles in, but it goes RED on a failure. Same pattern as fuzz.yml -- do NOT
+# add continue-on-error, that would mask the alert. PRs run it only when they
+# touch the thread setup; src/ changes are covered by the weekly run.
+on:
+  pull_request:
+    paths:
+      - "test/python/test_thread_comparison.py"
+      - "mk/test.mk"
+      - ".github/workflows/threads.yml"
+  schedule:
+    - cron: "0 5 * * 5" # Fridays 05:00 UTC (clear of the Monday-Thursday crons)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: threads-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  threads:
+    name: Python oracles with 4 threads (OpenMP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+
+      - name: Install editable package
+        # GCC with OpenMP, the default build.
+        run: make dev-python-install PIP="uv pip" PYTHON_DEV_EXTRAS=test
+        env:
+          UV_SYSTEM_PYTHON: "1"
+        shell: bash
+
+      - name: Run the oracles and the thread comparison
+        run: make test-python-threads
+        shell: bash
+
+  # Surface a scheduled failure as a tracking issue so it is not lost in the
+  # Actions tab. Only fires for cron runs.
+  report-failure:
+    name: Report scheduled failure
+    needs: [threads]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Open or update the tracking issue
+        uses: ./.github/actions/report-cron-failure
+        with:
+          workflow-name: ${{ github.workflow }}
+          run-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          token: ${{ github.token }}

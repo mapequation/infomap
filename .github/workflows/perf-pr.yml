@@ -16,6 +16,7 @@ on:
       - "src/**"
       - "test/bench/**"
       - "test/fixtures/meta/**"
+      - "test/python/test_count_native_benchmarks.py"
       - "test/python/test_native_benchmark_script.py"
 
 permissions:
@@ -64,8 +65,12 @@ jobs:
         uses: ./head/.github/actions/setup-ccache
         with:
           key-prefix: perf-pr-ubuntu-24.04
+          # This job runs only on PRs, so no master entry exists to restore. Its
+          # entries are small (~5 MB), so it keeps saving per PR push.
+          always-save: "true"
 
       - name: Build base and head benchmark binaries
+        id: build
         shell: bash
         run: |
           set -euo pipefail
@@ -145,7 +150,51 @@ jobs:
             --fail-on-regression \
             --fail-on-output-change || comparison_status=$?
           cat "$GITHUB_WORKSPACE/artifacts/perf-summary.md" >> "$GITHUB_STEP_SUMMARY"
+          # An intended output change also gets a row in RESULT_CHANGES.csv (#1260).
+          # A reminder, not a gate: the row may cover a change this gate cannot see.
+          if grep -qiE '^[[:blank:]]*Output-change:[[:blank:]]*[^[:space:]]' "$pr_description" \
+            && git -C "$GITHUB_WORKSPACE/head" diff --quiet HEAD^1 HEAD -- RESULT_CHANGES.csv; then
+            echo "::warning::The description has an Output-change line, but RESULT_CHANGES.csv has no new row for it."
+          fi
           exit "$comparison_status"
+
+      # Instruction counts and peak live heap see changes of a percent or two that
+      # wall time cannot: repeated runs of one binary agree on instructions to
+      # about 1e-7 and on peak heap exactly, where wall time varies by about 2%
+      # (#1259). They run after the gate, and whatever it decided, since a PR it
+      # fails is where they help most.
+      #
+      # Reported only, not gated, for now. Some PRs add work on purpose, and there
+      # is no way yet to acknowledge that in the PR description the way an output
+      # change is; instructions also miss memory-bound effects, so they can rise
+      # while wall time falls. The summary marks cases at or above the thresholds
+      # in count_native_benchmarks.py and the step prints a warning. A failure here
+      # is reported without failing the job.
+      - name: Install Valgrind
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends valgrind
+          valgrind --version
+
+      # One run per binary and case. Valgrind serializes a program onto one core,
+      # so the runs go in parallel, one per core, for about 2 minutes in all.
+      - name: Count instructions and peak heap
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$GITHUB_WORKSPACE/head/scripts/benchmarks/count_native_benchmarks.py" \
+            --base-binary "$GITHUB_WORKSPACE/base/build/cmake/infomap_native_benchmark" \
+            --head-binary "$GITHUB_WORKSPACE/head/build/cmake/infomap_native_benchmark" \
+            --timeout-sec 300 \
+            --json-out "$GITHUB_WORKSPACE/artifacts/counts.json" \
+            --markdown-out "$GITHUB_WORKSPACE/artifacts/counts-summary.md"
+          cat "$GITHUB_WORKSPACE/artifacts/counts-summary.md" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload comparison artifacts
         if: always()
@@ -157,4 +206,6 @@ jobs:
             artifacts/head-native-benchmarks.json
             artifacts/perf-comparison.json
             artifacts/perf-summary.md
+            artifacts/counts.json
+            artifacts/counts-summary.md
           retention-days: 14

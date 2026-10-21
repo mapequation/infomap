@@ -83,6 +83,20 @@ def test_clang_debug_and_release_share_warning_policy():
     assert "-O3" in release_config["compile_flags"]
 
 
+def test_debug_builds_compile_in_the_flow_invariants():
+    # CMake sets the define itself, so only the Make and setuptools flags carry it.
+    configs = {
+        mode: resolve_build_config(
+            platform_name="linux", compiler="clang++", mode=mode, openmp=False
+        )
+        for mode in ("debug", "release")
+    }
+    define = "-DINFOMAP_CHECK_INVARIANTS=1"
+    assert define in configs["debug"]["compile_flags"]
+    assert define not in configs["debug"]["cmake_compile_flags"]
+    assert define not in configs["release"]["compile_flags"]
+
+
 def test_clang_without_openmp_drops_openmp_flags():
     config = resolve_build_config(
         platform_name="linux",

@@ -375,17 +375,71 @@ make fuzz FUZZ_SECONDS=300
 make fuzz FUZZ_CXX=/opt/homebrew/opt/llvm/bin/clang++ FUZZ_CC=/opt/homebrew/opt/llvm/bin/clang
 ```
 
-A weekly non-blocking `.github/workflows/fuzz.yml` runs the same target on Linux.
-The fuzzer writes findings under `build/fuzz/` as `crash-*` / `timeout-*` /
-`leak-*`; reproduce one with:
+`make fuzz FUZZ_TARGET=run` builds and runs a second harness,
+`test/fuzz/fuzz_run.cpp`. Its first 8 input bytes choose the options (flow
+model, recorded teleportation, Markov time, two-level, module preference,
+entropy correction, regularization, multilayer relaxation, bipartite
+teleportation, meta data), the rest is a network. It runs one trial with a
+small budget, and the fuzz build checks the flow invariants after each phase.
+A broken invariant aborts, like a crash. Its seeds are the same fixtures
+behind a few option headers, and its corpus is `build/fuzz/corpus-run`. Pass
+extra libFuzzer flags with `FUZZ_ARGS`, e.g. `FUZZ_ARGS="-fork=3
+-ignore_crashes=1"` to keep going after a finding. Open bugs it would hit on
+every run are listed in `isKnownFinding()` and pinned as `should_fail` cases in
+`test/cpp/test_map_equation_invariants.cpp`.
+
+`make fuzz FUZZ_TARGET=cluster` builds and runs a third harness,
+`test/fuzz/fuzz_cluster.cpp`, for cluster data (`--cluster-data`). Its first 3
+input bytes choose one of a few small fixed networks, the file format (`.clu`,
+`.tree` or `.ftree`) and the options (hard or soft partition, `--no-infomap`,
+two-level, directed, a few objectives); the rest is the cluster file. Besides
+the flow invariants it checks that the reported codelength is the codelength
+of the finished tree, also when that tree is read back by a fresh run with
+`--no-infomap`, that `--no-infomap` keeps the partition it was given, and that
+a hard partition is not split. Its seeds are the cluster fixtures and
+Infomap's own output for the fixed networks (`test/fuzz/cluster_seeds/`), and
+its corpus is `build/fuzz/corpus-cluster`. Its open bugs are listed in its own
+`isKnownFinding()` and pinned as `should_fail` cases in
+`test/cpp/test_partition.cpp`.
+
+A weekly non-blocking `.github/workflows/fuzz.yml` runs all three targets on
+Linux, and `.github/workflows/fuzz-pr.yml` runs each target for 60 s on PRs
+that touch the code it covers, also non-blocking. The fuzzer writes findings under `build/fuzz/` as `crash-*` /
+`timeout-*` / `leak-*` (`run-crash-*` and `cluster-crash-*` and so on for the
+other targets); reproduce one with:
 
 ```bash
 build/fuzz/fuzz_intake build/fuzz/crash-<hash>
+build/fuzz/fuzz_run build/fuzz/run-crash-<hash>
+build/fuzz/fuzz_cluster build/fuzz/cluster-crash-<hash>
 ```
+
+`fuzz_run` prints the options and any meta data of a finding, so the network
+(the input after its first 8 bytes) replays in a debug build of the CLI.
+`fuzz_cluster` prints the network, the options and the cluster file.
 
 macOS note: Apple Clang lacks libFuzzer (use Homebrew LLVM via `FUZZ_CXX`).
 A Homebrew-LLVM fuzzer binary can fail to *run* on macOS due to a libc++ ABI
-mismatch even though it builds. Run the fuzzer on Linux.
+mismatch even though it builds. If it does, run the fuzzer on Linux.
+
+### Coverage
+
+`make coverage` builds a one-off coverage map of `src/` with Clang
+source-based coverage (`-DINFOMAP_ENABLE_COVERAGE=ON`, `llvm-profdata`,
+`llvm-cov`). It runs the C++ tests and CLI checks (ctest), then each fuzz target
+for `COVERAGE_FUZZ_SECONDS` (default 60, `0` skips them), and with
+`COVERAGE_PYTHON=1` the Python tests against an instrumented extension. It
+writes `build/coverage/report/index.html` and a per-file line and branch
+summary in `build/coverage/summary.txt`. It is not a gate: failing tests do not
+stop the report. `llvm-cov` warns about functions with mismatched data; those
+are header functions that the Python extension compiles with other defines.
+`COVERAGE_OPENMP=1` (with `COVERAGE_FUZZ_SECONDS=0`) covers the OpenMP paths.
+
+```bash
+make coverage COVERAGE_CXX=/opt/homebrew/opt/llvm/bin/clang++ COVERAGE_CC=/opt/homebrew/opt/llvm/bin/clang
+make coverage COVERAGE_FUZZ_SECONDS=0     # Apple Clang: no libFuzzer
+make coverage COVERAGE_PYTHON=1           # needs setuptools and the test extras
+```
 
 Build source and wheel distributions locally when needed:
 

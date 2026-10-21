@@ -3,7 +3,11 @@ project(infomap LANGUAGES CXX)
 
 option(INFOMAP_USE_OPENMP "Enable OpenMP support when available." ON)
 option(INFOMAP_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
-option(INFOMAP_BUILD_FUZZERS "Build libFuzzer harnesses for the network intake (Clang only)." OFF)
+option(INFOMAP_ENABLE_TSAN "Enable the thread sanitizer (Clang only; excludes INFOMAP_ENABLE_SANITIZERS)." OFF)
+option(INFOMAP_FP_TRAPS "Trap invalid operations and division by zero in the C++ test runner." OFF)
+option(INFOMAP_BUILD_FUZZERS "Build libFuzzer harnesses for the network intake and full runs (Clang only)." OFF)
+option(INFOMAP_ENABLE_COVERAGE "Instrument for Clang source-based coverage (llvm-cov). Run via make coverage." OFF)
+option(INFOMAP_CHECK_INVARIANTS "Compile in the flow invariant checks (InfomapBase::checkInvariants). Always on with sanitizers, fuzzers or INFOMAP_MODE=debug." OFF)
 option(INFOMAP_NATIVE_ARCH "Enable -march=native, LTO, and loop unrolling for the host CPU. Produces non-portable binaries; opt-in for local builds only." OFF)
 set(INFOMAP_MODE "release" CACHE STRING "Build mode shared with the Make-based native build policy.")
 set_property(CACHE INFOMAP_MODE PROPERTY STRINGS release debug)
@@ -128,6 +132,11 @@ if("/utf-8" IN_LIST INFOMAP_COMPILE_FLAGS)
     target_compile_options(infomap_core PUBLIC /utf-8)
 endif()
 target_compile_definitions(infomap_core PUBLIC ${INFOMAP_ENABLED_FEATURE_DEFINES})
+# PUBLIC: InfomapBase.h declares checkInvariants differently with and without it, so every
+# consumer of the headers has to see the same value. Never set for release builds.
+if(INFOMAP_CHECK_INVARIANTS OR INFOMAP_ENABLE_SANITIZERS OR INFOMAP_BUILD_FUZZERS OR INFOMAP_MODE STREQUAL "debug")
+    target_compile_definitions(infomap_core PUBLIC INFOMAP_CHECK_INVARIANTS=1)
+endif()
 target_link_options(infomap_core PUBLIC ${INFOMAP_LINK_FLAGS})
 
 if(INFOMAP_ENABLE_SANITIZERS)
@@ -136,11 +145,47 @@ if(INFOMAP_ENABLE_SANITIZERS)
         # error: ..." and carries on, so the doctest binary exits 0, ctest
         # reports Passed, and --output-on-failure never shows the diagnostic --
         # the blocking sanitizer job could not fail on any UB finding.
-        target_compile_options(infomap_core PUBLIC -fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
-        target_link_options(infomap_core PUBLIC -fsanitize=address,undefined)
+        # float-divide-by-zero is not in the undefined group, but a division by
+        # zero is how a wrong codelength usually starts (#1171).
+        target_compile_options(infomap_core PUBLIC -fsanitize=address,undefined,float-divide-by-zero -fno-sanitize-recover=undefined,float-divide-by-zero -fno-omit-frame-pointer)
+        target_link_options(infomap_core PUBLIC -fsanitize=address,undefined,float-divide-by-zero)
     else()
         message(FATAL_ERROR "INFOMAP_ENABLE_SANITIZERS requires Clang or GCC.")
     endif()
+endif()
+
+if(INFOMAP_ENABLE_TSAN)
+    if(INFOMAP_ENABLE_SANITIZERS)
+        message(FATAL_ERROR "INFOMAP_ENABLE_TSAN cannot be combined with INFOMAP_ENABLE_SANITIZERS.")
+    endif()
+    # The fuzz build adds AddressSanitizer to the core on its own.
+    if(INFOMAP_BUILD_FUZZERS)
+        message(FATAL_ERROR "INFOMAP_ENABLE_TSAN cannot be combined with INFOMAP_BUILD_FUZZERS.")
+    endif()
+    # Clang only: TSan needs the OpenMP runtime to report its synchronisation,
+    # which LLVM's libomp does through Archer (OMP_TOOL_LIBRARIES). GCC's
+    # libgomp has no OMPT support for Archer to attach to, so every barrier
+    # would read as a race.
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "INFOMAP_ENABLE_TSAN requires Clang.")
+    endif()
+    target_compile_options(infomap_core PUBLIC -fsanitize=thread -fno-omit-frame-pointer)
+    target_link_options(infomap_core PUBLIC -fsanitize=thread)
+endif()
+
+if(INFOMAP_FP_TRAPS AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Clang assumes floating-point operations never trap, so the optimizer
+    # computes a division ahead of the branch that discards it. With the traps
+    # on that is a false hit. GCC defaults to -ftrapping-math.
+    target_compile_options(infomap_core PUBLIC -ffp-exception-behavior=maytrap)
+endif()
+
+if(INFOMAP_ENABLE_COVERAGE)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "INFOMAP_ENABLE_COVERAGE requires Clang.")
+    endif()
+    target_compile_options(infomap_core PUBLIC -fprofile-instr-generate -fcoverage-mapping)
+    target_link_options(infomap_core PUBLIC -fprofile-instr-generate)
 endif()
 
 add_executable(infomap_cli "${infomap_main_source}")
@@ -184,6 +229,9 @@ if(BUILD_TESTING)
         # toolchain for which the policy emits nothing does not expect _OPENMP.
         if(INFOMAP_OPENMP_COMPILE_FLAGS)
             target_compile_definitions(${target_name} PRIVATE INFOMAP_TEST_EXPECT_OPENMP=1)
+        endif()
+        if(INFOMAP_FP_TRAPS)
+            target_compile_definitions(${target_name} PRIVATE INFOMAP_TEST_FP_TRAPS=1)
         endif()
         target_link_libraries(${target_name} PRIVATE infomap_core)
         add_test(NAME ${target_name} COMMAND ${target_name})
@@ -321,6 +369,19 @@ if(BUILD_TESTING)
     )
     set_tests_properties(js_output_format_manifest PROPERTIES LABELS "fast;core;output;js")
 
+    # The OpenMP paths the unit tests barely reach (recursive partition tasks,
+    # inner parallelization, parallel trials). Only meaningful under TSan.
+    if(INFOMAP_ENABLE_TSAN)
+        add_test(
+            NAME tsan_cli
+            COMMAND
+                "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_tsan_cli.py"
+                "$<TARGET_FILE:infomap_cli>"
+        )
+        set_tests_properties(tsan_cli PROPERTIES LABELS "core;cli;threads")
+    endif()
+
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(infomap_cpp_lifecycle_tests PRIVATE -fno-access-control)
         target_compile_options(infomap_cpp_partition_tests PRIVATE -fno-access-control)
@@ -354,9 +415,11 @@ if(BUILD_TESTING)
     )
 endif()
 
-# libFuzzer harnesses for the network intake. Opt-in and Clang-only; kept out of
-# BUILD_TESTING / infomap_cpp_tests / ctest (not pass/fail unit tests). Run via
-# `make fuzz`. Configure with -DINFOMAP_BUILD_FUZZERS=ON -DINFOMAP_USE_OPENMP=OFF.
+# libFuzzer harnesses for the network intake and full runs. Opt-in and
+# Clang-only; kept out of BUILD_TESTING / infomap_cpp_tests / ctest (not
+# pass/fail unit tests). Run via `make fuzz` (FUZZ_TARGET=run for full runs,
+# FUZZ_TARGET=cluster for cluster data).
+# Configure with -DINFOMAP_BUILD_FUZZERS=ON -DINFOMAP_USE_OPENMP=OFF.
 if(INFOMAP_BUILD_FUZZERS)
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         message(FATAL_ERROR "INFOMAP_BUILD_FUZZERS requires Clang (libFuzzer).")
@@ -372,9 +435,17 @@ if(INFOMAP_BUILD_FUZZERS)
     # block above.
     target_link_options(infomap_core PUBLIC -fsanitize=address,undefined)
 
-    add_executable(fuzz_intake test/fuzz/fuzz_intake.cpp)
-    target_link_libraries(fuzz_intake PRIVATE infomap_core)
-    target_compile_options(fuzz_intake
-        PRIVATE -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
-    target_link_options(fuzz_intake PRIVATE -fsanitize=fuzzer,address,undefined)
+    # fuzz_intake: the parsers only. fuzz_run: a full run with fuzzer-chosen
+    # options and the flow invariants on. fuzz_cluster: cluster data input
+    # (--cluster-data) on small fixed networks.
+    foreach(fuzz_target fuzz_intake fuzz_run fuzz_cluster)
+        add_executable(${fuzz_target} test/fuzz/${fuzz_target}.cpp)
+        target_link_libraries(${fuzz_target} PRIVATE infomap_core)
+        target_compile_options(${fuzz_target}
+            PRIVATE -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
+        target_link_options(${fuzz_target} PRIVATE -fsanitize=fuzzer,address,undefined)
+    endforeach()
+    # Reaches the private calcCodelengthOnTree and normalizeTreePaths to check the
+    # finished tree, as the invariant tests do.
+    target_compile_options(fuzz_cluster PRIVATE -fno-access-control)
 endif()
