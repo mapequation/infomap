@@ -3133,6 +3133,38 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
       }
     }
   }
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  // Regularized multilayer flow teleports within each layer, and the leaf nodes carry that
+  // teleportation per layer, not in teleportFlow. A module M sends T_{M,l} (W_l - W_{M,l}) out
+  // of layer l and receives (T_l - T_{M,l}) W_{M,l} there, as the optimizer prices it. Without
+  // these terms, a tree deeper than two levels read back below the codelength the search
+  // reported for it (#1022). The module keeps its per-layer sums, as consolidateModules leaves
+  // them, for an optimizer that continues from this tree.
+  std::unordered_map<InfoNode*, std::map<unsigned int, LayerTeleFlowData>> moduleLayerTeleFlow;
+  std::map<unsigned int, LayerTeleFlowData> layerTeleFlow;
+  for (const auto* leafNode : m_leafNodes) {
+    for (const auto& layerData : leafNode->layerTeleFlowData()) {
+      layerTeleFlow[layerData.layerId] += layerData;
+      for (auto* module = leafNode->parent; module != nullptr && !module->isRoot(); module = module->parent) {
+        auto& moduleLayerData = moduleLayerTeleFlow[module][layerData.layerId];
+        moduleLayerData.layerId = layerData.layerId;
+        moduleLayerData += layerData;
+      }
+    }
+  }
+  for (auto& moduleIt : moduleLayerTeleFlow) {
+    auto& module = *moduleIt.first;
+    auto& moduleLayerTele = module.ensureExtras().layerTeleFlowData;
+    moduleLayerTele.clear();
+    for (const auto& layerIt : moduleIt.second) {
+      const auto& moduleLayerData = layerIt.second;
+      const auto& layerData = layerTeleFlow[layerIt.first];
+      module.data.exitFlow += moduleLayerData.teleportFlow * (layerData.teleportWeight - moduleLayerData.teleportWeight);
+      module.data.enterFlow += (layerData.teleportFlow - moduleLayerData.teleportFlow) * moduleLayerData.teleportWeight;
+      moduleLayerTele.push_back(moduleLayerData);
+    }
+  }
+#endif
 }
 
 #if INFOMAP_CHECK_INVARIANTS

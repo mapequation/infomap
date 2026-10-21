@@ -956,6 +956,50 @@ TEST_CASE("Regularized multilayer: a module holding every node has no exit flow 
     infomap::test::checkApproxCodelength(im.codelength(), im.getOneLevelCodelength(), 1e-9);
   }
 }
+
+TEST_CASE("Regularized multilayer: a tree deeper than two levels keeps its modules' per-layer teleportation (#1022) [fast][core][partition][tree][regularized]")
+{
+  // A tree deeper than two levels is read by adding up module flow from the leaves, and that
+  // left out the teleportation within each layer, which the optimizer prices. Wrapping the
+  // modules of a two-level tree in one super module adds a level that costs nothing: the
+  // root's codebook is empty, and the super module's codebook is the old index codebook. On
+  // multilayer_intra.net the wrapped tree read back at 2.128 bits against 2.929 (2.384
+  // against 3.143 with --directed), and a restored winner deeper than two levels wrote a
+  // codelength below the one the search reported for it.
+  const std::vector<std::vector<unsigned int>> modules = { { 0, 1, 2 }, { 3, 5, 7 }, { 4, 6, 8, 9 } };
+  // State id -> (physical id, layer id) as the parser numbers them
+  const std::map<unsigned int, std::pair<unsigned int, unsigned int>> nodeOfState = {
+    { 0, { 1, 1 } }, { 1, { 4, 1 } }, { 2, { 5, 1 } }, { 3, { 1, 2 } }, { 4, { 2, 1 } },
+    { 5, { 2, 2 } }, { 6, { 3, 1 } }, { 7, { 3, 2 } }, { 8, { 4, 2 } }, { 9, { 5, 2 } }
+  };
+  const std::string twoLevelTree = "regularized_multilayer_two_level.tree";
+  const std::string wrappedTree = "regularized_multilayer_wrapped.tree";
+  for (const auto& [path, prefix] : { std::pair { twoLevelTree, "" }, std::pair { wrappedTree, "1:" } }) {
+    std::ofstream out(path);
+    out << "# state level\n";
+    for (unsigned int module = 0; module < modules.size(); ++module) {
+      for (unsigned int child = 0; child < modules[module].size(); ++child) {
+        const unsigned int stateId = modules[module][child];
+        const auto& [physicalId, layerId] = nodeOfState.at(stateId);
+        out << prefix << module + 1 << ":" << child + 1 << " 0 \"" << stateId << "\" " << stateId << " " << physicalId << " " << layerId << "\n";
+      }
+    }
+  }
+
+  for (const std::string flags : { "--regularized", "--regularized --directed" }) {
+    CAPTURE(flags);
+    const auto codelengthOf = [&flags](const std::string& tree, unsigned int numLevels) {
+      InfomapWrapper im(infomap::test::defaultFlags(flags + " --no-infomap --cluster-data " + tree));
+      im.readInputData(infomap::test::repoPath("examples/networks/multilayer_intra.net"));
+      im.run();
+      CHECK(im.maxTreeDepth() == numLevels);
+      return im.codelength();
+    };
+    infomap::test::checkApproxCodelength(codelengthOf(wrappedTree, 3), codelengthOf(twoLevelTree, 2), 1e-12);
+  }
+  std::remove(twoLevelTree.c_str());
+  std::remove(wrappedTree.c_str());
+}
 #endif
 
 TEST_CASE("An unknown node id in cluster data leaves the partition alone [fast][core][partition][parser]")
