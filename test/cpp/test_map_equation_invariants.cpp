@@ -870,6 +870,22 @@ TEST_CASE("--recorded-teleportation has no effect under precomputed flow (#1188)
   checkOptionHasNoEffect("--recorded-teleportation", "--flow-model precomputed", [](InfomapWrapper& im) { im.readInputData(networkFixturePath("twotriangles_flow.net")); });
 }
 
+// The columnar engine strips and prices recorded teleportation itself, so it has to take the
+// flow calculator's predicate, not the raw option. On the raw option it priced teleport steps
+// these walks do not take, from the teleport flow every node gets whatever the flow model:
+// modular_w.net coded 3.933 bits with --recorded-teleportation against 3.048 without, and
+// modular_wd.net under rawdir, outdirdir and undirdir 3.746 against 2.847. --regularized
+// under a model that does not teleport keeps recorded teleportation on, so it took the same
+// path (#1196).
+TEST_CASE("--columnar: --recorded-teleportation and --regularized have no effect where the walk does not teleport (#1194, #1196) [fast][core][mapeq][columnar-contract]")
+{
+  checkOptionHasNoEffect("--recorded-teleportation", "--columnar --flow-model undirected", [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/modular_w.net")); });
+  for (const char* model : { "undirdir", "outdirdir", "rawdir" }) {
+    for (const char* option : { "--recorded-teleportation", "--regularized" })
+      checkOptionHasNoEffect(option, std::string("--columnar --flow-model ") + model, [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/modular_wd.net")); });
+  }
+}
+
 TEST_CASE("--recorded-teleportation has no effect under undirected flow, over several trials (#1188) [fast][core][mapeq]")
 {
   checkOptionHasNoEffect("--recorded-teleportation", "--flow-model undirected", [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });

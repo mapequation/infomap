@@ -165,6 +165,13 @@ public:
   double getOneLevelCodelength() const { return m_oneLevelCodelength; }
 
 #ifndef SWIG
+  // The leaf SoA this instance's trials optimize from: the borrowed one when set,
+  // otherwise its own. Public so tests can check it against its own link flow.
+  const ColumnarLevel& columnarLeafInput() const
+  {
+    return m_columnarLeafInputBorrowed != nullptr ? *m_columnarLeafInputBorrowed : m_columnarLeafInput;
+  }
+
   // The seed the run was configured with, which is not the same as reading
   // seedToRandomNumberGenerator: the serial loop moves that field to the current
   // trial's seed (base + trialOffset + index) and only gives it back when the loop
@@ -659,12 +666,6 @@ private:
   // run and the owner outlives every borrower -- and it also puts workers on the same
   // input construction as the serial path rather than a parallel one (#994).
   void borrowColumnarLeafInputFrom(const InfomapBase& owner);
-  // The leaf SoA this instance's trials optimize from: the borrowed one when set,
-  // otherwise its own.
-  const ColumnarLevel& columnarLeafInput() const
-  {
-    return m_columnarLeafInputBorrowed != nullptr ? *m_columnarLeafInputBorrowed : m_columnarLeafInput;
-  }
 
   // Attach the active objective's composable correction (bias / meta / mem /
   // lossy) to a columnar optimizer, reading leaf attributes from m_leafNodes.

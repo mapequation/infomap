@@ -1853,4 +1853,45 @@ TEST_CASE("Ordinary bipartite runs are unaffected by the flow post-condition [fa
   infomap::test::checkApproxCodelength(directed.codelength(), 1.2649313331);
 }
 
+// The columnar leaf takes each node's enter and exit flow from the flow calculator and keeps
+// the link crossings only: under recorded teleportation it strips the teleportation part the
+// flow calculator stored. The two sides have to agree on when that part is stored, and the
+// stored value has to come from the links as scaled. Under rawdir with --recorded-teleportation
+// the strip removed teleportation that was never added (exit 0.013 short on modular_wd.net),
+// and under --regularized with --markov-time 2 a shortcut through node flow missed the scaled
+// links by up to 0.036. Whatever the flow options, the leaf's link-only enter and exit flow is
+// its own link flow.
+TEST_CASE("Columnar leaf: link-only enter and exit flow is the leaf's own link flow under every flow option (#1194, #1189) [fast][core][flow][columnar-contract]")
+{
+  const auto check = [](const std::string& network, const std::string& flags, bool undirectedClustering) {
+    INFO(network << " " << flags);
+    InfomapWrapper im(infomap::test::defaultFlags("--columnar --num-trials 1 " + flags));
+    im.readInputData(infomap::test::repoPath("examples/networks/" + network));
+    im.run();
+    const auto& leaf = im.columnarLeafInput();
+    REQUIRE(leaf.n == static_cast<int>(im.numLeafNodes()));
+    for (int i = 0; i < leaf.n; ++i) {
+      double outFlow = 0.0;
+      double inFlow = 0.0;
+      for (int e = leaf.outStart[i]; e < leaf.outStart[i + 1]; ++e)
+        outFlow += leaf.outFlow[e];
+      for (int e = leaf.inStart[i]; e < leaf.inStart[i + 1]; ++e)
+        inFlow += leaf.inFlow[e];
+      // An undirected link crosses either way with half its flow.
+      const double exitFlow = undirectedClustering ? (outFlow + inFlow) / 2 : outFlow;
+      const double enterFlow = undirectedClustering ? (outFlow + inFlow) / 2 : inFlow;
+      CHECK(std::abs(leaf.linkExit[i] - exitFlow) < 1e-12);
+      CHECK(std::abs(leaf.linkEnter[i] - enterFlow) < 1e-12);
+    }
+  };
+  for (const char* flags : { "-d", "-d --recorded-teleportation", "-d --markov-time 2", "-d --regularized",
+                             "-d --regularized --markov-time 2", "-d --regularized --markov-time 0.5",
+                             "-d --regularized --variable-markov-time", "--flow-model undirdir --recorded-teleportation",
+                             "--flow-model outdirdir --recorded-teleportation", "--flow-model rawdir --recorded-teleportation",
+                             "--flow-model outdirdir --regularized", "--flow-model rawdir --regularized" })
+    check("modular_wd.net", flags, false);
+  for (const char* flags : { "", "--recorded-teleportation", "--regularized", "--regularized --markov-time 2", "--variable-markov-time" })
+    check("modular_w.net", flags, true);
+}
+
 } // namespace
