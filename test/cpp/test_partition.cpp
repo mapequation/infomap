@@ -794,6 +794,25 @@ TEST_CASE("Fast hierarchical search reports the codelength of the tree it return
   std::remove(resultPath.c_str());
 }
 
+TEST_CASE("The non-trivial top-module count describes the tree after the prune (#1361) [fast][core][partition][tree]")
+{
+  // The prune dissolves one of ninetriangles' three super modules into its three
+  // triangles, leaving five top modules of three children each. The count was last
+  // taken before the prune and the summary reported 3 non-trivial modules.
+  InfomapWrapper im("--seed 1 --silent --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+
+  REQUIRE(im.numTopModules() == 5);
+  unsigned int numNonTrivial = 0;
+  for (const auto& module : im.root()) {
+    if (module.childDegree() > 1)
+      ++numNonTrivial;
+  }
+  CHECK(numNonTrivial == 5);
+  CHECK(im.numNonTrivialTopModules() == numNonTrivial);
+}
+
 TEST_CASE("Fast hierarchical search on a state network reports the codelength of the tree it returns (#1262) [fast][core][partition][tree]")
 {
   // -F made the fine-tuned sub modules with the flow data only, not the physical nodes the

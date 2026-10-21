@@ -4079,6 +4079,8 @@ unsigned int InfomapBase::dissolveUnprofitableModules()
 
   if (numDissolved > 0) {
     m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+    // A dissolved top module lifts its children to the top level (#1361).
+    m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
     Console::detail(1, "prune: dissolved {} modules, codelength {} {} {}", numDissolved, io::toPrecision(codelengthBefore), Console::arrow(), io::toPrecision(m_hierarchicalCodelength));
   }
   return numDissolved;
