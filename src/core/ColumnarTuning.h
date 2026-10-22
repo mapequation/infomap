@@ -264,6 +264,9 @@ namespace columnar {
   // Cumulative RELATIVE codelength gain per level, in units of 1e-9, so the
   // accumulator can stay an integer atomic (gains are ~1e-6..1e-3 each).
   extern std::atomic<long long> g_hSplitGainNano[kHSplitMaxLevels];
+  // Recombines whose seed held a parent id past the piece level and was compacted
+  // (#1375): a test reads it to know it still reaches that path.
+  extern std::atomic<long long> g_hSplitSeedCompactions;
   // Sub-phase clocks inside the operator (diagnostic, COL_HSPLIT_STATS):
   // 0 = moveBase copy, 1 = piece aggregate, 2 = seeded moveLoop,
   // 3 = stack rebuild (aggregations), 4 = hierarchicalCodelengthFromStack,
