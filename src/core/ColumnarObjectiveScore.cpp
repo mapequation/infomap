@@ -39,8 +39,9 @@ namespace columnar {
    * The objectives differ in how they combine these terms, not in which terms
    * they need — so this is the shared preamble that both scorers below consume,
    * rather than a branch inside one long function. `enter`/`exit` return the
-   * boundary rates with recorded teleportation already folded in, so neither
-   * scorer has to know whether the flow model records teleportation.
+   * levels' total boundary rates (recorded teleportation included, see
+   * ColumnarLevel), so neither scorer has to know whether the flow model records
+   * teleportation.
    *
    * Namespace scope rather than this file's anonymous namespace only so that
    * ColumnarTwoLevel::buildStackTerms can name it as a return type: the struct
@@ -56,13 +57,10 @@ namespace columnar {
     // exit flow for an in-context refine. L* charges the top modules' exit
     // codebooks against it; the base index term does not read it.
     double exitNetworkFlow;
-    bool tele;
-    // Per-module-level teleport enter/exit additions; empty unless `tele`.
-    std::vector<std::vector<double>> teleEnter, teleExit;
 
     const ColumnarLevel& level(int k) const { return k == 0 ? leaves : levels[k]; }
-    double enter(int k, int m) const { return level(k).linkEnter[m] + (tele ? teleEnter[k][m] : 0.0); }
-    double exit(int k, int m) const { return level(k).linkExit[m] + (tele ? teleExit[k][m] : 0.0); }
+    double enter(int k, int m) const { return level(k).enter[m]; }
+    double exit(int k, int m) const { return level(k).exit[m]; }
   };
 
 } // namespace columnar
@@ -264,37 +262,10 @@ StackTerms ColumnarTwoLevel::buildStackTerms() const
 {
   const int topLevel = static_cast<int>(m_hierLevels.size()) - 1; // >= 1
 
-  StackTerms terms { leaf0(), m_hierLevels, m_hierAssign, topLevel, m_exitNetworkFlow, m_recordedTeleport, {}, {} };
-
-  // Recorded-teleportation enter/exit additions per module level (1..topLevel).
-  // A module gains teleport exit = teleFlow_m * (1 - teleWeight_m) and teleport
-  // enter = (totalTele - teleFlow_m) * teleWeight_m, from its members' aggregated
-  // teleport flow/weight -- exactly InfomapBase::aggregateFlowValuesFromLeafToRoot's
-  // recorded-teleportation pass. Empty (and skipped) for the base flow model.
-  if (m_recordedTeleport) {
-    terms.teleEnter.resize(topLevel + 1);
-    terms.teleExit.resize(topLevel + 1);
-    std::vector<int> leafToK = m_hierAssign[0]; // leaf -> level-1 module
-    for (int k = 1; k <= topLevel; ++k) {
-      const int n = hierLevel(k).n;
-      std::vector<double> tf(n, 0.0), tw(n, 0.0);
-      for (int i = 0; i < m_nLeaves; ++i) {
-        tf[leafToK[i]] += m_leafTeleFlow[i];
-        tw[leafToK[i]] += m_leafTeleWeight[i];
-      }
-      terms.teleEnter[k].assign(n, 0.0);
-      terms.teleExit[k].assign(n, 0.0);
-      for (int m = 0; m < n; ++m) {
-        terms.teleEnter[k][m] = (m_totalTeleFlow - tf[m]) * tw[m];
-        terms.teleExit[k][m] = tf[m] * (1.0 - tw[m]);
-      }
-      if (k < topLevel) {
-        const std::vector<int>& a = m_hierAssign[k]; // level-k -> level-(k+1)
-        for (int i = 0; i < m_nLeaves; ++i)
-          leafToK[i] = a[leafToK[i]];
-      }
-    }
-  }
+  // Every module level is built by ColumnarBoundaryFlow::aggregate, so its
+  // enter/exit are the exact total rates of the partition, independent of any
+  // move loop's incremental state.
+  StackTerms terms { leaf0(), m_hierLevels, m_hierAssign, topLevel, m_exitNetworkFlow };
 
   return terms;
 }
@@ -531,7 +502,7 @@ double ColumnarTwoLevel::oneLevelCodelength()
   // one-level stack: the corrections read the partition through the core's
   // accessors, so there is no way to price them without a stack to read. Moving
   // the current stack out and back keeps that O(1) — the only real work is the
-  // single aggregateLevel over the leaf network.
+  // single m_flow.aggregate over the leaf network.
   std::vector<Level> savedLevels = std::move(m_hierLevels);
   std::vector<std::vector<int>> savedAssign = std::move(m_hierAssign);
   std::vector<int> savedLeafTop = std::move(m_leafTop);
@@ -542,7 +513,7 @@ double ColumnarTwoLevel::oneLevelCodelength()
   m_hierAssign.clear();
   m_hierLevels.emplace_back(); // level 0 is the leaf network; see hierLevel()
   m_hierAssign.push_back(allInOne);
-  m_hierLevels.push_back(aggregateLevel(leaf0(), allInOne, 1, m_undirected));
+  m_hierLevels.push_back(m_flow.aggregate(leaf0(), allInOne, 1));
   m_leafTop = allInOne;
   m_numTopModules = 1;
   const double L = hierarchicalCodelengthFromStack();
@@ -557,16 +528,8 @@ double ColumnarTwoLevel::oneLevelCodelength()
 std::vector<double> ColumnarTwoLevel::leafCodebookRates() const
 {
   // Empty = the uniform rate 1 of the base objective (see the header). Reusing
-  // buildStackTerms is the point: the recorded-teleportation augmentation folded
-  // into enter/exit is computed in exactly one place, so a correction cannot charge
-  // its substitution against boundary rates the scorer never used. Re-deriving them
-  // here from the link-only enter/exit would be silently wrong on every flow model
-  // that records teleportation, and right everywhere it is easy to test.
-  //
-  // Cost: O(1) on top of the scoring, except under recorded teleportation, where the
-  // second buildStackTerms repeats the teleport preamble's pass over the leaves. That
-  // is the cold (per-candidate-structural-operator) path; if it ever matters, thread
-  // the already-built terms through objectiveCorrection() instead.
+  // buildStackTerms keeps a correction's substitution on exactly the boundary
+  // rates the scorer charges.
   if (!m_nonRedundant || m_hierLevels.size() < 2)
     return {};
   const StackTerms terms = buildStackTerms();

@@ -1853,15 +1853,17 @@ TEST_CASE("Ordinary bipartite runs are unaffected by the flow post-condition [fa
   infomap::test::checkApproxCodelength(directed.codelength(), 1.2649313331);
 }
 
-// The columnar leaf takes each node's enter and exit flow from the flow calculator and keeps
-// the link crossings only: under recorded teleportation it strips the teleportation part the
-// flow calculator stored. The two sides have to agree on when that part is stored, and the
-// stored value has to come from the links as scaled. Under rawdir with --recorded-teleportation
-// the strip removed teleportation that was never added (exit 0.013 short on modular_wd.net),
-// and under --regularized with --markov-time 2 a shortcut through node flow missed the scaled
-// links by up to 0.036. Whatever the flow options, the leaf's link-only enter and exit flow is
-// its own link flow.
-TEST_CASE("Columnar leaf: link-only enter and exit flow is the leaf's own link flow under every flow option (#1194, #1189) [fast][core][flow][columnar-contract]")
+// The columnar leaf takes each node's enter and exit flow from the flow calculator as stored:
+// TOTAL boundary rates, the node's own link flow plus, under recorded teleportation, its
+// teleport exit t(1 - w) and enter (T - t)w. The two sides have to agree on when that part is
+// stored, and the stored value has to come from the links as scaled. Until the columnar levels
+// switched to total rates the leaf stripped the teleport part instead, and this test pinned the
+// link-only remainder: under rawdir with --recorded-teleportation the strip removed teleportation
+// that was never added (exit 0.013 short on modular_wd.net), and under --regularized with
+// --markov-time 2 a shortcut through node flow missed the scaled links by up to 0.036. Whatever
+// the flow options, the leaf's enter and exit flow is its own link flow plus, exactly when the
+// run records teleportation, its own teleport flow.
+TEST_CASE("Columnar leaf: total enter and exit flow is the leaf's own link plus teleport flow under every flow option (#1194, #1189) [fast][core][flow][columnar-contract]")
 {
   const auto check = [](const std::string& network, const std::string& flags, bool undirectedClustering) {
     INFO(network << " " << flags);
@@ -1870,6 +1872,10 @@ TEST_CASE("Columnar leaf: link-only enter and exit flow is the leaf's own link f
     im.run();
     const auto& leaf = im.columnarLeafInput();
     REQUIRE(leaf.n == static_cast<int>(im.numLeafNodes()));
+    const bool tele = im.recordsTeleportation();
+    double totalTele = 0.0;
+    for (int i = 0; i < leaf.n; ++i)
+      totalTele += leaf.teleFlow[i];
     for (int i = 0; i < leaf.n; ++i) {
       double outFlow = 0.0;
       double inFlow = 0.0;
@@ -1878,10 +1884,14 @@ TEST_CASE("Columnar leaf: link-only enter and exit flow is the leaf's own link f
       for (int e = leaf.inStart[i]; e < leaf.inStart[i + 1]; ++e)
         inFlow += leaf.inFlow[e];
       // An undirected link crosses either way with half its flow.
-      const double exitFlow = undirectedClustering ? (outFlow + inFlow) / 2 : outFlow;
-      const double enterFlow = undirectedClustering ? (outFlow + inFlow) / 2 : inFlow;
-      CHECK(std::abs(leaf.linkExit[i] - exitFlow) < 1e-12);
-      CHECK(std::abs(leaf.linkEnter[i] - enterFlow) < 1e-12);
+      double exitFlow = undirectedClustering ? (outFlow + inFlow) / 2 : outFlow;
+      double enterFlow = undirectedClustering ? (outFlow + inFlow) / 2 : inFlow;
+      if (tele) {
+        exitFlow += leaf.teleFlow[i] * (1.0 - leaf.teleWeight[i]);
+        enterFlow += (totalTele - leaf.teleFlow[i]) * leaf.teleWeight[i];
+      }
+      CHECK(std::abs(leaf.exit[i] - exitFlow) < 1e-12);
+      CHECK(std::abs(leaf.enter[i] - enterFlow) < 1e-12);
     }
   };
   for (const char* flags : { "-d", "-d --recorded-teleportation", "-d --markov-time 2", "-d --regularized",

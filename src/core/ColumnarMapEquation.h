@@ -11,7 +11,7 @@
 #define COLUMNAR_MAP_EQUATION_H_
 
 #include "ColumnarLevel.h"
-#include "ColumnarTuning.h" // teleIndexRate, read by unitIndexRate below
+#include "ColumnarBoundaryFlow.h"
 
 #include <cmath>
 #include <functional>
@@ -64,26 +64,6 @@ namespace columnar {
       return sum;
     }
   };
-
-  /**
-   * Reduce a leaf level's stored enter/exit to the link-only crossings the
-   * ColumnarLevel contract requires, under recorded teleportation.
-   *
-   * FlowCalculator stores a node's enter/exit as its TOTAL boundary rates — the
-   * object-oriented convention since the regularized map equation (#181): with
-   * teleportation recorded they already hold the node's own teleport enter
-   * (T - t) * w and exit t * (1 - w). The columnar core adds the teleport half
-   * per module instead (moduleTeleEnter/Exit, from the aggregated t and w), so
-   * reading the stored rates as link flow counted every member's teleportation a
-   * second time in every module rate the move loop and the aggregation passes
-   * saw (#1042: the search steered by an objective 0.5 bits off on jazz, 0.65 on
-   * om5). The stack scorer never saw it — it rebuilds module boundaries from the
-   * link CSR — so every reported codelength was right; only the search was not.
-   *
-   * Call once, on the leaf level, and only when teleportation is recorded: in
-   * every other flow model the stored rates are link-only already.
-   */
-  void stripLeafTeleportRates(ColumnarLevel& leaf);
 } // namespace columnar
 
 /**
@@ -326,8 +306,8 @@ public:
   std::vector<double> leafCodebookRates() const;
 
   // Build the leaf level (flow, enter/exit, out+in CSR) from the leaf network.
-  // recordedTeleport: the leaves' stored enter/exit include their own teleport
-  // rates, which are stripped to link-only (columnar::stripLeafTeleportRates).
+  // recordedTeleport: the leaves' stored enter/exit are total rates, their own
+  // teleport enter/exit included, and are kept as such (see ColumnarLevel).
   void buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed, bool recordedTeleport = false);
 
   // Build the leaf level directly from columnar arrays (used to feed the
@@ -616,7 +596,7 @@ public:
   // Enable recorded-teleportation codebook terms (regularized flow). Must be set
   // before hierarchicalCodelengthFromStack; per-leaf teleport flow/weight come
   // from buildFromLeaves. No effect on the base/mem/meta objectives.
-  void setRecordedTeleportation(bool on) { m_recordedTeleport = on; }
+  void setRecordedTeleportation(bool on) { m_flow.setRecordedTeleport(on); }
 
   // Use the non-redundant map equation L* as the base objective: the exit codebook
   // of a module excludes the module just left (leave-one-out over siblings) and the
@@ -673,27 +653,18 @@ private:
   // used by the regroup ladder's leaf-granularity candidate test, where the
   // point is to establish that a candidate wins, not to converge it.
   unsigned int moveLoop(unsigned int sweepCap = 0);
+  // The move loop's body, compiled once per teleport variant: without recorded
+  // teleportation the teleport flow between a unit and a module is identically
+  // zero, so that instantiation carries no teleport code in the per-candidate path.
+  template <bool Tele>
+  unsigned int moveLoopWith(unsigned int sweepCap);
   // Build the next level from the current module assignment; returns unit count.
   int consolidateToNextLevel();
 
   // Remove / add module m's contribution to the running plogp terms + m_enterFlow,
-  // using its effective (teleport-inclusive) enter/exit. With recorded
-  // teleportation off these reduce to the link enter/exit (base behaviour).
+  // from its total (teleport-inclusive) enter/exit.
   void removeModuleTerms(int m);
   void addModuleTerms(int m);
-
-  // Recorded-teleport-aware move delta: change in the augmented base codelength
-  // from moving unit u (link enter/exit/flow cur*, teleport tfu/twu) out of module
-  // A into module B, with deltaOld/deltaNew the link flow between u and A/B. This
-  // is the unhoisted reference form (the readable counterpart of the free
-  // hoistOldSideTele + deltaCodelengthMovingNodeTeleHoisted the move loop uses
-  // when m_recordedTeleport is on); kept for clarity like deltaCodelengthMovingNode.
-  double deltaCodelengthMovingNodeTele(double curEnter, double curExit, double curFlow, double tfu, double twu, int A, int B, double deltaOld, double deltaNew) const;
-
-  // Aggregate a base level under a unit->group assignment (K groups): group
-  // flow = sum of member flow, group enter/exit = crossing flow, plus the
-  // group-group CSR. A pure function of (base, assign).
-  static Level aggregateLevel(const Level& base, const std::vector<int>& assign, int K, bool undirected);
 
   // Refine each level-2 module's leaves as their own in-context two-level
   // problem, replacing the bottom level. Returns true if any module changed.
@@ -716,7 +687,7 @@ private:
   // Generalized in-context two-level of one parent's children S at an arbitrary
   // stack level (subClusterLeaves is the level-0 case). `base` is the level the
   // children live on; `interior` applies the enter-flow transform (an interior
-  // unit's codeword usage is its index rate q, exactly as the up-build's
+  // unit's codeword usage is its enter rate q, exactly as the up-build's
   // setIndexRateAsFlow and refineLayerWithinGrandparent's k > 0 branch);
   // `sliceCorrections` slices the leaf-shaping corrections onto S (only
   // meaningful when the children ARE leaves). `loc` is an all -1 scratch vector
@@ -816,7 +787,9 @@ private:
   // units are leaves (k == 0) — interior levels stay first-order (base).
   void addSlicedLeafCorrections(ColumnarTwoLevel& subOpt, const std::vector<int>& globalLeafIds) const;
 
-  bool m_undirected = false;
+  // Flow model (undirected, recorded teleportation) and the aggregation /
+  // slicing / teleport-term helpers built on it.
+  ColumnarBoundaryFlow m_flow;
   unsigned long m_seed = 123;
   double m_exitNetworkFlow = 0.0; // flow leaving this (sub-)network; 0 if closed
   unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
@@ -938,10 +911,9 @@ private:
 
   std::vector<int> m_module; // unit -> module id
   std::vector<double> m_mFlow, m_mEnter, m_mExit;
-  // Per-module recorded-teleport aggregates (link-independent), tracked only when
-  // m_recordedTeleport. The module's effective enter/exit fold in a teleport term
-  // (moduleTeleEnter/Exit) built from these; see effEnter/effExit in the .cpp.
-  std::vector<double> m_mTeleFlow, m_mTeleWeight;
+  // m_mEnter/m_mExit are TOTAL rates; m_tele supplies the recorded-teleport flow
+  // between a unit and a module that a move subtracts alongside the link flow.
+  ColumnarBoundaryFlow::TeleportSums m_tele;
   std::vector<int> m_mMembers;
   std::vector<int> m_emptyModules;
 
@@ -963,7 +935,8 @@ private:
   // consolidate the next level exactly as the pass itself would (see adoptPass1State).
   struct Pass1State {
     std::vector<int> module;
-    std::vector<double> mFlow, mEnter, mExit, mTeleFlow, mTeleWeight;
+    std::vector<double> mFlow, mEnter, mExit;
+    ColumnarBoundaryFlow::TeleportSums tele;
     std::vector<int> mMembers;
     double codelength = 0.0;
   };
@@ -987,16 +960,6 @@ private:
   double m_leafNodeFlow_log_nodeFlow = 0.0; // over leaves, constant
   unsigned int m_numTopModules = 0;
 
-  // Recorded teleportation (regularized / --recorded-teleportation): the walker
-  // records teleport steps, so a module's enter/exit gains a dense all-to-all
-  // teleport term the link-crossing aggregation can't see. Per-unit teleport
-  // flow/weight are threaded through every Level (they sum under aggregation) and
-  // folded into the effective module enter/exit in initPartition, the move loop,
-  // the merge operator, and hierarchicalCodelengthFromStack, exactly as
-  // InfomapBase::aggregateFlowValuesFromLeafToRoot does. m_totalTeleFlow is the
-  // GLOBAL total (constant across sub-networks), so sub-optimizers inherit it via
-  // buildFromLevel rather than recomputing from their local units.
-  bool m_recordedTeleport = false;
   // Non-redundant map equation L* (see setNonRedundant). m_nrExact selects the exact
   // O(m) exit sweep over the O(K) power-series delta in the leaf move loop.
   bool m_nonRedundant = false;
@@ -1029,38 +992,6 @@ private:
   // more than one interior layer (refineSweeps is 1 otherwise), so
   // science2001/air30k/malaria and all of -F are unaffected either way.
   double m_minRelTuneImprovement = 5e-3;
-  double m_totalTeleFlow = 0.0; // GLOBAL sum of leaf teleport flow (root teleport flow)
-  // A module's recorded-teleport enter/exit from its aggregated teleport flow tf
-  // and weight tw (see InfomapBase::aggregateFlowValuesFromLeafToRoot): a walker
-  // teleports out with the fraction not landing back (exit), and teleports in from
-  // the rest of the network onto this module's teleport weight (enter).
-  double moduleTeleEnter(double tf, double tw) const { return (m_totalTeleFlow - tf) * tw; }
-  double moduleTeleExit(double tf, double tw) const { return tf * (1.0 - tw); }
-
-  // A unit's index-codebook use rate q = e + (T - t) * w: the rate at which a
-  // walker enters it, across a link or by teleporting in from outside. This is
-  // what the objective charges the index codebook for the unit, and therefore
-  // what the enter-flow transform must hand a sub-search as its node flow --
-  // `enter` alone is the link part only (see teleIndexRate, #1038). Equal to
-  // `enter` whenever recorded teleportation is off.
-  double unitIndexRate(const Level& level, int i) const
-  {
-    if (!m_recordedTeleport || level.teleWeight.empty() || !columnar::teleIndexRate())
-      return level.linkEnter[i];
-    return level.linkEnter[i] + moduleTeleEnter(level.teleFlow[i], level.teleWeight[i]);
-  }
-
-  // In-place enter-flow transform: node flow := unitIndexRate for every unit.
-  // enter/exit/teleport aggregates and edges are carried through untouched, so
-  // the sub-search's own group-level enter stays exact.
-  void setIndexRateAsFlow(Level& level) const
-  {
-    level.flow = level.linkEnter;
-    if (!m_recordedTeleport || level.teleWeight.empty() || !columnar::teleIndexRate())
-      return;
-    for (int i = 0; i < level.n; ++i)
-      level.flow[i] += moduleTeleEnter(level.teleFlow[i], level.teleWeight[i]);
-  }
   std::vector<double> m_leafTeleFlow;
   std::vector<double> m_leafTeleWeight;
 

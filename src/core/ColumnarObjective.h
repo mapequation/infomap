@@ -149,53 +149,6 @@ namespace columnar {
     return delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
   }
 
-  // Recorded-teleportation (tele-path) analogue of OldSideTerms/hoistOldSide:
-  // the six old-module (A-side) plogp terms plus the A-side shift of enterFlow
-  // are constant across every candidate the move loop probes for the same unit,
-  // so the caller hoists them once per unit visit. moduleTeleEnter/moduleTeleExit
-  // are inlined here as free lambdas (these helpers live in the class); the
-  // per-candidate expression structure below matches deltaCodelengthMovingNodeTele
-  // exactly, so results stay bit-identical to the unhoisted form.
-  struct TeleOldSideTerms {
-    double plogpEA0, plogpXA0, plogpFA0; // before the move
-    double plogpEA1, plogpXA1, plogpFA1; // after
-    double deltaEnterA; // eA1 - eA0, the A-side contribution to enterFlow1
-  };
-
-  inline TeleOldSideTerms hoistOldSideTele(double curEnter, double curExit, double curFlow, double tfu, double twu, double oldEnter, double oldExit, double oldFlow, double oldTeleFlow, double oldTeleWeight, double totalTeleFlow, double deltaOld)
-  {
-    using infomath::plogp;
-    const auto teleEnter = [&](double tf, double tw) { return (totalTeleFlow - tf) * tw; };
-    const auto teleExit = [&](double tf, double tw) { return tf * (1.0 - tw); };
-    const double eA0 = oldEnter + teleEnter(oldTeleFlow, oldTeleWeight);
-    const double xA0 = oldExit + teleExit(oldTeleFlow, oldTeleWeight);
-    const double fA0 = xA0 + oldFlow;
-    const double eA1 = (oldEnter - curEnter + deltaOld) + teleEnter(oldTeleFlow - tfu, oldTeleWeight - twu);
-    const double xA1 = (oldExit - curExit + deltaOld) + teleExit(oldTeleFlow - tfu, oldTeleWeight - twu);
-    const double fA1 = xA1 + (oldFlow - curFlow);
-    return { plogp(eA0), plogp(xA0), plogp(fA0), plogp(eA1), plogp(xA1), plogp(fA1), eA1 - eA0 };
-  }
-
-  inline double deltaCodelengthMovingNodeTeleHoisted(double enterFlow, double enterFlow_log_enterFlow, double curEnter, double curExit, double curFlow, double tfu, double twu, const TeleOldSideTerms& o, double newEnter, double newExit, double newFlow, double newTeleFlow, double newTeleWeight, double totalTeleFlow, double deltaNew)
-  {
-    using infomath::plogp;
-    const auto teleEnter = [&](double tf, double tw) { return (totalTeleFlow - tf) * tw; };
-    const auto teleExit = [&](double tf, double tw) { return tf * (1.0 - tw); };
-    const double eB0 = newEnter + teleEnter(newTeleFlow, newTeleWeight);
-    const double xB0 = newExit + teleExit(newTeleFlow, newTeleWeight);
-    const double fB0 = xB0 + newFlow;
-    const double eB1 = (newEnter + curEnter - deltaNew) + teleEnter(newTeleFlow + tfu, newTeleWeight + twu);
-    const double xB1 = (newExit + curExit - deltaNew) + teleExit(newTeleFlow + tfu, newTeleWeight + twu);
-    const double fB1 = xB1 + (newFlow + curFlow);
-
-    const double enterFlow1 = enterFlow + o.deltaEnterA + (eB1 - eB0);
-    const double d_enter = plogp(enterFlow1) - enterFlow_log_enterFlow;
-    const double d_enter_log = (o.plogpEA1 + plogp(eB1)) - (o.plogpEA0 + plogp(eB0));
-    const double d_exit_log = (o.plogpXA1 + plogp(xB1)) - (o.plogpXA0 + plogp(xB0));
-    const double d_flow_log = (o.plogpFA1 + plogp(fB1)) - (o.plogpFA0 + plogp(fB0));
-    return d_enter - d_enter_log - d_exit_log + d_flow_log;
-  }
-
   // --- Non-redundant map equation (L*) per-module codebook terms ---------------
   // These are the ONLY implementation of L* in the codebase: the object-oriented
   // objectives have no non-redundant counterpart, which is why every fallback from

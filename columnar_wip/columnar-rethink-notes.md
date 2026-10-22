@@ -5876,3 +5876,78 @@ master's #1241 (#1209) now runs over every module of the tree, and which the col
 first). All 332 columnar results equal the first session's on both arms. Seconds: −0.92% in the sweep and
 −1.64% with 42 outliers re-timed; the changed wikispeedia `--regularized` rows still cost +1.1% to +5.3% on
 their new trajectories, as F72 explains.
+
+### F73 — Boundary flow gets its own class; levels store total rates; sub-searches priced the parent exit without teleportation (#828 PR 1) (2026-10-22)
+
+#828 needs the regularized-multilayer prior, recorded teleportation within each layer, in the columnar
+core. It does not fit a `ColumnarCorrection`: corrections add a term of their own, and the prior changes
+module enter and exit inside the base map equation's plogp terms. The teleport arithmetic the core
+already had (one global class) was spread across the search. The closed form T_M(1 − W_M) /
+(T − T_M)W_M was evaluated in five places: the move kernels, the module-term bookkeeping, the merge
+pass's lambdas, the stack scorer, and the sub-search index rate. On top of that, the leaf input stripped
+FlowCalculator's teleport part only to add it back per module, the sub-level slicing was copy-pasted in
+three functions, and the CSR was built in four. A per-layer variant would have had to thread through all
+of that. So the first PR moves boundary flow out of the search, and the prior itself is the second PR.
+Whether the stacked hierarchy should also get its own owner is left open (#1371): three search
+algorithms do stack surgery that a narrow API would not cover.
+
+- **Step A, `ColumnarBoundaryFlow` (8174e52b), a pure move.** It holds aggregation, one slicer in place
+  of the three copies, the index-rate transform and the flow-model flags. Bit-identical on 27
+  configurations (codelength and tree body), +0.22% instructions on air30k `-N10`, +0.09% on word_assoc.
+- **Step B, total rates (38eb58e9).** `ColumnarLevel::enter`/`exit` now hold the total boundary rates
+  FlowCalculator stores, so the strip is gone. `aggregate` is the only place the closed form is
+  evaluated. The teleport flow between a unit and a module, t_u W_M + T_M w_u, enters `deltaOld`/`deltaNew`
+  and the merge crossing exactly where link flow does (`ColumnarBoundaryFlow::TeleportSums`), which is
+  OO's formulation: no separate self-teleport term. The teleport kernels and `COL_TELE_INDEX_RATE` are
+  deleted.
+  - **Storing totals moves results only by rounding.** All 15 teleport configurations of the identity set
+    are bit-identical to the tip at 9 digits when only the totals change (a build that keeps the
+    link-only parent exit, below). On the 332-configuration snapshot set, 6 configurations move: four
+    web-NotreDame and two wikispeedia `--recorded-teleportation` runs, within ±0.021% in bits, whose
+    longer searches the rounding steers. Rescoring a partition gives the same codelength under the old
+    binary, the new one, and OO (wikispeedia `-d --regularized`: 4.4079153 bits in all four combinations).
+  - **Five sub-search entry points pass the parent's link-only exit (#1372, split out).**
+    `refineLayerWithinGrandparent` (`grand.linkExit[G]`), `refineBottomWithinParents`, `splitTopModules`
+    and `splitLevelModules` (two sites) hand a sub-search its parent's exit without the parent's teleport
+    exit, so under recorded teleportation the sub-search prices its exit codeword too cheaply. The merge
+    pass already adds it. Step B passed the total, since no link-only field was left, and that was every
+    other result change. On the identity set the four affected rows got shorter: wikispeedia
+    `-d --regularized -N1` −0.254% in bits, om3 E50k −0.019%. On the snapshot set it changed 31
+    configurations, from −0.254% to +0.095% in bits, and −8.6% to +13.7% in seconds. All the extra time
+    was in deep repair, which re-clustered more units: om2 E50k `-d --regularized -N1` 156,576 → 188,000
+    (+20%), wikispeedia `-d --regularized -N10` 17,649 → 30,253 (+71%). om2 E50k `-N1` paid +12–14% in
+    seconds for a codelength 0.00005% longer. The fix is therefore a search change of its own: this PR
+    keeps the old value through `ColumnarBoundaryFlow::linkExit` (total exit minus the unit's teleport
+    exit, 0c59ac59), and #1372 measures the fix alone, with a deep-repair stop under which the extra
+    re-clustering pays for itself.
+- **Step C, the move loop without teleport code (559d7fa1).** Step B cost +1.8% to +2.1% instructions
+  on runs without teleportation, for identical work: identical output, identical `log2` calls
+  (211,561,641 on word_assoc `-N5`), identical allocations (to 16 bytes). Hypotheses killed with builds:
+  - The move loop's teleport queries are about 0.8 points of it. `moveLoop` now dispatches once to
+    `moveLoopWith<Tele>`, and the teleport-free instantiation carries no teleport code.
+  - Not the other teleport-state calls (removing all of them leaves +1.1%), not object size or heap
+    layout (an 8-byte probe member on step A: ±0.04%), not loop padding (arm64 builds with
+    `-falign-loops=4` byte-identical to the default), not `aggregate`'s added loop (+2.0% without it).
+  - The rest is constant materialization. With the teleport kernel gone, the register allocator rebuilds
+    the inlined `std::mt19937_64` tempering constants with `mov`/`movk` chains where step A loaded them
+    with `ldr` (51 vs 19 `movk` in `moveLoop`). That costs instructions, not cycles.
+  - **Time is code placement, not work.** Forcing 64-byte loop and function alignment on both arms
+    reshuffles the per-configuration seconds: malaria `-N5` −1.19% → +2.42%, air30k `-N5` +3.79% →
+    +1.12%, word_assoc `-N5` +0.11% → +1.08%. After step C, `timing.total_s` (min of 5) is −0.2% to
+    −3.7% on seven of eight configurations and +1.15% on word_assoc `-N5`.
+- **Instrument notes.** `/usr/bin/time` cycles and `timing.total_s` disagreed in sign on malaria `-N5`
+  (+2.2% against −1.2%): process start and teardown are in the first, not the second. Single-run
+  instruction counts are not deterministic on small runs either: step A on polblogs `-N2` read 330.1M
+  and 339.1M in two runs. Use min-of-N for instructions below about 1G.
+- **Snapshot (old tip `fe9a21c5` md5 `7b8bdfad`, new `0c59ac59` md5 `777c20da`; OO carried from #1369).**
+  323 of 332 columnar configurations are bit-identical. The 9 that change all run under recorded
+  teleportation, and rounding steers them: 6 move in bits within ±0.021%, and 3 keep the codelength with
+  1 to 4 fewer zero-flow top modules. Instructions are at a median of −0.02% (5th–95th percentile −1.17%
+  to +1.08%), and −0.52% on the 99 unchanged recorded-teleportation configurations. Seconds summed are
+  −0.85% in the sweep and −2.30% with the 29 outliers re-timed (`columnar_wip/retime-outliers.py`). Two
+  costs remain, both on wikispeedia `--recorded-teleportation`:
+  - `-2d -N1` at seed 123 takes a 9.3% longer path to the same codelength. Over seeds 1–20 the
+    instructions average −0.01%, and 8 seeds change in bits, from −0.0018% to +0.53% (seed 10 lands in a
+    worse basin, as the old binary does at seed 123).
+  - `-d -N10` costs +0.36% to +2.36% in instructions on 7 bit-identical seeds of 8. That cost is real
+    and not located yet.

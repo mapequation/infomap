@@ -3693,8 +3693,8 @@ void InfomapBase::buildColumnarLeafInput(Network& network)
   ColumnarLevel& leaf = m_columnarLeafInput;
   leaf.n = static_cast<int>(numNodes);
   leaf.flow.assign(numNodes, 0.0);
-  leaf.linkEnter.assign(numNodes, 0.0);
-  leaf.linkExit.assign(numNodes, 0.0);
+  leaf.enter.assign(numNodes, 0.0);
+  leaf.exit.assign(numNodes, 0.0);
   leaf.teleFlow.assign(numNodes, 0.0);
   leaf.teleWeight.assign(numNodes, 0.0);
 
@@ -3704,16 +3704,12 @@ void InfomapBase::buildColumnarLeafInput(Network& network)
   for (const auto& nodeIt : network.nodes()) {
     const auto& n = nodeIt.second;
     leaf.flow[i] = n.flow;
-    leaf.linkEnter[i] = n.enterFlow;
-    leaf.linkExit[i] = n.exitFlow;
+    leaf.enter[i] = n.enterFlow; // total boundary rates, teleport included
+    leaf.exit[i] = n.exitFlow;
     leaf.teleFlow[i] = n.teleFlow;
     leaf.teleWeight[i] = n.weight; // teleport weight
     ++i;
   }
-  // The network stores total boundary rates; the columnar level wants link-only
-  // crossings and adds the teleport half per module itself.
-  if (recordsTeleportation())
-    columnar::stripLeafTeleportRates(leaf);
 
   // Out + in CSR (in is the transpose), self-links excluded as in generateSubNetwork.
   std::vector<int> outDeg(numNodes, 0), inDeg(numNodes, 0);
@@ -4113,7 +4109,7 @@ double InfomapBase::evaluateColumnarPartition()
   //
   // Why the subtraction is exact, for every objective: a phantom p inserted between a
   // module x and its real parent P is an exact copy of x's flow / enter / exit / teleport
-  // aggregates (aggregateLevel over a singleton assignment), and every per-module term in
+  // aggregates (ColumnarBoundaryFlow::aggregate over a singleton assignment), and every per-module term in
   // the scorer reads only that module's own exit and its children's enter -- never a
   // depth, a level count or a grandparent. So P's term is unchanged (its child p
   // contributes the same enter x did), x's term is unchanged, and p's whole cost is its
