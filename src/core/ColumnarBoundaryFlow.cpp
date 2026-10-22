@@ -9,31 +9,17 @@
 
 #include "ColumnarBoundaryFlow.h"
 
-#include <algorithm>
 #include <unordered_map>
 
 namespace infomap {
-
-void ColumnarBoundaryFlow::stripLeafTeleportRates(Level& leaf)
-{
-  double totalTele = 0.0;
-  for (double tf : leaf.teleFlow)
-    totalTele += tf;
-  // max(0, .): a node with no links keeps exactly its teleport rates, which the
-  // subtraction cancels only to rounding.
-  for (int i = 0; i < leaf.n; ++i) {
-    leaf.linkEnter[i] = std::max(0.0, leaf.linkEnter[i] - (totalTele - leaf.teleFlow[i]) * leaf.teleWeight[i]);
-    leaf.linkExit[i] = std::max(0.0, leaf.linkExit[i] - leaf.teleFlow[i] * (1.0 - leaf.teleWeight[i]));
-  }
-}
 
 ColumnarBoundaryFlow::Level ColumnarBoundaryFlow::aggregate(const Level& base, const std::vector<int>& assign, int K) const
 {
   Level out;
   out.n = K;
   out.flow.assign(K, 0.0);
-  out.linkEnter.assign(K, 0.0);
-  out.linkExit.assign(K, 0.0);
+  out.enter.assign(K, 0.0);
+  out.exit.assign(K, 0.0);
   out.teleFlow.assign(K, 0.0);
   out.teleWeight.assign(K, 0.0);
   const bool haveTele = !base.teleFlow.empty();
@@ -58,14 +44,22 @@ ColumnarBoundaryFlow::Level ColumnarBoundaryFlow::aggregate(const Level& base, c
       edgeMap[static_cast<long long>(ga) * K + gb] += f;
       if (m_undirected) {
         const double half = f / 2.0;
-        out.linkExit[ga] += half;
-        out.linkEnter[ga] += half;
-        out.linkEnter[gb] += half;
-        out.linkExit[gb] += half;
+        out.exit[ga] += half;
+        out.enter[ga] += half;
+        out.enter[gb] += half;
+        out.exit[gb] += half;
       } else {
-        out.linkExit[ga] += f;
-        out.linkEnter[gb] += f;
+        out.exit[ga] += f;
+        out.enter[gb] += f;
       }
+    }
+  }
+
+  // Total rates: add each group's teleport enter/exit from its aggregated sums.
+  if (m_recordedTeleport && haveTele) {
+    for (int g = 0; g < K; ++g) {
+      out.enter[g] += moduleTeleEnter(out.teleFlow[g], out.teleWeight[g]);
+      out.exit[g] += moduleTeleExit(out.teleFlow[g], out.teleWeight[g]);
     }
   }
 
@@ -109,16 +103,16 @@ ColumnarBoundaryFlow::Level ColumnarBoundaryFlow::slice(const Level& base, const
   Level sub;
   sub.n = nP;
   sub.flow.resize(nP);
-  sub.linkEnter.resize(nP);
-  sub.linkExit.resize(nP);
+  sub.enter.resize(nP);
+  sub.exit.resize(nP);
   sub.teleFlow.resize(nP);
   sub.teleWeight.resize(nP);
   std::vector<int> outDeg(nP, 0), inDeg(nP, 0);
   for (int j = 0; j < nP; ++j) {
     const int g = units[j];
-    sub.flow[j] = indexRateAsFlow ? unitIndexRate(base, g) : base.flow[g];
-    sub.linkEnter[j] = base.linkEnter[g];
-    sub.linkExit[j] = base.linkExit[g];
+    sub.flow[j] = indexRateAsFlow ? base.enter[g] : base.flow[g];
+    sub.enter[j] = base.enter[g];
+    sub.exit[j] = base.exit[g];
     sub.teleFlow[j] = base.teleFlow.empty() ? 0.0 : base.teleFlow[g];
     sub.teleWeight[j] = base.teleWeight.empty() ? 0.0 : base.teleWeight[g];
     for (int k = base.outStart[g]; k < base.outStart[g + 1]; ++k) {

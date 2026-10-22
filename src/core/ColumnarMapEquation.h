@@ -306,8 +306,8 @@ public:
   std::vector<double> leafCodebookRates() const;
 
   // Build the leaf level (flow, enter/exit, out+in CSR) from the leaf network.
-  // recordedTeleport: the leaves' stored enter/exit include their own teleport
-  // rates, which are stripped to link-only (ColumnarBoundaryFlow::stripLeafTeleportRates).
+  // recordedTeleport: the leaves' stored enter/exit are total rates, their own
+  // teleport enter/exit included, and are kept as such (see ColumnarLevel).
   void buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed, bool recordedTeleport = false);
 
   // Build the leaf level directly from columnar arrays (used to feed the
@@ -657,18 +657,9 @@ private:
   int consolidateToNextLevel();
 
   // Remove / add module m's contribution to the running plogp terms + m_enterFlow,
-  // using its effective (teleport-inclusive) enter/exit. With recorded
-  // teleportation off these reduce to the link enter/exit (base behaviour).
+  // from its total (teleport-inclusive) enter/exit.
   void removeModuleTerms(int m);
   void addModuleTerms(int m);
-
-  // Recorded-teleport-aware move delta: change in the augmented base codelength
-  // from moving unit u (link enter/exit/flow cur*, teleport tfu/twu) out of module
-  // A into module B, with deltaOld/deltaNew the link flow between u and A/B. This
-  // is the unhoisted reference form (the readable counterpart of the free
-  // hoistOldSideTele + deltaCodelengthMovingNodeTeleHoisted the move loop uses
-  // when m_flow.recordedTeleport() is on); kept for clarity like deltaCodelengthMovingNode.
-  double deltaCodelengthMovingNodeTele(double curEnter, double curExit, double curFlow, double tfu, double twu, int A, int B, double deltaOld, double deltaNew) const;
 
   // Refine each level-2 module's leaves as their own in-context two-level
   // problem, replacing the bottom level. Returns true if any module changed.
@@ -691,7 +682,7 @@ private:
   // Generalized in-context two-level of one parent's children S at an arbitrary
   // stack level (subClusterLeaves is the level-0 case). `base` is the level the
   // children live on; `interior` applies the enter-flow transform (an interior
-  // unit's codeword usage is its index rate q, exactly as the up-build's
+  // unit's codeword usage is its enter rate q, exactly as the up-build's
   // setIndexRateAsFlow and refineLayerWithinGrandparent's k > 0 branch);
   // `sliceCorrections` slices the leaf-shaping corrections onto S (only
   // meaningful when the children ARE leaves). `loc` is an all -1 scratch vector
@@ -915,10 +906,9 @@ private:
 
   std::vector<int> m_module; // unit -> module id
   std::vector<double> m_mFlow, m_mEnter, m_mExit;
-  // Per-module recorded-teleport aggregates (link-independent), tracked only when
-  // m_flow.recordedTeleport(). The module's effective enter/exit fold in a teleport term
-  // (moduleTeleEnter/Exit) built from these; see effEnter/effExit in the .cpp.
-  std::vector<double> m_mTeleFlow, m_mTeleWeight;
+  // m_mEnter/m_mExit are TOTAL rates; m_tele supplies the recorded-teleport flow
+  // between a unit and a module that a move subtracts alongside the link flow.
+  ColumnarBoundaryFlow::TeleportSums m_tele;
   std::vector<int> m_mMembers;
   std::vector<int> m_emptyModules;
 
@@ -940,7 +930,8 @@ private:
   // consolidate the next level exactly as the pass itself would (see adoptPass1State).
   struct Pass1State {
     std::vector<int> module;
-    std::vector<double> mFlow, mEnter, mExit, mTeleFlow, mTeleWeight;
+    std::vector<double> mFlow, mEnter, mExit;
+    ColumnarBoundaryFlow::TeleportSums tele;
     std::vector<int> mMembers;
     double codelength = 0.0;
   };

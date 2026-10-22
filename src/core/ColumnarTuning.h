@@ -169,34 +169,6 @@ namespace columnar {
     return on;
   }
 
-  // The enter-flow transform's node flow: the map equation's index rate q, or
-  // the link-only enter e? From env COL_TELE_INDEX_RATE (off/0 = e, the
-  // pre-#1038 behaviour, for A/B only).
-  //
-  // A unit's index-codebook use rate is the rate at which a walker enters it,
-  // across a link OR by teleporting into it from outside:
-  //     q = e + (T - t) * w
-  // ColumnarLevel::enter carries only e, because a group's (T - t_G) * w_G is
-  // not additive over its members and must be recomputed from the aggregates at
-  // each level; every SCORING site duly adds the term itself. The four
-  // enter-flow transforms — which hand a sub-search a unit's codeword usage as
-  // its node flow — did not, so under recorded teleportation the search
-  // proposed and gated against a quantity the objective never used, 43.7% off
-  // on om5 and 72.0% on om8 (#1038).
-  //
-  // Identically a no-op without recorded teleportation, where q == e.
-  inline bool teleIndexRate()
-  {
-    static const bool on = [] {
-      const char* e = std::getenv("COL_TELE_INDEX_RATE");
-      if (e == nullptr)
-        return true;
-      const std::string v(e);
-      return !(v == "off" || v == "0");
-    }();
-    return on;
-  }
-
   // Hierarchical split operator (experimental, see splitLevelModules), from env
   // COL_HSPLIT:
   //   off/unset (default) | 1 | all  = every stack level
@@ -293,7 +265,7 @@ namespace columnar {
   // accumulator can stay an integer atomic (gains are ~1e-6..1e-3 each).
   extern std::atomic<long long> g_hSplitGainNano[kHSplitMaxLevels];
   // Sub-phase clocks inside the operator (diagnostic, COL_HSPLIT_STATS):
-  // 0 = moveBase copy, 1 = piece aggregateLevel, 2 = seeded moveLoop,
+  // 0 = moveBase copy, 1 = piece aggregate, 2 = seeded moveLoop,
   // 3 = stack rebuild (aggregations), 4 = hierarchicalCodelengthFromStack,
   // 5 = save/restore of levels+assignments, 6 = fresh sub-clustering.
   constexpr int kHSplitPhases = 7;
