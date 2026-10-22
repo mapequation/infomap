@@ -653,6 +653,11 @@ private:
   // used by the regroup ladder's leaf-granularity candidate test, where the
   // point is to establish that a candidate wins, not to converge it.
   unsigned int moveLoop(unsigned int sweepCap = 0);
+  // The move loop's body, compiled once per teleport variant: without recorded
+  // teleportation the teleport flow between a unit and a module is identically
+  // zero, so that instantiation carries no teleport code in the per-candidate path.
+  template <bool Tele>
+  unsigned int moveLoopWith(unsigned int sweepCap);
   // Build the next level from the current module assignment; returns unit count.
   int consolidateToNextLevel();
 

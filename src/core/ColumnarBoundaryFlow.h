@@ -59,10 +59,13 @@ public:
    * T_M = sum t, W_M = sum w, the teleport flow between unit u and module M (both
    * directions) is t_u W_M + T_M w_u. Every query returns 0, and every update is a
    * no-op, when the flow model does not record teleportation, so search code never
-   * branches on it.
+   * branches on it. The move loop, the hottest caller, still asks on() once and
+   * compiles a teleport-free body for the common case (moveLoopWith<false>).
    */
   class TeleportSums {
   public:
+    bool on() const { return m_on; }
+
     // Every unit of `units` in its own module.
     void reset(const ColumnarBoundaryFlow& flow, const Level& units)
     {

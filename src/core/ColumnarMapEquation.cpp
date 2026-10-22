@@ -327,6 +327,12 @@ void ColumnarTwoLevel::seedAssignment(const std::vector<int>& assign)
 
 unsigned int ColumnarTwoLevel::moveLoop(unsigned int sweepCap)
 {
+  return m_tele.on() ? moveLoopWith<true>(sweepCap) : moveLoopWith<false>(sweepCap);
+}
+
+template <bool Tele>
+unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
+{
   using infomath::plogp;
   const int n = lvl().n;
 
@@ -403,7 +409,9 @@ unsigned int ColumnarTwoLevel::moveLoop(unsigned int sweepCap)
         touched.push_back(cMod);
 
       // Link plus recorded-teleport flow between u and the rest of its module.
-      const double deltaOld = dEnter[cMod] + dExit[cMod] + m_tele.betweenOwn(lvl(), u, cMod);
+      double deltaOld = dEnter[cMod] + dExit[cMod];
+      if constexpr (Tele)
+        deltaOld += m_tele.betweenOwn(lvl(), u, cMod);
       const double curEnter = lvl().enter[u];
       const double curExit = lvl().exit[u];
       const double curFlow = lvl().flow[u];
@@ -448,7 +456,9 @@ unsigned int ColumnarTwoLevel::moveLoop(unsigned int sweepCap)
         if (m == cMod)
           continue;
         // The "strongest" tie-break below stays on link exit flow only.
-        const double deltaNew = dEnter[m] + dExit[m] + m_tele.between(lvl(), u, m);
+        double deltaNew = dEnter[m] + dExit[m];
+        if constexpr (Tele)
+          deltaNew += m_tele.between(lvl(), u, m);
         double dl = deltaCodelengthMovingNodeHoisted(
             m_enterFlow, m_enterFlow_log_enterFlow, curEnter, curExit, curFlow, oldSide, m_mEnter[m], m_mExit[m], m_mFlow[m], deltaOld, deltaNew);
         for (auto* c : corr)
@@ -468,7 +478,9 @@ unsigned int ColumnarTwoLevel::moveLoop(unsigned int sweepCap)
         bestMod = strongestMod;
 
       if (bestMod != cMod) {
-        const double deltaNew = dEnter[bestMod] + dExit[bestMod] + m_tele.between(lvl(), u, bestMod);
+        double deltaNew = dEnter[bestMod] + dExit[bestMod];
+        if constexpr (Tele)
+          deltaNew += m_tele.between(lvl(), u, bestMod);
         // Update empty-module bookkeeping.
         if (m_mMembers[bestMod] == 0 && !m_emptyModules.empty())
           m_emptyModules.pop_back();
@@ -491,7 +503,8 @@ unsigned int ColumnarTwoLevel::moveLoop(unsigned int sweepCap)
         m_mEnter[bestMod] -= deltaNew;
         m_mExit[bestMod] -= deltaNew;
 
-        m_tele.move(lvl(), u, cMod, bestMod);
+        if constexpr (Tele)
+          m_tele.move(lvl(), u, cMod, bestMod);
 
         addModuleTerms(cMod);
         addModuleTerms(bestMod);
