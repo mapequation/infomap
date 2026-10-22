@@ -5840,3 +5840,39 @@ One cost on unchanged results survives re-timing: on om5–om8 E50k `-d` the out
 instructions are +1.3% to +2.4%. A `sample` profile puts it in `MemMapEquation::initPhysicalNodes`, which
 master's #1241 (#1209) now runs over every module of the tree, and which the columnar engine reaches through
 `initTree` on every trial's materialization (0.68% → 2.05% of samples on om8 `-d -N10`). Tracked as #1368.
+
+**F72 addendum (2026-10-22): the sync's CI found the Markov-scaled link flow, and #1368 is fixed in it.**
+
+- **The branch reported Markov-scaled link flow.** It made `FlowCalculator` the one owner of Markov time
+  by scaling the link flow it stores in the network, which is also the flow the output reports. Master's
+  new oracles (#1177, #1225) pin the other contract: node and link flow are those of Markov time 1, and
+  Markov time scales only the link flow the map equation codes (`test/python/reference_flow.py`). On the
+  sync PR's CI every Markov-time case failed: the reported link flow was `t` times the oracle's, the
+  codelength oracles applied `t` to it again, and `--markov-time 0` (a valid boundary) left no link flow
+  and stopped as degenerate. The codelengths themselves were right: OO matched master's at `t` = 0.5, 2
+  and 3 on ninetriangles and modular_wd `-d`.
+- **Fix:** the network keeps the flow of Markov time 1, and `FlowCalculator` writes the coded flow, scaled
+  by the global and variable Markov time, into a second array that exists only when either is set. The
+  enter/exit it derives, the OO leaf edges and the columnar leaf CSR read the coded flow. 270 Markov-time
+  configurations are bit-identical on both engines, and `--markov-time 0` gives master's result.
+- **Why the sync's own checks missed it:** they were the three native test configurations, and master's
+  oracles are Python only. A sync has to run the Python suite too, slow tests included.
+- **#1368, fixed here.** The columnar engine never runs the OO hierarchical search, the only reader of
+  module-of-module physical nodes (`removeSubModules`), so under `--columnar` the memory objective
+  aggregates the leaf modules only, as before #1241. On om5–om8 E50k `-C -d -N1` the instructions return
+  to the tip's: −0.22% to +0.16%, from +1.3% to +2.4% with the merge alone, output
+  bit-identical. Over the 277 unchanged configurations above 0.3G instructions the median moves from
+  +0.074% to −0.002%, and the 95th percentile from +1.18% to +0.47%.
+- **The reference-edit gate fails on every sync.** `scripts/check_reference_edits.py` refuses a PR that
+  changes both `test/python/reference_*.py` and `src/`, and a sync that brings master's oracle edits does
+  both. The two modules were byte-identical to master's. #1370 (master) leaves out every file HEAD has as
+  `origin/master` has it, so a sync passes and an oracle edited on a branch together with `src/` does not.
+- **Columnar is now slower than OO on air30k `-2`.** At `-C -2 -N10` it takes 4.51 s against OO's 3.46 s
+  (interleaved, minimum of 5), +42% in instructions, for −0.31% in bits. Columnar's cost did not move in
+  this sync; OO's fell 53% in seconds with #1282 (memory-network sub-searches code the module exit), which
+  made its result 0.27% longer. The `-2` snapshot prose had kept the pre-sync comparison and is corrected.
+
+**Second session** (columnar arms only, old `13c27f95` against `f8536bd9`, md5 `7b8bdfad`; OO carried from the
+first). All 332 columnar results equal the first session's on both arms. Seconds: −0.92% in the sweep and
+−1.64% with 42 outliers re-timed; the changed wikispeedia `--regularized` rows still cost +1.1% to +5.3% on
+their new trajectories, as F72 explains.
