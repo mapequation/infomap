@@ -3713,7 +3713,7 @@ void InfomapBase::buildColumnarLeafInput(Network& network)
   // The network stores total boundary rates; the columnar level wants link-only
   // crossings and adds the teleport half per module itself.
   if (recordsTeleportation())
-    columnar::stripLeafTeleportRates(leaf);
+    ColumnarBoundaryFlow::stripLeafTeleportRates(leaf);
 
   // Out + in CSR (in is the transpose), self-links excluded as in generateSubNetwork.
   std::vector<int> outDeg(numNodes, 0), inDeg(numNodes, 0);

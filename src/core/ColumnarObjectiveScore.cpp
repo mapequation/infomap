@@ -264,14 +264,14 @@ StackTerms ColumnarTwoLevel::buildStackTerms() const
 {
   const int topLevel = static_cast<int>(m_hierLevels.size()) - 1; // >= 1
 
-  StackTerms terms { leaf0(), m_hierLevels, m_hierAssign, topLevel, m_exitNetworkFlow, m_recordedTeleport, {}, {} };
+  StackTerms terms { leaf0(), m_hierLevels, m_hierAssign, topLevel, m_exitNetworkFlow, m_flow.recordedTeleport(), {}, {} };
 
   // Recorded-teleportation enter/exit additions per module level (1..topLevel).
   // A module gains teleport exit = teleFlow_m * (1 - teleWeight_m) and teleport
   // enter = (totalTele - teleFlow_m) * teleWeight_m, from its members' aggregated
   // teleport flow/weight -- exactly InfomapBase::aggregateFlowValuesFromLeafToRoot's
   // recorded-teleportation pass. Empty (and skipped) for the base flow model.
-  if (m_recordedTeleport) {
+  if (m_flow.recordedTeleport()) {
     terms.teleEnter.resize(topLevel + 1);
     terms.teleExit.resize(topLevel + 1);
     std::vector<int> leafToK = m_hierAssign[0]; // leaf -> level-1 module
@@ -285,8 +285,8 @@ StackTerms ColumnarTwoLevel::buildStackTerms() const
       terms.teleEnter[k].assign(n, 0.0);
       terms.teleExit[k].assign(n, 0.0);
       for (int m = 0; m < n; ++m) {
-        terms.teleEnter[k][m] = (m_totalTeleFlow - tf[m]) * tw[m];
-        terms.teleExit[k][m] = tf[m] * (1.0 - tw[m]);
+        terms.teleEnter[k][m] = m_flow.moduleTeleEnter(tf[m], tw[m]);
+        terms.teleExit[k][m] = m_flow.moduleTeleExit(tf[m], tw[m]);
       }
       if (k < topLevel) {
         const std::vector<int>& a = m_hierAssign[k]; // level-k -> level-(k+1)
@@ -531,7 +531,7 @@ double ColumnarTwoLevel::oneLevelCodelength()
   // one-level stack: the corrections read the partition through the core's
   // accessors, so there is no way to price them without a stack to read. Moving
   // the current stack out and back keeps that O(1) — the only real work is the
-  // single aggregateLevel over the leaf network.
+  // single m_flow.aggregate over the leaf network.
   std::vector<Level> savedLevels = std::move(m_hierLevels);
   std::vector<std::vector<int>> savedAssign = std::move(m_hierAssign);
   std::vector<int> savedLeafTop = std::move(m_leafTop);
@@ -542,7 +542,7 @@ double ColumnarTwoLevel::oneLevelCodelength()
   m_hierAssign.clear();
   m_hierLevels.emplace_back(); // level 0 is the leaf network; see hierLevel()
   m_hierAssign.push_back(allInOne);
-  m_hierLevels.push_back(aggregateLevel(leaf0(), allInOne, 1, m_undirected));
+  m_hierLevels.push_back(m_flow.aggregate(leaf0(), allInOne, 1));
   m_leafTop = allInOne;
   m_numTopModules = 1;
   const double L = hierarchicalCodelengthFromStack();
