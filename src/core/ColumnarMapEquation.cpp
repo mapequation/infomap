@@ -1481,7 +1481,7 @@ int ColumnarTwoLevel::splitTopModules(double& L, bool allowSingletons)
       // aggregation passes are about two thirds of a derivation's cost. The
       // aggregated pieces exposed a few such groups per derivation, by chance, so
       // the repair re-aggregated the whole remainder round after round (F59).
-      Ksub = subClusterLeaves(S, hierLevel(1).exit[P], loc, localAssign, false, nullptr, m_seedIsOneModule ? 1u : 0u);
+      Ksub = subClusterLeaves(S, m_flow.linkExit(hierLevel(1), P), loc, localAssign, false, nullptr, m_seedIsOneModule ? 1u : 0u);
       m_subClusterCache.emplace(S, std::make_pair(Ksub, localAssign));
       rederivedLeaves += S.size();
     }
@@ -1771,7 +1771,7 @@ int ColumnarTwoLevel::splitLevelModules(int k, double& L, bool allowSingletons)
       }
       int Ksub = 0;
       if (interior) {
-        Ksub = subClusterUnits(hierLevel(k), true, false, S, hierLevel(k + 1).exit[P], loc, localAssign, false, nullptr);
+        Ksub = subClusterUnits(hierLevel(k), true, false, S, m_flow.linkExit(hierLevel(k + 1), P), loc, localAssign, false, nullptr);
       } else {
         // A module's sub-clustering depends only on its own leaf set, so
         // unchanged modules reuse earlier rounds' result (memo shared with
@@ -1781,7 +1781,7 @@ int ColumnarTwoLevel::splitLevelModules(int k, double& L, bool allowSingletons)
           Ksub = it->second.first;
           localAssign = it->second.second;
         } else {
-          Ksub = subClusterLeaves(S, hierLevel(1).exit[P], loc, localAssign, false);
+          Ksub = subClusterLeaves(S, m_flow.linkExit(hierLevel(1), P), loc, localAssign, false);
           m_subClusterCache.emplace(S, std::make_pair(Ksub, localAssign));
         }
       }
@@ -2259,7 +2259,7 @@ bool ColumnarTwoLevel::refineBottomWithinParents()
     // reachable via COL_PARTSEED_ALWAYS, which is how the `-F` half was
     // measured: partial-seeding this single pass costs web-NotreDame +0.08% on
     // 3/3 seeds, because here it replaces the only discovery the search has.
-    const int Ksub = subClusterLeaves(S, hierLevel(2).exit[P], loc, subAssign, true, &a0);
+    const int Ksub = subClusterLeaves(S, m_flow.linkExit(hierLevel(2), P), loc, subAssign, true, &a0);
 
     for (int j = 0; j < nP; ++j)
       newA0[S[j]] = nextL1 + subAssign[j];
@@ -2494,7 +2494,7 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
 
     ColumnarTwoLevel subOpt;
     subOpt.setInterruptCallback(m_interruptCallback);
-    subOpt.buildFromLevel(std::move(sub), m_flow.undirected(), m_seed, grand.exit[G], m_flow.recordedTeleport(), m_flow.totalTeleFlow());
+    subOpt.buildFromLevel(std::move(sub), m_flow.undirected(), m_seed, m_flow.linkExit(grand, G), m_flow.recordedTeleport(), m_flow.totalTeleFlow());
     subOpt.m_rootLeaves = m_rootLeaves;
     if (k == 0)
       addSlicedLeafCorrections(subOpt, S);

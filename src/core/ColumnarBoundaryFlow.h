@@ -46,6 +46,18 @@ public:
   double moduleTeleEnter(double tf, double tw) const { return (m_totalTeleFlow - tf) * tw; }
   double moduleTeleExit(double tf, double tw) const { return tf * (1.0 - tw); }
 
+  // A unit's exit without its own teleport exit: its link crossings alone. The
+  // sub-searches that re-cluster inside a parent are handed this as their exit
+  // codeword, which under-prices leaving the parent under recorded teleportation
+  // (#1372). Kept on purpose: passing the total exit is a search change with its
+  // own cost in deep repair, to be measured on its own.
+  double linkExit(const Level& level, int i) const
+  {
+    if (!m_recordedTeleport || level.teleFlow.empty())
+      return level.exit[i];
+    return level.exit[i] - moduleTeleExit(level.teleFlow[i], level.teleWeight[i]);
+  }
+
   // Enter-flow transform: node flow := enter for every unit. A unit's enter is its
   // index-codebook use rate q (teleporting in included, #1038), which is what the
   // objective charges for its codeword in a module-of-modules codebook. enter/exit,
