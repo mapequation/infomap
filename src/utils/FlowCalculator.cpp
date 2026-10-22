@@ -1514,8 +1514,8 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
 // factor derived from the local out-transition entropy (damping >= 0 uses the local
 // effective degree instead). This was historically applied to the per-instance
 // InfoNode edge flows in InfomapBase::generateSubNetwork; centralizing it here makes
-// the network link flow -- and the enter/exit derived from it -- the single source of
-// truth. It runs once, before trials, so scaling the shared network CSR is idempotent,
+// the coded link flow -- and the enter/exit derived from it -- the single source of
+// truth. It runs once, before trials, so scaling the shared coded flow is idempotent,
 // unlike the per-trial InfoNode scaling it replaces. Entropy is taken from link WEIGHTS
 // (undirected: both endpoints of each incident link contribute), self-links excluded
 // (they are never InfoNode edges).
@@ -1585,7 +1585,7 @@ void FlowCalculator::applyVariableMarkovTime(StateNetwork& network, const Config
         linkLocalScale = std::max(localScale, oppositeLocalScale);
       }
       const double localMarkovTimeScale = maxScale / std::max(minLocalScale, linkLocalScale);
-      network.m_linkFlows[e] *= localMarkovTimeScale;
+      network.m_codedLinkFlows[e] *= localMarkovTimeScale;
     }
   }
 
@@ -1730,11 +1730,9 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     normalize(nodeFlow);
   }
 
-  // Write back flow to network. Global Markov time scales the link (transition)
-  // flow here, in the flow calculator, so the stored link flow and the enter/exit
-  // derived from it below are already Markov-scaled -- the network is the single
-  // source of truth and consumers (the InfoNode tree, the columnar core) no longer
-  // rescale. (Variable Markov time is still applied downstream for now.)
+  // Write back flow to network. The network keeps the flow of Markov time 1, which the
+  // output reports. Markov time scales the link flow the map equation codes, kept beside it
+  // for the enter/exit derived below and for both engines, so no consumer rescales.
   const double markovTime = config.markovTime;
   double sumNodeFlow = 0.0;
   double sumLinkFlow = 0.0;
@@ -1743,22 +1741,25 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
   network.forEachLink([&](unsigned int srcIdx, unsigned int, double, double& flow) {
     if (network.isBipartite() && network.nodeId(srcIdx) >= network.bipartiteStartId()) {
-      flow = flowLinks[featureLinkIndex++].flow * markovTime;
+      flow = flowLinks[featureLinkIndex++].flow;
     } else {
-      flow = flowLinks[linkIndex++].flow * markovTime;
+      flow = flowLinks[linkIndex++].flow;
     }
     sumLinkFlow += flow;
   });
 
-  // Variable Markov time scales the (already globally Markov-scaled) link flow in
-  // place, so the enter/exit derived below is variable-Markov-scaled too. Runs after
-  // node flow is normalized (it reads node flow) and before enter/exit.
+  network.m_codedLinkFlows.clear();
+  if (markovTime != 1.0 || config.variableMarkovTime) {
+    network.m_codedLinkFlows.reserve(network.m_linkFlows.size());
+    for (const double flow : network.m_linkFlows)
+      network.m_codedLinkFlows.push_back(flow * markovTime);
+  }
+
+  // Variable Markov time scales the (already globally Markov-scaled) coded link flow, so the
+  // enter/exit derived below is variable-Markov-scaled too. Runs after node flow is
+  // normalized (it reads node flow) and before enter/exit.
   if (config.variableMarkovTime) {
     applyVariableMarkovTime(network, config);
-    sumLinkFlow = 0.0;
-    network.forEachLink([&](unsigned int, unsigned int, double, double& flow) {
-      sumLinkFlow += flow;
-    });
   }
 
   double fractionIntraFlow = config.isMultilayerNetwork() && config.regularized ? 1 : 0;
@@ -1787,8 +1788,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
       const auto srcIdx = network.indexOfId(node.id);
       for (unsigned int e = network.m_linkOffsets[srcIdx]; e < network.m_linkOffsets[srcIdx + 1]; ++e) {
         if (network.m_linkTargets[e] == srcIdx) { // self-link: target index == source index
-          node.enterFlow -= network.m_linkFlows[e] / norm;
-          node.exitFlow -= network.m_linkFlows[e] / norm;
+          node.enterFlow -= network.codedLinkFlow(e) / norm;
+          node.exitFlow -= network.codedLinkFlow(e) / norm;
           break;
         }
       }
@@ -1830,8 +1831,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
           if (tgtCsr == srcIdx)
             continue; // self-link: doesn't cross a module boundary, not an InfoNode edge
           const auto targetIndex = nodeIndexMap[network.nodeId(tgtCsr)];
-          exitFlow[sourceIndex] += network.m_linkFlows[e];
-          enterFlow[targetIndex] += network.m_linkFlows[e];
+          exitFlow[sourceIndex] += network.codedLinkFlow(e);
+          enterFlow[targetIndex] += network.codedLinkFlow(e);
         }
       }
     } else if (config.isUndirectedClustering() && !config.usesRegularizedFlow()) {
@@ -1854,7 +1855,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
           if (tgtCsr == srcIdx)
             continue; // self-link: doesn't add to enter/exit flow
           const auto targetIndex = nodeIndexMap[network.nodeId(tgtCsr)];
-          const double halfFlow = network.m_linkFlows[e] / 2.0;
+          const double halfFlow = network.codedLinkFlow(e) / 2.0;
           exitFlow[sourceIndex] += halfFlow;
           exitFlow[targetIndex] += halfFlow;
           enterFlow[sourceIndex] += halfFlow;
@@ -1877,7 +1878,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
           if (network.m_linkTargets[e] == srcIdx)
             continue;
           const auto targetIndex = nodeIndexMap[network.nodeId(network.m_linkTargets[e])];
-          const double flow = undirectedLinks ? network.m_linkFlows[e] / 2 : network.m_linkFlows[e];
+          const double flow = undirectedLinks ? network.codedLinkFlow(e) / 2 : network.codedLinkFlow(e);
           exitFlow[sourceIndex] += flow;
           enterFlow[targetIndex] += flow;
           if (undirectedLinks) {
@@ -1889,8 +1890,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     }
   } else {
     // Only the regularized multilayer flow sets enter and exit flow before this point, and
-    // only their teleportation part. Add the links as stored, after global and variable
-    // Markov time scaled them. A self-link has the same physical node at both ends, so the
+    // only their teleportation part. Add the coded link flow, which global and variable
+    // Markov time have scaled. A self-link has the same physical node at both ends, so the
     // multilayer flow takes it for an inter-layer link, but it never crosses a module
     // boundary.
     for (auto& nodeIt : network.m_nodes) {
@@ -1900,8 +1901,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
         if (network.m_linkTargets[e] == srcIdx)
           continue;
         const auto targetIndex = nodeIndexMap[network.nodeId(network.m_linkTargets[e])];
-        exitFlow[sourceIndex] += network.m_linkFlows[e];
-        enterFlow[targetIndex] += network.m_linkFlows[e];
+        exitFlow[sourceIndex] += network.codedLinkFlow(e);
+        enterFlow[targetIndex] += network.codedLinkFlow(e);
       }
     }
   }

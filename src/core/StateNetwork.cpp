@@ -307,6 +307,7 @@ void StateNetwork::clearLinks()
   std::vector<unsigned int>().swap(m_linkTargets);
   std::vector<double>().swap(m_linkWeights);
   std::vector<double>().swap(m_linkFlows);
+  std::vector<double>().swap(m_codedLinkFlows);
   std::map<unsigned int, double>().swap(m_outWeights);
   // Mark finalized (CSR is "built" -- it's just empty) and zero the raw count so a
   // lazy finalize triggered after clearLinks() can't rebuild a bogus CSR or compute
@@ -333,6 +334,7 @@ void StateNetwork::clear()
   std::vector<unsigned int>().swap(m_linkTargets);
   std::vector<double>().swap(m_linkWeights);
   std::vector<double>().swap(m_linkFlows);
+  std::vector<double>().swap(m_codedLinkFlows);
   m_physNodes.clear();
   m_outWeights.clear();
   m_names.clear();
@@ -588,6 +590,7 @@ void StateNetwork::buildCsrFromBuffer()
   // on a node with no other links made sumDegree() 0, and three made it wrap around.
   m_numSelfLinks = numSelfLinks;
   m_linkFlows.assign(m_linkTargets.size(), 0.0);
+  m_codedLinkFlows.clear();
 
   // m_outWeights is deliberately NOT derived in mode A: first-order consumers
   // don't read it (only the multilayer mode-B expansion does, where it's kept
@@ -617,6 +620,7 @@ void StateNetwork::definalize()
   m_linkTargets.clear();
   m_linkWeights.clear();
   m_linkFlows.clear();
+  m_codedLinkFlows.clear();
   m_linksFinalized = false;
 }
 
@@ -633,6 +637,7 @@ void StateNetwork::buildCsrFromMap()
   m_linkTargets.clear();
   m_linkWeights.clear();
   m_linkFlows.clear();
+  m_codedLinkFlows.clear();
   m_linkTargets.reserve(m_numLinks);
   m_linkWeights.reserve(m_numLinks);
   m_linkFlows.reserve(m_numLinks);

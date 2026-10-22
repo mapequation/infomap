@@ -1894,4 +1894,43 @@ TEST_CASE("Columnar leaf: link-only enter and exit flow is the leaf's own link f
     check("modular_w.net", flags, true);
 }
 
+// Markov time scales the link flow the map equation codes, not the flow of the network: the
+// reported link flow is that of Markov time 1 (test/python/reference_flow.py). The branch
+// stored the scaled flow in the network, so the output reported it, and --markov-time 0 left
+// no link flow and failed as degenerate. The columnar leaf codes the scaled flow.
+TEST_CASE("Columnar: Markov time scales the coded link flow and leaves the reported link flow at Markov time 1 [fast][core][flow][columnar-contract]")
+{
+  const auto links = [](const std::string& network, const std::string& flags) {
+    InfomapWrapper im(infomap::test::defaultFlags("--columnar --num-trials 1 " + flags));
+    im.readInputData(infomap::test::repoPath("examples/networks/" + network));
+    im.run();
+    return im.getLinks(true);
+  };
+  for (const char* network : { "modular_wd.net", "modular_w.net" }) {
+    for (const char* model : { "-d", "", "--flow-model undirdir", "-d --regularized" }) {
+      const auto reference = links(network, model);
+      for (const char* markov : { "--markov-time 0.5", "--markov-time 2", "--markov-time 0", "--variable-markov-time" }) {
+        INFO(network << " " << model << " " << markov);
+        const auto scaled = links(network, std::string(model) + " " + markov);
+        REQUIRE(scaled.size() == reference.size());
+        for (const auto& [link, flow] : reference)
+          CHECK(std::abs(scaled.at(link) - flow) < 1e-12);
+      }
+    }
+  }
+
+  InfomapWrapper im(infomap::test::defaultFlags("--columnar --num-trials 1 -d --markov-time 2"));
+  im.readInputData(infomap::test::repoPath("examples/networks/modular_wd.net"));
+  im.run();
+  const auto reported = im.getLinks(true);
+  const auto& leaf = im.columnarLeafInput();
+  for (int i = 0; i < leaf.n; ++i) {
+    for (int e = leaf.outStart[i]; e < leaf.outStart[i + 1]; ++e) {
+      const auto source = im.network().nodeId(static_cast<unsigned int>(i));
+      const auto target = im.network().nodeId(static_cast<unsigned int>(leaf.outTarget[e]));
+      CHECK(std::abs(leaf.outFlow[e] - 2 * reported.at({ source, target })) < 1e-12);
+    }
+  }
+}
+
 } // namespace

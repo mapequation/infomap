@@ -2960,9 +2960,9 @@ void InfomapBase::generateSubNetwork(Network& network)
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Console::warn(1, "Total flow on nodes differs from 1.0 by {:g}.", sumNodeFlow - 1.0);
 
-  // Global Markov time is now applied to the link flow in FlowCalculator, so the
-  // network flow read here is already scaled -- no rescale on the edge.
-  network.forEachLink([&](unsigned int sourceIndex, unsigned int targetIndex, double weight, double& flow) {
+  // Global and variable Markov time are applied to the coded link flow in FlowCalculator,
+  // so the flow read here is already scaled -- no rescale on the edge.
+  network.forEachCodedLink([&](unsigned int sourceIndex, unsigned int targetIndex, double weight, double flow) {
     // Ignore self-links in optimization as it doesn't change enter/exit flow on modular level
     if (sourceIndex != targetIndex) {
       m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], weight, flow);
@@ -2971,7 +2971,7 @@ void InfomapBase::generateSubNetwork(Network& network)
 
   // Reporting stats only (entropy rate, max entropy, max flow, exposed via
   // getEntropyRate/getMaxEntropy/getMaxFlow). Variable Markov time scaling itself now
-  // lives in FlowCalculator, applied to the network link flow that the InfoNode edges
+  // lives in FlowCalculator, applied to the coded link flow that the InfoNode edges
   // above already read -- so no per-edge rescale happens here anymore.
   double maxEntropy = 0.0;
   double maxFlow = 0.0;
@@ -3680,9 +3680,9 @@ void InfomapBase::columnarPartition()
 
 bool InfomapBase::columnarNativeInputEligible() const
 {
-  // Native leaf input reads the network's stored node enter/exit + link flow, both of
-  // which FlowCalculator now computes for every flow model -- including global and
-  // variable Markov time, which it scales into the link flow (and the enter/exit
+  // Native leaf input reads the network's stored node enter/exit + coded link flow, both
+  // of which FlowCalculator now computes for every flow model -- including global and
+  // variable Markov time, which it scales into the coded link flow (and the enter/exit
   // derived from it) before the network is handed off. No flow model is excluded.
   return columnarSearch;
 }
@@ -3735,7 +3735,7 @@ void InfomapBase::buildColumnarLeafInput(Network& network)
   leaf.inFlow.assign(leaf.inStart[numNodes], 0.0);
   std::vector<int> outPos(leaf.outStart.begin(), leaf.outStart.end() - 1);
   std::vector<int> inPos(leaf.inStart.begin(), leaf.inStart.end() - 1);
-  network.forEachLink([&](unsigned int s, unsigned int t, double, double& f) {
+  network.forEachCodedLink([&](unsigned int s, unsigned int t, double, double f) {
     if (s == t)
       return;
     leaf.outTarget[outPos[s]] = static_cast<int>(t);
