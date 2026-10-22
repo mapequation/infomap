@@ -314,13 +314,13 @@ public:
   // enter-flow super-network, or a sub-network within a module, into a nested
   // optimizer). exitNetworkFlow is the flow leaving the (sub-)network — 0 for
   // the whole closed network, the module's exit flow for an in-context refine.
-  // recordedTeleport/globalTotalTeleFlow propagate the GLOBAL teleport context so
-  // sub-optimizers fold in the same all-to-all teleport term (the level already
-  // carries per-unit teleFlow/teleWeight); globalTotalTeleFlow is the whole
-  // network's teleport flow, NOT the sub-network's local sum.
+  // `flow` is the parent's whole flow model (undirected, teleport kind and its
+  // GLOBAL totals), so sub-optimizers fold in the same teleport terms as the
+  // parent (the level already carries the per-unit teleport sums); the totals
+  // are the whole network's, NOT the sub-network's local sums.
   // Takes the level by value so a caller with a dead local can hand over its
   // storage (std::move) instead of paying a copy of the whole CSR.
-  void buildFromLevel(Level level, bool undirected, unsigned long seed, double exitNetworkFlow = 0.0, bool recordedTeleport = false, double globalTotalTeleFlow = 0.0);
+  void buildFromLevel(Level level, const ColumnarBoundaryFlow& flow, unsigned long seed, double exitNetworkFlow = 0.0);
 
   // Same, but the leaf level stays owned by the caller and is only read through
   // (no copy). Used for the native columnar leaf input, which InfomapBase builds
@@ -328,7 +328,7 @@ public:
   // largest allocation in a run, so each trial borrows it instead of duplicating
   // it. The caller MUST keep `level` alive, and unchanged, for this optimizer's
   // whole lifetime — the leaf level is immutable during a search.
-  void buildFromBorrowedLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow = 0.0, bool recordedTeleport = false, double globalTotalTeleFlow = 0.0);
+  void buildFromBorrowedLevel(const Level& level, const ColumnarBoundaryFlow& flow, unsigned long seed, double exitNetworkFlow = 0.0);
 
   // Run repeated aggregation (Louvain-style) and return the two-level codelength
   // of the resulting leaves -> top-modules partition. maxAggPasses > 0 stops the
@@ -653,10 +653,11 @@ private:
   // used by the regroup ladder's leaf-granularity candidate test, where the
   // point is to establish that a candidate wins, not to converge it.
   unsigned int moveLoop(unsigned int sweepCap = 0);
-  // The move loop's body, compiled once per teleport variant: without recorded
+  // The move loop's body, compiled once per teleport kind: without recorded
   // teleportation the teleport flow between a unit and a module is identically
-  // zero, so that instantiation carries no teleport code in the per-candidate path.
-  template <bool Tele>
+  // zero, so that instantiation carries no teleport code in the per-candidate
+  // path, and the global and per-layer kinds each inline their own sums.
+  template <ColumnarBoundaryFlow::TeleportKind Tele>
   unsigned int moveLoopWith(unsigned int sweepCap);
   // Build the next level from the current module assignment; returns unit count.
   int consolidateToNextLevel();
@@ -875,7 +876,7 @@ private:
 
   // Shared tail of the three build entries: point the leaf network at `leaf`
   // (owned or borrowed) and derive the per-leaf context from it.
-  void initLeafContext(const Level* leaf, bool undirected, unsigned long seed, double exitNetworkFlow, bool recordedTeleport, double globalTotalTeleFlow);
+  void initLeafContext(const Level* leaf, const ColumnarBoundaryFlow& flow, unsigned long seed, double exitNetworkFlow);
 
   const Level& leaf0() const { return *m_leaf0Ptr; }
   const Level& lvl() const { return *m_lvlPtr; }

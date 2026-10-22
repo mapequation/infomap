@@ -30,6 +30,13 @@ namespace infomap {
  * only ColumnarBoundaryFlow::aggregate evaluates the closed form. Leaving that
  * subtraction out double-counts teleportation in every module rate (#1042).
  *
+ * Under the regularized multilayer prior (#828) the walker teleports within its
+ * own layer, so the teleport aggregates are per layer instead: unit i's layers
+ * are layerId[layerStart[i] .. layerStart[i + 1]) (compact ids) with
+ * that layer's summed teleport flow / weight in layerTeleFlow / layerTeleWeight
+ * -- one entry per leaf. All four are empty unless the flow model is layered
+ * (ColumnarBoundaryFlow::layered()), and teleFlow then carries nothing (0).
+ *
  * The leaf level is by far the largest object in a run (24 B per link: target +
  * flow in each direction), so it is passed around by reference and borrowed
  * rather than copied wherever its owner outlives the reader — see
@@ -39,6 +46,8 @@ struct ColumnarLevel {
   int n = 0;
   std::vector<double> flow, enter, exit;
   std::vector<double> teleFlow, teleWeight;
+  std::vector<int> layerStart, layerId;
+  std::vector<double> layerTeleFlow, layerTeleWeight;
   std::vector<int> outStart, outTarget;
   std::vector<double> outFlow;
   std::vector<int> inStart, inTarget;

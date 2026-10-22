@@ -3146,13 +3146,10 @@ void InfomapBase::setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long se
     // this InfomapBase, or by the main instance for a parallel-trial worker), which
     // is what buildFromBorrowedLevel requires.
     const ColumnarLevel& leaf = columnarLeafInput();
-    // Global teleport total = sum of leaf teleport flow (buildFromLeaves derives
-    // this itself; the level builders need it passed so the module teleport terms
-    // use the whole-network total, not zero).
-    double totalTele = 0.0;
-    for (double tf : leaf.teleFlow)
-      totalTele += tf;
-    opt.buildFromBorrowedLevel(leaf, isUndirectedClustering(), seed, 0.0, recordsTeleportation(), totalTele);
+    // The flow model, teleport totals included (buildFromLeaves derives it
+    // itself; the level builders need it passed so the module teleport terms use
+    // the whole-network totals, not zero).
+    opt.buildFromBorrowedLevel(leaf, ColumnarBoundaryFlow::forLeaves(leaf, isUndirectedClustering(), recordsTeleportation()), seed, 0.0);
   } else {
     opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seed, recordsTeleportation());
   }
@@ -3710,6 +3707,41 @@ void InfomapBase::buildColumnarLeafInput(Network& network)
     leaf.teleWeight[i] = n.weight; // teleport weight
     ++i;
   }
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  // Regularized multilayer flow teleports within the walker's layer: one
+  // per-layer teleport entry per leaf (compact layer ids), on the same condition
+  // as the leaf tree's layerTeleFlowData in initNetwork -- all or nothing.
+  leaf.layerStart.clear();
+  leaf.layerId.clear();
+  leaf.layerTeleFlow.clear();
+  leaf.layerTeleWeight.clear();
+  bool haveLayerTeleportFlow = false;
+  if (isRegularizedMultilayerFlow())
+    for (const auto& nodeIt : network.nodes())
+      haveLayerTeleportFlow = haveLayerTeleportFlow || nodeIt.second.intraLayerTeleFlow > 0;
+  if (haveLayerTeleportFlow) {
+    std::map<unsigned int, int> compactLayer;
+    for (const auto& nodeIt : network.nodes())
+      compactLayer.emplace(nodeIt.second.layerId, 0);
+    int numLayers = 0;
+    for (auto& kv : compactLayer)
+      kv.second = numLayers++;
+    leaf.layerStart.resize(numNodes + 1);
+    leaf.layerId.resize(numNodes);
+    leaf.layerTeleFlow.resize(numNodes);
+    leaf.layerTeleWeight.resize(numNodes);
+    i = 0;
+    for (const auto& nodeIt : network.nodes()) {
+      const auto& n = nodeIt.second;
+      leaf.layerStart[i] = static_cast<int>(i);
+      leaf.layerId[i] = compactLayer[n.layerId];
+      leaf.layerTeleFlow[i] = n.intraLayerTeleFlow;
+      leaf.layerTeleWeight[i] = n.intraLayerTeleWeight;
+      ++i;
+    }
+    leaf.layerStart[numNodes] = static_cast<int>(numNodes);
+  }
+#endif
 
   // Out + in CSR (in is the transpose), self-links excluded as in generateSubNetwork.
   std::vector<int> outDeg(numNodes, 0), inDeg(numNodes, 0);
@@ -3781,7 +3813,9 @@ void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
     opt.addCorrection(std::make_unique<MetaCorrection>(std::move(leafCategory), std::move(leafWeight), metaDataRate));
   }
   // Memory (state / higher-order): physical-node leaf-module codebook. The
-  // regularized-multilayer teleport prior is a separate correction, deferred.
+  // regularized-multilayer teleport prior is not a correction: it is the flow
+  // model's per-layer recorded teleportation, in the boundary rates themselves
+  // (ColumnarBoundaryFlow, layered kind; #828).
   //
   // Attached independently of the metadata correction above, not as its `else`
   // branch (#1012). They are independent codebooks over the same leaves, and the
