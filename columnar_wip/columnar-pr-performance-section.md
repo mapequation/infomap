@@ -26,6 +26,7 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123`. Codelength in bits. **`
 > Columnar arms measured in one session, 2026-10-22/23. OO arms carried from #1373, which carried them from #1369's session.
 > - **Old:** a fresh build of the branch tip `1f8312a9` (#1373), md5 `777c20dac8bb63080f7946abf64a8741`. It is byte-identical to #1373's new arm. Feature build (for the multilayer table): md5 `360478379b73b4777592c266a59a924e`.
 > - **New:** `2740ec9c`, md5 `d1da5248ea7b61b049fa3b83d834f7cf`. Feature build: md5 `ab45d66545ef7b3ce597d3395771499a`.
+> - **The head moved after measuring.** `aeb4112c` gives `TeleportKind` a one-byte base type, which CI's clang-tidy requires. That changes the binaries (md5 `2a16e693583ec42cd6edb2069f51e9ce`, feature build `7d25fa4bfbc2e08422d8a4ad78181a68`). The new feature build against the measured one on 16 configurations (6 plain or regularized from the set, 10 multilayer, `-N1`, `-N10` and `-2 -N10`): codelengths bit-identical on all 16, instructions min-of-3 −0.48% to +0.19%, median −0.06%. The numbers below stand.
 > - **Family rows** that repeat a `-C`, `-C -2` or `-C -N1` row take that row's run, so the two tables agree.
 
 ### What the change moves
