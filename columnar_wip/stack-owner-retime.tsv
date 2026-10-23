@@ -1,0 +1,290 @@
+C1	lazega	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	old	0	0.002773292	346365918	6.041117399
+C1	lazega	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	new	0	0.0048195	79720149	6.041117399
+C1	lazega	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	new	1	0.000852625	68832485	6.041117399
+C1	lazega	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	old	1	0.001103083	67630355	6.041117399
+C1	lazega	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	old	2	0.000774292	67614876	6.041117399
+C1	lazega	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	new	2	0.000850334	67006093	6.041117399
+C1	lazega	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	new	3	0.000907834	69501809	6.041117399
+C1	lazega	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	old	3	0.000962541	67355749	6.041117399
+C1	lazega	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	old	4	0.000943667	67580275	6.041117399
+C1	lazega	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	new	4	0.000806958	67561447	6.041117399
+F1	overlapping om8_N256_E100k `-d`	-C -F -d -N1	old	0	0.989583625	6117884924	7.007657776
+F1	overlapping om8_N256_E100k `-d`	-C -F -d -N1	new	0	0.8344975	6106277757	7.007657776
+F1	overlapping om8_N256_E100k `-d`	-C -F -d -N1	new	1	0.936605417	6117798204	7.007657776
+F1	overlapping om8_N256_E100k `-d`	-C -F -d -N1	old	1	0.795662792	6111843986	7.007657776
+F1	overlapping om8_N256_E100k `-d`	-C -F -d -N1	old	2	0.914911292	6113935631	7.007657776
+F1	overlapping om8_N256_E100k `-d`	-C -F -d -N1	new	2	0.824233292	6104623689	7.007657776
+F1	overlapping om8_N256_E100k `-d`	-C -F -d -N1	new	3	0.891040292	6106631438	7.007657776
+F1	overlapping om8_N256_E100k `-d`	-C -F -d -N1	old	3	0.825654833	6108915019	7.007657776
+F1	overlapping om8_N256_E100k `-d`	-C -F -d -N1	old	4	0.852381084	6108628950	7.007657776
+F1	overlapping om8_N256_E100k `-d`	-C -F -d -N1	new	4	0.853394583	6103283398	7.007657776
+FAM	om2_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	0	1.270914917	5246446884	7.485225266
+FAM	om2_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	0	0.731936542	5227666821	7.485225266
+FAM	om2_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	1	0.675321958	5221719693	7.485225266
+FAM	om2_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	1	0.756410875	5230056398	7.485225266
+FAM	om2_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	2	0.600827959	5219947643	7.485225266
+FAM	om2_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	2	0.543169416	5208298312	7.485225266
+FAM	om2_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	3	0.906762208	5250501040	7.485225266
+FAM	om2_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	3	0.528376709	5209127862	7.485225266
+FAM	om2_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	4	0.606262125	5208414618	7.485225266
+FAM	om2_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	4	0.551761042	5214515682	7.485225266
+FAM	om3_N256_E100k `-d -N1`	-C -d -N1	old	0	1.669794875	16815660161	6.823562921
+FAM	om3_N256_E100k `-d -N1`	-C -d -N1	new	0	1.596610583	16804245962	6.823562921
+FAM	om3_N256_E100k `-d -N1`	-C -d -N1	new	1	1.715030125	16809652114	6.823562921
+FAM	om3_N256_E100k `-d -N1`	-C -d -N1	old	1	1.714144833	16815735193	6.823562921
+FAM	om3_N256_E100k `-d -N1`	-C -d -N1	old	2	1.644962917	16809750830	6.823562921
+FAM	om3_N256_E100k `-d -N1`	-C -d -N1	new	2	1.563920875	16799414971	6.823562921
+FAM	om3_N256_E100k `-d -N1`	-C -d -N1	new	3	1.644610292	16803897730	6.823562921
+FAM	om3_N256_E100k `-d -N1`	-C -d -N1	old	3	1.659651125	16803370701	6.823562921
+FAM	om3_N256_E100k `-d -N1`	-C -d -N1	old	4	1.569951166	16802026873	6.823562921
+FAM	om3_N256_E100k `-d -N1`	-C -d -N1	new	4	1.579366	16796616765	6.823562921
+FAM	om4_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	0	1.823387583	16566907697	7.535466123
+FAM	om4_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	0	1.657285792	16553040473	7.535466123
+FAM	om4_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	1	1.716361875	16553261438	7.535466123
+FAM	om4_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	1	1.807034541	16569740506	7.535466123
+FAM	om4_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	2	1.711177833	16560609617	7.535466123
+FAM	om4_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	2	1.959462167	16591414715	7.535466123
+FAM	om4_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	3	1.851809125	16569003484	7.535466123
+FAM	om4_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	3	2.007701375	16588718010	7.535466123
+FAM	om4_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	4	2.12576725	16578690272	7.535466123
+FAM	om4_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	4	1.886196416	16573983715	7.535466123
+FAM	om5_N256_E100k `-d -N1`	-C -d -N1	old	0	1.11789525	7217184730	7.795491139
+FAM	om5_N256_E100k `-d -N1`	-C -d -N1	new	0	0.978872542	7207923637	7.795491139
+FAM	om5_N256_E100k `-d -N1`	-C -d -N1	new	1	0.941292666	7196653270	7.795491139
+FAM	om5_N256_E100k `-d -N1`	-C -d -N1	old	1	0.915070667	7216412814	7.795491139
+FAM	om5_N256_E100k `-d -N1`	-C -d -N1	old	2	1.185820958	7224224493	7.795491139
+FAM	om5_N256_E100k `-d -N1`	-C -d -N1	new	2	1.478802458	7257109210	7.795491139
+FAM	om5_N256_E100k `-d -N1`	-C -d -N1	new	3	1.157440459	7221823364	7.795491139
+FAM	om5_N256_E100k `-d -N1`	-C -d -N1	old	3	0.958432917	7207756583	7.795491139
+FAM	om5_N256_E100k `-d -N1`	-C -d -N1	old	4	0.833587834	7198874769	7.795491139
+FAM	om5_N256_E100k `-d -N1`	-C -d -N1	new	4	0.996990416	7198484695	7.795491139
+FAM	om7_N256_E100k `-2d -N1`	-C -2d -N1	old	0	2.437028042	16671597974	6.889674586
+FAM	om7_N256_E100k `-2d -N1`	-C -2d -N1	new	0	1.95034625	16640355382	6.889674586
+FAM	om7_N256_E100k `-2d -N1`	-C -2d -N1	new	1	2.090195667	16641680761	6.889674586
+FAM	om7_N256_E100k `-2d -N1`	-C -2d -N1	old	1	1.955462709	16653488498	6.889674586
+FAM	om7_N256_E100k `-2d -N1`	-C -2d -N1	old	2	1.893014375	16647764210	6.889674586
+FAM	om7_N256_E100k `-2d -N1`	-C -2d -N1	new	2	1.942193125	16631911857	6.889674586
+FAM	om7_N256_E100k `-2d -N1`	-C -2d -N1	new	3	2.051913833	16643600754	6.889674586
+FAM	om7_N256_E100k `-2d -N1`	-C -2d -N1	old	3	2.003004708	16651616659	6.889674586
+FAM	om7_N256_E100k `-2d -N1`	-C -2d -N1	old	4	1.909774375	16644107046	6.889674586
+FAM	om7_N256_E100k `-2d -N1`	-C -2d -N1	new	4	1.971323	16643156643	6.889674586
+FAM	om8_N256_E100k `-d -N1`	-C -d -N1	old	0	0.951982584	7840994978	6.938347922
+FAM	om8_N256_E100k `-d -N1`	-C -d -N1	new	0	0.940643333	7838243866	6.938347922
+FAM	om8_N256_E100k `-d -N1`	-C -d -N1	new	1	0.925042125	7827701048	6.938347922
+FAM	om8_N256_E100k `-d -N1`	-C -d -N1	old	1	0.919984958	7838777750	6.938347922
+FAM	om8_N256_E100k `-d -N1`	-C -d -N1	old	2	0.917462125	7855948585	6.938347922
+FAM	om8_N256_E100k `-d -N1`	-C -d -N1	new	2	1.005533875	7835475462	6.938347922
+FAM	om8_N256_E100k `-d -N1`	-C -d -N1	new	3	0.905393	7840320753	6.938347922
+FAM	om8_N256_E100k `-d -N1`	-C -d -N1	old	3	0.92086125	7842906831	6.938347922
+FAM	om8_N256_E100k `-d -N1`	-C -d -N1	old	4	0.99647175	7847429790	6.938347922
+FAM	om8_N256_E100k `-d -N1`	-C -d -N1	new	4	0.959455625	7842276617	6.938347922
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	old	0	10.015975125	90425260402	7.419172605
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	new	0	10.203002125	90219702507	7.419172605
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	new	1	10.207042458	90211368552	7.419172605
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	old	1	10.115365542	90435966492	7.419172605
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	old	2	10.220117125	90442306031	7.419172605
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	new	2	11.599962833	90319280784	7.419172605
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	new	3	13.284816292	90450590067	7.419172605
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	old	3	10.51614525	90456391389	7.419172605
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	old	4	10.640675375	90448884427	7.419172605
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	new	4	10.908039125	90277579272	7.419172605
+L10	wikispeedia `-d`	-C --non-redundant -d -N10	old	0	0.95467125	6885307315	5.903208727
+L10	wikispeedia `-d`	-C --non-redundant -d -N10	new	0	0.842521875	6846705523	5.903208727
+L10	wikispeedia `-d`	-C --non-redundant -d -N10	new	1	0.744768666	6845048905	5.903208727
+L10	wikispeedia `-d`	-C --non-redundant -d -N10	old	1	0.709265125	6857303950	5.903208727
+L10	wikispeedia `-d`	-C --non-redundant -d -N10	old	2	1.195423916	6871921730	5.903208727
+L10	wikispeedia `-d`	-C --non-redundant -d -N10	new	2	0.709446208	6839477216	5.903208727
+L10	wikispeedia `-d`	-C --non-redundant -d -N10	new	3	0.781251417	6838484896	5.903208727
+L10	wikispeedia `-d`	-C --non-redundant -d -N10	old	3	0.69907825	6853063064	5.903208727
+L10	wikispeedia `-d`	-C --non-redundant -d -N10	old	4	0.71145875	6856825149	5.903208727
+L10	wikispeedia `-d`	-C --non-redundant -d -N10	new	4	0.840954375	6849222079	5.903208727
+F10	multilayer (ex.)	-C -F -N10	old	0	0.000612625	64506356	2.011405238
+F10	multilayer (ex.)	-C -F -N10	new	0	0.000544125	63199627	2.011405238
+F10	multilayer (ex.)	-C -F -N10	new	1	0.00055825	63002556	2.011405238
+F10	multilayer (ex.)	-C -F -N10	old	1	0.000510708	63286879	2.011405238
+F10	multilayer (ex.)	-C -F -N10	old	2	0.000575958	63225440	2.011405238
+F10	multilayer (ex.)	-C -F -N10	new	2	0.00059325	63086349	2.011405238
+F10	multilayer (ex.)	-C -F -N10	new	3	0.000548958	63180813	2.011405238
+F10	multilayer (ex.)	-C -F -N10	old	3	0.000535584	63684334	2.011405238
+F10	multilayer (ex.)	-C -F -N10	old	4	0.000615042	63180472	2.011405238
+F10	multilayer (ex.)	-C -F -N10	new	4	0.000512458	62924039	2.011405238
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	0	4.701208458	45156436305	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	0	4.628303666	44878451732	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	1	6.00928075	44942610847	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	1	5.390814333	45213304874	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	2	4.916427791	45185727347	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	2	5.578162333	44953868834	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	3	6.66545825	45039895920	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	3	5.39119525	45207833133	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	4	4.788649125	45161085918	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	4	4.872711042	44913207162	11.73480892
+C2_10	ninetriangles	-C -2 -N10	old	0	0.000573875	65141828	3.517754809
+C2_10	ninetriangles	-C -2 -N10	new	0	0.000679792	63775490	3.517754809
+C2_10	ninetriangles	-C -2 -N10	new	1	0.000609959	64058563	3.517754809
+C2_10	ninetriangles	-C -2 -N10	old	1	0.000563667	63819568	3.517754809
+C2_10	ninetriangles	-C -2 -N10	old	2	0.000651209	63728658	3.517754809
+C2_10	ninetriangles	-C -2 -N10	new	2	0.000581625	63630159	3.517754809
+C2_10	ninetriangles	-C -2 -N10	new	3	0.000572667	63717054	3.517754809
+C2_10	ninetriangles	-C -2 -N10	old	3	0.000637	63869735	3.517754809
+C2_10	ninetriangles	-C -2 -N10	old	4	0.000593334	63710181	3.517754809
+C2_10	ninetriangles	-C -2 -N10	new	4	0.000573375	64270444	3.517754809
+FAM	om6_N256_E50k `-d -N10`	-C -d -N10	old	0	7.573765583	51751175914	3.617750514
+FAM	om6_N256_E50k `-d -N10`	-C -d -N10	new	0	7.280578375	51671135455	3.617750514
+FAM	om6_N256_E50k `-d -N10`	-C -d -N10	new	1	6.767127958	51629011379	3.617750514
+FAM	om6_N256_E50k `-d -N10`	-C -d -N10	old	1	7.086303375	51768100649	3.617750514
+FAM	om6_N256_E50k `-d -N10`	-C -d -N10	old	2	6.99072625	51741449872	3.617750514
+FAM	om6_N256_E50k `-d -N10`	-C -d -N10	new	2	7.100559375	51761945235	3.617750514
+FAM	om6_N256_E50k `-d -N10`	-C -d -N10	new	3	6.914543208	51630824970	3.617750514
+FAM	om6_N256_E50k `-d -N10`	-C -d -N10	old	3	6.665348042	51708276202	3.617750514
+FAM	om6_N256_E50k `-d -N10`	-C -d -N10	old	4	6.824420708	51706559841	3.617750514
+FAM	om6_N256_E50k `-d -N10`	-C -d -N10	new	4	6.71883275	51631214533	3.617750514
+FAM	om5_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	0	3.477365167	26201319908	7.950093392
+FAM	om5_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	0	4.305818917	26238651848	7.950093392
+FAM	om5_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	1	3.651469667	26211814762	7.950093392
+FAM	om5_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	1	3.409918458	26193767726	7.950093392
+FAM	om5_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	2	3.430238834	26206470980	7.950093392
+FAM	om5_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	2	3.673521	26206735894	7.950093392
+FAM	om5_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	3	3.535035334	26209916538	7.950093392
+FAM	om5_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	3	3.426278542	26205583476	7.950093392
+FAM	om5_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	4	3.719882917	26225984184	7.950093392
+FAM	om5_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	4	3.649877	26219686081	7.950093392
+F10	web-NotreDame	-C -F -N10 -d	old	0	18.700185125	120425529044	6.263424919
+F10	web-NotreDame	-C -F -N10 -d	new	0	16.872984416	119834595979	6.263424919
+F10	web-NotreDame	-C -F -N10 -d	new	1	16.819316791	119903631051	6.263424919
+F10	web-NotreDame	-C -F -N10 -d	old	1	17.006568375	119902067665	6.263424919
+F10	web-NotreDame	-C -F -N10 -d	old	2	16.204168291	119772019646	6.263424919
+F10	web-NotreDame	-C -F -N10 -d	new	2	17.041333833	120097389602	6.263424919
+F10	web-NotreDame	-C -F -N10 -d	new	3	16.843137542	119928419204	6.263424919
+F10	web-NotreDame	-C -F -N10 -d	old	3	16.932392	119909401895	6.263424919
+F10	web-NotreDame	-C -F -N10 -d	old	4	16.453008542	119800369389	6.263424919
+F10	web-NotreDame	-C -F -N10 -d	new	4	16.833349625	119869489671	6.263424919
+F10	lazega	-C -F -N10 --meta-data networks/columnar-benchmark/lazega.meta	old	0	0.004585833	107291923	6.017860269
+F10	lazega	-C -F -N10 --meta-data networks/columnar-benchmark/lazega.meta	new	0	0.003945042	98853581	6.017860269
+F10	lazega	-C -F -N10 --meta-data networks/columnar-benchmark/lazega.meta	new	1	0.00362225	98525459	6.017860269
+F10	lazega	-C -F -N10 --meta-data networks/columnar-benchmark/lazega.meta	old	1	0.00357225	100024702	6.017860269
+F10	lazega	-C -F -N10 --meta-data networks/columnar-benchmark/lazega.meta	old	2	0.003852209	99061650	6.017860269
+F10	lazega	-C -F -N10 --meta-data networks/columnar-benchmark/lazega.meta	new	2	0.003753542	98471558	6.017860269
+F10	lazega	-C -F -N10 --meta-data networks/columnar-benchmark/lazega.meta	new	3	0.00380025	98417155	6.017860269
+F10	lazega	-C -F -N10 --meta-data networks/columnar-benchmark/lazega.meta	old	3	0.003568458	100228728	6.017860269
+F10	lazega	-C -F -N10 --meta-data networks/columnar-benchmark/lazega.meta	old	4	0.003679042	99066006	6.017860269
+F10	lazega	-C -F -N10 --meta-data networks/columnar-benchmark/lazega.meta	new	4	0.003768916	98422050	6.017860269
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	old	0	0.685898959	6894451607	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	new	0	0.723806792	6894823655	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	new	1	0.730572292	6895461537	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	old	1	0.692102583	6898976517	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	old	2	0.88186725	6920417732	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	new	2	0.693519541	6894391870	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	new	3	0.775595	6899013195	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	old	3	0.866252583	6905570476	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	old	4	0.727863709	6902917819	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	new	4	0.796914916	6898603221	4.309453443
+C2_10	overlapping om4_N256_E50k `-2d`	-C -2d -N10	old	0	4.955498666	33211911087	5.454385527
+C2_10	overlapping om4_N256_E50k `-2d`	-C -2d -N10	new	0	5.317596709	33203526065	5.454385527
+C2_10	overlapping om4_N256_E50k `-2d`	-C -2d -N10	new	1	4.904828292	33173395896	5.454385527
+C2_10	overlapping om4_N256_E50k `-2d`	-C -2d -N10	old	1	5.500057166	33251514811	5.454385527
+C2_10	overlapping om4_N256_E50k `-2d`	-C -2d -N10	old	2	4.854756375	33206031118	5.454385527
+C2_10	overlapping om4_N256_E50k `-2d`	-C -2d -N10	new	2	4.77323325	33166880296	5.454385527
+C2_10	overlapping om4_N256_E50k `-2d`	-C -2d -N10	new	3	6.119461958	33194683505	5.454385527
+C2_10	overlapping om4_N256_E50k `-2d`	-C -2d -N10	old	3	4.991849125	33211533018	5.454385527
+C2_10	overlapping om4_N256_E50k `-2d`	-C -2d -N10	old	4	4.950421875	33217052920	5.454385527
+C2_10	overlapping om4_N256_E50k `-2d`	-C -2d -N10	new	4	5.429115458	33209691531	5.454385527
+FAM	om8_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	0	7.387795041	52373541874	7.971714831
+FAM	om8_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	0	7.2045085	52350593198	7.971714831
+FAM	om8_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	1	7.052974375	52322642796	7.971714831
+FAM	om8_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	1	7.3395015	52382568810	7.971714831
+FAM	om8_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	2	7.293358084	52410238633	7.971714831
+FAM	om8_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	2	7.297045625	52372038968	7.971714831
+FAM	om8_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	3	7.629699584	52372362174	7.971714831
+FAM	om8_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	3	7.495319083	52413126192	7.971714831
+FAM	om8_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	4	7.257804791	52382379062	7.971714831
+FAM	om8_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	4	7.456100125	52372211560	7.971714831
+FAM	om8_N256_E50k `-2d -N10`	-C -2d -N10	old	0	5.080437375	30507753260	3.859069372
+FAM	om8_N256_E50k `-2d -N10`	-C -2d -N10	new	0	4.974907833	30452508998	3.859069372
+FAM	om8_N256_E50k `-2d -N10`	-C -2d -N10	new	1	9.745099583	30727971665	3.859069372
+FAM	om8_N256_E50k `-2d -N10`	-C -2d -N10	old	1	4.74024375	30485776526	3.859069372
+FAM	om8_N256_E50k `-2d -N10`	-C -2d -N10	old	2	4.687532875	30471988008	3.859069372
+FAM	om8_N256_E50k `-2d -N10`	-C -2d -N10	new	2	5.268514708	30455176688	3.859069372
+FAM	om8_N256_E50k `-2d -N10`	-C -2d -N10	new	3	4.647322791	30426347349	3.859069372
+FAM	om8_N256_E50k `-2d -N10`	-C -2d -N10	old	3	4.758379458	30482589629	3.859069372
+FAM	om8_N256_E50k `-2d -N10`	-C -2d -N10	old	4	4.849551958	30487405779	3.859069372
+FAM	om8_N256_E50k `-2d -N10`	-C -2d -N10	new	4	4.724357458	30429898147	3.859069372
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	old	0	7.542044875	63887644722	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	new	0	7.240553792	63865265583	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	new	1	7.533028583	63889055143	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	old	1	7.351065667	63879772856	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	old	2	8.207498083	63917932742	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	new	2	7.774259333	63914830672	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	new	3	7.35843975	63875572233	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	old	3	7.36766475	63879685892	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	old	4	7.77340625	63903444034	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	new	4	7.310975375	63872713480	6.859843831
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	0	4.304142958	46025089345	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	0	4.261796083	46015757826	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	1	4.346211209	46026969759	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	1	4.287056416	46029391037	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	2	4.252614542	46026433669	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	2	4.435430625	46038224912	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	3	4.452525208	46035521484	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	3	4.272275958	46044122812	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	4	4.234025625	46029413033	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	4	4.3267695	46023558346	11.73480892
+L10	word_assoc	-C --non-redundant -N10 -d	old	0	4.544290125	49088024726	11.95700584
+L10	word_assoc	-C --non-redundant -N10 -d	new	0	4.576140083	48782506632	11.95700584
+L10	word_assoc	-C --non-redundant -N10 -d	new	1	4.481561792	48771032214	11.95700584
+L10	word_assoc	-C --non-redundant -N10 -d	old	1	4.841527416	49111917415	11.95700584
+L10	word_assoc	-C --non-redundant -N10 -d	old	2	4.842789584	49099955078	11.95700584
+L10	word_assoc	-C --non-redundant -N10 -d	new	2	4.587219291	48778739776	11.95700584
+L10	word_assoc	-C --non-redundant -N10 -d	new	3	4.648617667	48791351588	11.95700584
+L10	word_assoc	-C --non-redundant -N10 -d	old	3	4.695713208	49102094892	11.95700584
+L10	word_assoc	-C --non-redundant -N10 -d	old	4	4.743762833	49109737620	11.95700584
+L10	word_assoc	-C --non-redundant -N10 -d	new	4	4.539443833	48779306168	11.95700584
+C2_10	multilayer (ex.)	-C -2 -N10	old	0	0.000679459	63658360	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	new	0	0.000754667	62851862	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	new	1	0.000566792	62222474	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	old	1	0.000465666	62282821	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	old	2	0.000470375	62345304	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	new	2	0.000505833	62480015	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	new	3	0.000472583	62930633	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	old	3	0.000510959	62405219	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	old	4	0.000472042	62542472	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	new	4	0.000486334	63776329	2.011405238
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	old	0	0.00382325	99679847	6.455952473
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	new	0	0.004101417	98256009	6.455952473
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	new	1	0.003449583	98184501	6.455952473
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	old	1	0.003823666	99178862	6.455952473
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	old	2	0.003697375	98807165	6.455952473
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	new	2	0.003818125	98334892	6.455952473
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	new	3	0.003584292	98299741	6.455952473
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	old	3	0.003579375	99034174	6.455952473
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	old	4	0.003587208	98821127	6.455952473
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	new	4	0.003589625	98224519	6.455952473
+FAM	om6_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	0	7.694374292	60381388358	7.979250374
+FAM	om6_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	0	7.689806625	60381005396	7.979250374
+FAM	om6_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	1	7.94923425	60442682667	7.979250374
+FAM	om6_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	1	7.803231666	60412512990	7.979250374
+FAM	om6_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	2	7.936255791	60413558299	7.979250374
+FAM	om6_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	2	8.617452417	60482903121	7.979250374
+FAM	om6_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	3	8.740818667	60495770266	7.979250374
+FAM	om6_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	3	9.106025541	60508342194	7.979250374
+FAM	om6_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	4	8.182590917	60445410083	7.979250374
+FAM	om6_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	4	7.64366225	60408649265	7.979250374
+C2_10	overlapping om3_N256_E50k `-2d`	-C -2d -N10	old	0	5.365682834	36086429184	6.258611497
+C2_10	overlapping om3_N256_E50k `-2d`	-C -2d -N10	new	0	5.067301959	36014200328	6.258611497
+C2_10	overlapping om3_N256_E50k `-2d`	-C -2d -N10	new	1	4.822539292	36014102032	6.258611497
+C2_10	overlapping om3_N256_E50k `-2d`	-C -2d -N10	old	1	5.057935333	36069802182	6.258611497
+C2_10	overlapping om3_N256_E50k `-2d`	-C -2d -N10	old	2	4.829116459	36047248296	6.258611497
+C2_10	overlapping om3_N256_E50k `-2d`	-C -2d -N10	new	2	4.834498291	36006111472	6.258611497
+C2_10	overlapping om3_N256_E50k `-2d`	-C -2d -N10	new	3	4.917648666	35999765820	6.258611497
+C2_10	overlapping om3_N256_E50k `-2d`	-C -2d -N10	old	3	4.828938917	36065933405	6.258611497
+C2_10	overlapping om3_N256_E50k `-2d`	-C -2d -N10	old	4	4.829299458	36052549260	6.258611497
+C2_10	overlapping om3_N256_E50k `-2d`	-C -2d -N10	new	4	4.94039325	36010393593	6.258611497
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	0	0.780266208	8053922321	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	0	0.851727042	8040878931	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	1	0.790571875	8032755671	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	1	0.798006584	8055770331	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	2	0.859326167	8059788261	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	2	0.7852325	8033896455	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	3	0.858267958	8037683661	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	3	0.798797333	8057673094	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	4	0.838885583	8056534189	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	4	0.790813417	8036184182	6.624543363

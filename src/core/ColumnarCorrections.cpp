@@ -29,7 +29,7 @@ namespace infomap {
 
 using namespace columnar;
 
-double BiasedEntropyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core, StackBreakdown* breakdown) const
+double BiasedEntropyCorrection::hierarchicalCorrection(const ColumnarStackView& core, StackBreakdown* breakdown) const
 {
   // Sum of childDegree over all internal nodes incl. root == count of non-root
   // nodes == sum of every level's size (leaves + modules at all levels). Each
@@ -73,7 +73,7 @@ double BiasedEntropyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& c
 // PreferredModulesCorrection (--preferred-number-of-modules: |K - K_pref| bias)
 // ===================================================
 
-double PreferredModulesCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core, StackBreakdown* breakdown) const
+double PreferredModulesCorrection::hierarchicalCorrection(const ColumnarStackView& core, StackBreakdown* breakdown) const
 {
   // Leaf-module level, matching where the move-loop bias acts (and the other
   // corrections apply). <2 levels means no modules; the base handles that and
@@ -149,7 +149,7 @@ void PreferredModulesCorrection::applyMerge(int a, int b)
   m_moduleMembers[a] = 0;
 }
 
-double MetaCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core, StackBreakdown* breakdown) const
+double MetaCorrection::hierarchicalCorrection(const ColumnarStackView& core, StackBreakdown* breakdown) const
 {
   using infomath::plogp;
   // Meta term applies at the leaf-module level (level 1): for each bottom
@@ -388,7 +388,7 @@ double MemCorrection::physFlow(int module, int physical) const
   return it == pf.end() ? 0.0 : it->second;
 }
 
-double MemCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core, StackBreakdown* breakdown) const
+double MemCorrection::hierarchicalCorrection(const ColumnarStackView& core, StackBreakdown* breakdown) const
 {
   using infomath::plogp;
   if (core.hierNumLevels() < 2)
@@ -706,7 +706,7 @@ double LossyCorrection::moduleCost(double flow, double flowLogFlow, double entro
   return std::max(0.0, (plogp(flow) - flowLogFlow) - m_lambda * entropy);
 }
 
-double LossyCorrection::hierarchicalCorrection(const ColumnarTwoLevel& core, StackBreakdown* breakdown) const
+double LossyCorrection::hierarchicalCorrection(const ColumnarStackView& core, StackBreakdown* breakdown) const
 {
   if (core.hierNumLevels() < 2)
     return 0.0;

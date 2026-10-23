@@ -3370,13 +3370,13 @@ bool InfomapBase::spliceDissolvedModules(const ColumnarTwoLevel& stack)
   // ancestor chain is its module chain in the stack and the two can be walked side by
   // side to name each stack module's InfoNode. Pointer identity, not module ids:
   // initTree is free to renumber. Validated in full before anything moves.
-  const int top = static_cast<int>(stack.hierNumLevels()) - 1;
+  const int top = stack.stack().topLevel();
   if (top < 2 || m_leafNodes.empty() || stack.dissolveNumNodes() == 0)
     return false;
   std::vector<InfoNode*> nodeOf(static_cast<std::size_t>(stack.dissolveNumNodes()), nullptr);
   for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
     InfoNode* node = m_leafNodes[i]->parent;
-    int module = stack.hierLeafModule(static_cast<int>(i));
+    int module = stack.stack().leafModule(static_cast<int>(i));
     for (int k = 1; k <= top; ++k) {
       if (node == nullptr || node->isRoot())
         return false; // the tree is shallower than the stack here
@@ -3386,7 +3386,7 @@ bool InfomapBase::spliceDissolvedModules(const ColumnarTwoLevel& stack)
       slot = node;
       node = node->parent;
       if (k < top)
-        module = stack.hierUnitParent(k, module);
+        module = stack.stack().parent(k, module);
     }
     if (node == nullptr || !node->isRoot())
       return false; // the tree is deeper than the stack here
@@ -4214,7 +4214,7 @@ bool InfomapBase::stampColumnarCodelengths(const ColumnarTwoLevel& opt,
                                            double& padCharge)
 {
   padCharge = 0.0;
-  const int topLevel = static_cast<int>(opt.hierNumLevels()) - 1;
+  const int topLevel = opt.stack().topLevel();
   if (topLevel < 1 || m_leafNodes.empty())
     return false;
 
@@ -4248,11 +4248,11 @@ bool InfomapBase::stampColumnarCodelengths(const ColumnarTwoLevel& opt,
 
   for (std::size_t i = 0; i < m_leafNodes.size(); ++i) {
     chain.clear();
-    for (int m = opt.hierLeafModule(static_cast<int>(i)), k = 1;; ++k) {
+    for (int m = opt.stack().leafModule(static_cast<int>(i)), k = 1;; ++k) {
       chain.push_back(m);
       if (k == topLevel)
         break;
-      m = opt.hierUnitParent(k, m);
+      m = opt.stack().parent(k, m);
     }
     ancestors.clear();
     for (InfoNode* p = m_leafNodes[i]->parent; p != nullptr && p != &m_root; p = p->parent)

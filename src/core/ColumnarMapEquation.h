@@ -12,6 +12,7 @@
 
 #include "ColumnarLevel.h"
 #include "ColumnarBoundaryFlow.h"
+#include "ColumnarStack.h"
 
 #include <cmath>
 #include <functional>
@@ -30,12 +31,7 @@ namespace infomap {
 class InfoNode;
 class ColumnarTwoLevel;
 
-// Defined in ColumnarObjectiveScore.cpp, where both the stack scorers and
-// ColumnarTwoLevel::buildStackTerms live. Only ever named as a return type here,
-// so the incomplete declaration is enough and this header stays free of it.
 namespace columnar {
-  struct StackTerms;
-
   /**
    * Per-node decomposition of the stack codelength, in stack coordinates.
    *
@@ -67,6 +63,50 @@ namespace columnar {
 } // namespace columnar
 
 /**
+ * What a correction reads when it prices a stack: the stack's shape, and the
+ * rate at which the active base objective charges each leaf module's leaf
+ * codewords. A correction prices whatever stack it is shown -- the search's own
+ * or a candidate it never installs -- so it reads neither the optimizer nor its
+ * live stack.
+ */
+class ColumnarStackView {
+public:
+  ColumnarStackView(const ColumnarStack& stack, bool nonRedundant, double exitNetworkFlow)
+      : m_stack(stack), m_nonRedundant(nonRedundant), m_exitNetworkFlow(exitNetworkFlow) {}
+
+  const ColumnarStack& stack() const { return m_stack; }
+  // Number of tree levels in the stack (0 = leaves).
+  unsigned int hierNumLevels() const { return static_cast<unsigned int>(m_stack.numLevels()); }
+  // Unit count at a stack level (level 0 = leaves, 1.. = module levels).
+  int hierLevelSize(int level) const { return m_stack.size(level); }
+  int numLeaves() const { return m_stack.size(0); }
+  // The leaf's bottom (level-1) module id.
+  int hierLeafModule(int leaf) const { return m_stack.leafModule(leaf); }
+  // The level-(k+1) parent of unit `unit` at stack level k (0 = leaves).
+  int hierUnitParent(int level, int unit) const { return m_stack.parent(level, unit); }
+
+  // Per level-1 module: the rate at which the ACTIVE base objective's leaf-module
+  // term consumes that module's F_m = sum_{leaf in m} plogp(leafFlow).
+  //
+  // Only corrections that SUBSTITUTE one F for another need this — today just
+  // MemCorrection, which replaces the state-node F by the physical-node F. An
+  // additive correction carrying its own rate (Meta, Bias, Preferred) composes
+  // with either objective unweighted and must not call this.
+  //
+  // Returns EMPTY when the rate is uniformly 1, which is the base map equation's
+  // whole leaf-module level — so the caller keeps its unweighted arithmetic
+  // verbatim rather than multiplying by a vector of ones (the summation order is
+  // part of the reported number). Non-empty only under L*, where the rate is
+  // nrLeafCodebookRate(flow, enter, exit) >= 1 and differs per module.
+  std::vector<double> leafCodebookRates() const;
+
+private:
+  const ColumnarStack& m_stack;
+  bool m_nonRedundant;
+  double m_exitNetworkFlow;
+};
+
+/**
  * A composable correction on top of the base columnar map equation.
  *
  * The new objective structure (replacing the OO inheritance hierarchy) is a
@@ -82,9 +122,8 @@ namespace columnar {
 class ColumnarCorrection {
 public:
   virtual ~ColumnarCorrection() = default;
-  // Additive contribution to the total hierarchical codelength of the core's
-  // current stacked hierarchy. Reads the partition through the core's public
-  // accessors. Base objective = no corrections = exactly zero.
+  // Additive contribution to the total hierarchical codelength of the stack the
+  // view shows. Base objective = no corrections = exactly zero.
   //
   // `breakdown`, when non-null, must also receive this contribution split over
   // the nodes it is charged to, so the reported per-module decomposition adds up
@@ -93,7 +132,7 @@ public:
   // second, independently-rounded computation. A correction with no natural
   // per-node split leaves the default: the whole scalar on the root. The
   // parameter is null on every search-path call, so nothing is allocated there.
-  virtual double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const = 0;
+  virtual double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const = 0;
 
   // --- Optional move-loop hooks (leaf-level two-level search) ---------------
   // Corrections that shape the leaf partition (Meta/Lossy/Mem) participate in
@@ -276,34 +315,11 @@ public:
     m_interruptCallback = std::move(callback);
   }
 
-  // --- Public read accessors for corrections (partition shape + leaf data) ---
-  // Number of tree levels currently in the stacked hierarchy (0 = leaves).
-  unsigned int hierNumLevels() const { return static_cast<unsigned int>(m_hierLevels.size()); }
-  // Unit count at a stacked level (level 0 = leaves, 1.. = module levels).
-  int hierLevelSize(int level) const { return hierLevel(level).n; }
+  // The stacked hierarchy the search holds: the seeded or optimized partition.
+  // Walking leafModule + parent gives a leaf's whole ancestor chain, which is how
+  // InfomapBase maps stack modules onto the materialized InfoNode tree.
+  const ColumnarStack& stack() const { return m_stack; }
   int numLeaves() const { return m_nLeaves; }
-  // The leaf's current bottom (level-1) module id.
-  int hierLeafModule(int leaf) const { return m_hierAssign[0][leaf]; }
-  // The level-(k+1) parent of unit `unit` at stacked level k (0 = leaves). Walking
-  // hierLeafModule + hierUnitParent gives a leaf's whole ancestor chain, which is
-  // how InfomapBase maps stack modules onto the materialized InfoNode tree.
-  int hierUnitParent(int level, int unit) const { return m_hierAssign[level][unit]; }
-  double leafFlow(int leaf) const { return m_leafFlow[leaf]; }
-
-  // Per level-1 module: the rate at which the ACTIVE base objective's leaf-module
-  // term consumes that module's F_m = sum_{leaf in m} plogp(leafFlow).
-  //
-  // Only corrections that SUBSTITUTE one F for another need this — today just
-  // MemCorrection, which replaces the state-node F by the physical-node F. An
-  // additive correction carrying its own rate (Meta, Bias, Preferred) composes
-  // with either objective unweighted and must not call this.
-  //
-  // Returns EMPTY when the rate is uniformly 1, which is the base map equation's
-  // whole leaf-module level — so the caller keeps its unweighted arithmetic
-  // verbatim rather than multiplying by a vector of ones (the summation order is
-  // part of the reported number). Non-empty only under L*, where the rate is
-  // nrLeafCodebookRate(flow, enter, exit) >= 1 and differs per module.
-  std::vector<double> leafCodebookRates() const;
 
   // Build the leaf level (flow, enter/exit, out+in CSR) from the leaf network.
   // recordedTeleport: the leaves' stored enter/exit are total rates, their own
@@ -349,7 +365,7 @@ public:
 
   // Two-level engine entry (the `--columnar --two-level` search): run the full
   // two-level optimize and materialize it as a two-level stack (leaves + one
-  // module level) in m_hierLevels/m_hierAssign, so hierarchicalCodelengthFromStack,
+  // module level) in m_stack, so hierarchicalCodelengthFromStack,
   // the module coarsening loop and toNodePaths all operate on it like any other
   // hierarchy. Returns the (correction-augmented) two-level codelength.
   double optimizeTwoLevelStack();
@@ -374,7 +390,7 @@ public:
   // partition (the flat-first probe's output, optimizeTwoLevel(0, false)):
   // materialize the stack, run the deferred leaf fine-tune to convergence,
   // then the merge <-> retune interleave of optimizeTwoLevelStack. Returns
-  // the flat codelength; leaves the flat stack in m_hierLevels/m_hierAssign.
+  // the flat codelength; leaves the flat stack in m_stack.
   double completeFlatFromAggregation(std::vector<int> aggTop, int aggK);
 
   // Deep repair of a two-level stack (#889): the split operator interleaved
@@ -423,11 +439,11 @@ public:
   // level. Returns the hierarchical codelength of the multi-level partition.
   double optimizeHierarchical(unsigned int bottomBlockLimit = 0);
 
-  // Grow the hierarchy from an already-built bottom two-level (m_leaf0/m_leafTop
-  // with bottomK modules) via the enter-flow super-search, using m_superAggLimit.
-  // Does not touch the bottom, so optimizeColumnar builds the bottom once and
+  // Grow the hierarchy from a bottom leaf -> module assignment (bottomK modules)
+  // via the enter-flow super-search, using m_superAggLimit. Replaces the stack;
+  // the bottom is an argument, so optimizeColumnar builds the bottom once and
   // reuses it across up-merge strategies. Returns hierarchical codelength.
-  double buildHierarchyFromBottom(int bottomK);
+  double buildHierarchyFromBottom(std::vector<int> bottom, int bottomK);
 
   // M2: build the hierarchy, then refine to convergence. Returns hierarchical
   // codelength. Uses a fine bottom by default so the interior tune has room.
@@ -446,7 +462,7 @@ public:
   // sweepLimit caps the number of up/down tuning sweeps (0 = until convergence).
   double optimizeConverge(unsigned int bottomBlockLimit = 1, unsigned int superAggLimit = 0, unsigned int sweepLimit = 0);
 
-  // Refine the current built hierarchy (m_hier*) in place: interior-layer
+  // Refine the current built hierarchy (m_stack) in place: interior-layer
   // refinement (re-partition each interior layer within its grandparent, up/down
   // to convergence) followed by module coarsening. `startL` is the hierarchical
   // codelength of the incoming stack (used as the accept/revert baseline);
@@ -539,7 +555,7 @@ public:
   // module coarsening, which never brought one under (om5 8.80, om4 8.33).
   void setAbandonUnrecoveredBuild(bool on) { m_abandonUnrecoveredBuild = on; }
 
-  // Materialize the best hierarchy (m_hier*) as one module-path per leaf, in the
+  // Materialize the best hierarchy (m_stack) as one module-path per leaf, in the
   // shape InfomapBase::initTree expects: coarsest-first (path[0] = top module),
   // 1-based module ids, plus a trailing leaf-rank slot (unused by initTree but
   // keeps path length = module levels + 1). `leafNodes` supplies leaf stateIds
@@ -549,11 +565,11 @@ public:
 
   unsigned int numTopModules() const { return m_numTopModules; }
   // Number of tree levels (leaves + module levels) after optimizeHierarchical.
-  unsigned int numHierLevels() const { return static_cast<unsigned int>(m_hierLevels.size()); }
+  unsigned int numHierLevels() const { return static_cast<unsigned int>(m_stack.numLevels()); }
   // Final leaf -> top-module assignment (compacted ids), one entry per leaf.
   const std::vector<int>& leafTopModule() const { return m_leafTop; }
 
-  // Seed the stacked hierarchy (m_hierLevels / m_hierAssign) from a given
+  // Seed the stacked hierarchy (m_stack) from a given
   // partition, so hierarchicalCodelengthFromStack() evaluates it on the columnar
   // structure and the optimizer can resume from it. Each leafPaths[i] is that
   // leaf's module ids coarsest-first (path[0] = top module .. path.back() =
@@ -613,24 +629,31 @@ public:
   // convergence). Wired from --tune-iteration-relative-threshold.
   void setMinRelativeTuneImprovement(double frac) { m_minRelTuneImprovement = frac; }
 
-  // Hierarchical codelength (base map equation + active corrections) from the
-  // stacked levels/assignments in m_hier* — the seeded or optimized partition.
-  double hierarchicalCodelengthFromStack() const;
+  // Hierarchical codelength (base map equation + active corrections) of the
+  // stack the search holds — the seeded or optimized partition.
+  double hierarchicalCodelengthFromStack() const { return scoreStack(m_stack); }
 
   // The same codelength, plus its per-node decomposition under the SAME
   // objective. Reporting only (the search never asks for the breakdown, so it
   // pays no allocation): the console per-level table and -o json
   // modules[].codelength are stamped from this.
-  double codelengthBreakdownFromStack(columnar::StackBreakdown& breakdown) const;
+  double codelengthBreakdownFromStack(columnar::StackBreakdown& breakdown) const { return scoreStack(m_stack, &breakdown); }
+
+  // Codelength of ANY stack bound to this optimizer's leaf network, under its
+  // objective (base map equation + corrections), without installing it: a
+  // candidate partition is priced before the search decides to keep it.
+  // `breakdown`, when non-null, also receives the per-node decomposition.
+  double scoreStack(const ColumnarStack& stack, columnar::StackBreakdown* breakdown = nullptr) const;
 
   // Codelength of the all-in-one-module partition under the ACTIVE objective,
   // corrections included. Not the same thing as InfomapBase::getOneLevelCodelength(),
   // which is calcCodelength on a tree with ZERO modules: under --entropy-corrected
   // the two differ by exactly multiplier/(2*totalDegree) (ninetriangles 4.918622452
   // vs 4.925032709), and the collapse the one-level fallback performs installs one
-  // module, so this is the value that partition actually costs. Restores the
-  // current stack before returning, so it can be asked at any point in the search.
-  double oneLevelCodelength();
+  // module, so this is the value that partition actually costs. It prices that
+  // partition as a stack of its own and leaves the search's stack untouched, so
+  // it can be asked at any point in the search.
+  double oneLevelCodelength() const;
 
 private:
   void pollInterrupt() const
@@ -745,7 +768,7 @@ private:
   // Generalized within-grandparent refine (M3): re-partition layer-k units into
   // new layer-(k+1) modules, each constrained to stay within its layer-(k+2)
   // grandparent (the grandparent's exit is the sub-network exitNetworkFlow).
-  // Rebuilds m_hierAssign[k], m_hierAssign[k+1], m_hierLevels[k+1]; layers k+2
+  // Rebuilds assign(k), assign(k+1) and level k+1 of the stack; layers k+2
   // and above are untouched. Requires k in [0, top-2]. refineBottomWithinParents
   // is the k == 0 special case. Returns false if no grandparent layer exists.
   bool refineLayerWithinGrandparent(int k);
@@ -757,7 +780,7 @@ private:
   // in the general tuning: after a leaf-module merge coarsens the bottom, it lets
   // the super-structure regroup, and iterating merge <-> top-refine relaxes the
   // same-parent merge restriction over sweeps. Enter-flow transform (grouping
-  // modules). Rebuilds m_hierAssign[top-1] and m_hierLevels[top]. Returns false
+  // modules). Rebuilds the stack's assign(top-1) and top level. Returns false
   // if there is no sub-top layer to regroup.
   bool refineTopLayer();
 
@@ -797,7 +820,7 @@ private:
   bool m_flatFirstBottom = false; // build the bottom with the full two-level pipeline (see setFlatFirstBottom)
   bool m_abandonDoomedBuild = false; // skip refining a build already worse than one-level (see setAbandonDoomedBuild)
   bool m_abandonUnrecoveredBuild = false; // stop refining a doomed build its interior sweeps left above one-level (see setAbandonUnrecoveredBuild)
-  // True while m_hierLevels' bottom (leaf -> level-1) is the converged two-level
+  // True while the stack's bottom (leaf -> level-1) is the converged two-level
   // optimum produced by completeFlatFromAggregation, rather than a fine-blocks
   // or up-built bottom. The leaf partition is then already at the two-level
   // fixpoint (fine-tune to convergence + the merge <-> retune interleave), so
@@ -842,16 +865,14 @@ private:
   std::vector<std::unique_ptr<ColumnarCorrection>> m_corrections; // objective add-ons
   std::function<void()> m_interruptCallback;
 
-  // Sum of the composable corrections' contributions to the hierarchical
-  // codelength (0 for the base objective, i.e. no corrections). `breakdown`, when
+  // Sum of the composable corrections' contributions to the codelength of
+  // `stack` (0 for the base objective, i.e. no corrections). `breakdown`, when
   // non-null, also collects each correction's per-node split.
-  double objectiveCorrection(columnar::StackBreakdown* breakdown = nullptr) const;
+  double objectiveCorrection(const ColumnarStack& stack, columnar::StackBreakdown* breakdown = nullptr) const;
 
-  // The levels, assignments and teleport-augmented boundary rates a stack scoring
-  // reads, resolved once. The single source of truth for the recorded-teleportation
-  // augmentation: hierarchicalCodelengthFromStack and leafCodebookRates both go
-  // through it, so no consumer can re-derive a module's enter/exit differently.
-  columnar::StackTerms buildStackTerms() const;
+  // The view a correction prices `stack` through, under this optimizer's base
+  // objective.
+  ColumnarStackView stackView(const ColumnarStack& stack) const { return { stack, m_nonRedundant, m_exitNetworkFlow }; }
 
   // --- The leaf network and the active level ---
   // Both are read-only for the whole search: nothing writes into a level's
@@ -868,7 +889,7 @@ private:
   //
   // Before this indirection each of these was a full copy of the leaf CSR, and a
   // trial held up to four of them at once (the caller's input, m_leaf0, m_lvl and
-  // m_hierLevels[0], plus the saved-stack copies).
+  // the stack's level 0, plus the saved-stack copies).
   Level m_leaf0Owned;
   const Level* m_leaf0Ptr = nullptr;
   Level m_lvlOwned;
@@ -996,18 +1017,17 @@ private:
   std::vector<double> m_leafTeleFlow;
   std::vector<double> m_leafTeleWeight;
 
-  // Stacked hierarchy after optimizeHierarchical: level 0 = leaves, [1] = first
-  // module level, ... ; m_hierAssign[k] maps a level-k unit to its level-(k+1)
-  // parent.
-  //
-  // Level 0 is always the leaf network, and nothing ever writes to it (every
-  // rebuild targets index >= 1), so slot 0 stays an empty placeholder and reads
-  // go through hierLevel(), which routes level 0 to leaf0(). That keeps indices
-  // and size() unchanged while making the stack — and every save/restore copy of
-  // it — free of the leaf CSR.
-  std::vector<Level> m_hierLevels;
-  const Level& hierLevel(int k) const { return k == 0 ? leaf0() : m_hierLevels[k]; }
-  std::vector<std::vector<int>> m_hierAssign;
+  // The stacked hierarchy (see ColumnarStack), bound to leaf0() and m_flow by
+  // initLeafContext. Its level 0 is the leaf network itself, so the stack -- and
+  // every copy of it -- is free of the leaf CSR.
+  ColumnarStack m_stack;
+
+  // Run `step` (which returns whether it changed the stack) under a checkpoint
+  // and keep it only if it lowers the stack codelength below L - kMinImprovement,
+  // updating L; otherwise undo it. The accept/revert policy every gated operator
+  // shares.
+  template <class Step>
+  bool gatedStep(double& L, Step&& step);
 
   // Set by dissolveUnprofitableLevels when it removed at least one level for some
   // branch: one ragged module-path per leaf (coarsest-first, no trailing leaf
@@ -1034,7 +1054,7 @@ class BiasedEntropyCorrection final : public ColumnarCorrection {
 public:
   BiasedEntropyCorrection(double multiplier, double totalDegree)
       : m_multiplier(multiplier), m_totalDegree(totalDegree > 0.0 ? totalDegree : 1.0) {}
-  double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const override;
+  double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const override;
 
   // Removing one internal codebook drops the free-parameter count by one; the
   // per-parameter price is m_multiplier / (2 * totalDegree * ln2), the same
@@ -1072,7 +1092,7 @@ class PreferredModulesCorrection final : public ColumnarCorrection {
 public:
   explicit PreferredModulesCorrection(unsigned int preferredNumModules)
       : m_preferredNumModules(static_cast<int>(preferredNumModules)) {}
-  double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const override;
+  double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const override;
 
   // The same penalty for a caller that has a leaf-module count but no stack to
   // attach a correction to: InfomapBase::evaluateColumnarPartition's fallback to
@@ -1120,7 +1140,7 @@ public:
   // flow, else a uniform weight); leafCategory[i] its metadata category.
   MetaCorrection(std::vector<int> leafCategory, std::vector<double> leafWeight, double metaDataRate)
       : m_leafCategory(std::move(leafCategory)), m_leafWeight(std::move(leafWeight)), m_metaDataRate(metaDataRate) {}
-  double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const override;
+  double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const override;
 
   bool participatesInMoveLoop() const override { return true; }
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
@@ -1191,7 +1211,7 @@ private:
  *    i.e. it reports L* too HIGH, which broke invariance under exactly lumpable
  *    state duplication (#1009).
  *
- * hierarchicalCorrection therefore asks the core for leafCodebookRates(): empty
+ * hierarchicalCorrection therefore asks the stack view for leafCodebookRates(): empty
  * under the base objective, where it keeps the two-global-sums form verbatim, and
  * per-module under L*. Leaf-module level only (module-of-modules delegates to
  * base; neither objective reads leaf flows above level 1). Same O(1) move-loop
@@ -1201,7 +1221,7 @@ private:
 class MemCorrection final : public ColumnarCorrection {
 public:
   MemCorrection(std::vector<int> leafPhysical, std::vector<double> leafFlow);
-  double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const override;
+  double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const override;
 
   bool participatesInMoveLoop() const override { return true; }
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
@@ -1278,7 +1298,7 @@ public:
   // leafFlow[i] = leaf flow f_i; leafEntropy[i] = its Markov entropy share
   // (f_i * h_i, matching InfoNode::lossyEntropy). lambda = distortion price.
   LossyCorrection(std::vector<double> leafFlow, std::vector<double> leafEntropy, double lambda);
-  double hierarchicalCorrection(const ColumnarTwoLevel& core, columnar::StackBreakdown* breakdown = nullptr) const override;
+  double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const override;
 
   bool participatesInMoveLoop() const override { return true; }
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
