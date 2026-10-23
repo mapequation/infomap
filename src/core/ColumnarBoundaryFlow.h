@@ -13,6 +13,7 @@
 #include "ColumnarLevel.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <unordered_map>
 #include <vector>
 
@@ -37,9 +38,9 @@ public:
   // (regularized / --recorded-teleportation: a walker teleports anywhere, onto
   // teleWeight); or per layer (the regularized multilayer prior, #828: a walker
   // teleports within its own layer, onto the layer's teleport weights).
-  enum class TeleportKind { none,
-                            global,
-                            layered };
+  enum class TeleportKind : std::uint8_t { none,
+                                           global,
+                                           layered };
 
   // The flow model of a leaf level: global teleport total = sum of leaf teleport
   // flow, and the layered kind whenever the level carries per-layer teleport
