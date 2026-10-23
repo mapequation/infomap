@@ -375,7 +375,7 @@ namespace columnar {
   // the first refine of a grandparent (F24 C), and before that first refine the
   // layer holds no partition worth locking — the build's greedy enter-flow
   // super-search made it, not a two-level optimize. Refine sweep 0 refines every
-  // dirty layer, so m_refineSweep > 0 is exactly "this layer has been re-derived".
+  // dirty layer, so a refine sweep > 0 is exactly "this layer has been re-derived".
   // This is also what keeps the whole feature inert on the single-sweep searches
   // (`-F`, and any stack with one interior layer): they only ever refine once, so
   // there is nothing to re-refine and nothing changes.
