@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Regenerate the numeric tables of columnar-pr-performance-section.md from a
-bench-hier-gaps.py results TSV.
+results TSV (tables-1042.py `assembly` writes it from bench-sync.py's).
 
 Usage: assemble-hier-gaps.py <results.tsv> <snapshot.md> [--check]
 
