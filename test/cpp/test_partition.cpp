@@ -1288,6 +1288,57 @@ TEST_CASE("Regularized multilayer one-module fallback reports the codelength of 
 #endif
 
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+TEST_CASE("Columnar regularized multilayer codes the per-layer teleport prior as OO does (#828) [fast][core][partition][regularized][columnar-contract]")
+{
+  // Regularized multilayer flow teleports within the walker's layer, so a module's teleport
+  // enter/exit is a sum over layers against each layer's totals. The columnar core left it
+  // out and scored the fixed partition below at 3.166264539 bits against OO's 3.654809409 (on
+  // airline_europe.net its search reported 4.80 bits for a partition OO scores at 11.37).
+  const std::string network = infomap::test::repoPath("examples/networks/multilayer_intra.net");
+  const std::string treePath = "columnar_regularized_multilayer_result_states.tree";
+  const std::string fixedPath = "columnar_regularized_multilayer_fixed_states.tree";
+  {
+    // Both layers split, so every module has teleport flow to and from the rest of its layers.
+    std::ofstream fixed(fixedPath);
+    fixed << "# path flow name state_id node_id layer_id\n"
+          << "1:1 0 \"i\" 0 1 1\n1:2 0 \"l\" 1 4 1\n1:3 0 \"m\" 2 5 1\n1:4 0 \"j\" 5 2 2\n"
+          << "2:1 0 \"i\" 3 1 2\n2:2 0 \"j\" 4 2 1\n2:3 0 \"k\" 6 3 1\n2:4 0 \"k\" 7 3 2\n"
+          << "2:5 0 \"l\" 8 4 2\n2:6 0 \"m\" 9 5 2\n";
+  }
+  const auto score = [&network](const std::string& flags, const std::string& tree) {
+    InfomapWrapper im(infomap::test::defaultFlags(flags + " --no-infomap --cluster-data " + tree));
+    im.readInputData(network);
+    im.run();
+    return im.codelength();
+  };
+  for (const std::string flags : { "--regularized", "--regularized --directed" }) {
+    CAPTURE(flags);
+    infomap::test::checkApproxCodelength(score("--columnar " + flags, fixedPath), score(flags, fixedPath), 1e-9);
+
+    double ooSearch = 0.0;
+    {
+      InfomapWrapper oo(infomap::test::defaultFlags(flags));
+      oo.readInputData(network);
+      oo.run();
+      ooSearch = oo.codelength();
+    }
+    double columnarSearch = 0.0;
+    {
+      InfomapWrapper columnar(infomap::test::defaultFlags("--columnar " + flags));
+      columnar.readInputData(network);
+      columnar.run();
+      columnarSearch = columnar.codelength();
+      infomap::writeTree(columnar, columnar.network(), treePath, true);
+    }
+    infomap::test::checkApproxCodelength(score(flags, treePath), columnarSearch, 1e-9);
+    CHECK(columnarSearch <= ooSearch + 1e-9);
+  }
+  std::remove(treePath.c_str());
+  std::remove(fixedPath.c_str());
+}
+#endif
+
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 TEST_CASE("Regularized multilayer: a module holding every node has no exit flow (#1287) [fast][core][partition][regularized]")
 {
   // The flow calculator's leaf enter and exit flow counted the inter-layer self-links,

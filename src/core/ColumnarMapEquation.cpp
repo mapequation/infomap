@@ -21,6 +21,7 @@
 #include <ctime>
 #include <functional>
 #include <limits>
+#include <map>
 #include <numeric>
 #include <random>
 #include <string>
@@ -42,8 +43,6 @@ using namespace columnar;
 void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, bool undirected, unsigned long seed, bool recordedTeleport)
 {
   using infomath::plogp;
-  m_flow.setUndirected(undirected);
-  m_flow.setRecordedTeleport(recordedTeleport);
   m_seed = seed;
   m_exitNetworkFlow = 0.0; // whole network is closed
   m_nLeaves = static_cast<int>(leafNodes.size());
@@ -65,7 +64,6 @@ void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, 
   m_leafFlow.resize(m_nLeaves);
   m_leafTeleFlow.resize(m_nLeaves);
   m_leafTeleWeight.resize(m_nLeaves);
-  double totalTeleFlow = 0.0;
   m_leafNodeFlow_log_nodeFlow = 0.0;
   for (int i = 0; i < m_nLeaves; ++i) {
     L.flow[i] = leafNodes[i]->data.flow;
@@ -78,10 +76,34 @@ void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, 
     L.teleWeight[i] = leafNodes[i]->data.teleportWeight;
     m_leafTeleFlow[i] = L.teleFlow[i];
     m_leafTeleWeight[i] = L.teleWeight[i];
-    totalTeleFlow += m_leafTeleFlow[i];
     m_leafNodeFlow_log_nodeFlow += plogp(L.flow[i]);
   }
-  m_flow.setTotalTeleFlow(totalTeleFlow);
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  // Per-layer teleport data (regularized multilayer prior), present on every leaf
+  // or none (InfomapBase::initNetwork): one entry per leaf, compact layer ids.
+  bool layered = false;
+  for (const InfoNode* leaf : leafNodes)
+    layered = layered || !leaf->layerTeleFlowData().empty();
+  if (layered) {
+    std::map<unsigned int, int> compactLayer;
+    for (const InfoNode* leaf : leafNodes)
+      for (const auto& d : leaf->layerTeleFlowData())
+        compactLayer.emplace(d.layerId, 0);
+    int numLayers = 0;
+    for (auto& kv : compactLayer)
+      kv.second = numLayers++;
+    L.layerStart.assign(m_nLeaves + 1, 0);
+    for (int i = 0; i < m_nLeaves; ++i) {
+      for (const auto& d : leafNodes[i]->layerTeleFlowData()) {
+        L.layerId.push_back(compactLayer[d.layerId]);
+        L.layerTeleFlow.push_back(d.teleportFlow);
+        L.layerTeleWeight.push_back(d.teleportWeight);
+      }
+      L.layerStart[i + 1] = static_cast<int>(L.layerId.size());
+    }
+  }
+#endif
+  m_flow = ColumnarBoundaryFlow::forLeaves(L, undirected, recordedTeleport);
 
   // Out + in CSR from leaf out-edges (in is the transpose), matching the OO
   // core's use of outEdges()/inEdges() in the move loop.
@@ -124,23 +146,25 @@ void ColumnarTwoLevel::buildFromLeaves(const std::vector<InfoNode*>& leafNodes, 
   }
 }
 
-void ColumnarTwoLevel::buildFromLevel(Level level, bool undirected, unsigned long seed, double exitNetworkFlow, bool recordedTeleport, double globalTotalTeleFlow)
+void ColumnarTwoLevel::buildFromLevel(Level level, const ColumnarBoundaryFlow& flow, unsigned long seed, double exitNetworkFlow)
 {
   m_leaf0Owned = std::move(level);
-  initLeafContext(&m_leaf0Owned, undirected, seed, exitNetworkFlow, recordedTeleport, globalTotalTeleFlow);
+  initLeafContext(&m_leaf0Owned, flow, seed, exitNetworkFlow);
 }
 
-void ColumnarTwoLevel::buildFromBorrowedLevel(const Level& level, bool undirected, unsigned long seed, double exitNetworkFlow, bool recordedTeleport, double globalTotalTeleFlow)
+void ColumnarTwoLevel::buildFromBorrowedLevel(const Level& level, const ColumnarBoundaryFlow& flow, unsigned long seed, double exitNetworkFlow)
 {
   // No copy: the caller owns `level` and keeps it alive and unchanged (see the
   // header contract). Everything below reads the leaf network through leaf0().
-  initLeafContext(&level, undirected, seed, exitNetworkFlow, recordedTeleport, globalTotalTeleFlow);
+  initLeafContext(&level, flow, seed, exitNetworkFlow);
 }
 
-void ColumnarTwoLevel::initLeafContext(const Level* leaf, bool undirected, unsigned long seed, double exitNetworkFlow, bool recordedTeleport, double globalTotalTeleFlow)
+void ColumnarTwoLevel::initLeafContext(const Level* leaf, const ColumnarBoundaryFlow& flow, unsigned long seed, double exitNetworkFlow)
 {
   using infomath::plogp;
-  m_flow.setUndirected(undirected);
+  // Inherit the whole flow model: the teleport totals stay the whole network's,
+  // not this level's (the level already carries the per-unit teleport sums).
+  m_flow = flow;
   m_seed = seed;
   m_exitNetworkFlow = exitNetworkFlow;
   m_leaf0Ptr = leaf;
@@ -150,10 +174,6 @@ void ColumnarTwoLevel::initLeafContext(const Level* leaf, bool undirected, unsig
   m_nLeaves = leaf->n;
   m_rootLeaves = m_nLeaves; // sub-optimizers get the true root's count after build
   m_leafFlow = leaf->flow;
-  // Inherit the GLOBAL teleport context (the level already carries per-unit
-  // teleFlow/teleWeight; the total stays the whole network's, not this level's).
-  m_flow.setRecordedTeleport(recordedTeleport);
-  m_flow.setTotalTeleFlow(globalTotalTeleFlow);
   m_leafTeleFlow = leaf->teleFlow;
   m_leafTeleWeight = leaf->teleWeight;
   m_leafNodeFlow_log_nodeFlow = 0.0;
@@ -327,10 +347,18 @@ void ColumnarTwoLevel::seedAssignment(const std::vector<int>& assign)
 
 unsigned int ColumnarTwoLevel::moveLoop(unsigned int sweepCap)
 {
-  return m_tele.on() ? moveLoopWith<true>(sweepCap) : moveLoopWith<false>(sweepCap);
+  using Kind = ColumnarBoundaryFlow::TeleportKind;
+  switch (m_tele.kind()) {
+  case Kind::global:
+    return moveLoopWith<Kind::global>(sweepCap);
+  case Kind::layered:
+    return moveLoopWith<Kind::layered>(sweepCap);
+  default:
+    return moveLoopWith<Kind::none>(sweepCap);
+  }
 }
 
-template <bool Tele>
+template <ColumnarBoundaryFlow::TeleportKind Tele>
 unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
 {
   using infomath::plogp;
@@ -410,8 +438,8 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
 
       // Link plus recorded-teleport flow between u and the rest of its module.
       double deltaOld = dEnter[cMod] + dExit[cMod];
-      if constexpr (Tele)
-        deltaOld += m_tele.betweenOwn(lvl(), u, cMod);
+      if constexpr (Tele != ColumnarBoundaryFlow::TeleportKind::none)
+        deltaOld += m_tele.betweenOwnAs<Tele>(lvl(), u, cMod);
       const double curEnter = lvl().enter[u];
       const double curExit = lvl().exit[u];
       const double curFlow = lvl().flow[u];
@@ -457,8 +485,8 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
           continue;
         // The "strongest" tie-break below stays on link exit flow only.
         double deltaNew = dEnter[m] + dExit[m];
-        if constexpr (Tele)
-          deltaNew += m_tele.between(lvl(), u, m);
+        if constexpr (Tele != ColumnarBoundaryFlow::TeleportKind::none)
+          deltaNew += m_tele.betweenAs<Tele>(lvl(), u, m);
         double dl = deltaCodelengthMovingNodeHoisted(
             m_enterFlow, m_enterFlow_log_enterFlow, curEnter, curExit, curFlow, oldSide, m_mEnter[m], m_mExit[m], m_mFlow[m], deltaOld, deltaNew);
         for (auto* c : corr)
@@ -479,8 +507,8 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
 
       if (bestMod != cMod) {
         double deltaNew = dEnter[bestMod] + dExit[bestMod];
-        if constexpr (Tele)
-          deltaNew += m_tele.between(lvl(), u, bestMod);
+        if constexpr (Tele != ColumnarBoundaryFlow::TeleportKind::none)
+          deltaNew += m_tele.betweenAs<Tele>(lvl(), u, bestMod);
         // Update empty-module bookkeeping.
         if (m_mMembers[bestMod] == 0 && !m_emptyModules.empty())
           m_emptyModules.pop_back();
@@ -503,8 +531,8 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
         m_mEnter[bestMod] -= deltaNew;
         m_mExit[bestMod] -= deltaNew;
 
-        if constexpr (Tele)
-          m_tele.move(lvl(), u, cMod, bestMod);
+        if constexpr (Tele != ColumnarBoundaryFlow::TeleportKind::none)
+          m_tele.moveAs<Tele>(lvl(), u, cMod, bestMod);
 
         addModuleTerms(cMod);
         addModuleTerms(bestMod);
@@ -578,6 +606,13 @@ int ColumnarTwoLevel::consolidateToNextLevel()
     next.exit[m] = m_mExit[oldM];
     next.teleFlow[m] = m_tele.flowOf(oldM);
     next.teleWeight[m] = m_tele.weightOf(oldM);
+  }
+  // Per-layer teleport sums (layered flow model only): each module's layers.
+  if (!lvl().layerStart.empty()) {
+    std::vector<int> assign(n);
+    for (int i = 0; i < n; ++i)
+      assign[i] = remap[m_module[i]];
+    m_flow.aggregateLayers(lvl(), assign, K, next);
   }
 
   // Aggregate current-level out-edges into module-module edges.
@@ -950,7 +985,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
           m_flow.setIndexRateAsFlow(probeNet);
           ColumnarTwoLevel probe;
           probe.setInterruptCallback(m_interruptCallback);
-          probe.buildFromLevel(std::move(probeNet), m_flow.undirected(), m_seed, 0.0, m_flow.recordedTeleport(), m_flow.totalTeleFlow());
+          probe.buildFromLevel(std::move(probeNet), m_flow, m_seed, 0.0);
           probe.optimizeTwoLevel(0, false);
           const int probeK = static_cast<int>(probe.numTopModules());
           if (probeK <= 1 || probeK >= nU)
@@ -2069,7 +2104,7 @@ double ColumnarTwoLevel::buildHierarchyFromBottom(int bottomK)
 
     ColumnarTwoLevel superOpt;
     superOpt.setInterruptCallback(m_interruptCallback);
-    superOpt.buildFromLevel(std::move(superNet), m_flow.undirected(), m_seed, 0.0, m_flow.recordedTeleport(), m_flow.totalTeleFlow());
+    superOpt.buildFromLevel(std::move(superNet), m_flow, m_seed, 0.0);
     // Conservative up-build (m_superAggLimit > 0): fewer aggregation passes per
     // super-level so we don't collapse the whole level in one greedy jump —
     // more, finer super-levels for the down-sweep to tune and (later) collapse.
@@ -2217,7 +2252,7 @@ int ColumnarTwoLevel::subClusterUnits(const Level& base, bool interior, bool sli
   if (unitModule != nullptr && buildPartialSeed(sub, S, *unitModule, 0, seed))
     seedPtr = &seed;
 
-  subOpt.buildFromLevel(std::move(sub), m_flow.undirected(), m_seed, parentExit, m_flow.recordedTeleport(), m_flow.totalTeleFlow());
+  subOpt.buildFromLevel(std::move(sub), m_flow, m_seed, parentExit);
   subOpt.m_rootLeaves = m_rootLeaves;
   if (sliceCorrections)
     addSlicedLeafCorrections(subOpt, S);
@@ -2494,7 +2529,7 @@ bool ColumnarTwoLevel::refineLayerWithinGrandparent(int k)
 
     ColumnarTwoLevel subOpt;
     subOpt.setInterruptCallback(m_interruptCallback);
-    subOpt.buildFromLevel(std::move(sub), m_flow.undirected(), m_seed, m_flow.linkExit(grand, G), m_flow.recordedTeleport(), m_flow.totalTeleFlow());
+    subOpt.buildFromLevel(std::move(sub), m_flow, m_seed, m_flow.linkExit(grand, G));
     subOpt.m_rootLeaves = m_rootLeaves;
     if (k == 0)
       addSlicedLeafCorrections(subOpt, S);
@@ -2535,7 +2570,7 @@ bool ColumnarTwoLevel::refineTopLayer()
 
   ColumnarTwoLevel subOpt;
   subOpt.setInterruptCallback(m_interruptCallback);
-  subOpt.buildFromLevel(std::move(sub), m_flow.undirected(), m_seed, 0.0, m_flow.recordedTeleport(), m_flow.totalTeleFlow());
+  subOpt.buildFromLevel(std::move(sub), m_flow, m_seed, 0.0);
   subOpt.optimizeTwoLevel();
   const int Ksub = static_cast<int>(subOpt.numTopModules());
   if (Ksub <= 1 || Ksub == nU)

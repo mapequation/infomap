@@ -9,9 +9,151 @@
 
 #include "ColumnarBoundaryFlow.h"
 
+#include <algorithm>
 #include <unordered_map>
 
 namespace infomap {
+
+namespace {
+  // Largest module x layer table TeleportSums keeps dense (cells, 16 B each);
+  // beyond it the per-(module, layer) sums go to a hash.
+  constexpr long long kDenseLayerCells = 1LL << 20;
+} // namespace
+
+ColumnarBoundaryFlow ColumnarBoundaryFlow::forLeaves(const Level& leaf, bool undirected, bool recordedTeleport)
+{
+  ColumnarBoundaryFlow flow;
+  flow.setUndirected(undirected);
+  flow.setRecordedTeleport(recordedTeleport);
+  double totalTeleFlow = 0.0;
+  for (double tf : leaf.teleFlow)
+    totalTeleFlow += tf;
+  flow.setTotalTeleFlow(totalTeleFlow);
+  if (!leaf.layerStart.empty()) {
+    flow.m_kind = TeleportKind::layered;
+    int numLayers = 0;
+    for (int l : leaf.layerId)
+      numLayers = std::max(numLayers, l + 1);
+    flow.m_layerTeleFlow.assign(numLayers, 0.0);
+    flow.m_layerTeleWeight.assign(numLayers, 0.0);
+    for (std::size_t k = 0; k < leaf.layerId.size(); ++k) {
+      flow.m_layerTeleFlow[leaf.layerId[k]] += leaf.layerTeleFlow[k];
+      flow.m_layerTeleWeight[leaf.layerId[k]] += leaf.layerTeleWeight[k];
+    }
+  }
+  return flow;
+}
+
+void ColumnarBoundaryFlow::TeleportSums::reset(const ColumnarBoundaryFlow& flow, const Level& units)
+{
+  m_kind = flow.teleportKind();
+  if (m_kind == TeleportKind::global && units.teleFlow.empty())
+    m_kind = TeleportKind::none;
+  if (m_kind == TeleportKind::layered && units.layerStart.empty())
+    m_kind = TeleportKind::none;
+  if (m_kind == TeleportKind::global) {
+    m_flow = units.teleFlow;
+    m_weight = units.teleWeight;
+    return;
+  }
+  m_cells.clear();
+  if (m_kind != TeleportKind::layered)
+    return;
+  m_numLayers = flow.numLayers();
+  m_dense = static_cast<long long>(units.n) * m_numLayers <= kDenseLayerCells;
+  if (m_dense) {
+    m_flow.assign(static_cast<std::size_t>(units.n) * m_numLayers, 0.0);
+    m_weight.assign(static_cast<std::size_t>(units.n) * m_numLayers, 0.0);
+  } else {
+    m_flow.clear();
+    m_weight.clear();
+    m_cells.reserve(units.layerId.size());
+  }
+  for (int u = 0; u < units.n; ++u)
+    for (int k = units.layerStart[u]; k < units.layerStart[u + 1]; ++k)
+      add(u, units.layerId[k], units.layerTeleFlow[k], units.layerTeleWeight[k]);
+}
+
+double ColumnarBoundaryFlow::TeleportSums::betweenModules(int a, int b) const
+{
+  if (m_kind == TeleportKind::global)
+    return m_flow[a] * m_weight[b] + m_flow[b] * m_weight[a];
+  if (m_kind != TeleportKind::layered)
+    return 0.0;
+  double sum = 0.0;
+  for (int l = 0; l < m_numLayers; ++l) {
+    const Cell ca = cell(a, l), cb = cell(b, l);
+    sum += ca.t * cb.w + cb.t * ca.w;
+  }
+  return sum;
+}
+
+void ColumnarBoundaryFlow::TeleportSums::merge(int a, int b)
+{
+  if (m_kind == TeleportKind::global) {
+    m_flow[b] += m_flow[a];
+    m_weight[b] += m_weight[a];
+    m_flow[a] = 0.0;
+    m_weight[a] = 0.0;
+    return;
+  }
+  if (m_kind != TeleportKind::layered)
+    return;
+  for (int l = 0; l < m_numLayers; ++l) {
+    const Cell ca = cell(a, l);
+    if (ca.t == 0.0 && ca.w == 0.0)
+      continue;
+    add(b, l, ca.t, ca.w);
+    add(a, l, -ca.t, -ca.w);
+  }
+}
+
+void ColumnarBoundaryFlow::aggregateLayers(const Level& base, const std::vector<int>& assign, int K, Level& out) const
+{
+  out.layerStart.clear();
+  out.layerId.clear();
+  out.layerTeleFlow.clear();
+  out.layerTeleWeight.clear();
+  if (base.layerStart.empty())
+    return;
+  // Members by group (counting sort, unit order kept), then each group's layers
+  // gathered through a per-layer slot into its output range.
+  std::vector<int> start(K + 1, 0);
+  for (int i = 0; i < base.n; ++i)
+    ++start[assign[i] + 1];
+  for (int g = 0; g < K; ++g)
+    start[g + 1] += start[g];
+  std::vector<int> members(base.n);
+  std::vector<int> pos(start.begin(), start.end() - 1);
+  for (int i = 0; i < base.n; ++i)
+    members[pos[assign[i]]++] = i;
+
+  std::vector<int> slot(numLayers(), -1);
+  out.layerStart.assign(K + 1, 0);
+  out.layerId.reserve(base.layerId.size());
+  out.layerTeleFlow.reserve(base.layerId.size());
+  out.layerTeleWeight.reserve(base.layerId.size());
+  for (int g = 0; g < K; ++g) {
+    const int first = static_cast<int>(out.layerId.size());
+    for (int m = start[g]; m < start[g + 1]; ++m) {
+      const int i = members[m];
+      for (int k = base.layerStart[i]; k < base.layerStart[i + 1]; ++k) {
+        const int l = base.layerId[k];
+        if (slot[l] < 0) {
+          slot[l] = static_cast<int>(out.layerId.size());
+          out.layerId.push_back(l);
+          out.layerTeleFlow.push_back(0.0);
+          out.layerTeleWeight.push_back(0.0);
+        }
+        out.layerTeleFlow[slot[l]] += base.layerTeleFlow[k];
+        out.layerTeleWeight[slot[l]] += base.layerTeleWeight[k];
+      }
+    }
+    out.layerStart[g + 1] = static_cast<int>(out.layerId.size());
+    for (int k = first; k < out.layerStart[g + 1]; ++k)
+      slot[out.layerId[k]] = -1;
+  }
+}
 
 ColumnarBoundaryFlow::Level ColumnarBoundaryFlow::aggregate(const Level& base, const std::vector<int>& assign, int K) const
 {
@@ -56,10 +198,19 @@ ColumnarBoundaryFlow::Level ColumnarBoundaryFlow::aggregate(const Level& base, c
   }
 
   // Total rates: add each group's teleport enter/exit from its aggregated sums.
-  if (m_recordedTeleport && haveTele) {
+  if (m_kind == TeleportKind::global && haveTele) {
     for (int g = 0; g < K; ++g) {
       out.enter[g] += moduleTeleEnter(out.teleFlow[g], out.teleWeight[g]);
       out.exit[g] += moduleTeleExit(out.teleFlow[g], out.teleWeight[g]);
+    }
+  }
+  aggregateLayers(base, assign, K, out);
+  if (m_kind == TeleportKind::layered && !out.layerStart.empty()) {
+    for (int g = 0; g < K; ++g) {
+      for (int k = out.layerStart[g]; k < out.layerStart[g + 1]; ++k) {
+        out.enter[g] += layerTeleEnter(out.layerId[k], out.layerTeleFlow[k], out.layerTeleWeight[k]);
+        out.exit[g] += layerTeleExit(out.layerId[k], out.layerTeleFlow[k], out.layerTeleWeight[k]);
+      }
     }
   }
 
@@ -148,6 +299,19 @@ ColumnarBoundaryFlow::Level ColumnarBoundaryFlow::slice(const Level& base, const
         sub.inFlow[ip[lt]] = f;
         ++ip[lt];
       }
+    }
+  }
+
+  if (!base.layerStart.empty()) {
+    sub.layerStart.assign(nP + 1, 0);
+    for (int j = 0; j < nP; ++j) {
+      const int g = units[j];
+      for (int k = base.layerStart[g]; k < base.layerStart[g + 1]; ++k) {
+        sub.layerId.push_back(base.layerId[k]);
+        sub.layerTeleFlow.push_back(base.layerTeleFlow[k]);
+        sub.layerTeleWeight.push_back(base.layerTeleWeight[k]);
+      }
+      sub.layerStart[j + 1] = static_cast<int>(sub.layerId.size());
     }
   }
 

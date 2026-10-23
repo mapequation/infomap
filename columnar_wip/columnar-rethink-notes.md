@@ -5951,3 +5951,48 @@ algorithms do stack surgery that a narrow API would not cover.
     worse basin, as the old binary does at seed 123).
   - `-d -N10` costs +0.36% to +2.36% in instructions on 7 bit-identical seeds of 8. That cost is real
     and not located yet.
+
+### F74 — The regularized-multilayer prior in the columnar engine (#828 PR 2) (2026-10-23)
+
+Under `--regularized`, multilayer flow teleports within each layer. A module's teleport boundary is then
+Σ_l T_{M,l}(W_l − W_{M,l}) out and Σ_l (T_l − T_{M,l})W_{M,l} in (OO:
+`InfomapBase::aggregateFlowValuesFromLeafToRoot` and `RegularizedMultilayerMapEquation`). FlowCalculator
+stores all of it in the per-layer fields and leaves the global teleport flow at zero, so `-C` had no prior
+at all. It optimized a different objective and reported that objective's codelength. Scored under the
+prior, the old engine's partitions were 1.0% to 475% longer than it reported (DanioRerio `-N10`: 1.770
+reported, 10.175 scored), and the gap had nothing to do with search quality.
+
+- **Design, on #1373's boundary-flow class.** `ColumnarBoundaryFlow::TeleportKind` is none, global or
+  layered.
+  - Levels carry a per-unit CSR of per-layer teleport sums: one entry per leaf, merged by `aggregate`
+    (counting sort, O(entries)) and carried by `slice`. `aggregate` adds the per-layer closed form.
+  - `TeleportSums` keeps the live per-(module, layer) sums: a dense table up to 2^20 cells, a hash keyed
+    (module, layer) beyond. A leaf's teleport flow to a candidate module is one table read, so the move
+    loop stays O(1) per candidate. The merge pass's module–module query iterates the layers (4–9 here).
+  - `moveLoopWith` is templated on the kind, and the global and no-teleport bodies are unchanged.
+  - Sub-optimizers now inherit the whole `ColumnarBoundaryFlow` instead of (recorded, total) arguments,
+    so per-layer totals reach every sub-search.
+  - `linkExit` (the deliberately link-only parent exit, #1372) subtracts the per-layer teleport exit.
+- **Exact against OO.** On 8 of 9 multilayer networks (two toys, EU airlines, aucs, StarWars,
+  DanioRerio, Jelena's synthetic 0% and 50%), each engine scores the other's partition at 0 relative
+  error. Malaria is 8e-9 apart. The by-layer partition, where every teleport step stays inside its
+  module, shows the same gap on the tip, and plain malaria agrees exactly, so the gap is in the
+  regularized multilayer *link* flow, not the prior (#1374).
+- **Undirected multilayer leaves.** The stored link part of a leaf's enter/exit is its in-flow and
+  out-flow, not (in + out)/2 as for undirected first-order input. Both engines agree on this. The leaf
+  contract test checks it and says why.
+- **Search against OO** (`--regularized`, seed 123): shorter on malaria (−0.235% in bits at `-N10`, at
+  −45% in instructions), StarWars (−0.087%), DanioRerio (−0.044%), aucs `-2`/`-N1` and Jelena 50%. Equal on
+  the toys and EU airlines. Longer on aucs `-N10` (+0.082%) and Jelena 0% `-N10` (+0.010%). Against the old
+  engine it does less work on most rows (malaria −3% to −9% in instructions, EU airlines −10% to −45%).
+  It does more only on single-trial rows where it finds a far shorter partition: Jelena 0% `-N1` +32% for
+  −5.0% in bits.
+- **Two defects found while measuring, both filed.** #1374 is the malaria link-flow gap above. #1375: the
+  old arm crashed on 6 to 8 of 10 aucs `-N10` runs with SIGTRAP in malloc. ASan traced it to
+  `splitLevelModules` seeding its piece-level move loop with uncompacted level-(k+1) module ids, where
+  emptied modules survive as gaps, so a parent id could reach `nPieces` and every per-module array
+  overran. It predates #1373 and #828. The new arm does not reach it on aucs, but the bug is general.
+- **Snapshot instrument.** The 332 configurations of the set are bit-identical, at a median of +0.06% in
+  instructions. Another job held the machine at load averages of 57 to 388 during the re-timing and the
+  multilayer table, so their seconds are load, and instructions carry the comparison. A re-timed om7 E50k
+  `-d -N10` took 24 s, against about 6 s in the sweep.

@@ -1902,6 +1902,51 @@ TEST_CASE("Columnar leaf: total enter and exit flow is the leaf's own link plus 
     check("modular_wd.net", flags, false);
   for (const char* flags : { "", "--recorded-teleportation", "--regularized", "--regularized --markov-time 2", "--variable-markov-time" })
     check("modular_w.net", flags, true);
+
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  // Regularized multilayer flow teleports within the walker's layer (#828): no global teleport
+  // flow, and each leaf carries one per-layer entry whose own teleport part is exit t(W_l - w)
+  // and enter (T_l - t)w against its layer's totals. The link part is the leaf's out and in
+  // flow even when clustering undirected: the regularized multilayer walk is computed on the
+  // directed state network, so a link's flow differs between its two directions.
+  const auto checkLayered = [](const std::string& network, const std::string& flags) {
+    INFO(network << " " << flags);
+    InfomapWrapper im(infomap::test::defaultFlags("--columnar --num-trials 1 " + flags));
+    im.readInputData(infomap::test::repoPath("examples/networks/" + network));
+    im.run();
+    const auto& leaf = im.columnarLeafInput();
+    REQUIRE(leaf.n == static_cast<int>(im.numLeafNodes()));
+    REQUIRE(leaf.layerStart.size() == static_cast<std::size_t>(leaf.n) + 1);
+    std::map<int, double> layerFlow, layerWeight;
+    for (std::size_t k = 0; k < leaf.layerId.size(); ++k) {
+      layerFlow[leaf.layerId[k]] += leaf.layerTeleFlow[k];
+      layerWeight[leaf.layerId[k]] += leaf.layerTeleWeight[k];
+    }
+    CHECK(layerFlow.size() > 1);
+    for (int i = 0; i < leaf.n; ++i) {
+      CHECK(leaf.teleFlow[i] == 0.0);
+      REQUIRE(leaf.layerStart[i + 1] - leaf.layerStart[i] == 1);
+      const int k = leaf.layerStart[i];
+      const int l = leaf.layerId[k];
+      double outFlow = 0.0;
+      double inFlow = 0.0;
+      for (int e = leaf.outStart[i]; e < leaf.outStart[i + 1]; ++e)
+        outFlow += leaf.outFlow[e];
+      for (int e = leaf.inStart[i]; e < leaf.inStart[i + 1]; ++e)
+        inFlow += leaf.inFlow[e];
+      double exitFlow = outFlow;
+      double enterFlow = inFlow;
+      exitFlow += leaf.layerTeleFlow[k] * (layerWeight[l] - leaf.layerTeleWeight[k]);
+      enterFlow += (layerFlow[l] - leaf.layerTeleFlow[k]) * leaf.layerTeleWeight[k];
+      CHECK(std::abs(leaf.exit[i] - exitFlow) < 1e-12);
+      CHECK(std::abs(leaf.enter[i] - enterFlow) < 1e-12);
+    }
+  };
+  for (const char* network : { "multilayer_intra.net", "multilayer_intra_inter.net" }) {
+    checkLayered(network, "--regularized");
+    checkLayered(network, "--regularized --directed");
+  }
+#endif
 }
 
 // Markov time scales the link flow the map equation codes, not the flow of the network: the
