@@ -97,7 +97,7 @@ double ColumnarHierarchy::completeFlatFromAggregation(std::vector<int> aggTop, i
   return L;
 }
 
-double ColumnarHierarchy::deepRepairTwoLevelStack()
+double ColumnarHierarchy::deepRepairTwoLevelStack(bool externalSeed)
 {
   // Exploitation phase (#889), run ONCE on the winning trial's partition
   // (seeded via seedHierarchyFromLeafPaths) instead of inside every trial:
@@ -127,15 +127,15 @@ double ColumnarHierarchy::deepRepairTwoLevelStack()
   double L = hierarchicalCodelengthFromStack();
   double before = L;
   bool allowSingletons = true;
-  int split = splitTopModules(L, allowSingletons);
+  int split = splitTopModules(L, allowSingletons, externalSeed);
   allowSingletons = split != 0;
   for (int round = 0; round < 100; ++round) {
     const bool tuned = retuneLeavesWithinModules(L);
     before = L;
-    coarsenModules(L, 1000);
+    coarsenModules(L, 1000, false, externalSeed);
     if (tuned || L < before - kMinImprovement)
       allowSingletons = true;
-    split = splitTopModules(L, allowSingletons);
+    split = splitTopModules(L, allowSingletons, externalSeed);
     allowSingletons = split != 0;
     if (!tuned && split == 0 && L >= before - kMinImprovement)
       break;
@@ -143,7 +143,7 @@ double ColumnarHierarchy::deepRepairTwoLevelStack()
   return L;
 }
 
-int ColumnarHierarchy::splitTopModules(double& L, bool allowSingletons)
+int ColumnarHierarchy::splitTopModules(double& L, bool allowSingletons, bool externalSeed)
 {
   // Merge overshoot only exists where module-move-capable corrections drive
   // the aggregation (the base merge is a no-op), and the recombination loop
@@ -154,8 +154,8 @@ int ColumnarHierarchy::splitTopModules(double& L, bool allowSingletons)
     if (cp->participatesInMoveLoop() && cp->participatesInModuleMoves())
       unitCorr.push_back(cp.get());
   // ...except on an externally seeded partition, whose modules the engine did not
-  // build and can need subdividing under any objective (m_externalSeed, #824).
-  if (unitCorr.empty() && !m_externalSeed)
+  // build and can need subdividing under any objective (externalSeed, #824).
+  if (unitCorr.empty() && !externalSeed)
     return 0;
 
   const int K = m_stack.size(1);
@@ -342,10 +342,8 @@ double ColumnarHierarchy::deepRepairHierarchicalStack()
   m_lastLevelPieces.clear();
   m_levelFreshProductive.clear();
   m_freshSinglesProductive = true;
-  m_forceHSplit = true;
   double L = hierarchicalCodelengthFromStack();
-  coarsenModules(L, 1000);
-  m_forceHSplit = false;
+  coarsenModules(L, 1000, true);
   return L;
 }
 
@@ -637,8 +635,7 @@ double ColumnarHierarchy::optimizeFromSeed(bool flat, unsigned int sweepLimit)
     return std::numeric_limits<double>::infinity(); // nothing seeded
 
   // The split and merge operators earn their keep on a seed the engine did not
-  // build; see m_externalSeed.
-  m_externalSeed = true;
+  // build, so every step below runs them as on an external seed (#824).
   const bool flatSeed = m_stack.numLevels() == 2;
 
   // (1) POLISH the seed at its own granularity.
@@ -654,16 +651,14 @@ double ColumnarHierarchy::optimizeFromSeed(bool flat, unsigned int sweepLimit)
   // grandparent's leaf set from singletons -- the same subdivision, one level down --
   // followed by the module coarsening.
   double L = flatSeed
-      ? deepRepairTwoLevelStack()
-      : refineHierarchy(hierarchicalCodelengthFromStack(), sweepLimit);
+      ? deepRepairTwoLevelStack(true)
+      : refineHierarchy(hierarchicalCodelengthFromStack(), sweepLimit, std::numeric_limits<double>::infinity(), true);
   if (flatSeed)
     // The interleave leaves the leaves at the two-level fixpoint, exactly as
     // completeFlatFromAggregation does.
     m_bottomConverged = true;
-  if (flat) {
-    m_externalSeed = false;
+  if (flat)
     return L; // --two-level: there is no hierarchy to rebuild
-  }
 
   // (2) REBUILD the hierarchy above the polished bottom, and keep whichever of the
   // two is better.
@@ -710,7 +705,6 @@ double ColumnarHierarchy::optimizeFromSeed(bool flat, unsigned int sweepLimit)
       // No module could be subdivided: the seed is already at leaf granularity, so
       // the up-build would consume the same bottom the polish converged on.
       m_stack = std::move(best);
-      m_externalSeed = false;
       return bestL;
     }
   }
@@ -718,32 +712,31 @@ double ColumnarHierarchy::optimizeFromSeed(bool flat, unsigned int sweepLimit)
   // The rebuilt bottom is a fresh from-singletons derivation, not the converged flat
   // partition, so the leaf-layer refine below is not a re-solve (see m_bottomConverged).
   m_bottomConverged = false;
-  const double rebuilt = refineHierarchy(buildHierarchyFromBottom(m_stack.assign(0), m_stack.size(1)), sweepLimit);
+  const double rebuilt = refineHierarchy(buildHierarchyFromBottom(m_stack.assign(0), m_stack.size(1), 0), sweepLimit, std::numeric_limits<double>::infinity(), true);
   if (rebuilt < bestL - kMinImprovement)
     bestL = rebuilt;
   else
     m_stack = std::move(best);
-  m_externalSeed = false;
   return bestL;
 }
 
-double ColumnarHierarchy::optimizeHierarchical(unsigned int bottomBlockLimit)
+double ColumnarHierarchy::optimizeHierarchical(unsigned int bottomBlockLimit, unsigned int superAggLimit)
 {
   // Bottom: leaves -> building blocks. With bottomBlockLimit > 0 we stop the
   // aggregation early (finer bottom) and skip fine-tune to preserve fineness;
   // with 0 we take the full two-level optimum with fine-tune.
   m_search.optimizeTwoLevel(bottomBlockLimit, bottomBlockLimit == 0);
-  return buildHierarchyFromBottom(m_search.leafTopModule(), static_cast<int>(m_search.numTopModules()));
+  return buildHierarchyFromBottom(m_search.leafTopModule(), static_cast<int>(m_search.numTopModules()), superAggLimit);
 }
 
 // Grow the multi-level hierarchy from an ALREADY-BUILT bottom two-level (a
 // leaf -> module assignment with bottomK modules) using the enter-flow
 // super-search. Independent of how the bottom was found, so optimizeColumnar
-// builds the bottom once and calls this per up-merge strategy (m_superAggLimit) —
+// builds the bottom once and calls this per up-merge strategy (superAggLimit) —
 // the bottom is identical across strategies (superAgg only shapes the up-build),
 // so recomputing it was waste. Repeated calls from the same bottom are
 // deterministic and produce the same result as a full rebuild.
-double ColumnarHierarchy::buildHierarchyFromBottom(std::vector<int> bottom, int bottomK)
+double ColumnarHierarchy::buildHierarchyFromBottom(std::vector<int> bottom, int bottomK, unsigned int superAggLimit)
 {
   using infomath::plogp;
 
@@ -771,11 +764,11 @@ double ColumnarHierarchy::buildHierarchyFromBottom(std::vector<int> bottom, int 
     ColumnarTwoLevel superOpt;
     superOpt.setInterruptCallback(m_search.interruptCallback());
     superOpt.buildFromLevel(std::move(superNet), m_search.flow(), m_search.seed(), 0.0);
-    // Conservative up-build (m_superAggLimit > 0): fewer aggregation passes per
+    // Conservative up-build (superAggLimit > 0): fewer aggregation passes per
     // super-level so we don't collapse the whole level in one greedy jump —
     // more, finer super-levels for the down-sweep to tune and (later) collapse.
-    const double superCodelength = m_superAggLimit > 0
-        ? superOpt.optimizeTwoLevel(m_superAggLimit, false)
+    const double superCodelength = superAggLimit > 0
+        ? superOpt.optimizeTwoLevel(superAggLimit, false)
         : superOpt.optimizeTwoLevel();
     const unsigned int superK = superOpt.numTopModules();
 
@@ -800,10 +793,10 @@ void ColumnarHierarchy::addSlicedLeafCorrections(ColumnarTwoLevel& subOpt, const
   }
 }
 
-bool ColumnarHierarchy::buildPartialSeed(const Level& sub, const std::vector<int>& S, const std::vector<int>& assign, int layer, std::vector<int>& seed) const
+bool ColumnarHierarchy::buildPartialSeed(const Level& sub, const std::vector<int>& S, const std::vector<int>& assign, int layer, int sweep, std::vector<int>& seed) const
 {
   const int nP = sub.n;
-  if (!partSeedActive(layer) || (partSeedResweepOnly() && m_refineSweep == 0))
+  if (!partSeedActive(layer) || (partSeedResweepOnly() && sweep == 0))
     return false; // from singletons, the default
   if (nP <= 1)
     return false; // a single unit has nothing to re-place
@@ -912,7 +905,7 @@ int ColumnarHierarchy::subClusterUnits(const Level& base, bool interior, bool sl
   // before buildFromLevel takes ownership of its storage below.
   std::vector<int> seed;
   const std::vector<int>* seedPtr = nullptr;
-  if (unitModule != nullptr && buildPartialSeed(sub, S, *unitModule, 0, seed))
+  if (unitModule != nullptr && buildPartialSeed(sub, S, *unitModule, 0, 0, seed))
     seedPtr = &seed;
 
   subOpt.buildFromLevel(std::move(sub), m_search.flow(), m_search.seed(), parentExit);
@@ -971,7 +964,7 @@ bool ColumnarHierarchy::refineBottomWithinParents()
   return true;
 }
 
-void ColumnarHierarchy::coarsenModules(double& L, int maxSweeps)
+void ColumnarHierarchy::coarsenModules(double& L, int maxSweeps, bool winnerSplit, bool externalSeed)
 {
   // Each step is gated (gatedStep): kept only if it lowers the true
   // hierarchical codelength, else reverted. The checkpoint saves just the slots
@@ -979,7 +972,7 @@ void ColumnarHierarchy::coarsenModules(double& L, int maxSweeps)
   // Hierarchical split operator (COL_HSPLIT, default off): the merge's dual.
   // Only on stacks with a real hierarchy — a two-level stack is the two-level
   // search's own territory (splitTopModules), which must stay untouched.
-  const int splitMode = m_forceHSplit ? hSplitWinnerMode() : hSplitMode();
+  const int splitMode = winnerSplit ? hSplitWinnerMode() : hSplitMode();
   const bool doSplit = splitMode != kHSplitOff && m_stack.numLevels() >= 3;
   // Per-level dirty flag: splitLevelModules(k) is deterministic given the
   // stack, so once it has rejected every source at level k it will keep
@@ -990,7 +983,7 @@ void ColumnarHierarchy::coarsenModules(double& L, int maxSweeps)
   std::vector<char> splitDirty(doSplit ? static_cast<std::size_t>(m_stack.numLevels()) : 0, 1);
   for (int sweep = 0; sweep < maxSweeps; ++sweep) {
     pollInterrupt();
-    const bool merged = gatedStep(L, [&] { return mergeLeafModulesWithinParents(); });
+    const bool merged = gatedStep(L, [&] { return mergeLeafModulesWithinParents(externalSeed); });
     const bool regrouped = gatedStep(L, [&] { return refineTopLayer(); });
     bool split = false;
     if (doSplit) {
@@ -1045,7 +1038,7 @@ double ColumnarHierarchy::optimizeFlexible(unsigned int bottomBlockLimit, unsign
     for (int b : m_search.leafBlocks())
       if (b >= fineK)
         fineK = b + 1;
-    L = buildHierarchyFromBottom(m_search.leafBlocks(), fineK);
+    L = buildHierarchyFromBottom(m_search.leafBlocks(), fineK, 0);
     const bool complete = probeEscalated || flatEst < L * (1.0 + kFlatProbeMargin);
 #ifdef COLUMNAR_DEBUG
     std::fprintf(stderr, "[flat-first -F] est=%.6f build=%.6f ratio=%.4f %s\n", flatEst, L, flatEst / L, complete ? "complete" : "skip");
@@ -1054,7 +1047,7 @@ double ColumnarHierarchy::optimizeFlexible(unsigned int bottomBlockLimit, unsign
       ColumnarStack fine = m_stack;
       flatL = completeFlatFromAggregation(std::move(flatAggTop), flatAggK);
       flatStack = m_stack;
-      const double buildFlat = buildHierarchyFromBottom(flatStack.assign(0), flatStack.size(1));
+      const double buildFlat = buildHierarchyFromBottom(flatStack.assign(0), flatStack.size(1), 0);
       if (buildFlat < L - kMinImprovement) {
         L = buildFlat;
       } else {
@@ -1103,7 +1096,7 @@ double ColumnarHierarchy::optimizeFlexible(unsigned int bottomBlockLimit, unsign
   return L;
 }
 
-bool ColumnarHierarchy::refineLayerWithinGrandparent(int k)
+bool ColumnarHierarchy::refineLayerWithinGrandparent(int k, int sweep)
 {
   const int top = m_stack.topLevel();
   if (k < 0 || k + 2 > top)
@@ -1150,7 +1143,7 @@ bool ColumnarHierarchy::refineLayerWithinGrandparent(int k)
     // `sub` here, before buildFromLevel takes ownership of its storage below.
     std::vector<int> seed;
     const std::vector<int>* seedPtr = nullptr;
-    if (buildPartialSeed(sub, S, aC, k, seed))
+    if (buildPartialSeed(sub, S, aC, k, sweep, seed))
       seedPtr = &seed;
 
     ColumnarTwoLevel subOpt;
@@ -1203,7 +1196,7 @@ bool ColumnarHierarchy::refineTopLayer()
   return true;
 }
 
-bool ColumnarHierarchy::mergeLeafModulesWithinParents()
+bool ColumnarHierarchy::mergeLeafModulesWithinParents(bool externalSeed)
 {
   using infomath::plogp;
   if (!m_stack.hasModules())
@@ -1215,7 +1208,7 @@ bool ColumnarHierarchy::mergeLeafModulesWithinParents()
   for (auto& c : corrections())
     if (c->participatesInMoveLoop())
       corr.push_back(c.get());
-  // ...unless the partition is an external seed (m_externalSeed, #824): "any merge only
+  // ...unless the partition is an external seed (externalSeed, #824): "any merge only
   // raises the codelength" holds for a partition this engine's aggregation produced,
   // whose module-level move loop already settled every merge, not for an over-fine
   // cluster file. mergeCost below is the full base-objective delta, and the caller
@@ -1223,7 +1216,7 @@ bool ColumnarHierarchy::mergeLeafModulesWithinParents()
   // seeded with its own planted partition returned that partition unchanged at
   // 3.652410119 under --two-level -- 2.3% above what the same run finds from scratch --
   // because merging adjacent cliques was the only move that helped and it was skipped.
-  if (corr.empty() && !m_externalSeed)
+  if (corr.empty() && !externalSeed)
     return false;
 
   const int K = m_stack.size(1); // leaf modules (level-0 -> 1)
@@ -1421,12 +1414,11 @@ bool ColumnarHierarchy::mergeLeafModulesWithinParents()
 
 double ColumnarHierarchy::optimizeConverge(unsigned int bottomBlockLimit, unsigned int superAggLimit, unsigned int sweepLimit)
 {
-  m_superAggLimit = superAggLimit;
-  const double L = optimizeHierarchical(bottomBlockLimit);
+  const double L = optimizeHierarchical(bottomBlockLimit, superAggLimit);
   return refineHierarchy(L, sweepLimit);
 }
 
-double ColumnarHierarchy::refineHierarchy(double startL, unsigned int sweepLimit, double abandonAboveL)
+double ColumnarHierarchy::refineHierarchy(double startL, unsigned int sweepLimit, double abandonAboveL, bool externalSeed)
 {
   double L = startL;
 
@@ -1439,7 +1431,7 @@ double ColumnarHierarchy::refineHierarchy(double startL, unsigned int sweepLimit
   // interior refine optimizes a units-as-leaves proxy, so we gate on the real
   // objective and revert otherwise). Iterate whole sweeps until none improves.
 #ifdef COLUMNAR_DEBUG
-  std::fprintf(stderr, "[refine] start L=%.9f levels=%d superAgg=%u\n", L, m_stack.numLevels(), m_superAggLimit);
+  std::fprintf(stderr, "[refine] start L=%.9f levels=%d\n", L, m_stack.numLevels());
 #endif
 #ifdef COLUMNAR_DEBUG
   const std::clock_t t_p1 = std::clock();
@@ -1475,7 +1467,6 @@ double ColumnarHierarchy::refineHierarchy(double startL, unsigned int sweepLimit
     dirty[0] = 0;
   for (int sweep = 0; sweep < refineSweeps; ++sweep) {
     pollInterrupt();
-    m_refineSweep = sweep;
     const double beforeSweep = L;
     bool improved = false;
     const int top = m_stack.topLevel();
@@ -1486,7 +1477,7 @@ double ColumnarHierarchy::refineHierarchy(double startL, unsigned int sweepLimit
 #ifdef COLUMNAR_DEBUG
       const double beforeRefine = L;
 #endif
-      if (gatedStep(L, [&] { return refineLayerWithinGrandparent(k); })) {
+      if (gatedStep(L, [&] { return refineLayerWithinGrandparent(k, sweep); })) {
 #ifdef COLUMNAR_DEBUG
         std::fprintf(stderr, "[refine] REFINE %.9f -> %.9f (levels %d, top %d)\n", beforeRefine, L, m_stack.numLevels(), m_stack.numTopModules());
 #endif
@@ -1506,7 +1497,6 @@ double ColumnarHierarchy::refineHierarchy(double startL, unsigned int sweepLimit
       break;
     dirty = std::move(nextDirty);
   }
-  m_refineSweep = 0; // out of the sweep loop: no layer is a re-refine
   if (L > abandonAboveL)
     return L;
 
@@ -1518,10 +1508,10 @@ double ColumnarHierarchy::refineHierarchy(double startL, unsigned int sweepLimit
 #ifdef COLUMNAR_DEBUG
   const std::clock_t t_p2 = std::clock();
 #endif
-  coarsenModules(L, maxSweeps);
+  coarsenModules(L, maxSweeps, false, externalSeed);
 #ifdef COLUMNAR_DEBUG
   const std::clock_t t_end = std::clock();
-  std::fprintf(stderr, "[refine] interior=%.3fs coarsen=%.3fs (superAgg=%u)\n", double(t_p2 - t_p1) / CLOCKS_PER_SEC, double(t_end - t_p2) / CLOCKS_PER_SEC, m_superAggLimit);
+  std::fprintf(stderr, "[refine] interior=%.3fs coarsen=%.3fs\n", double(t_p2 - t_p1) / CLOCKS_PER_SEC, double(t_end - t_p2) / CLOCKS_PER_SEC);
 #endif
   return L;
 }
@@ -1587,7 +1577,7 @@ double ColumnarHierarchy::optimizeColumnar(unsigned int bottomBlockLimit, unsign
   // up-merge choice fixes the basin; refinement only tunes within it). Then run
   // the interior-layer refinement to convergence on the winning build ONLY.
   //
-  // The bottom two-level is IDENTICAL across strategies (m_superAggLimit only
+  // The bottom two-level is IDENTICAL across strategies (superAggLimit only
   // shapes the up-build), so build the bottom ONCE and grow each strategy from
   // the shared bottom via buildHierarchyFromBottom — half the build work,
   // bit-identical result.
@@ -1624,13 +1614,12 @@ double ColumnarHierarchy::optimizeColumnar(unsigned int bottomBlockLimit, unsign
 
   double bestBuildL = std::numeric_limits<double>::infinity();
   ColumnarStack best;
-  unsigned int bestSuperAgg = 0;
+  [[maybe_unused]] unsigned int bestSuperAgg = 0; // reported under COLUMNAR_DEBUG
   bool bestBottomConverged = false;
 
   for (unsigned int superAgg : kSuperAggSettings) {
     pollInterrupt();
-    m_superAggLimit = superAgg;
-    const double buildL = buildHierarchyFromBottom(bottom, bottomK);
+    const double buildL = buildHierarchyFromBottom(bottom, bottomK, superAgg);
 #ifdef COLUMNAR_DEBUG
     std::fprintf(stderr, "[screen] superAgg=%u buildL=%.6f top=%d\n", superAgg, buildL, m_stack.numTopModules());
 #endif
@@ -1668,8 +1657,7 @@ double ColumnarHierarchy::optimizeColumnar(unsigned int bottomBlockLimit, unsign
       const int flatK = flatStack.size(1);
       for (unsigned int superAgg : kSuperAggSettings) {
         pollInterrupt();
-        m_superAggLimit = superAgg;
-        const double buildL = buildHierarchyFromBottom(flatStack.assign(0), flatK);
+        const double buildL = buildHierarchyFromBottom(flatStack.assign(0), flatK, superAgg);
         if (buildL < bestBuildL - kMinImprovement) {
           bestBuildL = buildL;
           best = m_stack;
@@ -1682,7 +1670,6 @@ double ColumnarHierarchy::optimizeColumnar(unsigned int bottomBlockLimit, unsign
 
   // Restore the winning build and refine only it.
   m_stack = std::move(best);
-  m_superAggLimit = bestSuperAgg;
   m_bottomConverged = bestBottomConverged;
   // A build that starts worse than one module is in the wrong basin; see
   // setAbandonDoomedBuild. A completed flat candidate (flatL finite) beats it

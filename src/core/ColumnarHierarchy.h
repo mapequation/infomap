@@ -103,7 +103,10 @@ public:
   // runs it ONCE on the winning trial (seeded from its tree), not inside
   // every trial. Every step is gated on the true stack codelength, so the
   // result is never worse than the seed. Returns the repaired codelength.
-  double deepRepairTwoLevelStack();
+  // externalSeed: the stack is a partition this engine did not build (a
+  // --cluster-data warm start), so the split and the merge run for every
+  // objective; see splitTopModules.
+  double deepRepairTwoLevelStack(bool externalSeed = false);
 
   // Once-per-run repair of a DEEP (multi-level) winner, the hierarchical
   // analog of deepRepairTwoLevelStack: the hierarchical split operator
@@ -124,13 +127,14 @@ public:
   // Run the two-level optimize, then grow the hierarchy upward with the
   // enter-flow super-search (M1c). bottomBlockLimit > 0 seeds a finer bottom
   // level. Returns the hierarchical codelength of the multi-level partition.
-  double optimizeHierarchical(unsigned int bottomBlockLimit = 0);
+  double optimizeHierarchical(unsigned int bottomBlockLimit = 0, unsigned int superAggLimit = 0);
 
   // Grow the hierarchy from a bottom leaf -> module assignment (bottomK modules)
-  // via the enter-flow super-search, using m_superAggLimit. Replaces the stack;
+  // via the enter-flow super-search; superAggLimit > 0 makes it conservative (see
+  // optimizeConverge). Replaces the stack;
   // the bottom is an argument, so optimizeColumnar builds the bottom once and
   // reuses it across up-merge strategies. Returns hierarchical codelength.
-  double buildHierarchyFromBottom(std::vector<int> bottom, int bottomK);
+  double buildHierarchyFromBottom(std::vector<int> bottom, int bottomK, unsigned int superAggLimit = 0);
 
   // M2: build the hierarchy, then refine to convergence. Returns hierarchical
   // codelength. Uses a fine bottom by default so the interior tune has room.
@@ -158,7 +162,8 @@ public:
   // several up-build strategies cheaply and refine only the winner. A stack
   // still above `abandonAboveL` after the interior sweeps is returned without
   // the coarsening (see setAbandonUnrecoveredBuild).
-  double refineHierarchy(double startL, unsigned int sweepLimit = 0, double abandonAboveL = std::numeric_limits<double>::infinity());
+  // externalSeed as in deepRepairTwoLevelStack, for the module coarsening.
+  double refineHierarchy(double startL, unsigned int sweepLimit = 0, double abandonAboveL = std::numeric_limits<double>::infinity(), bool externalSeed = false);
 
   // Top-level columnar engine entry (the `--columnar` search): build the
   // hierarchy at a small set of up-merge strategies, screen them by post-build
@@ -401,7 +406,19 @@ public:
   // until another operator has changed the partition since the last
   // rejection. Returns 0 = no improvement, 1 = improved via block pieces,
   // 2 = improved via singles pieces (updates L on improvement).
-  int splitTopModules(double& L, bool allowSingletons);
+  //
+  // externalSeed runs it for every objective, not only where module-move-capable
+  // corrections drive the aggregation, and mergeLeafModulesWithinParents takes the
+  // same flag. Both operators' usual gates rest on one premise: that the partition
+  // came out of THIS engine's aggregation, which already settled every
+  // module-level move, so the only overshoot left to repair is the kind a
+  // correction introduces. An externally supplied partition has no such
+  // provenance. Its modules can need subdividing (an over-coarse cluster file) or
+  // merging (an over-fine one) under the plain map equation, and both operators
+  // compute a full base-objective delta and are gated on the true stack
+  // codelength, so running them is sound wherever it is useful -- it just never
+  // pays on an engine-built partition, which is what the gates keep free.
+  int splitTopModules(double& L, bool allowSingletons, bool externalSeed = false);
 
   // Hierarchical split operator (experimental, env COL_HSPLIT): the analog of
   // splitTopModules for a stacked hierarchy. Splits the level-(k+1) modules by
@@ -424,7 +441,11 @@ public:
   // Rebuilds assign(k), assign(k+1) and level k+1 of the stack; layers k+2
   // and above are untouched. Requires k in [0, top-2]. refineBottomWithinParents
   // is the k == 0 special case. Returns false if no grandparent layer exists.
-  bool refineLayerWithinGrandparent(int k);
+  // sweep: which up/down sweep of refineHierarchy asks (0 = the first, which
+  // re-derives every layer from singletons; partial seeding can be restricted to
+  // the later sweeps, where the layer already holds a re-derived partition worth
+  // locking).
+  bool refineLayerWithinGrandparent(int k, int sweep = 0);
 
   // Re-partition the top module grouping within the root (the whole network is
   // the grandparent, exit flow 0). The up/down sweep refines layer k only within
@@ -444,7 +465,10 @@ public:
   // caps the interleave. Shared by the converge refinement (refineHierarchy) and
   // the fast (-F) search so both coarsen the memory/metadata/lossy objectives the
   // same way (without it -F skips the coarsening those objectives require).
-  void coarsenModules(double& L, int maxSweeps);
+  // winnerSplit: the once-per-run hierarchical repair, which reads COL_HSPLIT_WINNER
+  // instead of COL_HSPLIT for the split interleave. externalSeed as in
+  // splitTopModules, for the merge.
+  void coarsenModules(double& L, int maxSweeps, bool winnerSplit = false, bool externalSeed = false);
 
   // Mem-aware leaf-module coarsening: merge leaf modules (level-0 -> 1) within
   // their shared level-2 parent when it lowers the augmented objective. The base
@@ -455,7 +479,7 @@ public:
   // (uphill before the codebook payoff); an atomic module merge can. Super
   // levels stay first-order. No-op for the base objective (no correction => a
   // merge only raises base => never accepted). Returns true if anything merged.
-  bool mergeLeafModulesWithinParents();
+  bool mergeLeafModulesWithinParents(bool externalSeed = false);
 
 private:
   const Level& leaf0() const { return m_search.leafLevel(); }
@@ -475,8 +499,9 @@ private:
   // released unit gets a fresh id K, K+1, ... (compacting over the locked units
   // only is required — compacting all modules first overflows the sub-network's
   // module id space at high release fractions). `layer` only keys the random
-  // control. Returns false when partial seeding does not apply.
-  bool buildPartialSeed(const Level& sub, const std::vector<int>& S, const std::vector<int>& assign, int layer, std::vector<int>& seed) const;
+  // control; `sweep` is the refine sweep asking (see refineLayerWithinGrandparent).
+  // Returns false when partial seeding does not apply.
+  bool buildPartialSeed(const Level& sub, const std::vector<int>& S, const std::vector<int>& assign, int layer, int sweep, std::vector<int>& seed) const;
 
   // Add leaf-shaping corrections, sliced to the given subset of leaves, onto a
   // sub-optimizer so an in-context bottom refine optimizes the augmented
@@ -495,7 +520,6 @@ private:
   ColumnarStackView stackView(const ColumnarStack& stack) const { return { stack, m_nonRedundant, m_search.exitNetworkFlow() }; }
 
   ColumnarTwoLevel m_search;
-  unsigned int m_superAggLimit = 0; // >0: conservative up-build (passes/super-level)
   bool m_flatFirstBottom = false; // build the bottom with the full two-level pipeline (see setFlatFirstBottom)
   bool m_abandonDoomedBuild = false; // skip refining a build already worse than one-level (see setAbandonDoomedBuild)
   bool m_abandonUnrecoveredBuild = false; // stop refining a doomed build its interior sweeps left above one-level (see setAbandonUnrecoveredBuild)
@@ -514,27 +538,6 @@ private:
   // above marks layer 0 dirty again, so the leaf re-derivation stays reachable
   // once the structure it nests in actually moves.
   bool m_bottomConverged = false;
-  // True inside optimizeFromSeed: the two operators the engine skips on the base
-  // objective -- the from-singletons split (splitTopModules) and the module merge
-  // (mergeLeafModulesWithinParents) -- run there for every objective.
-  //
-  // Both of their usual gates rest on the same premise: that the partition being
-  // operated on came out of THIS engine's aggregation, which already settled every
-  // module-level move, so the only overshoot left to repair is the kind a correction
-  // introduces. An externally supplied partition has no such provenance. Its modules
-  // can need subdividing (an over-coarse cluster file) or merging (an over-fine one)
-  // under the plain map equation, and both operators compute a full base-objective
-  // delta and are gated on the true stack codelength, so running them is sound
-  // wherever it is useful -- it just never pays on an engine-built partition, which is
-  // what the gates keep free.
-  bool m_externalSeed = false;
-  // True inside the once-per-run hierarchical repair: coarsenModules then reads
-  // COL_HSPLIT_WINNER instead of COL_HSPLIT for the split interleave.
-  bool m_forceHSplit = false;
-  // Which interior-refine sweep is running (refineHierarchy). Sweep 0 re-derives
-  // every layer from singletons; partial seeding can be restricted to the later
-  // sweeps, where the layer already holds a re-derived partition worth locking.
-  int m_refineSweep = 0;
 
   std::vector<int> m_lastSinglesPieces; // leaf -> piece of the last fresh from-singletons derivation
   bool m_freshSinglesProductive = true; // last fresh derivation paid its cost (gates further fresh derives)
