@@ -29,7 +29,9 @@ R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def load_bench_sync():
-    spec = importlib.util.spec_from_file_location("benchsync", f"{R}/columnar_wip/bench-sync.py")
+    spec = importlib.util.spec_from_file_location(
+        "benchsync", f"{R}/columnar_wip/bench-sync.py"
+    )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -57,7 +59,11 @@ def tree_md5(outdir):
 
 def run(binary, net, flags):
     with tempfile.TemporaryDirectory(prefix="bench-identity-") as out:
-        cmd = ["/usr/bin/time", "-l", binary, f"{R}/{net}", out] + flags.split() + ["--seed", "123", "-o", "tree"]
+        cmd = (
+            ["/usr/bin/time", "-l", binary, f"{R}/{net}", out]
+            + flags.split()
+            + ["--seed", "123", "-o", "tree"]
+        )
         p = subprocess.run(cmd, cwd=R, capture_output=True, text=True, check=False)
         text = p.stdout + p.stderr
         cl = grab(r"Best codelength\s+([0-9.eE+-]+)", text)
@@ -79,8 +85,14 @@ def main():
             arm, path = a.split("=", 1)
             bins[arm] = path
     bs = load_bench_sync()
-    configs = [c for c in bs.read_rows(rows_path or bs.ROWS) if c[0] not in bs.OO_KEYS.values()]
-    tasks = [(key, label, net, flags, arm) for key, label, net, flags, _ in configs for arm in ("old", "new")]
+    configs = [
+        c for c in bs.read_rows(rows_path or bs.ROWS) if c[0] not in bs.OO_KEYS.values()
+    ]
+    tasks = [
+        (key, label, net, flags, arm)
+        for key, label, net, flags, _ in configs
+        for arm in ("old", "new")
+    ]
     results = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as pool:
         futures = {pool.submit(run, bins[t[4]], t[2], t[3]): t for t in tasks}
@@ -90,7 +102,7 @@ def main():
     with open(out, "w") as f:
         for key, label, net, flags, arm in tasks:
             cl, instr, md5 = results[key, label, net, flags, arm]
-            f.write("\t".join([key, label, arm, flags, cl, instr, md5]) + "\n")
+            f.write(f"{key}\t{label}\t{arm}\t{flags}\t{cl}\t{instr}\t{md5}\n")
     for key, label, net, flags, _ in configs:
         o = results[key, label, net, flags, "old"]
         n = results[key, label, net, flags, "new"]
@@ -99,8 +111,12 @@ def main():
         elif o[0] != n[0] or o[2] != n[2]:
             differ.append((key, label, flags, o, n))
     for key, label, flags, o, n in differ + failed:
-        print(f"{'DIFFER' if (key, label, flags, o, n) in differ else 'FAILED'} {key} {label} [{flags}] old {o[0]} {o[2][:8]} new {n[0]} {n[2][:8]}")
-    print(f"{len(configs)} rows: {len(configs) - len(differ) - len(failed)} identical, {len(differ)} differ, {len(failed)} failed")
+        print(
+            f"{'DIFFER' if (key, label, flags, o, n) in differ else 'FAILED'} {key} {label} [{flags}] old {o[0]} {o[2][:8]} new {n[0]} {n[2][:8]}"
+        )
+    print(
+        f"{len(configs)} rows: {len(configs) - len(differ) - len(failed)} identical, {len(differ)} differ, {len(failed)} failed"
+    )
     sys.exit(1 if differ or failed else 0)
 
 
