@@ -1,0 +1,530 @@
+F1	overlapping om2_N256_E50k `-d`	-C -F -d -N1	old	0	0.726620875	2671138118	7.317528373
+F1	overlapping om2_N256_E50k `-d`	-C -F -d -N1	new	0	0.723981875	2640199470	7.317528373
+F1	overlapping om2_N256_E50k `-d`	-C -F -d -N1	new	1	1.092490667	2646693143	7.317528373
+F1	overlapping om2_N256_E50k `-d`	-C -F -d -N1	old	1	1.098639083	2656742276	7.317528373
+F1	overlapping om2_N256_E50k `-d`	-C -F -d -N1	old	2	0.536382834	2616904316	7.317528373
+F1	overlapping om2_N256_E50k `-d`	-C -F -d -N1	new	2	0.378713083	2599546740	7.317528373
+F1	overlapping om2_N256_E50k `-d`	-C -F -d -N1	new	3	0.312699167	2593732795	7.317528373
+F1	overlapping om2_N256_E50k `-d`	-C -F -d -N1	old	3	0.399095708	2597657795	7.317528373
+F1	overlapping om2_N256_E50k `-d`	-C -F -d -N1	old	4	0.301309584	2595070878	7.317528373
+F1	overlapping om2_N256_E50k `-d`	-C -F -d -N1	new	4	0.334410958	2601613526	7.317528373
+C1	overlapping om3_N256_E100k `-2d -c` planted	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	old	0	0.619638209	4199477825	6.820929855
+C1	overlapping om3_N256_E100k `-2d -c` planted	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	new	0	0.823567958	4209874053	6.820929855
+C1	overlapping om3_N256_E100k `-2d -c` planted	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	new	1	0.642868292	4215205418	6.820929855
+C1	overlapping om3_N256_E100k `-2d -c` planted	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	old	1	0.709468333	4254380204	6.820929855
+C1	overlapping om3_N256_E100k `-2d -c` planted	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	old	2	0.940236541	4221365322	6.820929855
+C1	overlapping om3_N256_E100k `-2d -c` planted	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	new	2	0.80981625	4195936701	6.820929855
+C1	overlapping om3_N256_E100k `-2d -c` planted	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	new	3	1.181266666	4198096734	6.820929855
+C1	overlapping om3_N256_E100k `-2d -c` planted	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	old	3	0.437792083	4181297686	6.820929855
+C1	overlapping om3_N256_E100k `-2d -c` planted	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	old	4	0.440279958	4182963111	6.820929855
+C1	overlapping om3_N256_E100k `-2d -c` planted	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	new	4	0.545194167	4183649853	6.820929855
+C1	overlapping om4_N256_E100k `-d`	-C -d -N1	old	0	2.2975915	17959362349	6.858825005
+C1	overlapping om4_N256_E100k `-d`	-C -d -N1	new	0	2.03860475	17940390392	6.858825005
+C1	overlapping om4_N256_E100k `-d`	-C -d -N1	new	1	2.295516416	17981871019	6.858825005
+C1	overlapping om4_N256_E100k `-d`	-C -d -N1	old	1	3.308867167	18036095957	6.858825005
+C1	overlapping om4_N256_E100k `-d`	-C -d -N1	old	2	1.922559584	17938598770	6.858825005
+C1	overlapping om4_N256_E100k `-d`	-C -d -N1	new	2	2.274493417	17945409956	6.858825005
+C1	overlapping om4_N256_E100k `-d`	-C -d -N1	new	3	1.919592042	17935829646	6.858825005
+C1	overlapping om4_N256_E100k `-d`	-C -d -N1	old	3	2.349621708	17961319377	6.858825005
+C1	overlapping om4_N256_E100k `-d`	-C -d -N1	old	4	2.041933375	17949891475	6.858825005
+C1	overlapping om4_N256_E100k `-d`	-C -d -N1	new	4	2.2163875	17953388810	6.858825005
+C1	overlapping om6_N256_E100k `-2d`	-C -2d -N1	old	0	1.718618583	14545074075	6.894797134
+C1	overlapping om6_N256_E100k `-2d`	-C -2d -N1	new	0	1.664885	14538473094	6.894797134
+C1	overlapping om6_N256_E100k `-2d`	-C -2d -N1	new	1	2.113763375	14560638732	6.894797134
+C1	overlapping om6_N256_E100k `-2d`	-C -2d -N1	old	1	1.698575	14550693679	6.894797134
+C1	overlapping om6_N256_E100k `-2d`	-C -2d -N1	old	2	1.907492042	14554263528	6.894797134
+C1	overlapping om6_N256_E100k `-2d`	-C -2d -N1	new	2	1.707429292	14544180893	6.894797134
+C1	overlapping om6_N256_E100k `-2d`	-C -2d -N1	new	3	1.675357458	14539577440	6.894797134
+C1	overlapping om6_N256_E100k `-2d`	-C -2d -N1	old	3	1.747183209	14544064113	6.894797134
+C1	overlapping om6_N256_E100k `-2d`	-C -2d -N1	old	4	1.923720125	14555038003	6.894797134
+C1	overlapping om6_N256_E100k `-2d`	-C -2d -N1	new	4	1.647359083	14533711295	6.894797134
+C1	overlapping om6_N256_E50k `-d`	-C -d -N1	old	0	0.75722375	5973684601	3.620157111
+C1	overlapping om6_N256_E50k `-d`	-C -d -N1	new	0	0.835348875	5980170198	3.620157111
+C1	overlapping om6_N256_E50k `-d`	-C -d -N1	new	1	0.741718292	5968186216	3.620157111
+C1	overlapping om6_N256_E50k `-d`	-C -d -N1	old	1	0.887224833	5981599888	3.620157111
+C1	overlapping om6_N256_E50k `-d`	-C -d -N1	old	2	0.795002792	5986255786	3.620157111
+C1	overlapping om6_N256_E50k `-d`	-C -d -N1	new	2	0.84139875	5975491025	3.620157111
+C1	overlapping om6_N256_E50k `-d`	-C -d -N1	new	3	0.748023208	5972807233	3.620157111
+C1	overlapping om6_N256_E50k `-d`	-C -d -N1	old	3	0.856295084	5985962663	3.620157111
+C1	overlapping om6_N256_E50k `-d`	-C -d -N1	old	4	0.866067459	5977732483	3.620157111
+C1	overlapping om6_N256_E50k `-d`	-C -d -N1	new	4	0.747687083	5968297740	3.620157111
+FAM	om2_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	old	0	1.4815845	13950639962	7.563584264
+FAM	om2_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	new	0	1.601997375	15917643763	7.563587703
+FAM	om2_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	new	1	1.801549333	15938063925	7.563587703
+FAM	om2_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	old	1	1.559604208	13961992993	7.563584264
+FAM	om2_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	old	2	1.365105542	13940295828	7.563584264
+FAM	om2_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	new	2	1.612944833	15924777381	7.563587703
+FAM	om2_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	new	3	1.667103291	15922374659	7.563587703
+FAM	om2_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	old	3	1.664967833	13957702124	7.563584264
+FAM	om2_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	old	4	1.426028541	13951568484	7.563584264
+FAM	om2_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	new	4	1.767922	15926669889	7.563587703
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	old	0	0.076840542	818491619	6.782220083
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	new	0	0.083790875	816475937	6.782220083
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	new	1	0.079915292	820239704	6.782220083
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	old	1	0.127897625	820361255	6.782220083
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	old	2	0.085710834	820132566	6.782220083
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	new	2	0.080019292	818983599	6.782220083
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	new	3	0.090156666	822504197	6.782220083
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	old	3	0.080558917	818431100	6.782220083
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	old	4	0.0794345	819462863	6.782220083
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	new	4	0.088779666	819756770	6.782220083
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	old	0	0.094502041	799583768	8.141739503
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	new	0	0.111229667	798290791	8.141739503
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	new	1	0.094240792	796904310	8.141739503
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	old	1	0.131044917	802247281	8.141739503
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	old	2	0.091423625	802645132	8.141739503
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	new	2	0.197309041	799174618	8.141739503
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	new	3	0.217996167	805855866	8.141739503
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	old	3	0.095616625	797871944	8.141739503
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	old	4	0.095309791	797612768	8.141739503
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	new	4	0.100317125	800332275	8.141739503
+FAM	om3_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	old	0	0.986742958	6350838421	7.91934781
+FAM	om3_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	new	0	1.080310167	6373291873	7.917872981
+FAM	om3_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	new	1	1.233202375	6374769050	7.917872981
+FAM	om3_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	old	1	0.918225375	6346552393	7.91934781
+FAM	om3_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	old	2	1.026436291	6357117154	7.91934781
+FAM	om3_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	new	2	0.932853	6364060564	7.917872981
+FAM	om3_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	new	3	0.75351425	6351072850	7.917872981
+FAM	om3_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	old	3	0.9275635	6348325633	7.91934781
+FAM	om3_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	old	4	0.957299208	6349052964	7.91934781
+FAM	om3_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	new	4	0.792859542	6352300750	7.917872981
+FAM	om3_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	0	1.597721959	15998908056	7.263336431
+FAM	om3_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	0	1.833116875	16202570848	7.263397657
+FAM	om3_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	1	1.995145833	16203637206	7.263397657
+FAM	om3_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	1	1.8013285	16011840625	7.263336431
+FAM	om3_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	2	2.588971333	16059884791	7.263336431
+FAM	om3_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	2	4.107291541	16220391080	7.263397657
+FAM	om3_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	3	1.739009125	16204267336	7.263397657
+FAM	om3_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	3	2.239402333	16057194205	7.263336431
+FAM	om3_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	old	4	2.132622583	16031201993	7.263336431
+FAM	om3_N256_E100k `-d --regularized -N1`	-C -d --regularized -N1	new	4	2.022965166	16221804441	7.263397657
+FAM	om4_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	old	0	1.026184166	7031919817	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	new	0	1.271900042	7048091584	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	new	1	1.185908625	7045085920	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	old	1	1.156785792	7028680418	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	old	2	0.95684225	7023278060	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	new	2	1.154678375	7022209319	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	new	3	1.036894916	7022041940	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	old	3	1.105076125	7032336724	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	old	4	1.128598709	7026332958	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N1`	-C -d --regularized -N1	new	4	1.088001	7026116357	7.9258537
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	old	0	0.140031833	1031520001	6.873858104
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	new	0	0.141882584	1027936758	6.873858104
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	new	1	0.233462167	1033277744	6.873858104
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	old	1	0.135814583	1030973431	6.873858104
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	old	2	0.169630209	1031872854	6.873858104
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	new	2	0.113423334	1027004834	6.873858104
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	new	3	0.131254667	1028080573	6.873858104
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	old	3	0.119688084	1028476913	6.873858104
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	old	4	0.119369584	1026921633	6.873858104
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	new	4	0.116071084	1025573736	6.873858104
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	old	0	0.241209375	1593242110	7.565393576
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	new	0	0.289749625	1591797443	7.565393576
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	new	1	0.275362792	1592677244	7.565393576
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	old	1	0.204465917	1590264663	7.565393576
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	old	2	0.200947208	1588364530	7.565393576
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	new	2	0.201676875	1587960196	7.565393576
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	new	3	0.194123292	1586841752	7.565393576
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	old	3	0.1960805	1590334435	7.565393576
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	old	4	0.192882708	1588329229	7.565393576
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	new	4	0.203966542	1590796477	7.565393576
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	old	0	0.221680667	1678018441	7.82562597
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	new	0	0.2775845	1679252275	7.82562597
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	new	1	0.234617042	1678570431	7.82562597
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	old	1	0.218267	1675692371	7.82562597
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	old	2	0.237513583	1675726300	7.82562597
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	new	2	0.361988542	1675309162	7.82562597
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	new	3	0.21589925	1673869066	7.82562597
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	old	3	0.213306167	1674753702	7.82562597
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	old	4	0.308930208	1679078330	7.82562597
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	new	4	0.260785458	1681076413	7.82562597
+REG	web-NotreDame `-d --recorded-teleportation -N1`	-C -d --recorded-teleportation -N1	old	0	3.429503375	28317743979	9.44801753
+REG	web-NotreDame `-d --recorded-teleportation -N1`	-C -d --recorded-teleportation -N1	new	0	3.4171455	26463282488	9.452246659
+REG	web-NotreDame `-d --recorded-teleportation -N1`	-C -d --recorded-teleportation -N1	new	1	3.34821375	26444583322	9.452246659
+REG	web-NotreDame `-d --recorded-teleportation -N1`	-C -d --recorded-teleportation -N1	old	1	3.441333	28302474914	9.44801753
+REG	web-NotreDame `-d --recorded-teleportation -N1`	-C -d --recorded-teleportation -N1	old	2	3.367779125	28321375164	9.44801753
+REG	web-NotreDame `-d --recorded-teleportation -N1`	-C -d --recorded-teleportation -N1	new	2	3.5376055	26459438631	9.452246659
+REG	web-NotreDame `-d --recorded-teleportation -N1`	-C -d --recorded-teleportation -N1	new	3	3.275523292	26444401714	9.452246659
+REG	web-NotreDame `-d --recorded-teleportation -N1`	-C -d --recorded-teleportation -N1	old	3	3.35677975	28300176287	9.44801753
+REG	web-NotreDame `-d --recorded-teleportation -N1`	-C -d --recorded-teleportation -N1	old	4	3.545526292	28301439538	9.44801753
+REG	web-NotreDame `-d --recorded-teleportation -N1`	-C -d --recorded-teleportation -N1	new	4	3.629172375	26485910168	9.452246659
+FAM	om7_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	0	3.769859416	26355986389	7.948022767
+FAM	om7_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	0	3.445279625	26160286236	7.948022767
+FAM	om7_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	1	3.617882917	26176551607	7.948022767
+FAM	om7_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	1	3.551358	26351592609	7.948022767
+FAM	om7_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	2	3.734971208	26377777918	7.948022767
+FAM	om7_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	2	5.972344792	26362534639	7.948022767
+FAM	om7_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	3	3.778677708	26188453202	7.948022767
+FAM	om7_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	3	3.70608375	26366097497	7.948022767
+FAM	om7_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	4	5.023299875	26472382387	7.948022767
+FAM	om7_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	4	3.944837625	26216275338	7.948022767
+FAM	om3_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	0	7.353864667	70051515250	7.263006685
+FAM	om3_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	0	7.084244625	70024203216	7.261663242
+FAM	om3_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	1	8.46643775	70167589413	7.261663242
+FAM	om3_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	1	7.425694666	70067766781	7.263006685
+FAM	om3_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	2	7.497928583	70069898672	7.263006685
+FAM	om3_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	2	7.672432542	70077105378	7.261663242
+FAM	om3_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	3	7.626167042	70063675362	7.261663242
+FAM	om3_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	3	7.464625541	70069991902	7.263006685
+FAM	om3_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	4	7.64235875	70091145502	7.263006685
+FAM	om3_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	4	10.188838041	70318140856	7.261663242
+FAM	om2_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	0	6.112617583	36374513504	6.950794743
+FAM	om2_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	0	4.464084541	36257139526	6.950671574
+FAM	om2_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	1	4.312683875	36257195562	6.950671574
+FAM	om2_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	1	4.549825959	36200992797	6.950794743
+FAM	om2_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	2	4.468043041	36192057653	6.950794743
+FAM	om2_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	2	6.139678667	36409434294	6.950671574
+FAM	om2_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	3	4.556153167	36273215659	6.950671574
+FAM	om2_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	3	4.417171209	36196604990	6.950794743
+FAM	om2_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	4	4.221552917	36177756496	6.950794743
+FAM	om2_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	4	4.509461083	36259374715	6.950671574
+C10	overlapping om2_N256_E50k `-d`	-C -d -N10	old	0	4.404595917	37655378432	6.752836583
+C10	overlapping om2_N256_E50k `-d`	-C -d -N10	new	0	4.574035833	37717246674	6.752836583
+C10	overlapping om2_N256_E50k `-d`	-C -d -N10	new	1	4.240151416	37661466057	6.752836583
+C10	overlapping om2_N256_E50k `-d`	-C -d -N10	old	1	4.636641833	37689360575	6.752836583
+C10	overlapping om2_N256_E50k `-d`	-C -d -N10	old	2	4.40774025	37680368739	6.752836583
+C10	overlapping om2_N256_E50k `-d`	-C -d -N10	new	2	5.055366042	37735049215	6.752836583
+C10	overlapping om2_N256_E50k `-d`	-C -d -N10	new	3	4.044089583	37656846295	6.752836583
+C10	overlapping om2_N256_E50k `-d`	-C -d -N10	old	3	4.044871083	37668060798	6.752836583
+C10	overlapping om2_N256_E50k `-d`	-C -d -N10	old	4	3.962356541	37660932358	6.752836583
+C10	overlapping om2_N256_E50k `-d`	-C -d -N10	new	4	3.979017833	37657806151	6.752836583
+L10	malaria	-C --non-redundant -N10	old	0	5.185496625	34453276435	7.438064454
+L10	malaria	-C --non-redundant -N10	new	0	3.210460666	34399065443	7.438064454
+L10	malaria	-C --non-redundant -N10	new	1	3.093596083	34383270059	7.438064454
+L10	malaria	-C --non-redundant -N10	old	1	3.143557208	34384430984	7.438064454
+L10	malaria	-C --non-redundant -N10	old	2	3.015751667	34383046697	7.438064454
+L10	malaria	-C --non-redundant -N10	new	2	3.006098375	34389030000	7.438064454
+L10	malaria	-C --non-redundant -N10	new	3	3.365202792	34402550594	7.438064454
+L10	malaria	-C --non-redundant -N10	old	3	3.045671916	34386660421	7.438064454
+L10	malaria	-C --non-redundant -N10	old	4	3.053351708	34387870804	7.438064454
+L10	malaria	-C --non-redundant -N10	new	4	3.052182958	34381838705	7.438064454
+C2_10	wikispeedia `-2d`	-C -2d -N10	old	0	0.67749	6801431486	5.907904741
+C2_10	wikispeedia `-2d`	-C -2d -N10	new	0	0.833098	6812132904	5.907904741
+C2_10	wikispeedia `-2d`	-C -2d -N10	new	1	0.8442865	6814746726	5.907904741
+C2_10	wikispeedia `-2d`	-C -2d -N10	old	1	0.689302	6802814082	5.907904741
+C2_10	wikispeedia `-2d`	-C -2d -N10	old	2	0.702772917	6801698963	5.907904741
+C2_10	wikispeedia `-2d`	-C -2d -N10	new	2	0.694291917	6804637813	5.907904741
+C2_10	wikispeedia `-2d`	-C -2d -N10	new	3	0.683127042	6800074295	5.907904741
+C2_10	wikispeedia `-2d`	-C -2d -N10	old	3	0.710698709	6801999123	5.907904741
+C2_10	wikispeedia `-2d`	-C -2d -N10	old	4	0.686474292	6799414898	5.907904741
+C2_10	wikispeedia `-2d`	-C -2d -N10	new	4	0.688053542	6800826952	5.907904741
+REG	wikispeedia `-2d --recorded-teleportation -N10`	-C -2d --recorded-teleportation -N10	old	0	0.997661042	10692640468	6.624543363
+REG	wikispeedia `-2d --recorded-teleportation -N10`	-C -2d --recorded-teleportation -N10	new	0	1.011305666	10683027931	6.624310588
+REG	wikispeedia `-2d --recorded-teleportation -N10`	-C -2d --recorded-teleportation -N10	new	1	0.98284425	10678643801	6.624310588
+REG	wikispeedia `-2d --recorded-teleportation -N10`	-C -2d --recorded-teleportation -N10	old	1	0.97725025	10693895865	6.624543363
+REG	wikispeedia `-2d --recorded-teleportation -N10`	-C -2d --recorded-teleportation -N10	old	2	1.000066167	10697724736	6.624543363
+REG	wikispeedia `-2d --recorded-teleportation -N10`	-C -2d --recorded-teleportation -N10	new	2	0.970757459	10676821925	6.624310588
+REG	wikispeedia `-2d --recorded-teleportation -N10`	-C -2d --recorded-teleportation -N10	new	3	0.995214333	10678710580	6.624310588
+REG	wikispeedia `-2d --recorded-teleportation -N10`	-C -2d --recorded-teleportation -N10	old	3	1.015223208	10695777028	6.624543363
+REG	wikispeedia `-2d --recorded-teleportation -N10`	-C -2d --recorded-teleportation -N10	old	4	1.0047765	10699989733	6.624543363
+REG	wikispeedia `-2d --recorded-teleportation -N10`	-C -2d --recorded-teleportation -N10	new	4	1.030013333	10684651859	6.624310588
+REG	netscience `--regularized -N10`	-C --regularized -N10	old	0	0.023379584	310420300	9.707927584
+REG	netscience `--regularized -N10`	-C --regularized -N10	new	0	0.02219175	309511366	9.707927584
+REG	netscience `--regularized -N10`	-C --regularized -N10	new	1	0.0243535	310197665	9.707927584
+REG	netscience `--regularized -N10`	-C --regularized -N10	old	1	0.02397075	310119170	9.707927584
+REG	netscience `--regularized -N10`	-C --regularized -N10	old	2	0.023010584	309886150	9.707927584
+REG	netscience `--regularized -N10`	-C --regularized -N10	new	2	0.023150041	309577794	9.707927584
+REG	netscience `--regularized -N10`	-C --regularized -N10	new	3	0.024984042	311480771	9.707927584
+REG	netscience `--regularized -N10`	-C --regularized -N10	old	3	0.025478666	310325991	9.707927584
+REG	netscience `--regularized -N10`	-C --regularized -N10	old	4	0.032122333	311054691	9.707927584
+REG	netscience `--regularized -N10`	-C --regularized -N10	new	4	0.024343667	310535655	9.707927584
+FAM	om8_N256_E100k `-d -N10`	-C -d -N10	old	0	10.168882166	84390380714	6.87278322
+FAM	om8_N256_E100k `-d -N10`	-C -d -N10	new	0	10.436364167	84393584259	6.87278322
+FAM	om8_N256_E100k `-d -N10`	-C -d -N10	new	1	10.453779041	84424412287	6.87278322
+FAM	om8_N256_E100k `-d -N10`	-C -d -N10	old	1	10.649771666	84431049024	6.87278322
+FAM	om8_N256_E100k `-d -N10`	-C -d -N10	old	2	11.629186625	84489769453	6.87278322
+FAM	om8_N256_E100k `-d -N10`	-C -d -N10	new	2	10.333533459	84393692405	6.87278322
+FAM	om8_N256_E100k `-d -N10`	-C -d -N10	new	3	11.026738625	84455455866	6.87278322
+FAM	om8_N256_E100k `-d -N10`	-C -d -N10	old	3	10.641269417	84409058025	6.87278322
+FAM	om8_N256_E100k `-d -N10`	-C -d -N10	old	4	10.944121083	84450609711	6.87278322
+FAM	om8_N256_E100k `-d -N10`	-C -d -N10	new	4	11.409201083	84526022409	6.87278322
+FAM	om7_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	0	7.516559083	52546520979	7.977653981
+FAM	om7_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	0	6.753939458	52482623582	7.977653981
+FAM	om7_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	1	6.535405375	52459597821	7.977653981
+FAM	om7_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	1	6.816309042	52483395732	7.977653981
+FAM	om7_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	2	6.672135458	52462122530	7.977653981
+FAM	om7_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	2	7.2114405	52506065395	7.977653981
+FAM	om7_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	3	7.131822166	52507344083	7.977653981
+FAM	om7_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	3	6.992175583	52496402058	7.977653981
+FAM	om7_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	4	7.093143708	52495920455	7.977653981
+FAM	om7_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	4	7.163275042	52548616693	7.977653981
+FAM	om3_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	0	2.902404292	23088130630	7.91934781
+FAM	om3_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	0	2.768647583	23098700212	7.917872981
+FAM	om3_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	1	2.851532458	23101976149	7.917872981
+FAM	om3_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	1	2.798146917	23076237933	7.91934781
+FAM	om3_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	2	2.766553959	23075717009	7.91934781
+FAM	om3_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	2	2.968033083	23105751268	7.917872981
+FAM	om3_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	3	2.8591905	23095814452	7.917872981
+FAM	om3_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	3	2.908133875	23077126042	7.91934781
+FAM	om3_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	4	2.814556125	23079636764	7.91934781
+FAM	om3_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	4	2.949034417	23102429229	7.917872981
+C10	netscience	-C -N10	old	0	0.067472	810507022	3.363918326
+C10	netscience	-C -N10	new	0	0.068924375	809677981	3.363918326
+C10	netscience	-C -N10	new	1	0.068470833	809156087	3.363918326
+C10	netscience	-C -N10	old	1	0.160547666	812817824	3.363918326
+C10	netscience	-C -N10	old	2	0.075594084	811017620	3.363918326
+C10	netscience	-C -N10	new	2	0.069333958	810983363	3.363918326
+C10	netscience	-C -N10	new	3	0.069117916	810138811	3.363918326
+C10	netscience	-C -N10	old	3	0.072655125	810145718	3.363918326
+C10	netscience	-C -N10	old	4	0.067660834	808948651	3.363918326
+C10	netscience	-C -N10	new	4	0.067523708	808997997	3.363918326
+FAM	om7_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	0	3.564227542	24673915729	7.948022767
+FAM	om7_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	0	3.728478042	24491073622	7.948022767
+FAM	om7_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	1	3.977191042	24506271931	7.948022767
+FAM	om7_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	1	4.025576875	24727742644	7.948022767
+FAM	om7_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	2	3.73411	24676909894	7.948022767
+FAM	om7_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	2	3.523803542	24477157254	7.948022767
+FAM	om7_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	3	3.455674542	24477906553	7.948022767
+FAM	om7_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	3	3.65852375	24671536067	7.948022767
+FAM	om7_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	4	3.656553917	24679173788	7.948022767
+FAM	om7_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	4	3.49845975	24476075618	7.948022767
+FAM	om4_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	0	10.262318583	80423369799	7.538801081
+FAM	om4_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	0	10.179776417	80266040358	7.538118287
+FAM	om4_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	1	9.302604208	80241465162	7.538118287
+FAM	om4_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	1	8.876664541	80336964757	7.538801081
+FAM	om4_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	2	8.426566084	80304958576	7.538801081
+FAM	om4_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	2	9.055799125	80233037587	7.538118287
+FAM	om4_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	3	9.391571375	80217800364	7.538118287
+FAM	om4_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	3	10.415956583	80380813095	7.538801081
+FAM	om4_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	4	9.372389166	80334734022	7.538801081
+FAM	om4_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	4	9.898085166	80357190142	7.538118287
+C10	overlapping om2_N256_E100k `-d`	-C -d -N10	old	0	3.867613042	33581397400	6.773456578
+C10	overlapping om2_N256_E100k `-d`	-C -d -N10	new	0	4.1989805	33597160258	6.773456578
+C10	overlapping om2_N256_E100k `-d`	-C -d -N10	new	1	4.000463	33578961637	6.773456578
+C10	overlapping om2_N256_E100k `-d`	-C -d -N10	old	1	4.420297542	33625137426	6.773456578
+C10	overlapping om2_N256_E100k `-d`	-C -d -N10	old	2	4.142557167	33578260363	6.773456578
+C10	overlapping om2_N256_E100k `-d`	-C -d -N10	new	2	3.843131458	33565959667	6.773456578
+C10	overlapping om2_N256_E100k `-d`	-C -d -N10	new	3	3.78270975	33555823700	6.773456578
+C10	overlapping om2_N256_E100k `-d`	-C -d -N10	old	3	3.751619834	33559884779	6.773456578
+C10	overlapping om2_N256_E100k `-d`	-C -d -N10	old	4	3.85526125	33566633385	6.773456578
+C10	overlapping om2_N256_E100k `-d`	-C -d -N10	new	4	3.789785666	33563892750	6.773456578
+C2_10	overlapping om5_N256_E100k `-2d`	-C -2d -N10	old	0	7.719655625	60996306828	6.880795013
+C2_10	overlapping om5_N256_E100k `-2d`	-C -2d -N10	new	0	7.455999416	60996224619	6.880795013
+C2_10	overlapping om5_N256_E100k `-2d`	-C -2d -N10	new	1	7.395927166	60970720550	6.880795013
+C2_10	overlapping om5_N256_E100k `-2d`	-C -2d -N10	old	1	7.279551833	60975716899	6.880795013
+C2_10	overlapping om5_N256_E100k `-2d`	-C -2d -N10	old	2	7.188735042	60962259274	6.880795013
+C2_10	overlapping om5_N256_E100k `-2d`	-C -2d -N10	new	2	7.312164292	60984236010	6.880795013
+C2_10	overlapping om5_N256_E100k `-2d`	-C -2d -N10	new	3	7.669499458	60993563461	6.880795013
+C2_10	overlapping om5_N256_E100k `-2d`	-C -2d -N10	old	3	7.672371416	60994090486	6.880795013
+C2_10	overlapping om5_N256_E100k `-2d`	-C -2d -N10	old	4	7.430445584	60972684505	6.880795013
+C2_10	overlapping om5_N256_E100k `-2d`	-C -2d -N10	new	4	7.535550791	61008527654	6.880795013
+F10	overlapping om4_N256_E100k `-d`	-C -F -d -N10	old	0	6.539537	52361563074	6.860084625
+F10	overlapping om4_N256_E100k `-d`	-C -F -d -N10	new	0	6.018730208	52338701003	6.860084625
+F10	overlapping om4_N256_E100k `-d`	-C -F -d -N10	new	1	6.071661042	52339905155	6.860084625
+F10	overlapping om4_N256_E100k `-d`	-C -F -d -N10	old	1	6.206175958	52367167754	6.860084625
+F10	overlapping om4_N256_E100k `-d`	-C -F -d -N10	old	2	6.046137917	52332059498	6.860084625
+F10	overlapping om4_N256_E100k `-d`	-C -F -d -N10	new	2	5.914465541	52329199507	6.860084625
+F10	overlapping om4_N256_E100k `-d`	-C -F -d -N10	new	3	6.368033959	52336245830	6.860084625
+F10	overlapping om4_N256_E100k `-d`	-C -F -d -N10	old	3	6.623940125	52392542713	6.860084625
+F10	overlapping om4_N256_E100k `-d`	-C -F -d -N10	old	4	7.117698834	52459295023	6.860084625
+F10	overlapping om4_N256_E100k `-d`	-C -F -d -N10	new	4	6.959626292	52441598566	6.860084625
+REG	wikispeedia `-d --regularized -N10`	-C -d --regularized -N10	old	0	0.753620542	7212567406	4.309453443
+REG	wikispeedia `-d --regularized -N10`	-C -d --regularized -N10	new	0	0.829672	7826710159	4.307471791
+REG	wikispeedia `-d --regularized -N10`	-C -d --regularized -N10	new	1	0.789536625	7819736651	4.307471791
+REG	wikispeedia `-d --regularized -N10`	-C -d --regularized -N10	old	1	0.776661334	7216589949	4.309453443
+REG	wikispeedia `-d --regularized -N10`	-C -d --regularized -N10	old	2	0.738837167	7213246732	4.309453443
+REG	wikispeedia `-d --regularized -N10`	-C -d --regularized -N10	new	2	0.827487709	7818739409	4.307471791
+REG	wikispeedia `-d --regularized -N10`	-C -d --regularized -N10	new	3	0.785437083	7817066892	4.307471791
+REG	wikispeedia `-d --regularized -N10`	-C -d --regularized -N10	old	3	0.732229041	7211803756	4.309453443
+REG	wikispeedia `-d --regularized -N10`	-C -d --regularized -N10	old	4	0.753277583	7213844336	4.309453443
+REG	wikispeedia `-d --regularized -N10`	-C -d --regularized -N10	new	4	0.849336167	7820155568	4.307471791
+FAM	om4_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	0	2.991824209	22853313119	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	0	3.033830667	22844447940	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	1	3.248458959	22862441920	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	1	3.081351833	22849138199	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	2	3.101549625	22857545947	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	2	3.161525625	22856214843	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	3	3.036146459	22849816673	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	3	3.179155	22856858542	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	4	3.037166041	22845317947	7.9258537
+FAM	om4_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	4	2.978959917	22842294489	7.9258537
+C2_10	air30k	-C -2 -N10	old	0	4.523203792	42951969792	5.39136505
+C2_10	air30k	-C -2 -N10	new	0	4.4332635	42943772629	5.39136505
+C2_10	air30k	-C -2 -N10	new	1	4.837351417	42966647696	5.39136505
+C2_10	air30k	-C -2 -N10	old	1	4.612729833	42982554509	5.39136505
+C2_10	air30k	-C -2 -N10	old	2	4.476086625	42936323486	5.39136505
+C2_10	air30k	-C -2 -N10	new	2	4.437229625	42944526990	5.39136505
+C2_10	air30k	-C -2 -N10	new	3	4.7419565	42964806022	5.39136505
+C2_10	air30k	-C -2 -N10	old	3	5.682457541	43022550946	5.39136505
+C2_10	air30k	-C -2 -N10	old	4	8.088842167	43154128152	5.39136505
+C2_10	air30k	-C -2 -N10	new	4	4.721677583	42968166134	5.39136505
+F10	wikispeedia `-d`	-C -F -d -N10	old	0	0.851765292	6883476223	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	new	0	0.747500334	6877147601	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	new	1	0.722619625	6878224504	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	old	1	0.766561958	6882917968	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	old	2	0.758846791	6881684124	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	new	2	0.793987917	6886115885	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	new	3	0.857751416	6883942891	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	old	3	0.768342125	6883657472	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	old	4	0.821978916	6887984338	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	new	4	0.752354417	6881126935	5.907904741
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	old	0	0.754913458	6906316220	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	new	0	1.797248834	7170029831	4.307471791
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	new	1	1.356979291	7150452704	4.307471791
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	old	1	1.57023075	6936833501	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	old	2	0.925647541	6922432451	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	new	2	0.890755625	7122824485	4.307471791
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	new	3	0.973661208	7124897340	4.307471791
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	old	3	1.248679084	6954933318	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	old	4	1.079380166	6937505681	4.309453443
+REG	wikispeedia `-2d --regularized -N10`	-C -2d --regularized -N10	new	4	0.843670666	7119385181	4.307471791
+REG	polblogs `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	old	0	0.05093625	592839060	9.585412453
+REG	polblogs `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	new	0	0.049107917	591406699	9.585412453
+REG	polblogs `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	new	1	0.047327667	590224305	9.585412453
+REG	polblogs `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	old	1	0.0478745	590436617	9.585412453
+REG	polblogs `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	old	2	0.053332416	591003573	9.585412453
+REG	polblogs `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	new	2	0.04883525	590727703	9.585412453
+REG	polblogs `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	new	3	0.208534125	592087443	9.585412453
+REG	polblogs `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	old	3	0.051924667	593042573	9.585412453
+REG	polblogs `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	old	4	0.047962583	591711274	9.585412453
+REG	polblogs `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	new	4	0.056225834	592076734	9.585412453
+FAM	om5_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	0	11.941797666	76395679398	7.784883609
+FAM	om5_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	0	11.715921666	76832838497	7.785498191
+FAM	om5_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	1	11.209921833	76758189365	7.785498191
+FAM	om5_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	1	11.653773042	76348089379	7.784883609
+FAM	om5_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	2	10.807701	76366445790	7.784883609
+FAM	om5_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	2	11.012051875	76670189853	7.785498191
+FAM	om5_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	3	10.054028541	76578582163	7.785498191
+FAM	om5_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	3	11.023411792	76331503908	7.784883609
+FAM	om5_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	old	4	11.596018333	76373955466	7.784883609
+FAM	om5_N256_E100k `-2d --regularized -N10`	-C -2d --regularized -N10	new	4	11.692798708	76718949254	7.785498191
+FAM	om4_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	0	9.0584525	61129018124	7.538801081
+FAM	om4_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	0	8.298171375	60960191747	7.538118287
+FAM	om4_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	1	8.635388667	60996873311	7.538118287
+FAM	om4_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	1	8.450324416	61107404446	7.538801081
+FAM	om4_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	2	8.495596875	61101551779	7.538801081
+FAM	om4_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	2	10.052530416	61076470942	7.538118287
+FAM	om4_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	3	7.902254958	60955956622	7.538118287
+FAM	om4_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	3	7.095978125	60996537360	7.538801081
+FAM	om4_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	4	7.239645291	60998073605	7.538801081
+FAM	om4_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	4	6.928981083	60848705341	7.538118287
+F10	overlapping om7_N256_E100k `-d`	-C -F -d -N10	old	0	8.926227042	66977390290	6.88945591
+F10	overlapping om7_N256_E100k `-d`	-C -F -d -N10	new	0	8.754956792	66999874707	6.88945591
+F10	overlapping om7_N256_E100k `-d`	-C -F -d -N10	new	1	8.779217542	66957563653	6.88945591
+F10	overlapping om7_N256_E100k `-d`	-C -F -d -N10	old	1	9.671936	66990592377	6.88945591
+F10	overlapping om7_N256_E100k `-d`	-C -F -d -N10	old	2	10.521963375	67149120393	6.88945591
+F10	overlapping om7_N256_E100k `-d`	-C -F -d -N10	new	2	8.54487925	66969516106	6.88945591
+F10	overlapping om7_N256_E100k `-d`	-C -F -d -N10	new	3	8.961687667	66993832070	6.88945591
+F10	overlapping om7_N256_E100k `-d`	-C -F -d -N10	old	3	8.804040083	66993089603	6.88945591
+F10	overlapping om7_N256_E100k `-d`	-C -F -d -N10	old	4	12.596715583	67349259742	6.88945591
+F10	overlapping om7_N256_E100k `-d`	-C -F -d -N10	new	4	10.209486375	67059165958	6.88945591
+C10	overlapping om7_N256_E100k `-d`	-C -d -N10	old	0	11.519722667	80195586851	6.88945591
+C10	overlapping om7_N256_E100k `-d`	-C -d -N10	new	0	13.207531334	80281550889	6.88945591
+C10	overlapping om7_N256_E100k `-d`	-C -d -N10	new	1	11.926726583	80222066314	6.88945591
+C10	overlapping om7_N256_E100k `-d`	-C -d -N10	old	1	11.988134209	80223359609	6.88945591
+C10	overlapping om7_N256_E100k `-d`	-C -d -N10	old	2	11.432760417	80178760432	6.88945591
+C10	overlapping om7_N256_E100k `-d`	-C -d -N10	new	2	13.56480125	80353748546	6.88945591
+C10	overlapping om7_N256_E100k `-d`	-C -d -N10	new	3	11.767844125	80216225329	6.88945591
+C10	overlapping om7_N256_E100k `-d`	-C -d -N10	old	3	12.158702292	80201508725	6.88945591
+C10	overlapping om7_N256_E100k `-d`	-C -d -N10	old	4	11.258494084	80128190132	6.88945591
+C10	overlapping om7_N256_E100k `-d`	-C -d -N10	new	4	11.377618917	80152886110	6.88945591
+REG	wikispeedia `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	old	0	0.738798041	6908612465	4.309453443
+REG	wikispeedia `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	new	0	1.014787542	7125040348	4.307471791
+REG	wikispeedia `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	new	1	0.985670292	7119769002	4.307471791
+REG	wikispeedia `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	old	1	0.843443792	6902687043	4.309453443
+REG	wikispeedia `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	old	2	0.714630875	6900651011	4.309453443
+REG	wikispeedia `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	new	2	0.758183333	7113123486	4.307471791
+REG	wikispeedia `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	new	3	0.811054917	7112313014	4.307471791
+REG	wikispeedia `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	old	3	0.871443042	6908140217	4.309453443
+REG	wikispeedia `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	old	4	0.822100125	6903628227	4.309453443
+REG	wikispeedia `-2 -d --regularized -N10`	-C -2 -d --regularized -N10	new	4	0.883667708	7132121119	4.307471791
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	old	0	8.200822083	63920047656	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	new	0	7.751268917	63880122237	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	new	1	8.23214075	63933016251	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	old	1	8.906645458	63996908261	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	old	2	8.005165208	63919443583	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	new	2	8.530074417	63954058853	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	new	3	8.461214834	63985382720	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	old	3	8.74739025	63977727022	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	old	4	7.676691625	63896543594	6.859843831
+FAM	om4_N256_E100k `-2d -N10`	-C -2d -N10	new	4	7.920885708	63949822324	6.859843831
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	0	4.565046458	46036374231	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	0	4.753806125	46072563978	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	1	5.501859875	46127440655	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	1	6.638147042	46142865665	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	2	5.681215291	46108556416	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	2	4.56685475	46042489891	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	3	4.456125	46039254204	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	3	4.404368	46030476847	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	4	4.225011583	46019209827	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	4	4.357842709	46027222433	11.73480892
+C2_10	multilayer (ex.)	-C -2 -N10	old	0	0.000684875	63295335	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	new	0	0.000763	62574854	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	new	1	0.000486208	62286981	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	old	1	0.000489209	62488730	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	old	2	0.000529375	63328075	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	new	2	0.000508708	63387636	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	new	3	0.000511625	62601870	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	old	3	0.000546	62718448	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	old	4	0.000546625	62585281	2.011405238
+C2_10	multilayer (ex.)	-C -2 -N10	new	4	0.000493583	63025789	2.011405238
+REG	wikispeedia `-2 -2d --regularized -N10`	-C -2 -2d --regularized -N10	old	0	0.7099985	6898648796	4.309453443
+REG	wikispeedia `-2 -2d --regularized -N10`	-C -2 -2d --regularized -N10	new	0	0.7172915	7109340894	4.307471791
+REG	wikispeedia `-2 -2d --regularized -N10`	-C -2 -2d --regularized -N10	new	1	0.756621917	7109260897	4.307471791
+REG	wikispeedia `-2 -2d --regularized -N10`	-C -2 -2d --regularized -N10	old	1	0.681219791	6896281987	4.309453443
+REG	wikispeedia `-2 -2d --regularized -N10`	-C -2 -2d --regularized -N10	old	2	0.704443125	6897215127	4.309453443
+REG	wikispeedia `-2 -2d --regularized -N10`	-C -2 -2d --regularized -N10	new	2	0.750100875	7107677475	4.307471791
+REG	wikispeedia `-2 -2d --regularized -N10`	-C -2 -2d --regularized -N10	new	3	0.767050916	7112071710	4.307471791
+REG	wikispeedia `-2 -2d --regularized -N10`	-C -2 -2d --regularized -N10	old	3	0.798664541	6906515225	4.309453443
+REG	wikispeedia `-2 -2d --regularized -N10`	-C -2 -2d --regularized -N10	old	4	0.704880917	6899076309	4.309453443
+REG	wikispeedia `-2 -2d --regularized -N10`	-C -2 -2d --regularized -N10	new	4	0.711097583	7105392144	4.307471791
+FAM	om5_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	0	8.381105792	65728434016	7.825368717
+FAM	om5_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	0	8.822271584	65802988357	7.825121965
+FAM	om5_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	1	8.002670333	65746698781	7.825121965
+FAM	om5_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	1	8.661195959	65768755074	7.825368717
+FAM	om5_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	2	7.912967375	65693189133	7.825368717
+FAM	om5_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	2	7.928320709	65742994727	7.825121965
+FAM	om5_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	3	7.715262666	65731778878	7.825121965
+FAM	om5_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	3	9.157654875	65809881204	7.825368717
+FAM	om5_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	old	4	7.350014875	65658656410	7.825368717
+FAM	om5_N256_E100k `-d --regularized -N10`	-C -d --regularized -N10	new	4	7.483573625	65714047146	7.825121965
+FAM	om2_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	0	3.744139542	35155627303	7.563584264
+FAM	om2_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	0	4.196296667	37135221733	7.563587703
+FAM	om2_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	1	4.135398834	37146065540	7.563587703
+FAM	om2_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	1	3.81627925	35155974377	7.563584264
+FAM	om2_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	2	3.765079917	35166370047	7.563584264
+FAM	om2_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	2	3.730581667	37116514348	7.563587703
+FAM	om2_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	3	3.847101416	37115993978	7.563587703
+FAM	om2_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	3	3.708244208	35152014534	7.563584264
+FAM	om2_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	old	4	3.586939875	35146739234	7.563584264
+FAM	om2_N256_E50k `-d --regularized -N10`	-C -d --regularized -N10	new	4	4.022048666	37140323072	7.563587703
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	0	5.19179425	49920874311	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	0	5.232549875	49916903249	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	1	5.129395042	49913024666	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	1	6.102649917	49996919541	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	2	5.36983	49965512777	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	2	6.17968875	49964662386	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	3	5.678154458	49960135632	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	3	5.430043458	49937995964	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	4	5.355990583	49931563345	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	4	5.667343375	49958045666	11.73480892
+C2_10	overlapping om6_N256_E50k `-2d`	-C -2d -N10	old	0	5.659698208	31885328681	4.468778176
+C2_10	overlapping om6_N256_E50k `-2d`	-C -2d -N10	new	0	4.77876775	31807725006	4.468778176
+C2_10	overlapping om6_N256_E50k `-2d`	-C -2d -N10	new	1	5.611393583	31882839968	4.468778176
+C2_10	overlapping om6_N256_E50k `-2d`	-C -2d -N10	old	1	4.85768225	31827710804	4.468778176
+C2_10	overlapping om6_N256_E50k `-2d`	-C -2d -N10	old	2	5.133039417	31827934391	4.468778176
+C2_10	overlapping om6_N256_E50k `-2d`	-C -2d -N10	new	2	4.788605416	31829009777	4.468778176
+C2_10	overlapping om6_N256_E50k `-2d`	-C -2d -N10	new	3	5.103360834	31839034055	4.468778176
+C2_10	overlapping om6_N256_E50k `-2d`	-C -2d -N10	old	3	4.97775175	31831338537	4.468778176
+C2_10	overlapping om6_N256_E50k `-2d`	-C -2d -N10	old	4	5.213263458	31821628185	4.468778176
+C2_10	overlapping om6_N256_E50k `-2d`	-C -2d -N10	new	4	5.51336825	31867999634	4.468778176
+C2_10	overlapping om8_N256_E100k `-2d`	-C -2d -N10	old	0	10.109154125	67588169003	6.873356654
+C2_10	overlapping om8_N256_E100k `-2d`	-C -2d -N10	new	0	9.348040333	67502018914	6.873356654
+C2_10	overlapping om8_N256_E100k `-2d`	-C -2d -N10	new	1	9.449187791	67500486969	6.873356654
+C2_10	overlapping om8_N256_E100k `-2d`	-C -2d -N10	old	1	10.467716417	67528649432	6.873356654
+C2_10	overlapping om8_N256_E100k `-2d`	-C -2d -N10	old	2	9.890168625	67528163362	6.873356654
+C2_10	overlapping om8_N256_E100k `-2d`	-C -2d -N10	new	2	8.699677625	67443239759	6.873356654
+C2_10	overlapping om8_N256_E100k `-2d`	-C -2d -N10	new	3	8.433122541	67420800116	6.873356654
+C2_10	overlapping om8_N256_E100k `-2d`	-C -2d -N10	old	3	9.682817333	67538561211	6.873356654
+C2_10	overlapping om8_N256_E100k `-2d`	-C -2d -N10	old	4	8.612415416	67417864597	6.873356654
+C2_10	overlapping om8_N256_E100k `-2d`	-C -2d -N10	new	4	8.706478084	67448320532	6.873356654
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	0	0.88784825	8070942390	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	0	0.77228375	8040137663	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	1	0.918175459	8050240528	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	1	1.036082917	8064811275	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	2	1.044184833	8074213713	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	2	0.789710291	8037860511	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	3	0.794841708	8038935551	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	3	0.799280125	8057641366	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	4	0.962715792	8076639690	6.624543363
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	4	0.795076292	8039874101	6.624310588
