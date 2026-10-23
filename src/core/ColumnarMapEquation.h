@@ -1211,7 +1211,7 @@ private:
  *    i.e. it reports L* too HIGH, which broke invariance under exactly lumpable
  *    state duplication (#1009).
  *
- * hierarchicalCorrection therefore asks the core for leafCodebookRates(): empty
+ * hierarchicalCorrection therefore asks the stack view for leafCodebookRates(): empty
  * under the base objective, where it keeps the two-global-sums form verbatim, and
  * per-module under L*. Leaf-module level only (module-of-modules delegates to
  * base; neither objective reads leaf flows above level 1). Same O(1) move-loop

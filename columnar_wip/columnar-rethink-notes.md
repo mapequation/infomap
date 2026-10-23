@@ -6027,3 +6027,87 @@ the tip before #828 reached it at `k=1` with 2 pieces and a parent id of 2.
   percentile −0.70% to +0.21%), and seconds summed are −0.57%. The 16 rows more than 10% slower in the sweep
   re-time as noise: instructions −0.18% to +0.04% as the minimum of 5. The two worst, at +4.66% and +3.92% in
   seconds, read −0.01% and +1.89% as the minimum of 10.
+
+### F77 — The stacked hierarchy gets its own value type; its misfits were missing stack operations plus the search engine used as a library (#1371) (2026-10-23)
+
+#1371 asked whether the stacked hierarchy (`m_hierLevels`, `m_hierAssign`, snapshots, level insertion) should
+leave `ColumnarTwoLevel`, which of the nine stack operations the issue listed should become an API, and how
+that keeps room for search algorithms in the style of deep repair and level splits. The issue's map was taken
+at `fe9a21c5`. Re-mapped on `fd41270c`, after #1373 moved aggregation and slicing into `ColumnarBoundaryFlow`,
+the stack code did four things: group units by ancestor and stitch local assignments back, write the stack,
+snapshot it, and keep state derived from it.
+
+- **The three algorithms that did not fit a narrow store API split into two kinds.**
+  - `splitLevelModules` and the top split / leaf retune need stack operations the narrow API lacked: edit
+    several assignments, re-aggregate everything above with the module counts kept (operation 3), and restore
+    only what was touched. An undo journal gives the partial restore without the operator naming the levels.
+  - `mergeLeafModulesWithinParents` is an ordinary client. Its private adjacency state never touches the stack
+    until its final two writes.
+  - Running the optimizer's own move loop on a temporary piece level (operation 9) is not a stack operation at
+    all. `moveLoopWith` reads no stack member. Its tie to the stack was only that both live in one class: shared
+    scratch (`m_lvlOwned`, `m_module`) and four ambient mode flags, written 26 times and left set by the
+    operators, harmless only because every move-loop entry sets them first.
+- **`ColumnarTwoLevel` already plays two roles.** Every sub-search constructs one and uses only `buildFromLevel`,
+  `optimizeTwoLevel`, `leafTopModule` and `numTopModules`, never its stack (the subcluster helper, the layer and
+  top refines, the up-build, and the regroup probe). The hierarchy role calls into the search role only for
+  sub-searches (operation 1) and operation 9.
+- **Snapshots came in four variants, not three.**
+  - Whole-stack copies in the drivers.
+  - One gate lambda copied verbatim in `coarsenModules` and `refineHierarchy`. It copied every assignment and
+    upper level before each step, also when the step changed nothing (the merge on the base objective).
+  - Partial saves in retune, the top split and `splitLevelModules`. The first two reverted by re-aggregating
+    level 1 from the leaf network, one O(leaf links) aggregation per rejected attempt.
+  - The move-out-and-back of `oneLevelCodelength`, which existed because corrections priced a stack through the
+    optimizer (`hierarchicalCorrection(const ColumnarTwoLevel&)`), so a candidate had to be installed as the
+    live stack before it could be priced.
+- **Derived state and hidden parameters.** `m_numTopModules` meant the two-level K to sub-search callers and the
+  stack's top size everywhere else (29 writes). `m_leafTop` was the up-build's input, set by its callers.
+  #1375 was a stack state (empty module ids kept by operation 3) that a later consumer did not expect.
+- **The paths put to Daniel.** (1) The stack type only, operators staying in `ColumnarTwoLevel`. (2) A split by
+  role: `ColumnarTwoLevel` keeps the move loop and the two-level search and gains a public "move on this level"
+  call, and a hierarchy class owns the stack, the operators, the drivers and the per-run caches. (3) A
+  composable core: problem, move search, two-level search, stack, and operators as free functions. The
+  recommendation was (2). Its boundary is the one the code already has, and it leaves `moveLoopWith` where it
+  is. (3) would move the hot path, where F73 showed that a change doing no extra work can still cost +2%
+  instructions. Step 1 of every path is the same stack type.
+- **Decision (Daniel).** Path 2, "if it keeps the flexibility not only in mixing current search functions but
+  also new functions currently not available", and "small building blocks that can be mixed easier if they
+  don't add cost". So the stack API is the full rectangular edit set, including the edits no search uses yet,
+  and the building blocks are public and cost nothing when unused.
+- **Sub-PR 1: `ColumnarStack` (`src/core/ColumnarStack.{h,cpp}`).** A value bound to the leaf network and the
+  flow model, with every module level the aggregate of the level below:
+  - Edits: `setFlat`, `setFromLeafPaths`, `pushLevel`, `setModules` (with or without the new modules'
+    parents), `setParents`, `reaggregateFrom`, and `insertLevel` / `removeLevel` for search functions that
+    change the depth, which no search does yet.
+  - Checkpoints over an undo journal: the first write to a slot after a checkpoint moves its old value aside,
+    and rollback moves it back, so a tentative step copies nothing. Checkpoints nest, so a tentative step can
+    contain gated steps. An edit that changes the number of levels saves the whole stack once (module levels
+    only).
+  - Copies are plain values without the leaf network, which is how the drivers keep candidates.
+  - In `ColumnarTwoLevel`: `gatedStep` is the one accept/revert policy (it replaces the two gate lambdas and the
+    hand-picked saves). `scoreStack` prices any stack without installing it, and corrections read a
+    `ColumnarStackView`. `buildHierarchyFromBottom` takes its bottom as an argument, and `m_numTopModules` is the
+    two-level result only.
+- **Two bugs the new tests caught before any run did.** `buildFromLeaves` sets up its leaf network without
+  `initLeafContext`, so its stack was never bound: the columnar contract tests of the lifecycle and partition
+  suites crashed in `aggregate` on a null leaf level. The unit test of `removeLevel` at the top level erased an
+  assignment past the end (the top's incoming assignment is the last one, not slot k). Neither reached a
+  shipped binary.
+- **Bit-identity.** `columnar_wip/bench-identity.py` runs every columnar row of the snapshot set once per arm
+  and compares the codelength and the body of every `.tree` file a run writes (`_states.tree` included). All
+  332 rows are identical between `fd41270c` (md5 `77eec5e8`, the same bytes as #1377's new arm) and this
+  PR's `37d4d5fc` (md5 `46a71b8e`).
+  The 33 feature-build configurations (multilayer input under `--regularized`, and `--lossy`) are identical too.
+- **Snapshot.** Instructions over the set: median −0.11%, 5th–95th percentile −1.14% to +0.08%, and every row
+  beyond ±1% is a run under 0.15G instructions. Seconds summed −1.09%, under load (load average 12–95, and the
+  sweep's last ~8 minutes shared the machine with #1372's sweep), so the 29 rows more than 10% slower wait for a
+  quiet re-time before landing.
+- **Instrument note: one sweep run of a 30–60G configuration is not an instruction measurement.** The sweep read
+  om8_N256_E50k `-2d -N10` at +1.15% and om4_N256_E100k `-2d -N10` at +0.43%. Two more runs per arm put them at
+  −0.14% and −0.03% as the minimum of 3, with the old arm alone spanning 30.50G–30.54G and 63.90G–64.05G.
+  `/usr/bin/time -l` counts the kernel's instructions too, so memory pressure from other jobs (page compression)
+  lands in a single run. The rule F73 set for runs under 1G holds above it too under load: minimum of N.
+- **Next.** Sub-PR 2 is the split by role: `ColumnarTwoLevel` keeps the move loop and the two-level search behind a
+  public "move on this level" call, and a hierarchy class owns the stack, the operators, the drivers and the
+  per-run caches, with the hidden member parameters (`m_externalSeed`, `m_forceHSplit`, `m_refineSweep`,
+  `m_superAggLimit`) turned into arguments.
