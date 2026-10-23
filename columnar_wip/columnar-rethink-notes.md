@@ -6100,8 +6100,9 @@ snapshot it, and keep state derived from it.
   The 33 feature-build configurations (multilayer input under `--regularized`, and `--lossy`) are identical too.
 - **Snapshot.** Instructions over the set: median −0.11%, 5th–95th percentile −1.14% to +0.08%, and every row
   beyond ±1% is a run under 0.15G instructions. Seconds summed −1.09%, under load (load average 12–95, and the
-  sweep's last ~8 minutes shared the machine with #1372's sweep), so the 29 rows more than 10% slower wait for a
-  quiet re-time before landing.
+  sweep's last ~8 minutes shared the machine with #1372's sweep). The 29 rows more than 10% slower re-time as
+  noise: instructions −0.65% to +0.05% as the minimum of 5. The two worst, +12.9% and +3.7% in seconds, read
+  +0.41% and −0.11% as the minimum of 10.
 - **Instrument note: one sweep run of a 30–60G configuration is not an instruction measurement.** The sweep read
   om8_N256_E50k `-2d -N10` at +1.15% and om4_N256_E100k `-2d -N10` at +0.43%. Two more runs per arm put them at
   −0.14% and −0.03% as the minimum of 3, with the old arm alone spanning 30.50G–30.54G and 63.90G–64.05G.

@@ -7,7 +7,7 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123`. Codelength in bits. **`
 - `-N1` rows are the interleaved minimum of 3.
 - Driver: [`columnar_wip/bench-sync.py`](columnar_wip/bench-sync.py) `--carry-oo`, writing [`columnar_wip/stack-owner-ab-results.tsv`](columnar_wip/stack-owner-ab-results.tsv), old and new on every row of the previous snapshot (#1377).
 - Bit-identity: [`columnar_wip/bench-identity.py`](columnar_wip/bench-identity.py), every columnar row once per arm, comparing the codelength and the body of every `.tree` file the run writes.
-- Outliers in seconds: [`columnar_wip/retime-outliers.py`](columnar_wip/retime-outliers.py), to write `columnar_wip/stack-owner-retime.tsv` in a quiet re-time before landing ([the slow cells](#the-slow-cells-are-noise)).
+- Outliers in seconds: [`columnar_wip/retime-outliers.py`](columnar_wip/retime-outliers.py), writing [`columnar_wip/stack-owner-retime.tsv`](columnar_wip/stack-owner-retime.tsv).
 - Tables: [`columnar_wip/assemble-hier-gaps.py`](columnar_wip/assemble-hier-gaps.py) builds every table from the TSV that [`columnar_wip/tables-1042.py`](columnar_wip/tables-1042.py) `assembly` writes, including the OO cells. The REG table comes from `tables-1042.py reg`.
 
 > **This PR gives the columnar stacked hierarchy its own value type (#1371).** `ColumnarStack` holds the levels and assignments that were two raw vectors inside `ColumnarTwoLevel`. Every edit keeps each level the aggregate of the level below, including `insertLevel` and `removeLevel`, which no search uses yet. Checkpoints over an undo journal make any sequence of edits tentative without copying, and they nest. The operators now go through those edits. One `gatedStep` replaces four snapshot variants, `scoreStack` prices any stack without installing it, and corrections read a stack view instead of the optimizer. It is the first step of the split by role Daniel picked for #1371; the finding is F77.
@@ -15,7 +15,7 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123`. Codelength in bits. **`
 > What the snapshot shows:
 > - **All 332 columnar configurations are bit-identical**, in codelength and in the body of every `.tree` file a run writes (`_states.tree` included). So are the 33 feature-build configurations of [the feature build](#the-feature-build): multilayer input under `--regularized`, and `--lossy`.
 > - **Instructions: median −0.11%, 5th–95th percentile −1.14% to +0.08%.** Every row beyond ±1% is a run under 0.15G instructions. The two largest increases on big runs are single-run noise. Two more runs per arm put om8_N256_E50k `-2d -N10` (+1.15% in the sweep) at −0.14%, and om4_N256_E100k `-2d -N10` (+0.43%) at −0.03%, as the minimum of 3.
-> - **Seconds summed: −1.09%.** The sweep ran under load: the machine's load average ran between 12 and 95, and the sweep's last ~8 minutes overlapped #1372's own snapshot sweep (16:55–17:03). The 29 rows more than 10% slower in seconds retire −2.54% to +1.15% in instructions, and the two largest increases among them re-run below the old arm (above). They are [not re-timed yet](#the-slow-cells-are-noise): #1372's sweep and re-time held the machine afterwards, so a quiet re-time runs before this lands.
+> - **Seconds summed: −1.09%, and the slow cells are noise.** The sweep ran under load (load average 12–95; its last ~8 minutes overlapped #1372's sweep). The 29 rows more than 10% slower, re-run alternating as the minimum of 5 on an otherwise idle benchmark slot: instructions −0.65% to +0.05%, seconds −3.6% to +12.9%. The two slowest, om5_N256_E100k `-d -N1` (+12.9%) and om5_N256_E50k `-2d --regularized -N10` (+3.7%), read +0.41% and −0.11% as the minimum of 10, with medians +1.8% and +1.3%. Their old arm alone spans 0.80–1.19 s and 3.41–3.72 s across rounds.
 >
 > Columnar arms measured in one session, 2026-10-23. OO arms carried from #1377, which carried them from #1376, #1373 and #1369's session.
 > - **Old:** a fresh build of the branch tip `fd41270c` (#1377), md5 `77eec5e8c6ba2277cc83375dba0b76ee`. It is byte-identical to #1377's new arm. Feature build: md5 `f94bd19808f2fadf60dd68d4fcb0dcca`, also identical.
@@ -31,39 +31,39 @@ Nothing in bits: no row of the assembled tables below changes its codelength, to
 
 #### The slow cells are noise
 
-Every row more than 10% slower in the sweep, with the sweep's own cells. They are not re-timed yet: a quiet re-time ([`columnar_wip/retime-outliers.py`](columnar_wip/retime-outliers.py), alternating rounds, minimum of 5) runs before this lands, once no other session's sweep shares the machine. Instructions carry the comparison until then. A three- to four-fold slowdown at +0.08% instructions, as on word_assoc `--non-redundant`, is load, not work.
+The sweep's outliers in seconds, re-run interleaved after it (old, new, new, old, …), as the minimum of 5 per arm: every unchanged configuration more than 10% slower. Instructions stay within −0.65% to +0.05% on every row, so what is left in seconds is noise and code placement. The re-time shared the machine with other sessions' interactive work (load average 13–18) but with no other benchmark. The two slowest were re-run once more as the minimum of 10 (see the opening note) and did not stay slow.
 
-| row | old time | new time | Δtime | Δinstr |
-|---|--:|--:|--:|--:|
-| `--non-redundant` word_assoc | 5.537s | 21.177s | +282.5% | +0.08% |
-| family om8_N256_E50k `-2d -N10` | 5.629s | 18.013s | +220.0% | +1.15% |
-| family om4_N256_E100k `-2d -N10` | 8.065s | 18.884s | +134.1% | +0.43% |
-| `-C -F` word_assoc (pref.) | 4.769s | 6.552s | +37.4% | -0.26% |
-| REG wikispeedia `-2d --regularized -N10` | 0.751s | 1.018s | +35.5% | +0.13% |
-| family om2_N256_E100k `-d --regularized -N1` | 0.543s | 0.703s | +29.5% | +0.06% |
-| `-C -N1` lazega | 0.001s | 0.001s | +29.4% | -0.50% |
-| family om6_N256_E100k `-2d --regularized -N10` | 9.310s | 11.611s | +24.7% | +0.14% |
-| `-C -2` multilayer (ex.) | 0.001s | 0.001s | +24.0% | -0.94% |
-| `-C -2` overlapping om4_N256_E50k `-2d` | 4.732s | 5.860s | +23.9% | +0.04% |
-| family om8_N256_E100k `-d --regularized -N10` | 7.292s | 8.760s | +20.1% | +0.15% |
-| family om3_N256_E100k `-d -N1` | 1.559s | 1.850s | +18.7% | +0.05% |
-| `-C -2` ninetriangles | 0.001s | 0.001s | +16.1% | +0.37% |
-| family om5_N256_E100k `-d -N1` | 0.802s | 0.918s | +14.5% | -0.16% |
-| REG air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10` | 10.284s | 11.734s | +14.1% | -0.20% |
-| `-C -F` web-NotreDame | 22.050s | 24.935s | +13.1% | +0.30% |
-| family om5_N256_E50k `-2d --regularized -N10` | 3.633s | 4.088s | +12.5% | +0.09% |
-| `-C -F` lazega | 0.005s | 0.005s | +11.9% | -1.73% |
-| `-C -2` overlapping om3_N256_E50k `-2d` | 6.252s | 6.962s | +11.4% | -0.01% |
-| family om6_N256_E50k `-d -N10` | 7.058s | 7.852s | +11.3% | -0.05% |
-| `-C -2` word_assoc (pref.) | 6.423s | 7.145s | +11.2% | +0.35% |
-| family om8_N256_E100k `-d -N1` | 0.882s | 0.978s | +10.9% | -0.10% |
-| `--non-redundant` wikispeedia `-d` | 0.698s | 0.774s | +10.9% | -0.21% |
-| `-C -F` multilayer (ex.) | 0.001s | 0.001s | +10.8% | -1.52% |
-| `-C -F -N1` overlapping om8_N256_E100k `-d` | 0.746s | 0.827s | +10.8% | +0.04% |
-| REG wikispeedia `-d --recorded-teleportation -N10` | 0.877s | 0.972s | +10.8% | -0.13% |
-| family om4_N256_E100k `-d --regularized -N1` | 1.702s | 1.882s | +10.6% | -0.02% |
-| family om7_N256_E100k `-2d -N1` | 1.893s | 2.088s | +10.3% | +0.06% |
-| REG lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10` | 0.004s | 0.004s | +10.2% | -2.54% |
+| row | bits changed? | sweep Δtime | sweep Δinstr | old (min of 5) | new (min of 5) | Δtime | Δinstr (min of 5) |
+|---|:-:|--:|--:|--:|--:|--:|--:|
+| `-C -F` web-NotreDame |  | +13.1% | +0.30% | 16.204s | 16.819s | +3.80% | +0.05% |
+| family om5_N256_E50k `-2d --regularized -N10` |  | +12.5% | +0.09% | 3.410s | 3.535s | +3.67% | +0.05% |
+| family om6_N256_E100k `-2d --regularized -N10` |  | +24.7% | +0.14% | 7.694s | 7.644s | -0.66% | -0.00% |
+| REG wikispeedia `-2d --regularized -N10` |  | +35.5% | +0.13% | 0.686s | 0.694s | +1.11% | -0.00% |
+| family om2_N256_E100k `-d --regularized -N1` |  | +29.5% | +0.06% | 0.528s | 0.543s | +2.80% | -0.00% |
+| `-C -2` word_assoc (pref.) |  | +11.2% | +0.35% | 4.234s | 4.262s | +0.66% | -0.02% |
+| family om4_N256_E100k `-2d -N10` |  | +134.1% | +0.43% | 7.351s | 7.241s | -1.50% | -0.02% |
+| family om5_N256_E100k `-d -N1` |  | +14.5% | -0.16% | 0.834s | 0.941s | +12.92% | -0.03% |
+| family om3_N256_E100k `-d -N1` |  | +18.7% | +0.05% | 1.570s | 1.564s | -0.38% | -0.03% |
+| family om4_N256_E100k `-d --regularized -N1` |  | +10.6% | -0.02% | 1.711s | 1.657s | -3.15% | -0.05% |
+| family om7_N256_E100k `-2d -N1` |  | +10.3% | +0.06% | 1.893s | 1.942s | +2.60% | -0.07% |
+| `-C -F -N1` overlapping om8_N256_E100k `-d` |  | +10.8% | +0.04% | 0.796s | 0.824s | +3.59% | -0.09% |
+| `-C -2` multilayer (ex.) |  | +24.0% | -0.94% | 0.000s | 0.000s | +1.49% | -0.10% |
+| family om8_N256_E100k `-d --regularized -N10` |  | +20.1% | +0.15% | 7.258s | 7.053s | -2.82% | -0.10% |
+| `-C -2` overlapping om4_N256_E50k `-2d` |  | +23.9% | +0.04% | 4.855s | 4.773s | -1.68% | -0.12% |
+| `-C -2` ninetriangles |  | +16.1% | +0.37% | 0.001s | 0.001s | +1.60% | -0.13% |
+| `-C -2` overlapping om3_N256_E50k `-2d` |  | +11.4% | -0.01% | 4.829s | 4.823s | -0.13% | -0.13% |
+| family om8_N256_E100k `-d -N1` |  | +10.9% | -0.10% | 0.917s | 0.905s | -1.32% | -0.14% |
+| family om8_N256_E50k `-2d -N10` |  | +220.0% | +1.15% | 4.688s | 4.647s | -0.86% | -0.15% |
+| family om6_N256_E50k `-d -N10` |  | +11.3% | -0.05% | 6.665s | 6.719s | +0.80% | -0.15% |
+| `--non-redundant` wikispeedia `-d` |  | +10.9% | -0.21% | 0.699s | 0.709s | +1.48% | -0.21% |
+| REG air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10` |  | +14.1% | -0.20% | 10.016s | 10.203s | +1.87% | -0.24% |
+| REG wikispeedia `-d --recorded-teleportation -N10` |  | +10.8% | -0.13% | 0.780s | 0.785s | +0.64% | -0.26% |
+| `-C -F` multilayer (ex.) |  | +10.8% | -1.52% | 0.001s | 0.001s | +0.34% | -0.41% |
+| `-C -N1` lazega |  | +29.4% | -0.50% | 0.001s | 0.001s | +4.22% | -0.52% |
+| `-C -F` word_assoc (pref.) |  | +37.4% | -0.26% | 4.701s | 4.628s | -1.55% | -0.62% |
+| REG lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10` |  | +10.2% | -2.54% | 0.004s | 0.003s | -3.63% | -0.63% |
+| `--non-redundant` word_assoc |  | +282.5% | +0.08% | 4.544s | 4.482s | -1.38% | -0.65% |
+| `-C -F` lazega |  | +11.9% | -1.73% | 0.004s | 0.004s | +1.51% | -0.65% |
 
 ### The feature build
 
