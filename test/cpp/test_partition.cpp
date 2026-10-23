@@ -1,6 +1,7 @@
 #include "vendor/doctest.h"
 
 #include "Infomap.h"
+#include "core/ColumnarTuning.h"
 #include "io/ClusterMap.h"
 #include "io/InfomapError.h"
 #include "io/Output.h"
@@ -459,6 +460,35 @@ TEST_CASE("Columnar dissolve reports the codelength a re-score of its own tree g
     std::remove(treePath.c_str());
     CHECK(scored.codelength() == doctest::Approx(im.codelength()).epsilon(1e-9));
   }
+}
+
+TEST_CASE("Columnar level split seeds its piece move loop with ids it has slots for (#1375) [fast][core][partition][columnar][columnar-contract]")
+{
+  // splitLevelModules recombines a level's pieces in a move loop with one module slot per
+  // piece, seeded at each piece's level-(k+1) module. A module emptied by an earlier split
+  // keeps its id there, so a seed id could reach the piece count, and moveUnit wrote past
+  // every per-module array: aucs.net under -C -N10 corrupted the heap. These 34 of its
+  // links reach such a seed; the sanitizer job reports the overrun if the compaction goes.
+  const std::string network = "columnar_split_seed_1375.net";
+  {
+    std::ofstream out(network);
+    out << "*Intra\n"
+        << "4 15 16 1\n5 15 16 1\n1 15 24 1\n2 15 24 1\n5 15 24 1\n4 15 35 1\n"
+        << "1 15 54 1\n2 15 54 1\n2 15 55 1\n4 15 55 1\n4 16 59 1\n5 17 58 1\n"
+        << "2 24 15 1\n5 24 15 1\n2 51 32 1\n2 51 35 1\n4 51 35 1\n5 51 35 1\n"
+        << "4 51 46 1\n4 51 48 1\n5 51 48 1\n5 51 44 1\n2 51 55 1\n4 52 48 1\n"
+        << "5 52 48 1\n4 52 58 1\n5 52 58 1\n1 61 15 1\n5 61 15 1\n4 61 16 1\n"
+        << "5 61 16 1\n3 61 24 1\n4 61 24 1\n1 61 38 1\n";
+  }
+  const long long before = infomap::columnar::g_hSplitSeedCompactions.load();
+  InfomapWrapper im(infomap::test::defaultFlags("--columnar --num-trials 10 --seed 1"));
+  im.readInputData(network);
+  im.run();
+  std::remove(network.c_str());
+  infomap::test::checkRunSanity(im);
+  // Without a compacted seed the test no longer covers #1375: a search change that moves
+  // this input off the path needs a new input, not a pass.
+  CHECK(infomap::columnar::g_hSplitSeedCompactions.load() > before);
 }
 
 TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition][columnar-contract]")

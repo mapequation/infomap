@@ -5996,3 +5996,34 @@ reported, 10.175 scored), and the gap had nothing to do with search quality.
   instructions. Another job held the machine at load averages of 57 to 388 during the re-timing and the
   multilayer table, so their seconds are load, and instructions carry the comparison. A re-timed om7 E50k
   `-d -N10` took 24 s, against about 6 s in the sweep.
+
+### F75 — The level split seeded its piece move loop past its slots (#1375) (2026-10-23)
+
+`splitLevelModules`' recombine aggregates a level's pieces into a move level with one module slot per piece,
+then seeds the move loop with `pieceParent`, the pieces' level-(k+1) module ids. Earlier splits can empty a
+level-(k+1) module without renumbering, so those ids have gaps. With enough gaps a parent id reaches
+`nPieces`, and `seedAssignment` → `moveUnit` writes past every per-module array of the move level. aucs at
+the tip before #828 reached it at `k=1` with 2 pieces and a parent id of 2.
+
+- **Fix.** Seed with ids compacted in first-seen order whenever the largest id would overrun. Only the
+  grouping matters: `remap` compacts the move loop's result anyway, and the grandparent votes still read
+  `pieceParent`. The fast reject compares against the seed actually used. A run that never overruns takes
+  the old path, apart from one copy of `pieceParent` and a max scan per recombine. Instructions over the set
+  are a median −0.01%.
+- **How often it fires.** Never in the snapshot set: a probe build that prints on every compaction ran all
+  332 columnar rows at seed 123 without one. Small inputs need `-N10`: no `-N1` run of `examples/networks`,
+  jazz, lazega, ninetriangles, aucs or StarWars at seeds 1–200 compacts, and at `-N10`, seeds 1–60, only aucs
+  does, on 10 seeds. #828 moved aucs `--regularized` off the path (no seed of 1–60 compacts), but plain
+  `-C -N10` still compacts on those 10 seeds. On the tip, 6 to 7 of those 10 crash per pass (SIGTRAP, SIGBUS,
+  SIGSEGV), and AddressSanitizer reports a `container-overflow` in `moveUnit` on all of them, including the
+  ones that complete.
+- **A test that knows when it stops testing.** #828 is a live example of how a search change silently moves
+  a reproducer off an internal path. So the fix counts compactions in `g_hSplitSeedCompactions`, beside the
+  other split counters (printed by `COL_HSPLIT_STATS`), and the test asserts the counter moved. Its input is
+  34 of aucs's 1,239 links, from a greedy reduction that kept every removal after which some seed in 1–10
+  still compacts at `-C -N10`. On the tip, AddressSanitizer reports the overrun on that input at seed 1, and
+  CI's sanitizer job runs the test.
+- **Snapshot.** All 332 configurations are bit-identical; instructions have a median of −0.01% (5th–95th
+  percentile −0.70% to +0.21%), and seconds summed are −0.57%. The 16 rows more than 10% slower in the sweep
+  re-time as noise: instructions −0.18% to +0.04% as the minimum of 5. The two worst, at +4.66% and +3.92% in
+  seconds, read −0.01% and +1.89% as the minimum of 10.

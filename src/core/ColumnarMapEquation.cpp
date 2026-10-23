@@ -1623,6 +1623,7 @@ int ColumnarTwoLevel::splitLevelModules(int k, double& L, bool allowSingletons)
     m_levelFreshProductive.resize(k + 1, 1);
   }
 
+  std::vector<int> seed; // pieceParent, compacted when it overruns the piece level
   // Recombination: a seeded move loop over the pieces of the level-k network,
   // seeded at the current level-(k+1) modules. Pieces may move to any module,
   // including an empty one — group split and cross-parent relocation in one
@@ -1643,7 +1644,23 @@ int ColumnarTwoLevel::splitLevelModules(int k, double& L, bool allowSingletons)
       PhaseTimer pt(2, phaseTiming);
       for (auto* cp : unitCorr)
         cp->setUnits(unitToPiece, nPieces);
-      seedAssignment(pieceParent);
+      // The move level has one module slot per piece, but pieceParent holds
+      // level-(k+1) module ids, where a module emptied by an earlier split
+      // survives as an empty id: with enough of them a parent id reaches
+      // nPieces. Seed with compacted ids then; remap below compacts the result
+      // anyway, so only the grouping matters.
+      seed = pieceParent;
+      if (*std::max_element(seed.begin(), seed.end()) >= nPieces) {
+        g_hSplitSeedCompactions.fetch_add(1, std::memory_order_relaxed);
+        std::vector<int> id(K, -1);
+        int next = 0;
+        for (int& s : seed) {
+          if (id[s] == -1)
+            id[s] = next++;
+          s = id[s];
+        }
+      }
+      seedAssignment(seed);
       moveLoop();
     }
     m_moduleCorrActive = false;
@@ -1654,7 +1671,7 @@ int ColumnarTwoLevel::splitLevelModules(int k, double& L, bool allowSingletons)
     // untouched, so no rebuild or evaluation is needed.
     bool anyMoved = false;
     for (int p = 0; p < nPieces && !anyMoved; ++p)
-      anyMoved = m_module[p] != pieceParent[p];
+      anyMoved = m_module[p] != seed[p];
     if (!anyMoved)
       return false;
 
