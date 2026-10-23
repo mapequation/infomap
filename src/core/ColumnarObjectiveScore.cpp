@@ -18,7 +18,7 @@
 // same levels, the same child->parent assignments and the same
 // teleport-augmented boundary rates, which is exactly what StackTerms holds.
 
-#include "ColumnarMapEquation.h"
+#include "ColumnarHierarchy.h"
 #include "ColumnarObjective.h"
 #include "../utils/infomath.h"
 
@@ -270,16 +270,16 @@ namespace {
 
 } // namespace
 
-double ColumnarTwoLevel::scoreStack(const ColumnarStack& stack, StackBreakdown* breakdown) const
+double ColumnarHierarchy::scoreStack(const ColumnarStack& stack, StackBreakdown* breakdown) const
 {
-  const StackTerms terms = buildStackTerms(stack, m_exitNetworkFlow);
+  const StackTerms terms = buildStackTerms(stack, m_search.exitNetworkFlow());
   if (breakdown != nullptr)
     prepareBreakdown(terms, *breakdown);
   const double base = m_nonRedundant ? scoreStackNonRedundant(terms, breakdown) : scoreStackBase(terms, breakdown);
   return base + objectiveCorrection(stack, breakdown);
 }
 
-double ColumnarTwoLevel::dissolveUnprofitableLevels(bool gainOnly)
+double ColumnarHierarchy::dissolveUnprofitableLevels(bool gainOnly)
 {
   using infomath::plogp;
   clearDissolvedPaths();
@@ -301,13 +301,13 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(bool gainOnly)
   // bias; zero for the rest), because dissolve moves module-of-modules terms only
   // and each correction's own cost lives on the leaf modules it never touches.
   double corrGainPerNode = 0.0;
-  for (const auto& c : m_corrections) {
+  for (const auto& c : corrections()) {
     if (c->blocksLevelDissolve())
       return startL;
     corrGainPerNode += c->dissolveGainPerInternalNode();
   }
 
-  const StackTerms t = buildStackTerms(m_stack, m_exitNetworkFlow);
+  const StackTerms t = buildStackTerms(m_stack, m_search.exitNetworkFlow());
 
   // Module-tree over root (id 0) + every module (id offset[k] + m). A leaf module
   // (k == 1) is a leaf of THIS tree; only modules-of-modules (k >= 2) and the root
@@ -457,7 +457,7 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(bool gainOnly)
     m_dissolveTerm[offset[1] + m] = breakdown.moduleTerm[1][static_cast<std::size_t>(m)];
   auto nodeCharge = [&](int p, bool hasExit) {
     double charge = 0.0;
-    for (const auto& c : m_corrections)
+    for (const auto& c : corrections())
       charge += c->dissolveNodeCharge(static_cast<int>(children[p].size()), hasExit);
     return charge;
   };
@@ -490,15 +490,15 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(bool gainOnly)
   return startL - totalGain;
 }
 
-double ColumnarTwoLevel::oneLevelCodelength() const
+double ColumnarHierarchy::oneLevelCodelength() const
 {
   // Score the all-in-one-module partition on THIS objective as a one-level stack
   // of its own: the corrections price whatever stack they are shown, so the
   // search's stack is never touched. The only real work is the single aggregate
   // over the leaf network.
   ColumnarStack oneModule;
-  oneModule.bind(leaf0(), m_flow);
-  oneModule.setFlat(std::vector<int>(static_cast<std::size_t>(m_nLeaves), 0), 1);
+  oneModule.bind(leaf0(), m_search.flow());
+  oneModule.setFlat(std::vector<int>(static_cast<std::size_t>(nLeaves()), 0), 1);
   return scoreStack(oneModule);
 }
 
@@ -517,13 +517,13 @@ std::vector<double> ColumnarStackView::leafCodebookRates() const
   return rates;
 }
 
-double ColumnarTwoLevel::objectiveCorrection(const ColumnarStack& stack, StackBreakdown* breakdown) const
+double ColumnarHierarchy::objectiveCorrection(const ColumnarStack& stack, StackBreakdown* breakdown) const
 {
-  if (m_corrections.empty() || stack.numLevels() == 0)
+  if (corrections().empty() || stack.numLevels() == 0)
     return 0.0;
   const ColumnarStackView view = stackView(stack);
   double sum = 0.0;
-  for (const auto& correction : m_corrections)
+  for (const auto& correction : corrections())
     sum += correction->hierarchicalCorrection(view, breakdown);
   return sum;
 }

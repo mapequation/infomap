@@ -259,7 +259,7 @@ namespace {
     // orthogonal to which codebook a step is coded in. Higher-order dynamics (the
     // state/physical codebook) and the composable corrections (metadata, entropy
     // bias, preferred module count) therefore compose with it, through
-    // ColumnarTwoLevel::objectiveCorrection(), which sums them on top of whichever
+    // ColumnarHierarchy::objectiveCorrection(), which sums them on top of whichever
     // base objective is selected.
     //
     // "Composes" is not the same as "is objective-independent", and conflating the
@@ -270,8 +270,8 @@ namespace {
     // codebook term — MemCorrection, which swaps the state-node
     // sum plogp(leafFlow) for the physical-node one — inherits that term's
     // coefficient, and L* charges it at a per-module rate >= 1 rather than at 1. Such
-    // a correction must ask the core which objective is active (see
-    // ColumnarTwoLevel::leafCodebookRates); adding it blind is a bug, not a
+    // a correction must ask the stack view which objective is active (see
+    // ColumnarStackView::leafCodebookRates); adding it blind is a bug, not a
     // composition.
     //
     // --lossy is the second kind and is rejected in applyAndValidateLossyInteraction

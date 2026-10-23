@@ -46,7 +46,7 @@ namespace detail {
   struct PerLevelStat;
 } // namespace detail
 
-class ColumnarTwoLevel;
+class ColumnarHierarchy;
 
 namespace columnar {
   struct StackBreakdown;
@@ -620,7 +620,7 @@ private:
   // Build + configure a columnar optimizer (native SoA or leaf-tree input,
   // recorded teleportation, tune knee, corrections). Shared by
   // columnarPartition() and deepRepairColumnarBest().
-  void setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long seed);
+  void setupColumnarOptimizer(ColumnarHierarchy& opt, unsigned long seed);
 
   // Deep repair of the winning -2 columnar trial (#889): seed a two-level
   // stack from `tree`, run the split-discovery interleave once, and rewrite
@@ -641,7 +641,7 @@ private:
   // each dissolved module's children into its parent, in the pass's order -- and stamp
   // the kept nodes from the pass's own terms. False, and no change, when the tree
   // does not map onto the stack.
-  bool spliceDissolvedModules(const ColumnarTwoLevel& stack);
+  bool spliceDissolvedModules(const ColumnarHierarchy& stack);
 
   // Whether the (single) trial's regroup arm escalated — the search's own
   // pathology signal, set by columnarPartition from the trial engine. A
@@ -670,7 +670,7 @@ private:
   // Attach the active objective's composable correction (bias / meta / mem /
   // lossy) to a columnar optimizer, reading leaf attributes from m_leafNodes.
   // Shared by columnarPartition() and evaluateColumnarPartition().
-  void addColumnarCorrections(ColumnarTwoLevel& opt) const;
+  void addColumnarCorrections(ColumnarHierarchy& opt) const;
 
   // Whether the engine this run searches with applies --entropy-corrected and
   // --preferred-number-of-modules: the condition for the run path's "has no effect"
@@ -744,7 +744,7 @@ private:
   // it from the reported codelength, and it is not written to any node. The one
   // stack module with no InfoNode that is NOT phantom -- the module a top-level leaf
   // constitutes -- is charged to the root instead.
-  bool stampColumnarCodelengths(const ColumnarTwoLevel& opt,
+  bool stampColumnarCodelengths(const ColumnarHierarchy& opt,
                                 const columnar::StackBreakdown& breakdown,
                                 const std::vector<int>& padDepth,
                                 double& padCharge);
@@ -1025,7 +1025,7 @@ protected:
 
   // Flat-first strategy alternation (#889): even-numbered trials of the
   // hierarchical columnar searches build the hierarchy from the full two-level
-  // optimum instead of the fine building blocks (ColumnarTwoLevel::
+  // optimum instead of the fine building blocks (ColumnarHierarchy::
   // setFlatFirstBottom). Set per trial by RunSession from the global trial
   // index (deterministic and identical across serial and parallel trial
   // modes); the first trial keeps hierarchical-first, so -N1 is unchanged.
@@ -1090,9 +1090,9 @@ protected:
   // building and seeding a new one -- every single-trial run. m_columnarTrialStackIsTree
   // says the stack IS the tree the trial left in memory (false after the one-level
   // fallback or a kept --cluster-data seed). Reset once the pass has run. A
-  // shared_ptr only because ColumnarTwoLevel is forward-declared here and the
+  // shared_ptr only because ColumnarHierarchy is forward-declared here and the
   // constructors are inline: its deleter is fixed where the type is complete.
-  std::shared_ptr<ColumnarTwoLevel> m_columnarTrialStack;
+  std::shared_ptr<ColumnarHierarchy> m_columnarTrialStack;
   bool m_columnarTrialStackIsTree = false;
 };
 
