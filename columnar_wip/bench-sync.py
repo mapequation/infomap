@@ -7,7 +7,7 @@ can move the object-oriented numbers too, and the OO arms are measured rather th
                   [--carry-oo <results.tsv>] [--dry-run]
 
 --rows     the results TSV whose old/new rows define the row set (default: the current
-           snapshot's, columnar_wip/1042-ab-results.tsv). Its flags are taken as run, already
+           snapshot's, columnar_wip/hierarchy-roles-ab-results.tsv). Its flags are taken as run, already
            resolved to the fetched inputs and the planted .clu paths.
 --carry-oo do not run the object-oriented arms; copy them from a previous session's TSV. For a
            change that cannot move the OO engine (a columnar sub-PR): each OO row's "new" arm there
@@ -19,7 +19,7 @@ can move the object-oriented numbers too, and the OO arms are measured rather th
 Columnar rows: every (key, label, flags) of the row set, both arms. OO rows: every C10 and C2_10
 row of the two "OO vs columnar" tables with -C removed, keys OO10 and OO2_10, both arms. Not the
 om family (no OO table shows it) and not air30k (meta), which OO does not finish in budget (#1134). Interleaved by arm within a row; -N1 rows as 3 reps spread
-across the batch (rep loop outermost), every other row once per arm, as bench-1042.py.
+across the batch (rep loop outermost), every other row once per arm.
 
 Row: key label arm rep flags codelength total_s instr top levels note one_level
 The twelfth column is the one-level codelength, written for the family table's planted rows
@@ -36,7 +36,7 @@ import sys
 import tempfile
 
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ROWS = f"{R}/columnar_wip/1042-ab-results.tsv"
+ROWS = f"{R}/columnar_wip/hierarchy-roles-ab-results.tsv"
 NB = "networks/columnar-benchmark"  # fetch-benchmark-networks.py output
 ARMS = ("old", "new")
 OO_KEYS = {"C10": "OO10", "C2_10": "OO2_10"}
@@ -83,11 +83,11 @@ def read_rows(path):
 
 
 def net_of_label(path):
-    """(key, label) -> input network, from the bench-1042 module that wrote the row set."""
+    """(key, label) -> input network, from the shared label map (benchmark-labels.py)."""
     import importlib.util
 
     spec = importlib.util.spec_from_file_location(
-        "bench1042", f"{R}/columnar_wip/bench-1042.py"
+        "benchlabels", f"{R}/columnar_wip/benchmark-labels.py"
     )
     bench = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(bench)
