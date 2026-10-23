@@ -42,23 +42,19 @@ namespace columnar {
    * levels' total boundary rates (recorded teleportation included, see
    * ColumnarLevel), so neither scorer has to know whether the flow model records
    * teleportation.
-   *
-   * Namespace scope rather than this file's anonymous namespace only so that
-   * ColumnarTwoLevel::buildStackTerms can name it as a return type: the struct
-   * and every consumer still live in this translation unit alone, and the header
-   * only forward-declares it.
    */
   struct StackTerms {
     const ColumnarLevel& leaves; // level 0
-    const std::vector<ColumnarLevel>& levels; // indices 1..topLevel
-    const std::vector<std::vector<int>>& assign; // assign[k]: level k -> level k+1
+    const ColumnarStack& stack; // levels 1..topLevel and the assignments
     int topLevel;
     // Flow leaving the (sub-)network: 0 for the whole closed network, the module's
     // exit flow for an in-context refine. L* charges the top modules' exit
     // codebooks against it; the base index term does not read it.
     double exitNetworkFlow;
 
-    const ColumnarLevel& level(int k) const { return k == 0 ? leaves : levels[k]; }
+    const ColumnarLevel& level(int k) const { return stack.level(k); }
+    // assign(k): level k -> level k+1.
+    const std::vector<int>& assign(int k) const { return stack.assign(k); }
     double enter(int k, int m) const { return level(k).enter[m]; }
     double exit(int k, int m) const { return level(k).exit[m]; }
   };
@@ -110,7 +106,7 @@ namespace {
     // Level-1 modules code their leaf children (module-of-leaf-nodes term).
     {
       const ColumnarLevel& L1 = t.level(1);
-      const std::vector<int>& leafToL1 = t.assign[0];
+      const std::vector<int>& leafToL1 = t.assign(0);
       std::vector<double> T(L1.n);
       for (int m = 0; m < L1.n; ++m)
         T[m] = L1.flow[m] + t.exit(1, m);
@@ -134,7 +130,7 @@ namespace {
     for (int lvl = 2; lvl <= t.topLevel; ++lvl) {
       const ColumnarLevel& Lk = t.level(lvl);
       const ColumnarLevel& Lkm1 = t.level(lvl - 1);
-      const std::vector<int>& childToParent = t.assign[lvl - 1];
+      const std::vector<int>& childToParent = t.assign(lvl - 1);
       std::vector<double> sumEnter(Lk.n, 0.0), sumPlogpEnter(Lk.n, 0.0);
       for (int c = 0; c < Lkm1.n; ++c) {
         const int p = childToParent[c];
@@ -194,7 +190,7 @@ namespace {
     // (1) Level-1 leaf modules: enter + within over their leaves.
     {
       const ColumnarLevel& L1 = t.level(1);
-      const std::vector<int>& leafToL1 = t.assign[0];
+      const std::vector<int>& leafToL1 = t.assign(0);
       std::vector<double> F(L1.n, 0.0);
       for (int i = 0; i < t.leaves.n; ++i)
         F[leafToL1[i]] += plogp(t.leaves.flow[i]);
@@ -209,7 +205,7 @@ namespace {
     for (int k = 2; k <= t.topLevel; ++k) {
       const ColumnarLevel& Lk = t.level(k);
       const ColumnarLevel& Lkm1 = t.level(k - 1);
-      const std::vector<int>& childToParent = t.assign[k - 1];
+      const std::vector<int>& childToParent = t.assign(k - 1);
       std::vector<double> sumEnter(Lk.n, 0.0), sumEnterLog(Lk.n, 0.0);
       for (int c = 0; c < Lkm1.n; ++c) {
         const double ec = t.enter(k - 1, c);
@@ -258,31 +254,29 @@ namespace {
 
 } // namespace
 
-StackTerms ColumnarTwoLevel::buildStackTerms() const
+namespace {
+
+  // The levels, assignments and teleport-augmented boundary rates a stack scoring
+  // reads, resolved once. The single source of truth for the recorded-teleportation
+  // augmentation: scoreStack and leafCodebookRates both go through it, so no
+  // consumer can re-derive a module's enter/exit differently.
+  StackTerms buildStackTerms(const ColumnarStack& stack, double exitNetworkFlow)
+  {
+    // Every module level is built by ColumnarBoundaryFlow::aggregate, so its
+    // enter/exit are the exact total rates of the partition, independent of any
+    // move loop's incremental state.
+    return StackTerms { stack.level(0), stack, stack.topLevel(), exitNetworkFlow };
+  }
+
+} // namespace
+
+double ColumnarTwoLevel::scoreStack(const ColumnarStack& stack, StackBreakdown* breakdown) const
 {
-  const int topLevel = static_cast<int>(m_hierLevels.size()) - 1; // >= 1
-
-  // Every module level is built by ColumnarBoundaryFlow::aggregate, so its
-  // enter/exit are the exact total rates of the partition, independent of any
-  // move loop's incremental state.
-  StackTerms terms { leaf0(), m_hierLevels, m_hierAssign, topLevel, m_exitNetworkFlow };
-
-  return terms;
-}
-
-double ColumnarTwoLevel::hierarchicalCodelengthFromStack() const
-{
-  const StackTerms terms = buildStackTerms();
-  const double base = m_nonRedundant ? scoreStackNonRedundant(terms) : scoreStackBase(terms);
-  return base + objectiveCorrection();
-}
-
-double ColumnarTwoLevel::codelengthBreakdownFromStack(StackBreakdown& breakdown) const
-{
-  const StackTerms terms = buildStackTerms();
-  prepareBreakdown(terms, breakdown);
-  const double base = m_nonRedundant ? scoreStackNonRedundant(terms, &breakdown) : scoreStackBase(terms, &breakdown);
-  return base + objectiveCorrection(&breakdown);
+  const StackTerms terms = buildStackTerms(stack, m_exitNetworkFlow);
+  if (breakdown != nullptr)
+    prepareBreakdown(terms, *breakdown);
+  const double base = m_nonRedundant ? scoreStackNonRedundant(terms, breakdown) : scoreStackBase(terms, breakdown);
+  return base + objectiveCorrection(stack, breakdown);
 }
 
 double ColumnarTwoLevel::dissolveUnprofitableLevels(bool gainOnly)
@@ -290,7 +284,7 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(bool gainOnly)
   using infomath::plogp;
   clearDissolvedPaths();
 
-  const int top = static_cast<int>(m_hierLevels.size()) - 1; // number of module levels
+  const int top = m_stack.topLevel(); // number of module levels
   if (top < 1)
     return 0.0; // no module structure at all: nothing to score, nothing to dissolve
   // The stack's own codelength and per-module decomposition on the active objective.
@@ -313,7 +307,7 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(bool gainOnly)
     corrGainPerNode += c->dissolveGainPerInternalNode();
   }
 
-  const StackTerms t = buildStackTerms();
+  const StackTerms t = buildStackTerms(m_stack, m_exitNetworkFlow);
 
   // Module-tree over root (id 0) + every module (id offset[k] + m). A leaf module
   // (k == 1) is a leaf of THIS tree; only modules-of-modules (k >= 2) and the root
@@ -354,7 +348,7 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(bool gainOnly)
       const int id = offset[k] + m;
       nodeEnter[id] = t.enter(k, m);
       nodeExit[id] = t.exit(k, m);
-      const int par = (k == top) ? 0 : offset[k + 1] + m_hierAssign[k][m];
+      const int par = (k == top) ? 0 : offset[k + 1] + m_stack.parent(k, m);
       parent[id] = par;
       children[par].push_back(id);
       sumEnter[par] += nodeEnter[id];
@@ -481,7 +475,7 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(bool gainOnly)
   std::vector<int> chain;
   for (int i = 0; i < nLeaves; ++i) {
     chain.clear();
-    for (int id = offset[1] + m_hierAssign[0][i]; id != 0; id = parent[id])
+    for (int id = offset[1] + m_stack.leafModule(i); id != 0; id = parent[id])
       chain.push_back(id);
     m_dissolvedPaths[i].assign(chain.rbegin(), chain.rend());
   }
@@ -496,43 +490,26 @@ double ColumnarTwoLevel::dissolveUnprofitableLevels(bool gainOnly)
   return startL - totalGain;
 }
 
-double ColumnarTwoLevel::oneLevelCodelength()
+double ColumnarTwoLevel::oneLevelCodelength() const
 {
-  // Score the all-in-one-module partition on THIS objective by seeding it as a
-  // one-level stack: the corrections read the partition through the core's
-  // accessors, so there is no way to price them without a stack to read. Moving
-  // the current stack out and back keeps that O(1) — the only real work is the
-  // single m_flow.aggregate over the leaf network.
-  std::vector<Level> savedLevels = std::move(m_hierLevels);
-  std::vector<std::vector<int>> savedAssign = std::move(m_hierAssign);
-  std::vector<int> savedLeafTop = std::move(m_leafTop);
-  const unsigned int savedNumTopModules = m_numTopModules;
-
-  const std::vector<int> allInOne(static_cast<std::size_t>(m_nLeaves), 0);
-  m_hierLevels.clear();
-  m_hierAssign.clear();
-  m_hierLevels.emplace_back(); // level 0 is the leaf network; see hierLevel()
-  m_hierAssign.push_back(allInOne);
-  m_hierLevels.push_back(m_flow.aggregate(leaf0(), allInOne, 1));
-  m_leafTop = allInOne;
-  m_numTopModules = 1;
-  const double L = hierarchicalCodelengthFromStack();
-
-  m_hierLevels = std::move(savedLevels);
-  m_hierAssign = std::move(savedAssign);
-  m_leafTop = std::move(savedLeafTop);
-  m_numTopModules = savedNumTopModules;
-  return L;
+  // Score the all-in-one-module partition on THIS objective as a one-level stack
+  // of its own: the corrections price whatever stack they are shown, so the
+  // search's stack is never touched. The only real work is the single aggregate
+  // over the leaf network.
+  ColumnarStack oneModule;
+  oneModule.bind(leaf0(), m_flow);
+  oneModule.setFlat(std::vector<int>(static_cast<std::size_t>(m_nLeaves), 0), 1);
+  return scoreStack(oneModule);
 }
 
-std::vector<double> ColumnarTwoLevel::leafCodebookRates() const
+std::vector<double> ColumnarStackView::leafCodebookRates() const
 {
   // Empty = the uniform rate 1 of the base objective (see the header). Reusing
   // buildStackTerms keeps a correction's substitution on exactly the boundary
   // rates the scorer charges.
-  if (!m_nonRedundant || m_hierLevels.size() < 2)
+  if (!m_nonRedundant || !m_stack.hasModules())
     return {};
-  const StackTerms terms = buildStackTerms();
+  const StackTerms terms = buildStackTerms(m_stack, m_exitNetworkFlow);
   const ColumnarLevel& L1 = terms.level(1);
   std::vector<double> rates(static_cast<std::size_t>(L1.n));
   for (int m = 0; m < L1.n; ++m)
@@ -540,13 +517,14 @@ std::vector<double> ColumnarTwoLevel::leafCodebookRates() const
   return rates;
 }
 
-double ColumnarTwoLevel::objectiveCorrection(StackBreakdown* breakdown) const
+double ColumnarTwoLevel::objectiveCorrection(const ColumnarStack& stack, StackBreakdown* breakdown) const
 {
-  if (m_corrections.empty() || m_hierLevels.empty())
+  if (m_corrections.empty() || stack.numLevels() == 0)
     return 0.0;
+  const ColumnarStackView view = stackView(stack);
   double sum = 0.0;
   for (const auto& correction : m_corrections)
-    sum += correction->hierarchicalCorrection(*this, breakdown);
+    sum += correction->hierarchicalCorrection(view, breakdown);
   return sum;
 }
 
