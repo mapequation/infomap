@@ -654,6 +654,79 @@ TEST_CASE("Directed regularization on both directions of a link with a self-link
   infomap::test::checkApproxCodelength(directed.first, undirected.first, 1e-12);
 }
 
+namespace {
+
+// Two triangles joined by the link 3 4. With split, the links 1 2 and 3 4 are each listed as
+// half the weight in both directions, the second one reverse first.
+void addPairTriangles(InfomapWrapper& im, bool split)
+{
+  for (const auto& [source, target] : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 3 }, { 2, 3 }, { 4, 5 }, { 4, 6 }, { 5, 6 } }) {
+    im.addLink(source, target, 1.0);
+  }
+  if (split) {
+    im.addLink(1, 2, 0.5);
+    im.addLink(2, 1, 0.5);
+    im.addLink(4, 3, 0.5);
+    im.addLink(3, 4, 0.5);
+  } else {
+    im.addLink(1, 2, 1.0);
+    im.addLink(3, 4, 1.0);
+  }
+}
+
+} // namespace
+
+TEST_CASE("An undirected pair listed as a b and b a is one link of the run [fast][core][flow]")
+{
+  // Duplicate links are summed on input only when they have the same direction. An undirected
+  // run sums the pair itself, so every degree it uses counts the pair once (#1366).
+  for (const std::string flags : { "", "--entropy-corrected", "--regularized", "--variable-markov-time" }) {
+    CAPTURE(flags);
+    InfomapWrapper single(infomap::test::defaultFlags(flags));
+    addPairTriangles(single, false);
+    single.run();
+    InfomapWrapper split(infomap::test::defaultFlags(flags));
+    addPairTriangles(split, true);
+    split.run();
+
+    CHECK(split.network().numLinks() == 7);
+    CHECK(split.network().numLinks() == single.network().numLinks());
+    CHECK(split.codelength() == single.codelength());
+    CHECK(split.getModules() == single.getModules());
+  }
+}
+
+TEST_CASE("A pair listed as a b and b a stays two links for the directed codings [fast][core][flow]")
+{
+  for (const std::string flags : { "--directed", "--flow-model undirdir" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(infomap::test::defaultFlags(flags));
+    addPairTriangles(im, true);
+    im.run();
+    CHECK(im.network().numLinks() == 9);
+  }
+}
+
+TEST_CASE("A directed run after an undirected one reads the links as entered [fast][core][flow]")
+{
+  // The bindings choose the flow model per run, after the links are added, so the undirected
+  // run must not sum the pair in the stored links (#1366).
+  InfomapWrapper fresh(infomap::test::defaultFlags("--directed"));
+  addPairTriangles(fresh, true);
+  fresh.run();
+
+  InfomapWrapper im(infomap::test::defaultFlags());
+  addPairTriangles(im, true);
+  im.run();
+  CHECK(im.network().numLinks() == 7);
+  im.run("--directed");
+  CHECK(im.network().numLinks() == 9);
+  CHECK(im.codelength() == fresh.codelength());
+  CHECK(im.getModules() == fresh.getModules());
+  im.run();
+  CHECK(im.network().numLinks() == 7);
+}
+
 TEST_CASE("Regularization strength 0 matches its small-strength limit with dangling nodes [fast][core][flow]")
 {
   // At strength 0 the prior out-weight t_i is zero, so alpha = t_i / (s_i + t_i) was

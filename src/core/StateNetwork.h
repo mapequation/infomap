@@ -133,6 +133,14 @@ protected:
   unsigned int m_numLinksIgnoredByWeightThreshold = 0;
   double m_totalLinkWeightIgnored = 0.0;
   std::map<unsigned int, double> m_outWeights;
+  // The CSR as entered, set aside while the CSR arrays hold the undirected view that sums a
+  // pair listed as a b and b a (#1366). Empty without that view.
+  bool m_haveUndirectedLinkView = false;
+  std::vector<unsigned int> m_enteredLinkOffsets;
+  std::vector<unsigned int> m_enteredLinkTargets;
+  std::vector<double> m_enteredLinkWeights;
+  unsigned int m_enteredNumLinks = 0;
+  unsigned int m_enteredNumAggregatedLinks = 0;
   bool m_haveNodeWeights = false;
   bool m_haveStateNodeWeights = false;
   bool m_haveFileInput = false;
@@ -244,12 +252,11 @@ public:
       for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e)
         fn(s, m_linkTargets[e], m_linkWeights[e], m_linkFlows[e]);
   }
-  // Duplicate links are summed only when they have the same direction, so a pair listed
-  // as a b and b a stays two links here, though it is one link of an undirected network
-  // (#1203). Whether a link is the second listing of such a pair (counted at the lower
-  // source index), and the degree sum of an undirected network that counts it once.
-  bool isReverseOfLink(unsigned int sourceIndex, unsigned int targetIndex) const;
-  unsigned int sumUndirectedDegree() const;
+  // Duplicate links are summed on input only when they have the same direction, so a pair
+  // listed as a b and b a is two links of the stored network. A run with the undirected
+  // coding calls this with true before its flow, to read one link per pair; any other run
+  // calls it with false and reads the links as entered (#1366).
+  void useUndirectedLinkView(bool undirected);
 #endif
 
   // Mode A (first-order and the main multilayer network) defers dedup to
@@ -358,6 +365,8 @@ protected:
   // Move CSR rows back into the flat buffer so a finalized network can keep
   // building (mode A accumulate / addLink-after-run).
   void definalize();
+  // Put the CSR as entered back in place of the undirected view, if there is one.
+  void restoreEnteredLinks();
 };
 
 } // namespace infomap
