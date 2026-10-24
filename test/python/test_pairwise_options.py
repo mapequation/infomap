@@ -468,6 +468,7 @@ WARN_ENTROPY = "--entropy-corrected has no effect"
 WARN_PREFERRED = "--preferred-number-of-modules has no effect"
 WARN_NORMALISED = "Node flow sums to"
 WARN_UNDIRDIR = "The undirdir flow model has no effect on multilayer input"
+WARN_STATE_UNDIRECTED = "flow model walks every state link in both directions"
 WARN_SERIAL = "--parallel-trials requires an OpenMP build"
 # Warned about, but not an option the run ignores; see the module docstring.
 TOLERATED = ("PageRank calculation did not converge",)
@@ -514,6 +515,9 @@ def expected(row: Mapping[str, object], net: Net) -> Expected:
         exp.warnings.add(WARN_RECORDED)
     if replaced_undirdir:
         exp.warnings.add(WARN_UNDIRDIR)
+    if net.kind == "state" and model in ("undirected", "undirdir"):
+        # Undirected flow walks state links backwards, which memory states cannot take (#1384).
+        exp.warnings.add(WARN_STATE_UNDIRECTED)
     if not exp.biased and row["entropy"]:
         exp.warnings.add(WARN_ENTROPY)
     if not exp.biased and row["preferred"]:
