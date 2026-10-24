@@ -1,0 +1,310 @@
+#!/usr/bin/env python3
+"""Regenerate the numeric tables of columnar-pr-performance-section.md from a
+bench-hier-gaps.py results TSV.
+
+Usage: assemble-hier-gaps.py <results.tsv> <snapshot.md> [--check]
+
+Only table bodies are rewritten (the "What the change moves" markdown table and the
+HTML tables); prose, headers and the hand-written per-feature attribution tables are
+left byte-for-byte. Row order and row set follow the existing snapshot where a label is
+already there; labels that are new in the TSV are appended in TSV order.
+
+TSV row: key label arm rep flags codelength total_s instr top levels
+Each (key, label, arm) is reduced to: codelength string of rep 1, minimum total_s over
+all reps, minimum instructions over all reps (independently), top/levels of rep 1.
+
+The OO cells of the two "OO vs columnar" tables come from the TSV's new OO10 / OO2_10
+rows when it has them (a master sync measures both engines, bench-sync.py). Otherwise
+they are parsed from the existing snapshot and carried over (their deltas are then
+recomputed from the printed, rounded values).
+
+The family table (FAM) pairs every search with its planted control (F66). Its rows may
+have a new arm only (a row this PR adds: the old cells read "—"), and it has one more
+column, the new search's codelength against the planted partition of the same network
+and objective. A planted row shows itself against one-level instead (a twelfth TSV
+column), and where the planted partition is worse than one-level it is no reference:
+that block's deltas are struck through.
+"""
+
+import difflib
+import re
+import sys
+from collections import namedtuple
+
+Cell = namedtuple("Cell", "bits_s bits time instr top lvls")
+
+NEW_ONLY = {"FAM"}  # tables that show rows with no old arm
+HEADS = {  # heading prefix -> list of table specs, in document order
+    "What the change moves": ["moves"],
+    "Old vs new columnar — standard search": [("pair", "C10")],
+    "Old vs new columnar — two-level": [("pair", "C2_10")],
+    "Single-trial runs": [("pair", "C1")],
+    "The overlapping family in full": [("pair", "FAM")],
+    "`-F` on the family, old vs new": [("pair", "F10"), ("pair", "F1")],
+    "The fast dial `-F`": [("cross", "C10", "F10")],
+    "The non-redundant map equation L": [("cross", "C10", "L10")],
+    "OO vs columnar —": [("oo", "C2_10")],
+    "OO vs columnar": [("oo", "C10")],
+    "Old vs new object-oriented": [("pair", "OO10"), ("pair", "OO2_10")],
+}
+OO_KEY = {"C10": "OO10", "C2_10": "OO2_10"}  # columnar key -> its measured OO rows
+MOVES_TABLE = {  # key -> "table" column of the moves table, in row order
+    "C1": "`-C -N1`",
+    "C10": "`-C`",
+    "C2_10": "`-C -2`",
+    "F1": "`-C -F -N1`",
+    "F10": "`-C -F`",
+    "FAM": "family",
+    "OO10": "OO",
+    "OO2_10": "OO `-2`",
+}
+
+
+ONE_LEVEL = {}  # (key, label) -> one-level codelength of a planted row
+
+
+def load(path):
+    reps = {}
+    order = []
+    with open(path) as fh:
+        lines = fh.readlines()
+    for line in lines:
+        f = line.rstrip("\n").split("\t")
+        if len(f) < 10:
+            continue
+        key, label, arm, rep = f[0], f[1], f[2], int(f[3])
+        if (key, label) not in order:
+            order.append((key, label))
+        reps.setdefault((key, label, arm), []).append((rep, f))
+        if len(f) >= 12 and f[11]:
+            ONE_LEVEL[key, label] = float(f[11])
+    data = {}
+    for k, lst in reps.items():
+        lst.sort(key=lambda r: r[0])
+        first = lst[0][1]
+        for _, f in lst:
+            if f[5] != first[5]:
+                print(f"warning: codelength differs between reps: {k}", file=sys.stderr)
+        _, best = min(lst, key=lambda r: float(r[1][6]))
+        data[k] = Cell(
+            first[5],
+            float(first[5]),
+            float(best[6]),
+            min(float(r[1][7]) for r in lst),
+            first[8],
+            first[9],
+        )
+    return data, order
+
+
+def fmt_time(t):
+    return f"{t:.3f}s" if t < 1 else f"{t:.2f}s" if t < 10 else f"{t:.1f}s"
+
+
+def fmt_instr(i):
+    return f"{i / 1e9:.1f}G"
+
+
+def pct(new, old, nd):
+    return f"{(new - old) / old * 100:+.{nd}f}%"
+
+
+def tds(*vals):
+    return "".join(f'<td align="right">{v}</td>' for v in vals)
+
+
+def left_cells(c):
+    return [c.bits_s, fmt_time(c.time), fmt_instr(c.instr), c.top, c.lvls]
+
+
+def right_cells(c, ref):
+    d = "=" if c.bits == ref.bits else pct(c.bits, ref.bits, 4)
+    return [
+        f"{c.bits_s} ({d})",
+        f"{fmt_time(c.time)} ({pct(c.time, ref.time, 1)})",
+        f"{fmt_instr(c.instr)} ({pct(c.instr, ref.instr, 2)})",
+        c.top,
+        c.lvls,
+    ]
+
+
+def row(label, left, right, extra=()):
+    return f"<tr>{tds(label, *left, *right, *extra)}</tr>"
+
+
+def vs_planted(label, data):
+    """The family table's last cell: the search against its planted control."""
+    m = re.match(r"(\S+) (planted, )?`(.*)`$", label)
+    net, is_planted, flags = m[1], m[2], m[3]
+    reg = " --regularized" if "--regularized" in flags else ""
+    planted = f"{net} planted, `-2d{reg} --no-infomap -c`"
+    p = data["FAM", planted, "new"].bits
+    one_level = ONE_LEVEL["FAM", planted]
+    if is_planted:
+        d = f"{pct(p, one_level, 2)} vs one-level"
+        return f"<b>{d}</b>" if p > one_level else d
+    c = data["FAM", label, "new"].bits
+    d = pct(c, p, 2)
+    if p > one_level:
+        return f"<s>{d}</s>"
+    return f"<b>{d}</b>" if c > p else d
+
+
+def ordered(labels, existing):
+    """Existing labels keep their snapshot order; new ones follow in the given order."""
+    known = [x for x in existing if x in labels]
+    return known + [x for x in labels if x not in known]
+
+
+def parse_rows(lines):
+    out = {}
+    for ln in lines:
+        m = re.findall(r"<td[^>]*>(.*?)</td>", ln)
+        out[m[0]] = m[1:]
+    return out
+
+
+def html_rows(spec, data, order, old_lines):
+    existing = list(parse_rows(old_lines))
+    kind, key = spec[0], spec[1]
+    if kind == "pair":
+        labels = [
+            lb
+            for k, lb in order
+            if k == key
+            and (key, lb, "new") in data
+            and ((key, lb, "old") in data or key in NEW_ONLY)
+        ]
+        out = []
+        for lb in ordered(labels, existing):
+            new, old = data[key, lb, "new"], data.get((key, lb, "old"))
+            left = left_cells(old) if old else ["—"] * 5
+            right = right_cells(new, old) if old else left_cells(new)
+            extra = [vs_planted(lb, data)] if key == "FAM" else []
+            out.append(row(lb, left, right, extra))
+        return out
+    if kind == "cross":
+        k2 = spec[2]
+        labels = [lb for k, lb in order if k == k2 and (key, lb, "new") in data]
+        return [
+            row(
+                lb,
+                left_cells(data[key, lb, "new"]),
+                right_cells(data[k2, lb, "new"], data[key, lb, "new"]),
+            )
+            for lb in ordered(labels, existing)
+        ]
+    # oo: right cells from the TSV; left from its OO rows, else carried from the snapshot
+    carried = parse_rows(old_lines)
+    out = []
+    for lb in existing:
+        oo = data.get((OO_KEY[key], lb, "new"))
+        if oo is not None:
+            out.append(row(lb, left_cells(oo), right_cells(data[key, lb, "new"], oo)))
+            continue
+        left = carried[lb][:5]
+        try:
+            ref = Cell(
+                left[0],
+                float(left[0]),
+                float(left[1][:-1]),
+                float(left[2][:-1]) * 1e9,
+                left[3],
+                left[4],
+            )
+        except ValueError:  # an OO run that did not finish: no deltas
+            out.append(row(lb, left, left_cells(data[key, lb, "new"])))
+            continue
+        out.append(row(lb, left, right_cells(data[key, lb, "new"], ref)))
+    return out
+
+
+def moves_rows(data, order, old_lines):
+    rows = []
+    for key, table in MOVES_TABLE.items():
+        for k, lb in order:
+            o, n = data.get((key, lb, "old")), data.get((key, lb, "new"))
+            if k != key or not o or not n or o.bits == n.bits:
+                continue
+            tname = table
+            if key == "FAM":
+                lb2, tname = lb, "family"
+            else:
+                lb2 = lb
+            rows.append((tname, lb2, o, n))
+    out = []
+    for tname, lb, o, n in rows:
+        out.append(
+            f"| {lb} | {tname} | {o.bits_s} | **{n.bits_s}** | **{pct(n.bits, o.bits, 4)}** "
+            f"| {fmt_instr(o.instr)} | {fmt_instr(n.instr)} | {pct(n.instr, o.instr, 2)} "
+            f"| {fmt_time(o.time)} | {fmt_time(n.time)} | {pct(n.time, o.time, 1)} |"
+        )
+    return out
+
+
+def spec_for(heading):
+    best = None
+    for prefix in HEADS:
+        if heading.startswith(prefix) and (best is None or len(prefix) > len(best)):
+            best = prefix
+    return HEADS.get(best) if best else None
+
+
+def assemble(tsv, text):
+    data, order = load(tsv)
+    lines = text.split("\n")
+    out = []
+    i = 0
+    specs, ti = None, 0
+    while i < len(lines):
+        ln = lines[i]
+        if re.match(r"#+ ", ln):  # a heading; prose may start with an issue number
+            specs, ti = spec_for(ln.lstrip("# ")), 0
+        if specs and ln == "<table>" and ti < len(specs):
+            spec = specs[ti]
+            ti += 1
+            j = i
+            while lines[j] != "<tbody>" and not lines[j].endswith("<tbody>"):
+                j += 1
+            out.extend(lines[i : j + 1])
+            k = j + 1
+            while lines[k] != "</tbody>":
+                k += 1
+            out.extend(html_rows(spec, data, order, lines[j + 1 : k]))
+            i = k
+            continue
+        if specs and specs[0] == "moves" and ln.startswith("|---"):
+            out.append(ln)
+            k = i + 1
+            while lines[k].startswith("|"):
+                k += 1
+            out.extend(moves_rows(data, order, lines[i + 1 : k]))
+            i = k
+            continue
+        out.append(ln)
+        i += 1
+    return "\n".join(out)
+
+
+def main():
+    args = [a for a in sys.argv[1:] if a != "--check"]
+    check = "--check" in sys.argv
+    if len(args) != 2:
+        sys.exit(__doc__)
+    tsv, md = args
+    with open(md) as fh:
+        old = fh.read()
+    new = assemble(tsv, old)
+    if check:
+        sys.stdout.writelines(
+            difflib.unified_diff(
+                old.splitlines(True), new.splitlines(True), md, md + " (assembled)", n=0
+            )
+        )
+    else:
+        with open(md, "w") as fh:
+            fh.write(new)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,1004 @@
+C1	ninetriangles	old	1	-C -N1 	3.371875026	0.000416209	62974520	5	3	carried: inputs-snapshot.tsv new arm	
+C1	ninetriangles	old	2	-C -N1 	3.371875026	0.0002195	59104135	5	3	carried: inputs-snapshot.tsv new arm	
+C1	ninetriangles	old	3	-C -N1 	3.371875026	0.000223209	59414375	5	3	carried: inputs-snapshot.tsv new arm	
+C1	ninetriangles	new	1	-C -N1 	3.371875026	0.000416209	62974520	5	3	carried: inputs-snapshot.tsv new arm	
+C1	ninetriangles	new	2	-C -N1 	3.371875026	0.0002195	59104135	5	3	carried: inputs-snapshot.tsv new arm	
+C1	ninetriangles	new	3	-C -N1 	3.371875026	0.000223209	59414375	5	3	carried: inputs-snapshot.tsv new arm	
+C1	lazega	old	1	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.0007065	65592334	6	2	carried: inputs-snapshot.tsv new arm	
+C1	lazega	old	2	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000817584	65609474	6	2	carried: inputs-snapshot.tsv new arm	
+C1	lazega	old	3	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000706541	66160873	6	2	carried: inputs-snapshot.tsv new arm	
+C1	lazega	new	1	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.0007065	65592334	6	2	carried: inputs-snapshot.tsv new arm	
+C1	lazega	new	2	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000817584	65609474	6	2	carried: inputs-snapshot.tsv new arm	
+C1	lazega	new	3	-C -N1 --meta-data networks/meta/lazega.meta	6.041117399	0.000706541	66160873	6	2	carried: inputs-snapshot.tsv new arm	
+C1	multilayer (ex.)	old	1	-C -N1 	2.011405238	0.000134125	58336624	2	2	carried: inputs-snapshot.tsv new arm	
+C1	multilayer (ex.)	old	2	-C -N1 	2.011405238	0.000205917	58389622	2	2	carried: inputs-snapshot.tsv new arm	
+C1	multilayer (ex.)	old	3	-C -N1 	2.011405238	0.000221667	58261352	2	2	carried: inputs-snapshot.tsv new arm	
+C1	multilayer (ex.)	new	1	-C -N1 	2.011405238	0.000134125	58336624	2	2	carried: inputs-snapshot.tsv new arm	
+C1	multilayer (ex.)	new	2	-C -N1 	2.011405238	0.000205917	58389622	2	2	carried: inputs-snapshot.tsv new arm	
+C1	multilayer (ex.)	new	3	-C -N1 	2.011405238	0.000221667	58261352	2	2	carried: inputs-snapshot.tsv new arm	
+C1	wikispeedia `-2d`	old	1	-C -2d -N1	5.91901362	0.094005208	999392069	184	2	carried: inputs-snapshot.tsv new arm	
+C1	wikispeedia `-2d`	old	2	-C -2d -N1	5.91901362	0.094454541	999548285	184	2	carried: inputs-snapshot.tsv new arm	
+C1	wikispeedia `-2d`	old	3	-C -2d -N1	5.91901362	0.094518458	998200815	184	2	carried: inputs-snapshot.tsv new arm	
+C1	wikispeedia `-2d`	new	1	-C -2d -N1	5.91901362	0.094005208	999392069	184	2	carried: inputs-snapshot.tsv new arm	
+C1	wikispeedia `-2d`	new	2	-C -2d -N1	5.91901362	0.094454541	999548285	184	2	carried: inputs-snapshot.tsv new arm	
+C1	wikispeedia `-2d`	new	3	-C -2d -N1	5.91901362	0.094518458	998200815	184	2	carried: inputs-snapshot.tsv new arm	
+C1	wikispeedia `-d`	old	1	-C -d -N1	6.066305904	0.0754485	822072819	187	3	carried: inputs-snapshot.tsv new arm	
+C1	wikispeedia `-d`	old	2	-C -d -N1	6.066305904	0.073701583	821348923	187	3	carried: inputs-snapshot.tsv new arm	
+C1	wikispeedia `-d`	old	3	-C -d -N1	6.066305904	0.075240916	821639476	187	3	carried: inputs-snapshot.tsv new arm	
+C1	wikispeedia `-d`	new	1	-C -d -N1	6.066305904	0.0754485	822072819	187	3	carried: inputs-snapshot.tsv new arm	
+C1	wikispeedia `-d`	new	2	-C -d -N1	6.066305904	0.073701583	821348923	187	3	carried: inputs-snapshot.tsv new arm	
+C1	wikispeedia `-d`	new	3	-C -d -N1	6.066305904	0.075240916	821639476	187	3	carried: inputs-snapshot.tsv new arm	
+C10	ninetriangles	old	1	-C -N10 	3.371875026	0.001180583	70496278	5	3	carried: inputs-snapshot.tsv new arm	
+C10	ninetriangles	new	1	-C -N10 	3.371875026	0.001180583	70496278	5	3	carried: inputs-snapshot.tsv new arm	
+L10	ninetriangles	new	1	-C --non-redundant -N10 	3.078067323	0.001181917	71829849	3	3	carried: inputs-snapshot.tsv new arm	
+F10	lazega	new	1	-C -F -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.004038167	99352112	7	2	carried: inputs-snapshot.tsv new arm	
+C2_10	multilayer (ex.)	old	1	-C -2 -N10 	2.011405238	0.000423875	61341773	2	2	carried: inputs-snapshot.tsv new arm	
+C2_10	multilayer (ex.)	new	1	-C -2 -N10 	2.011405238	0.000423875	61341773	2	2	carried: inputs-snapshot.tsv new arm	
+C2_10	wikispeedia `-2d`	old	1	-C -2d -N10	5.907904741	0.735059792	6885292164	199	2	carried: inputs-snapshot.tsv new arm	
+C2_10	wikispeedia `-2d`	new	1	-C -2d -N10	5.907904741	0.735059792	6885292164	199	2	carried: inputs-snapshot.tsv new arm	
+C2_10	ninetriangles	old	1	-C -2 -N10 	3.517754809	0.000495375	62820840	9	2	carried: inputs-snapshot.tsv new arm	
+C2_10	ninetriangles	new	1	-C -2 -N10 	3.517754809	0.000495375	62820840	9	2	carried: inputs-snapshot.tsv new arm	
+C10	lazega	old	1	-C -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.004588875	100468054	7	2	carried: inputs-snapshot.tsv new arm	
+C10	lazega	new	1	-C -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.004588875	100468054	7	2	carried: inputs-snapshot.tsv new arm	
+L10	lazega	new	1	-C --non-redundant -N10 --meta-data networks/meta/lazega.meta	5.968624653	0.003898333	99963258	7	2	carried: inputs-snapshot.tsv new arm	
+F10	multilayer (ex.)	new	1	-C -F -N10 	2.011405238	0.000505	62249052	2	2	carried: inputs-snapshot.tsv new arm	
+F10	wikispeedia `-d`	new	1	-C -F -d -N10	5.907904741	0.713456042	6891548793	199	2	carried: inputs-snapshot.tsv new arm	
+F10	ninetriangles	new	1	-C -F -N10 	3.371875026	0.00095675	68814457	5	3	carried: inputs-snapshot.tsv new arm	
+C2_10	lazega	old	1	-C -2 -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.003554	96981594	7	2	carried: inputs-snapshot.tsv new arm	
+C2_10	lazega	new	1	-C -2 -N10 --meta-data networks/meta/lazega.meta	6.017860269	0.003554	96981594	7	2	carried: inputs-snapshot.tsv new arm	
+C10	multilayer (ex.)	old	1	-C -N10 	2.011405238	0.000501834	62821025	2	2	carried: inputs-snapshot.tsv new arm	
+C10	multilayer (ex.)	new	1	-C -N10 	2.011405238	0.000501834	62821025	2	2	carried: inputs-snapshot.tsv new arm	
+L10	multilayer (ex.)	new	1	-C --non-redundant -N10 	1.928856578	0.000546333	62853172	2	2	carried: inputs-snapshot.tsv new arm	
+C10	wikispeedia `-d`	old	1	-C -d -N10	5.907904741	0.715405375	7180687137	199	2	carried: inputs-snapshot.tsv new arm	
+C10	wikispeedia `-d`	new	1	-C -d -N10	5.907904741	0.715405375	7180687137	199	2	carried: inputs-snapshot.tsv new arm	
+L10	wikispeedia `-d`	new	1	-C --non-redundant -d -N10	5.903208727	0.683396375	6860802747	199	2	carried: inputs-snapshot.tsv new arm	
+C1	jazz	old	1	-C -N1	6.896294162	0.000958084	70398465	10	2	carried: inputs-snapshot.tsv new arm	
+C1	jazz	old	2	-C -N1	6.896294162	0.000962417	70685536	10	2	carried: inputs-snapshot.tsv new arm	
+C1	jazz	old	3	-C -N1	6.896294162	0.000968333	70974729	10	2	carried: inputs-snapshot.tsv new arm	
+C1	jazz	new	1	-C -N1	6.896294162	0.000958084	70398465	10	2	carried: inputs-snapshot.tsv new arm	
+C1	jazz	new	2	-C -N1	6.896294162	0.000962417	70685536	10	2	carried: inputs-snapshot.tsv new arm	
+C1	jazz	new	3	-C -N1	6.896294162	0.000968333	70974729	10	2	carried: inputs-snapshot.tsv new arm	
+C1	powergrid	old	1	-C -N1	4.729861209	0.025490959	361002560	17	5	carried: inputs-snapshot.tsv new arm	
+C1	powergrid	old	2	-C -N1	4.729861209	0.026306708	362495956	17	5	carried: inputs-snapshot.tsv new arm	
+C1	powergrid	old	3	-C -N1	4.729861209	0.026211959	361928406	17	5	carried: inputs-snapshot.tsv new arm	
+C1	powergrid	new	1	-C -N1	4.729861209	0.025490959	361002560	17	5	carried: inputs-snapshot.tsv new arm	
+C1	powergrid	new	2	-C -N1	4.729861209	0.026306708	362495956	17	5	carried: inputs-snapshot.tsv new arm	
+C1	powergrid	new	3	-C -N1	4.729861209	0.026211959	361928406	17	5	carried: inputs-snapshot.tsv new arm	
+C1	web-NotreDame	old	1	-C -N1 -d	6.218856777	2.538373167	25075469772	399	5	carried: inputs-snapshot.tsv new arm	
+C1	web-NotreDame	old	2	-C -N1 -d	6.218856777	2.633000917	25093610101	399	5	carried: inputs-snapshot.tsv new arm	
+C1	web-NotreDame	old	3	-C -N1 -d	6.218856777	2.486839208	25075214947	399	5	carried: inputs-snapshot.tsv new arm	
+C1	web-NotreDame	new	1	-C -N1 -d	6.218856777	2.538373167	25075469772	399	5	carried: inputs-snapshot.tsv new arm	
+C1	web-NotreDame	new	2	-C -N1 -d	6.218856777	2.633000917	25093610101	399	5	carried: inputs-snapshot.tsv new arm	
+C1	web-NotreDame	new	3	-C -N1 -d	6.218856777	2.486839208	25075214947	399	5	carried: inputs-snapshot.tsv new arm	
+C1	malaria	old	1	-C -N1	7.491980364	0.3865335	5301384870	148	3	carried: inputs-snapshot.tsv new arm	
+C1	malaria	old	2	-C -N1	7.491980364	0.370952916	5301250186	148	3	carried: inputs-snapshot.tsv new arm	
+C1	malaria	old	3	-C -N1	7.491980364	0.371113375	5301158326	148	3	carried: inputs-snapshot.tsv new arm	
+C1	malaria	new	1	-C -N1	7.491980364	0.3865335	5301384870	148	3	carried: inputs-snapshot.tsv new arm	
+C1	malaria	new	2	-C -N1	7.491980364	0.370952916	5301250186	148	3	carried: inputs-snapshot.tsv new arm	
+C1	malaria	new	3	-C -N1	7.491980364	0.371113375	5301158326	148	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k	old	1	-C -N1	5.456991462	0.415516958	4700225395	203	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k	old	2	-C -N1	5.456991462	0.411827333	4704511068	203	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k	old	3	-C -N1	5.456991462	0.412007709	4703074125	203	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k	new	1	-C -N1	5.456991462	0.415516958	4700225395	203	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k	new	2	-C -N1	5.456991462	0.411827333	4704511068	203	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k	new	3	-C -N1	5.456991462	0.412007709	4703074125	203	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k (reg.)	old	1	-C -N1 -d --regularized	5.666386425	0.467596834	5645541623	203	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k (reg.)	old	2	-C -N1 -d --regularized	5.666386425	0.472900125	5645238971	203	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k (reg.)	old	3	-C -N1 -d --regularized	5.666386425	0.500036166	5641394107	203	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k (reg.)	new	1	-C -N1 -d --regularized	5.666386425	0.467596834	5645541623	203	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k (reg.)	new	2	-C -N1 -d --regularized	5.666386425	0.472900125	5645238971	203	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k (reg.)	new	3	-C -N1 -d --regularized	5.666386425	0.500036166	5641394107	203	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k (meta)	old	1	-C -N1 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.662468548	0.791572208	7677894711	1680	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k (meta)	old	2	-C -N1 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.662468548	0.80637	7679401851	1680	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k (meta)	old	3	-C -N1 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.662468548	0.73762275	7670504427	1680	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k (meta)	new	1	-C -N1 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.662468548	0.791572208	7677894711	1680	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k (meta)	new	2	-C -N1 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.662468548	0.80637	7679401851	1680	3	carried: inputs-snapshot.tsv new arm	
+C1	air30k (meta)	new	3	-C -N1 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.662468548	0.73762275	7670504427	1680	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-2d`	old	1	-C -2d -N1	6.744558723	1.247940708	13016936236	606	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-2d`	old	2	-C -2d -N1	6.744558723	1.287287459	13025021251	606	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-2d`	old	3	-C -2d -N1	6.744558723	1.197784042	13003939053	606	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-2d`	new	1	-C -2d -N1	6.744558723	1.247940708	13016936236	606	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-2d`	new	2	-C -2d -N1	6.744558723	1.287287459	13025021251	606	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-2d`	new	3	-C -2d -N1	6.744558723	1.197784042	13003939053	606	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-d`	old	1	-C -d -N1	7.295306496	0.363548625	3706040649	268	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-d`	old	2	-C -d -N1	7.295306496	0.383327834	3713971163	268	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-d`	old	3	-C -d -N1	7.295306496	0.368713583	3704882629	268	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-d`	new	1	-C -d -N1	7.295306496	0.363548625	3706040649	268	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-d`	new	2	-C -d -N1	7.295306496	0.383327834	3713971163	268	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-d`	new	3	-C -d -N1	7.295306496	0.368713583	3704882629	268	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.734990605	0.573336792	6329167780	454	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.734990605	0.626363917	6338488890	454	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.734990605	0.576251625	6330514915	454	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.734990605	0.573336792	6329167780	454	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.734990605	0.626363917	6338488890	454	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E50k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.734990605	0.576251625	6330514915	454	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om2_N256_E50k `-d`	old	1	-C -F -d -N1	7.317528373	0.266380542	2568574234	338	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om2_N256_E50k `-d`	old	2	-C -F -d -N1	7.317528373	0.287765625	2569544412	338	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om2_N256_E50k `-d`	old	3	-C -F -d -N1	7.317528373	0.279675667	2573884897	338	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om2_N256_E50k `-d`	new	1	-C -F -d -N1	7.317528373	0.266380542	2568574234	338	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om2_N256_E50k `-d`	new	2	-C -F -d -N1	7.317528373	0.287765625	2569544412	338	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om2_N256_E50k `-d`	new	3	-C -F -d -N1	7.317528373	0.279675667	2573884897	338	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-2d`	old	1	-C -2d -N1	6.823562921	1.205058959	12940915878	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-2d`	old	2	-C -2d -N1	6.823562921	1.231083083	12943000206	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-2d`	old	3	-C -2d -N1	6.823562921	1.131920417	12935395956	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-2d`	new	1	-C -2d -N1	6.823562921	1.205058959	12940915878	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-2d`	new	2	-C -2d -N1	6.823562921	1.231083083	12943000206	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-2d`	new	3	-C -2d -N1	6.823562921	1.131920417	12935395956	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-d`	old	1	-C -d -N1	6.823562921	1.508247584	17007838516	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-d`	old	2	-C -d -N1	6.823562921	1.522032375	17013505667	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-d`	old	3	-C -d -N1	6.823562921	1.48305175	17008256591	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-d`	new	1	-C -d -N1	6.823562921	1.508247584	17007838516	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-d`	new	2	-C -d -N1	6.823562921	1.522032375	17013505667	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-d`	new	3	-C -d -N1	6.823562921	1.48305175	17008256591	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.820929855	0.438385	4276346939	50	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.820929855	0.402804541	4276016766	50	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.820929855	0.398395709	4271563189	50	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.820929855	0.438385	4276346939	50	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.820929855	0.402804541	4276016766	50	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E100k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.820929855	0.398395709	4271563189	50	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om3_N256_E100k `-d`	old	1	-C -F -d -N1	6.823562921	1.516261833	16561058660	70	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om3_N256_E100k `-d`	old	2	-C -F -d -N1	6.823562921	1.510842833	16561250476	70	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om3_N256_E100k `-d`	old	3	-C -F -d -N1	6.823562921	1.445108958	16555824226	70	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om3_N256_E100k `-d`	new	1	-C -F -d -N1	6.823562921	1.516261833	16561058660	70	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om3_N256_E100k `-d`	new	2	-C -F -d -N1	6.823562921	1.510842833	16561250476	70	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om3_N256_E100k `-d`	new	3	-C -F -d -N1	6.823562921	1.445108958	16555824226	70	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-2d`	old	1	-C -2d -N1	6.858825005	1.346694041	13459627776	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-2d`	old	2	-C -2d -N1	6.858825005	1.466314791	13461848858	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-2d`	old	3	-C -2d -N1	6.858825005	1.351800958	13456564388	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-2d`	new	1	-C -2d -N1	6.858825005	1.346694041	13459627776	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-2d`	new	2	-C -2d -N1	6.858825005	1.466314791	13461848858	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-2d`	new	3	-C -2d -N1	6.858825005	1.351800958	13456564388	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-d`	old	1	-C -d -N1	6.858825005	1.799857	18762023216	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-d`	old	2	-C -d -N1	6.858825005	1.968115959	18760965138	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-d`	old	3	-C -d -N1	6.858825005	1.862884167	18751336551	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-d`	new	1	-C -d -N1	6.858825005	1.799857	18762023216	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-d`	new	2	-C -d -N1	6.858825005	1.968115959	18760965138	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-d`	new	3	-C -d -N1	6.858825005	1.862884167	18751336551	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.850471471	0.941227583	9547797389	126	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.850471471	0.994011875	9550069496	126	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.850471471	0.898534417	9537883248	126	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.850471471	0.941227583	9547797389	126	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.850471471	0.994011875	9550069496	126	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E100k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.850471471	0.898534417	9537883248	126	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om4_N256_E100k `-d`	old	1	-C -F -d -N1	6.858825005	1.608083708	16307030517	179	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om4_N256_E100k `-d`	old	2	-C -F -d -N1	6.858825005	2.263685	16318843807	179	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om4_N256_E100k `-d`	old	3	-C -F -d -N1	6.858825005	1.580844333	16301472681	179	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om4_N256_E100k `-d`	new	1	-C -F -d -N1	6.858825005	1.608083708	16307030517	179	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om4_N256_E100k `-d`	new	2	-C -F -d -N1	6.858825005	2.263685	16318843807	179	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om4_N256_E100k `-d`	new	3	-C -F -d -N1	6.858825005	1.580844333	16301472681	179	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-2d`	old	1	-C -2d -N1	6.948978287	1.61544575	15912112091	309	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-2d`	old	2	-C -2d -N1	6.948978287	1.681218625	15915103466	309	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-2d`	old	3	-C -2d -N1	6.948978287	1.644109166	15909400586	309	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-2d`	new	1	-C -2d -N1	6.948978287	1.61544575	15912112091	309	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-2d`	new	2	-C -2d -N1	6.948978287	1.681218625	15915103466	309	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-2d`	new	3	-C -2d -N1	6.948978287	1.644109166	15909400586	309	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-d`	old	1	-C -d -N1	7.795491139	0.763480375	7136299042	80	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-d`	old	2	-C -d -N1	7.795491139	0.985213333	7158994923	80	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-d`	old	3	-C -d -N1	7.795491139	0.749469542	7143789115	80	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-d`	new	1	-C -d -N1	7.795491139	0.763480375	7136299042	80	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-d`	new	2	-C -d -N1	7.795491139	0.985213333	7158994923	80	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-d`	new	3	-C -d -N1	7.795491139	0.749469542	7143789115	80	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.867718448	0.954712833	9844857281	290	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.867718448	1.58302875	9883616133	290	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.867718448	0.947362458	9840272617	290	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.867718448	0.954712833	9844857281	290	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.867718448	1.58302875	9883616133	290	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E100k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.867718448	0.947362458	9840272617	290	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om5_N256_E100k `-d`	old	1	-C -F -d -N1	7.829247983	0.572316958	4954757081	93	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om5_N256_E100k `-d`	old	2	-C -F -d -N1	7.829247983	0.622304209	4958139885	93	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om5_N256_E100k `-d`	old	3	-C -F -d -N1	7.829247983	0.554971166	4950346235	93	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om5_N256_E100k `-d`	new	1	-C -F -d -N1	7.829247983	0.572316958	4954757081	93	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om5_N256_E100k `-d`	new	2	-C -F -d -N1	7.829247983	0.622304209	4958139885	93	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om5_N256_E100k `-d`	new	3	-C -F -d -N1	7.829247983	0.554971166	4950346235	93	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-2d`	old	1	-C -2d -N1	6.894797134	1.627649584	15172385108	447	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-2d`	old	2	-C -2d -N1	6.894797134	1.819208083	15181624618	447	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-2d`	old	3	-C -2d -N1	6.894797134	1.563843292	15162762944	447	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-2d`	new	1	-C -2d -N1	6.894797134	1.627649584	15172385108	447	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-2d`	new	2	-C -2d -N1	6.894797134	1.819208083	15181624618	447	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-2d`	new	3	-C -2d -N1	6.894797134	1.563843292	15162762944	447	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-d`	old	1	-C -d -N1	7.478431518	0.798768	7289289140	112	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-d`	old	2	-C -d -N1	7.478431518	0.842368792	7301196028	112	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-d`	old	3	-C -d -N1	7.478431518	0.783224459	7297173197	112	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-d`	new	1	-C -d -N1	7.478431518	0.798768	7289289140	112	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-d`	new	2	-C -d -N1	7.478431518	0.842368792	7301196028	112	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-d`	new	3	-C -d -N1	7.478431518	0.783224459	7297173197	112	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.87656878	0.992796333	9699465173	430	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.87656878	1.013770417	9699695421	430	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.87656878	0.967679	9690190092	430	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.87656878	0.992796333	9699465173	430	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.87656878	1.013770417	9699695421	430	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E100k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.87656878	0.967679	9690190092	430	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om6_N256_E100k `-d`	old	1	-C -F -d -N1	7.546115138	0.590816292	4888499354	103	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om6_N256_E100k `-d`	old	2	-C -F -d -N1	7.546115138	0.622084083	4894059906	103	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om6_N256_E100k `-d`	old	3	-C -F -d -N1	7.546115138	0.561769	4886858585	103	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om6_N256_E100k `-d`	new	1	-C -F -d -N1	7.546115138	0.590816292	4888499354	103	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om6_N256_E100k `-d`	new	2	-C -F -d -N1	7.546115138	0.622084083	4894059906	103	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om6_N256_E100k `-d`	new	3	-C -F -d -N1	7.546115138	0.561769	4886858585	103	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-2d`	old	1	-C -2d -N1	6.889674586	1.873360292	17238195512	649	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-2d`	old	2	-C -2d -N1	6.889674586	1.999504791	17237674828	649	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-2d`	old	3	-C -2d -N1	6.889674586	1.803356875	17227131875	649	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-2d`	new	1	-C -2d -N1	6.889674586	1.873360292	17238195512	649	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-2d`	new	2	-C -2d -N1	6.889674586	1.999504791	17237674828	649	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-2d`	new	3	-C -2d -N1	6.889674586	1.803356875	17227131875	649	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-d`	old	1	-C -d -N1	7.192756466	0.800144459	7474774793	149	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-d`	old	2	-C -d -N1	7.192756466	0.982617209	7496634587	149	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-d`	old	3	-C -d -N1	7.192756466	0.805915458	7477626357	149	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-d`	new	1	-C -d -N1	7.192756466	0.800144459	7474774793	149	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-d`	new	2	-C -d -N1	7.192756466	0.982617209	7496634587	149	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-d`	new	3	-C -d -N1	7.192756466	0.805915458	7477626357	149	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.881554086	0.995353625	9577100847	624	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.881554086	1.086322166	9589786225	624	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.881554086	0.969356125	9574605778	624	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.881554086	0.995353625	9577100847	624	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.881554086	1.086322166	9589786225	624	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E100k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.881554086	0.969356125	9574605778	624	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om7_N256_E100k `-d`	old	1	-C -F -d -N1	7.238675817	0.640593166	5191039549	145	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om7_N256_E100k `-d`	old	2	-C -F -d -N1	7.238675817	0.739602958	5191356587	145	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om7_N256_E100k `-d`	old	3	-C -F -d -N1	7.238675817	0.600761209	5182461431	145	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om7_N256_E100k `-d`	new	1	-C -F -d -N1	7.238675817	0.640593166	5191039549	145	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om7_N256_E100k `-d`	new	2	-C -F -d -N1	7.238675817	0.739602958	5191356587	145	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om7_N256_E100k `-d`	new	3	-C -F -d -N1	7.238675817	0.600761209	5182461431	145	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-2d`	old	1	-C -2d -N1	6.876045079	2.043167708	18623251584	864	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-2d`	old	2	-C -2d -N1	6.876045079	2.175343208	18629275237	864	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-2d`	old	3	-C -2d -N1	6.876045079	1.992881708	18618102520	864	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-2d`	new	1	-C -2d -N1	6.876045079	2.043167708	18623251584	864	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-2d`	new	2	-C -2d -N1	6.876045079	2.175343208	18629275237	864	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-2d`	new	3	-C -2d -N1	6.876045079	1.992881708	18618102520	864	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-d`	old	1	-C -d -N1	6.938347922	0.8996745	7790090023	186	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-d`	old	2	-C -d -N1	6.938347922	0.9832665	7787991742	186	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-d`	old	3	-C -d -N1	6.938347922	0.829712625	7781809703	186	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-d`	new	1	-C -d -N1	6.938347922	0.8996745	7790090023	186	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-d`	new	2	-C -d -N1	6.938347922	0.9832665	7787991742	186	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-d`	new	3	-C -d -N1	6.938347922	0.829712625	7781809703	186	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.863878689	1.289634	12216756718	829	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.863878689	1.377920208	12226175232	829	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.863878689	1.288836625	12222185897	829	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.863878689	1.289634	12216756718	829	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.863878689	1.377920208	12226175232	829	2	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E100k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.863878689	1.288836625	12222185897	829	2	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om8_N256_E100k `-d`	old	1	-C -F -d -N1	7.007657776	0.778803459	6068943168	179	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om8_N256_E100k `-d`	old	2	-C -F -d -N1	7.007657776	0.767355958	6066229421	179	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om8_N256_E100k `-d`	old	3	-C -F -d -N1	7.007657776	0.730285958	6065393662	179	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om8_N256_E100k `-d`	new	1	-C -F -d -N1	7.007657776	0.778803459	6068943168	179	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om8_N256_E100k `-d`	new	2	-C -F -d -N1	7.007657776	0.767355958	6066229421	179	4	carried: inputs-snapshot.tsv new arm	
+F1	overlapping om8_N256_E100k `-d`	new	3	-C -F -d -N1	7.007657776	0.730285958	6065393662	179	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E100k `-d`	old	1	-C -d -N1	7.144517469	0.42935475	4550925829	3	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E100k `-d`	old	2	-C -d -N1	7.144517469	0.511287959	4560938861	3	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E100k `-d`	old	3	-C -d -N1	7.144517469	0.431696708	4551338366	3	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E100k `-d`	new	1	-C -d -N1	7.144517469	0.42935475	4550925829	3	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E100k `-d`	new	2	-C -d -N1	7.144517469	0.511287959	4560938861	3	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om2_N256_E100k `-d`	new	3	-C -d -N1	7.144517469	0.431696708	4551338366	3	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E50k `-d`	old	1	-C -d -N1	5.854829799	0.4628595	4356898682	537	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E50k `-d`	old	2	-C -d -N1	5.854829799	0.524227292	4366107135	537	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E50k `-d`	old	3	-C -d -N1	5.854829799	0.47326475	4356974138	537	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E50k `-d`	new	1	-C -d -N1	5.854829799	0.4628595	4356898682	537	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E50k `-d`	new	2	-C -d -N1	5.854829799	0.524227292	4366107135	537	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om3_N256_E50k `-d`	new	3	-C -d -N1	5.854829799	0.47326475	4356974138	537	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E50k `-d`	old	1	-C -d -N1	4.898784516	0.442761583	4180294970	1867	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E50k `-d`	old	2	-C -d -N1	4.898784516	0.508578833	4187155824	1867	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E50k `-d`	old	3	-C -d -N1	4.898784516	0.441480375	4176701683	1867	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E50k `-d`	new	1	-C -d -N1	4.898784516	0.442761583	4180294970	1867	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E50k `-d`	new	2	-C -d -N1	4.898784516	0.508578833	4187155824	1867	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om4_N256_E50k `-d`	new	3	-C -d -N1	4.898784516	0.441480375	4176701683	1867	3	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E50k `-d`	old	1	-C -d -N1	4.1554786	0.590319958	5018899929	2156	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E50k `-d`	old	2	-C -d -N1	4.1554786	0.603045125	5017122498	2156	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E50k `-d`	old	3	-C -d -N1	4.1554786	0.545757583	5009515287	2156	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E50k `-d`	new	1	-C -d -N1	4.1554786	0.590319958	5018899929	2156	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E50k `-d`	new	2	-C -d -N1	4.1554786	0.603045125	5017122498	2156	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om5_N256_E50k `-d`	new	3	-C -d -N1	4.1554786	0.545757583	5009515287	2156	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E50k `-d`	old	1	-C -d -N1	3.620157111	0.776119166	5968467047	3056	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E50k `-d`	old	2	-C -d -N1	3.620157111	0.776016875	5967869810	3056	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E50k `-d`	old	3	-C -d -N1	3.620157111	0.668174708	5946577549	3056	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E50k `-d`	new	1	-C -d -N1	3.620157111	0.776119166	5968467047	3056	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E50k `-d`	new	2	-C -d -N1	3.620157111	0.776016875	5967869810	3056	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om6_N256_E50k `-d`	new	3	-C -d -N1	3.620157111	0.668174708	5946577549	3056	4	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E50k `-d`	old	1	-C -d -N1	3.21639819	0.633765042	5565120879	3417	5	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E50k `-d`	old	2	-C -d -N1	3.21639819	0.751810541	5577411391	3417	5	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E50k `-d`	old	3	-C -d -N1	3.21639819	0.630397167	5570121735	3417	5	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E50k `-d`	new	1	-C -d -N1	3.21639819	0.633765042	5565120879	3417	5	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E50k `-d`	new	2	-C -d -N1	3.21639819	0.751810541	5577411391	3417	5	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om7_N256_E50k `-d`	new	3	-C -d -N1	3.21639819	0.630397167	5570121735	3417	5	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E50k `-d`	old	1	-C -d -N1	2.885785338	0.926753875	8130003576	4371	5	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E50k `-d`	old	2	-C -d -N1	2.885785338	1.009741292	8142311068	4371	5	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E50k `-d`	old	3	-C -d -N1	2.885785338	0.911604875	8113304185	4371	5	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E50k `-d`	new	1	-C -d -N1	2.885785338	0.926753875	8130003576	4371	5	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E50k `-d`	new	2	-C -d -N1	2.885785338	1.009741292	8142311068	4371	5	carried: inputs-snapshot.tsv new arm	
+C1	overlapping om8_N256_E50k `-d`	new	3	-C -d -N1	2.885785338	0.911604875	8113304185	4371	5	carried: inputs-snapshot.tsv new arm	
+F10	jazz	new	1	-C -F -N10	6.862755928	0.006388083	133529737	6	2	carried: inputs-snapshot.tsv new arm	
+C10	web-NotreDame	old	1	-C -N10 -d	6.174545892	20.579597209	186622890292	505	6	carried: inputs-snapshot.tsv new arm	
+C10	web-NotreDame	new	1	-C -N10 -d	6.174545892	20.579597209	186622890292	505	6	carried: inputs-snapshot.tsv new arm	
+L10	malaria	new	1	-C --non-redundant -N10	7.438064454	2.9627785	33906434756	2	3	carried: inputs-snapshot.tsv new arm	
+C10	air30k (meta)	old	1	-C -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.414540615	9.885318041	92643770544	2238	3	carried: inputs-snapshot.tsv new arm	
+C10	air30k (meta)	new	1	-C -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.414540615	9.885318041	92643770544	2238	3	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om2_N256_E50k `-d`	old	1	-C -F -d -N10	6.752836583	3.454946291	32534607923	536	2	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om2_N256_E50k `-d`	new	1	-C -F -d -N10	6.752836583	3.454946291	32534607923	536	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om8_N256_E100k `-2d`	old	1	-C -2d -N10	6.873356654	8.395855416	72610278816	848	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om8_N256_E100k `-2d`	new	1	-C -2d -N10	6.873356654	8.395855416	72610278816	848	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om5_N256_E50k `-d`	old	1	-C -d -N10	4.150346795	5.846149625	51389532005	2171	4	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om5_N256_E50k `-d`	new	1	-C -d -N10	4.150346795	5.846149625	51389532005	2171	4	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om8_N256_E50k `-d`	old	1	-C -d -N10	2.883308449	8.08495475	69991160151	4367	5	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om8_N256_E50k `-d`	new	1	-C -d -N10	2.883308449	8.08495475	69991160151	4367	5	carried: inputs-snapshot.tsv new arm	
+C2_10	web-NotreDame	old	1	-C -2 -N10 -d	6.889480271	15.717462	95308415151	10362	2	carried: inputs-snapshot.tsv new arm	
+C2_10	web-NotreDame	new	1	-C -2 -N10 -d	6.889480271	15.717462	95308415151	10362	2	carried: inputs-snapshot.tsv new arm	
+L10	air30k	new	1	-C --non-redundant -N10	5.379735352	3.493233542	38591055920	260	3	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om4_N256_E100k `-d`	old	1	-C -F -d -N10	6.860084625	5.927214917	56790217001	176	2	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om4_N256_E100k `-d`	new	1	-C -F -d -N10	6.860084625	5.927214917	56790217001	176	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om3_N256_E50k `-d`	old	1	-C -d -N10	5.851498646	4.716279917	44676775658	617	4	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om3_N256_E50k `-d`	new	1	-C -d -N10	5.851498646	4.716279917	44676775658	617	4	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om5_N256_E50k `-2d`	old	1	-C -2d -N10	4.903270512	4.346354084	31931821427	5443	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om5_N256_E50k `-2d`	new	1	-C -2d -N10	4.903270512	4.346354084	31931821427	5443	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om8_N256_E50k `-2d`	old	1	-C -2d -N10	3.859069372	4.519686458	31580787131	7985	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om8_N256_E50k `-2d`	new	1	-C -2d -N10	3.859069372	4.519686458	31580787131	7985	2	carried: inputs-snapshot.tsv new arm	
+F10	web-NotreDame	new	1	-C -F -N10 -d	6.263424919	14.494133958	120024898326	661	4	carried: inputs-snapshot.tsv new arm	
+C10	air30k (reg.)	old	1	-C -N10 -d --regularized	5.578852599	3.880745667	40841011031	225	3	carried: inputs-snapshot.tsv new arm	
+C10	air30k (reg.)	new	1	-C -N10 -d --regularized	5.578852599	3.880745667	40841011031	225	3	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om2_N256_E50k `-d`	old	1	-C -d -N10	6.752836583	3.755280667	38457102075	536	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om2_N256_E50k `-d`	new	1	-C -d -N10	6.752836583	3.755280667	38457102075	536	2	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om3_N256_E100k `-d`	old	1	-C -F -d -N10	6.822832994	5.280321083	55541369678	69	2	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om3_N256_E100k `-d`	new	1	-C -F -d -N10	6.822832994	5.280321083	55541369678	69	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om4_N256_E50k `-d`	old	1	-C -d -N10	4.873775655	5.416203375	48055377994	1200	4	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om4_N256_E50k `-d`	new	1	-C -d -N10	4.873775655	5.416203375	48055377994	1200	4	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om6_N256_E50k `-2d`	old	1	-C -2d -N10	4.468778176	4.44915925	32373090214	6379	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om6_N256_E50k `-2d`	new	1	-C -2d -N10	4.468778176	4.44915925	32373090214	6379	2	carried: inputs-snapshot.tsv new arm	
+C10	powergrid	old	1	-C -N10	4.713040685	0.249666541	2821777796	6	5	carried: inputs-snapshot.tsv new arm	
+C10	powergrid	new	1	-C -N10	4.713040685	0.249666541	2821777796	6	5	carried: inputs-snapshot.tsv new arm	
+L10	web-NotreDame	new	1	-C --non-redundant -N10 -d	6.18859115	21.12583875	182254533826	510	6	carried: inputs-snapshot.tsv new arm	
+F10	air30k	new	1	-C -F -N10	5.39323549	3.397443125	35888317140	260	3	carried: inputs-snapshot.tsv new arm	
+L10	air30k (meta)	new	1	-C --non-redundant -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.228774064	9.069524625	83017775738	2236	3	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om5_N256_E100k `-2d`	old	1	-C -2d -N10	6.880795013	7.608767625	66808565354	283	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om5_N256_E100k `-2d`	new	1	-C -2d -N10	6.880795013	7.608767625	66808565354	283	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om7_N256_E100k `-d`	old	1	-C -d -N10	6.88945591	9.51016325	82810296573	666	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om7_N256_E100k `-d`	new	1	-C -d -N10	6.88945591	9.51016325	82810296573	666	2	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om8_N256_E100k `-d`	old	1	-C -F -d -N10	6.87278322	8.414109291	72335232403	868	2	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om8_N256_E100k `-d`	new	1	-C -F -d -N10	6.87278322	8.414109291	72335232403	868	2	carried: inputs-snapshot.tsv new arm	
+C10	jazz	old	1	-C -N10	6.862755928	0.006597375	134421503	6	2	carried: inputs-snapshot.tsv new arm	
+C10	jazz	new	1	-C -N10	6.862755928	0.006597375	134421503	6	2	carried: inputs-snapshot.tsv new arm	
+C2_10	malaria	old	1	-C -2 -N10	7.400445378	2.835505625	32288772931	168	2	carried: inputs-snapshot.tsv new arm	
+C2_10	malaria	new	1	-C -2 -N10	7.400445378	2.835505625	32288772931	168	2	carried: inputs-snapshot.tsv new arm	
+F10	air30k (reg.)	new	1	-C -F -N10 -d --regularized	5.578852599	3.415031125	35666945352	225	3	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om3_N256_E100k `-d`	old	1	-C -d -N10	6.822832994	5.552790708	59878803717	69	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om3_N256_E100k `-d`	new	1	-C -d -N10	6.822832994	5.552790708	59878803717	69	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om7_N256_E100k `-2d`	old	1	-C -2d -N10	6.88992089	7.864813041	69152573843	663	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om7_N256_E100k `-2d`	new	1	-C -2d -N10	6.88992089	7.864813041	69152573843	663	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om6_N256_E50k `-d`	old	1	-C -d -N10	3.617750514	6.03424775	51859238758	3050	4	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om6_N256_E50k `-d`	new	1	-C -d -N10	3.617750514	6.03424775	51859238758	3050	4	carried: inputs-snapshot.tsv new arm	
+C2_10	jazz	old	1	-C -2 -N10	6.861229775	0.0066685	133337188	6	2	carried: inputs-snapshot.tsv new arm	
+C2_10	jazz	new	1	-C -2 -N10	6.861229775	0.0066685	133337188	6	2	carried: inputs-snapshot.tsv new arm	
+F10	malaria	new	1	-C -F -N10	7.392442593	2.567807	30638573795	164	3	carried: inputs-snapshot.tsv new arm	
+L10	air30k (reg.)	new	1	-C --non-redundant -N10 -d --regularized	5.571921279	3.829788791	40393702829	227	3	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om6_N256_E100k `-2d`	old	1	-C -2d -N10	6.893434836	7.603843833	68230547503	440	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om6_N256_E100k `-2d`	new	1	-C -2d -N10	6.893434836	7.603843833	68230547503	440	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om8_N256_E100k `-d`	old	1	-C -d -N10	6.87278322	9.676140875	86688262217	868	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om8_N256_E100k `-d`	new	1	-C -d -N10	6.87278322	9.676140875	86688262217	868	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om7_N256_E50k `-d`	old	1	-C -d -N10	3.201872271	7.571225792	65402928918	3424	6	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om7_N256_E50k `-d`	new	1	-C -d -N10	3.201872271	7.571225792	65402928918	3424	6	carried: inputs-snapshot.tsv new arm	
+L10	powergrid	new	1	-C --non-redundant -N10	4.50699368	0.252595458	2951799789	3	6	carried: inputs-snapshot.tsv new arm	
+C10	malaria	old	1	-C -N10	7.392442593	2.676829083	31475312306	164	3	carried: inputs-snapshot.tsv new arm	
+C10	malaria	new	1	-C -N10	7.392442593	2.676829083	31475312306	164	3	carried: inputs-snapshot.tsv new arm	
+C2_10	air30k (reg.)	old	1	-C -2 -N10 -d --regularized	5.57079319	3.864351292	40831455491	305	2	carried: inputs-snapshot.tsv new arm	
+C2_10	air30k (reg.)	new	1	-C -2 -N10 -d --regularized	5.57079319	3.864351292	40831455491	305	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om2_N256_E50k `-2d`	old	1	-C -2d -N10	6.752836583	3.339389167	33140595600	536	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om2_N256_E50k `-2d`	new	1	-C -2d -N10	6.752836583	3.339389167	33140595600	536	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om4_N256_E100k `-d`	old	1	-C -d -N10	6.860084625	6.198033167	61282435249	176	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om4_N256_E100k `-d`	new	1	-C -d -N10	6.860084625	6.198033167	61282435249	176	2	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om5_N256_E100k `-d`	old	1	-C -F -d -N10	6.880795013	5.55064625	53813329042	283	2	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om5_N256_E100k `-d`	new	1	-C -F -d -N10	6.880795013	5.55064625	53813329042	283	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om2_N256_E100k `-d`	old	1	-C -d -N10	6.773456578	3.273097541	33285536168	60	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om2_N256_E100k `-d`	new	1	-C -d -N10	6.773456578	3.273097541	33285536168	60	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om4_N256_E50k `-2d`	old	1	-C -2d -N10	5.454385527	4.590055917	33747810655	4381	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om4_N256_E50k `-2d`	new	1	-C -2d -N10	5.454385527	4.590055917	33747810655	4381	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om7_N256_E50k `-2d`	old	1	-C -2d -N10	4.143277395	4.705508917	31195203484	7097	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om7_N256_E50k `-2d`	new	1	-C -2d -N10	4.143277395	4.705508917	31195203484	7097	2	carried: inputs-snapshot.tsv new arm	
+L10	jazz	new	1	-C --non-redundant -N10	6.858483287	0.006785208	135398233	6	2	carried: inputs-snapshot.tsv new arm	
+C10	air30k	old	1	-C -N10	5.39323549	3.562134167	38589097755	260	3	carried: inputs-snapshot.tsv new arm	
+C10	air30k	new	1	-C -N10	5.39323549	3.562134167	38589097755	260	3	carried: inputs-snapshot.tsv new arm	
+C2_10	air30k (meta)	old	1	-C -2 -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.416311014	10.505504708	102940324178	2331	2	carried: inputs-snapshot.tsv new arm	
+C2_10	air30k (meta)	new	1	-C -2 -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.416311014	10.505504708	102940324178	2331	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om4_N256_E100k `-2d`	old	1	-C -2d -N10	6.859843831	7.454258459	71665165100	173	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om4_N256_E100k `-2d`	new	1	-C -2d -N10	6.859843831	7.454258459	71665165100	173	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om6_N256_E100k `-d`	old	1	-C -d -N10	6.892138569	8.621706542	79568879453	431	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om6_N256_E100k `-d`	new	1	-C -d -N10	6.892138569	8.621706542	79568879453	431	2	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om7_N256_E100k `-d`	old	1	-C -F -d -N10	6.88945591	8.055863916	69742256585	666	2	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om7_N256_E100k `-d`	new	1	-C -F -d -N10	6.88945591	8.055863916	69742256585	666	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om2_N256_E100k `-2d`	old	1	-C -2d -N10	6.773456578	4.006905208	37793577568	60	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om2_N256_E100k `-2d`	new	1	-C -2d -N10	6.773456578	4.006905208	37793577568	60	2	carried: inputs-snapshot.tsv new arm	
+F10	powergrid	new	1	-C -F -N10	4.752564739	0.150101292	1773427334	15	5	carried: inputs-snapshot.tsv new arm	
+C2_10	air30k	old	1	-C -2 -N10	5.39136505	3.697555709	42442579696	336	2	carried: inputs-snapshot.tsv new arm	
+C2_10	air30k	new	1	-C -2 -N10	5.39136505	3.697555709	42442579696	336	2	carried: inputs-snapshot.tsv new arm	
+F10	air30k (meta)	new	1	-C -F -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.414540615	8.983719792	90069711258	2238	3	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om3_N256_E100k `-2d`	old	1	-C -2d -N10	6.822832994	6.917373875	77261012895	69	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om3_N256_E100k `-2d`	new	1	-C -2d -N10	6.822832994	6.917373875	77261012895	69	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om5_N256_E100k `-d`	old	1	-C -d -N10	6.880795013	6.215186833	58641510359	283	2	carried: inputs-snapshot.tsv new arm	
+C10	overlapping om5_N256_E100k `-d`	new	1	-C -d -N10	6.880795013	6.215186833	58641510359	283	2	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om6_N256_E100k `-d`	old	1	-C -F -d -N10	6.892138569	7.198943625	65468339331	431	2	carried: inputs-snapshot.tsv new arm	
+F10	overlapping om6_N256_E100k `-d`	new	1	-C -F -d -N10	6.892138569	7.198943625	65468339331	431	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om3_N256_E50k `-2d`	old	1	-C -2d -N10	6.258611497	4.369131875	36804919335	3236	2	carried: inputs-snapshot.tsv new arm	
+C2_10	overlapping om3_N256_E50k `-2d`	new	1	-C -2d -N10	6.258611497	4.369131875	36804919335	3236	2	carried: inputs-snapshot.tsv new arm	
+C2_10	powergrid	old	1	-C -2 -N10	5.634871397	0.211913333	1164831468	419	2	carried: inputs-snapshot.tsv new arm	
+C2_10	powergrid	old	2	-C -2 -N10	5.634871397	0.121308833	1164534172	419	2	carried: inputs-snapshot.tsv new arm	
+C2_10	powergrid	old	3	-C -2 -N10	5.634871397	0.103471333	1163653187	419	2	carried: inputs-snapshot.tsv new arm	
+C2_10	powergrid	old	4	-C -2 -N10	5.634871397	0.101356458	1163105244	419	2	carried: inputs-snapshot.tsv new arm	
+C2_10	powergrid	new	1	-C -2 -N10	5.634871397	0.211913333	1164831468	419	2	carried: inputs-snapshot.tsv new arm	
+C2_10	powergrid	new	2	-C -2 -N10	5.634871397	0.121308833	1164534172	419	2	carried: inputs-snapshot.tsv new arm	
+C2_10	powergrid	new	3	-C -2 -N10	5.634871397	0.103471333	1163653187	419	2	carried: inputs-snapshot.tsv new arm	
+C2_10	powergrid	new	4	-C -2 -N10	5.634871397	0.101356458	1163105244	419	2	carried: inputs-snapshot.tsv new arm	
+C1	netscience	old	1	-C -N1	3.364566019	0.007371541	146463443	278	4	carried: inputs-snapshot.tsv new arm	
+C1	netscience	old	2	-C -N1	3.364566019	0.007227125	146148295	278	4	carried: inputs-snapshot.tsv new arm	
+C1	netscience	old	3	-C -N1	3.364566019	0.007561292	146224110	278	4	carried: inputs-snapshot.tsv new arm	
+C1	netscience	new	1	-C -N1	3.364566019	0.007371541	146463443	278	4	carried: inputs-snapshot.tsv new arm	
+C1	netscience	new	2	-C -N1	3.364566019	0.007227125	146148295	278	4	carried: inputs-snapshot.tsv new arm	
+C1	netscience	new	3	-C -N1	3.364566019	0.007561292	146224110	278	4	carried: inputs-snapshot.tsv new arm	
+C1	polblogs	old	1	-C -N1 -d	7.593689164	0.014712625	257201202	3	3	carried: inputs-snapshot.tsv new arm	
+C1	polblogs	old	2	-C -N1 -d	7.593689164	0.015283958	256396580	3	3	carried: inputs-snapshot.tsv new arm	
+C1	polblogs	old	3	-C -N1 -d	7.593689164	0.01820875	257447620	3	3	carried: inputs-snapshot.tsv new arm	
+C1	polblogs	new	1	-C -N1 -d	7.593689164	0.014712625	257201202	3	3	carried: inputs-snapshot.tsv new arm	
+C1	polblogs	new	2	-C -N1 -d	7.593689164	0.015283958	256396580	3	3	carried: inputs-snapshot.tsv new arm	
+C1	polblogs	new	3	-C -N1 -d	7.593689164	0.01820875	257447620	3	3	carried: inputs-snapshot.tsv new arm	
+C1	word_assoc	old	1	-C -N1 -d	11.70862241	0.272015584	3404212575	1817	2	carried: inputs-snapshot.tsv new arm	
+C1	word_assoc	old	2	-C -N1 -d	11.70862241	0.272199333	3403360182	1817	2	carried: inputs-snapshot.tsv new arm	
+C1	word_assoc	old	3	-C -N1 -d	11.70862241	0.279315458	3406585394	1817	2	carried: inputs-snapshot.tsv new arm	
+C1	word_assoc	new	1	-C -N1 -d	11.70862241	0.272015584	3404212575	1817	2	carried: inputs-snapshot.tsv new arm	
+C1	word_assoc	new	2	-C -N1 -d	11.70862241	0.272199333	3403360182	1817	2	carried: inputs-snapshot.tsv new arm	
+C1	word_assoc	new	3	-C -N1 -d	11.70862241	0.279315458	3406585394	1817	2	carried: inputs-snapshot.tsv new arm	
+C1	word_assoc (pref.)	old	1	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.428500625	4426761761	25	2	carried: inputs-snapshot.tsv new arm	
+C1	word_assoc (pref.)	old	2	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.419829833	4429313183	25	2	carried: inputs-snapshot.tsv new arm	
+C1	word_assoc (pref.)	old	3	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.420093917	4426953645	25	2	carried: inputs-snapshot.tsv new arm	
+C1	word_assoc (pref.)	new	1	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.428500625	4426761761	25	2	carried: inputs-snapshot.tsv new arm	
+C1	word_assoc (pref.)	new	2	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.419829833	4429313183	25	2	carried: inputs-snapshot.tsv new arm	
+C1	word_assoc (pref.)	new	3	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.420093917	4426953645	25	2	carried: inputs-snapshot.tsv new arm	
+F10	word_assoc	new	1	-C -F -N10 -d	11.43278494	3.482122542	38995881892	762	2	carried: inputs-snapshot.tsv new arm	
+L10	word_assoc	new	1	-C --non-redundant -N10 -d	11.95700584	4.3672775	48541473275	1789	2	carried: inputs-snapshot.tsv new arm	
+C2_10	netscience	old	1	-C -2 -N10	3.529536656	0.020007167	277006823	312	2	carried: inputs-snapshot.tsv new arm	
+C2_10	netscience	new	1	-C -2 -N10	3.529536656	0.020007167	277006823	312	2	carried: inputs-snapshot.tsv new arm	
+F10	polblogs	new	1	-C -F -N10 -d	7.592773105	0.079187917	915385798	91	2	carried: inputs-snapshot.tsv new arm	
+C10	polblogs	old	1	-C -N10 -d	7.592773105	0.082122458	943310314	91	2	carried: inputs-snapshot.tsv new arm	
+C10	polblogs	new	1	-C -N10 -d	7.592773105	0.082122458	943310314	91	2	carried: inputs-snapshot.tsv new arm	
+C10	word_assoc (pref.)	old	1	-C -N10 -d --preferred-number-of-modules 25	11.73480892	4.703783833	49197225455	25	2	carried: inputs-snapshot.tsv new arm	
+C10	word_assoc (pref.)	new	1	-C -N10 -d --preferred-number-of-modules 25	11.73480892	4.703783833	49197225455	25	2	carried: inputs-snapshot.tsv new arm	
+C10	netscience	old	1	-C -N10	3.363918326	0.066189042	802456637	278	4	carried: inputs-snapshot.tsv new arm	
+C10	netscience	new	1	-C -N10	3.363918326	0.066189042	802456637	278	4	carried: inputs-snapshot.tsv new arm	
+C2_10	polblogs	old	1	-C -2 -N10 -d	7.592588015	0.068032292	812739501	89	2	carried: inputs-snapshot.tsv new arm	
+C2_10	polblogs	new	1	-C -2 -N10 -d	7.592588015	0.068032292	812739501	89	2	carried: inputs-snapshot.tsv new arm	
+C2_10	word_assoc (pref.)	old	1	-C -2 -N10 -d --preferred-number-of-modules 25	11.73480892	3.981496125	45372567799	25	2	carried: inputs-snapshot.tsv new arm	
+C2_10	word_assoc (pref.)	new	1	-C -2 -N10 -d --preferred-number-of-modules 25	11.73480892	3.981496125	45372567799	25	2	carried: inputs-snapshot.tsv new arm	
+C2_10	word_assoc	old	1	-C -2 -N10 -d	11.42993396	3.094749042	34856121205	764	2	carried: inputs-snapshot.tsv new arm	
+C2_10	word_assoc	new	1	-C -2 -N10 -d	11.42993396	3.094749042	34856121205	764	2	carried: inputs-snapshot.tsv new arm	
+F10	word_assoc (pref.)	new	1	-C -F -N10 -d --preferred-number-of-modules 25	11.73480892	4.348200333	44526257185	25	2	carried: inputs-snapshot.tsv new arm	
+F10	netscience	new	1	-C -F -N10	3.364888761	0.038301834	491187967	283	4	carried: inputs-snapshot.tsv new arm	
+L10	polblogs	new	1	-C --non-redundant -N10 -d	7.592668282	0.080147417	934029380	3	3	carried: inputs-snapshot.tsv new arm	
+L10	word_assoc (pref.)	new	1	-C --non-redundant -N10 -d --preferred-number-of-modules 25	12.7626516	4.78937275	49198428015	25	2	carried: inputs-snapshot.tsv new arm	
+L10	netscience	new	1	-C --non-redundant -N10	3.313421599	0.053977917	664079980	272	4	carried: inputs-snapshot.tsv new arm	
+C10	word_assoc	old	1	-C -N10 -d	11.43278494	4.190791625	44479344884	762	2	carried: inputs-snapshot.tsv new arm	
+C10	word_assoc	new	1	-C -N10 -d	11.43278494	4.190791625	44479344884	762	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.778901842	0.048664375	588248801	8	2	carried: inputs-snapshot.tsv new arm	7.957873782
+FAM	om2_N256_E50k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.778901842	0.053097625	587801024	8	2	carried: inputs-snapshot.tsv new arm	7.957873782
+FAM	om2_N256_E50k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.778901842	0.055385167	587549378	8	2	carried: inputs-snapshot.tsv new arm	7.957873782
+FAM	om2_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.778901842	0.048664375	588248801	8	2	carried: inputs-snapshot.tsv new arm	7.957873782
+FAM	om2_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.778901842	0.053097625	587801024	8	2	carried: inputs-snapshot.tsv new arm	7.957873782
+FAM	om2_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.778901842	0.055385167	587549378	8	2	carried: inputs-snapshot.tsv new arm	7.957873782
+FAM	om2_N256_E50k `-2d -N10`	old	1	-C -2d -N10	6.752836583	3.339389167	33140595600	536	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om2_N256_E50k `-2d`)	
+FAM	om2_N256_E50k `-2d -N10`	new	1	-C -2d -N10	6.752836583	3.339389167	33140595600	536	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om2_N256_E50k `-2d`)	
+FAM	om2_N256_E50k `-2d -N1`	old	1	-C -2d -N1	6.744558723	1.247940708	13016936236	606	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E50k `-2d`)	
+FAM	om2_N256_E50k `-2d -N1`	old	2	-C -2d -N1	6.744558723	1.287287459	13025021251	606	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E50k `-2d`)	
+FAM	om2_N256_E50k `-2d -N1`	old	3	-C -2d -N1	6.744558723	1.197784042	13003939053	606	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E50k `-2d`)	
+FAM	om2_N256_E50k `-2d -N1`	new	1	-C -2d -N1	6.744558723	1.247940708	13016936236	606	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E50k `-2d`)	
+FAM	om2_N256_E50k `-2d -N1`	new	2	-C -2d -N1	6.744558723	1.287287459	13025021251	606	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E50k `-2d`)	
+FAM	om2_N256_E50k `-2d -N1`	new	3	-C -2d -N1	6.744558723	1.197784042	13003939053	606	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E50k `-2d`)	
+FAM	om2_N256_E50k `-d -N10`	old	1	-C -d -N10	6.752836583	3.755280667	38457102075	536	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om2_N256_E50k `-d`)	
+FAM	om2_N256_E50k `-d -N10`	new	1	-C -d -N10	6.752836583	3.755280667	38457102075	536	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om2_N256_E50k `-d`)	
+FAM	om2_N256_E50k `-d -N1`	old	1	-C -d -N1	7.295306496	0.363548625	3706040649	268	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E50k `-d`)	
+FAM	om2_N256_E50k `-d -N1`	old	2	-C -d -N1	7.295306496	0.383327834	3713971163	268	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E50k `-d`)	
+FAM	om2_N256_E50k `-d -N1`	old	3	-C -d -N1	7.295306496	0.368713583	3704882629	268	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E50k `-d`)	
+FAM	om2_N256_E50k `-d -N1`	new	1	-C -d -N1	7.295306496	0.363548625	3706040649	268	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E50k `-d`)	
+FAM	om2_N256_E50k `-d -N1`	new	2	-C -d -N1	7.295306496	0.383327834	3713971163	268	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E50k `-d`)	
+FAM	om2_N256_E50k `-d -N1`	new	3	-C -d -N1	7.295306496	0.368713583	3704882629	268	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E50k `-d`)	
+FAM	om2_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	7.569509705	0.095095708	885712304	8	2	this session (om-controls-ab-results.tsv)	7.958565403
+FAM	om2_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	7.569509705	0.092779792	883373715	8	2	this session (om-controls-ab-results.tsv)	7.958565403
+FAM	om2_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	7.569509705	0.095131791	883151635	8	2	this session (om-controls-ab-results.tsv)	7.958565403
+FAM	om2_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.53510563	2.614205958	24585248494	119	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.53510563	2.614205958	24585248494	119	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.930395953	0.331064125	3130410586	107	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.930395953	0.342148583	3131164442	107	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.930395953	0.33780125	3126539052	107	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.930395953	0.331064125	3130410586	107	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.930395953	0.342148583	3131164442	107	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.930395953	0.33780125	3126539052	107	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.53510563	2.441542459	23884694012	119	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.53510563	2.441542459	23884694012	119	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.930395953	0.476016166	4439529956	107	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.930395953	0.491750584	4443623033	107	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.930395953	0.493800917	4441848657	107	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.930395953	0.476016166	4439529956	107	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.930395953	0.491750584	4443623033	107	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.930395953	0.493800917	4441848657	107	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.782220083	0.068839083	808614076	8	2	this session (om-controls-ab-results.tsv)	7.960871197
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.782220083	0.070420792	807270509	8	2	this session (om-controls-ab-results.tsv)	7.960871197
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.782220083	0.072109458	808551616	8	2	this session (om-controls-ab-results.tsv)	7.960871197
+FAM	om2_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.773456578	4.006905208	37793577568	60	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om2_N256_E100k `-2d`)	
+FAM	om2_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.773456578	4.006905208	37793577568	60	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om2_N256_E100k `-2d`)	
+FAM	om2_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.774049681	0.616539625	6460395124	60	2	this session (om-controls-ab-results.tsv)	
+FAM	om2_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.774049681	0.639738958	6461145447	60	2	this session (om-controls-ab-results.tsv)	
+FAM	om2_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.774049681	0.632170041	6462489437	60	2	this session (om-controls-ab-results.tsv)	
+FAM	om2_N256_E100k `-d -N10`	old	1	-C -d -N10	6.773456578	3.273097541	33285536168	60	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om2_N256_E100k `-d`)	
+FAM	om2_N256_E100k `-d -N10`	new	1	-C -d -N10	6.773456578	3.273097541	33285536168	60	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om2_N256_E100k `-d`)	
+FAM	om2_N256_E100k `-d -N1`	old	1	-C -d -N1	7.144517469	0.42935475	4550925829	3	3	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E100k `-d`)	
+FAM	om2_N256_E100k `-d -N1`	old	2	-C -d -N1	7.144517469	0.511287959	4560938861	3	3	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E100k `-d`)	
+FAM	om2_N256_E100k `-d -N1`	old	3	-C -d -N1	7.144517469	0.431696708	4551338366	3	3	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E100k `-d`)	
+FAM	om2_N256_E100k `-d -N1`	new	1	-C -d -N1	7.144517469	0.42935475	4550925829	3	3	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E100k `-d`)	
+FAM	om2_N256_E100k `-d -N1`	new	2	-C -d -N1	7.144517469	0.511287959	4560938861	3	3	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E100k `-d`)	
+FAM	om2_N256_E100k `-d -N1`	new	3	-C -d -N1	7.144517469	0.431696708	4551338366	3	3	carried: inputs-snapshot.tsv new arm (C1 overlapping om2_N256_E100k `-d`)	
+FAM	om2_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.964713526	0.140592916	1000887564	8	2	this session (om-controls-ab-results.tsv)	7.960610295
+FAM	om2_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.964713526	0.092316875	1000906039	8	2	this session (om-controls-ab-results.tsv)	7.960610295
+FAM	om2_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.964713526	0.093637875	999421925	8	2	this session (om-controls-ab-results.tsv)	7.960610295
+FAM	om2_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	6.950176925	3.866010542	36758529440	9	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	6.950176925	3.866010542	36758529440	9	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	6.950576542	0.674852208	6941627001	10	2	this session (om-controls-ab-results.tsv)	
+FAM	om2_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	6.950576542	0.672723125	6941738917	10	2	this session (om-controls-ab-results.tsv)	
+FAM	om2_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	6.950576542	0.778790916	6961238005	10	2	this session (om-controls-ab-results.tsv)	
+FAM	om2_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	6.950176925	3.370468333	33516147078	9	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	6.950176925	3.370468333	33516147078	9	2	carried: inputs-snapshot.tsv new arm	
+FAM	om2_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.488616285	0.468277583	4963625663	320	3	this session (om-controls-ab-results.tsv)	
+FAM	om2_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.488616285	0.494484542	4969100064	320	3	this session (om-controls-ab-results.tsv)	
+FAM	om2_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.488616285	0.506221875	4969505218	320	3	this session (om-controls-ab-results.tsv)	
+FAM	om3_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	6.850734921	0.0694665	691115521	12	2	this session (om-controls-ab-results.tsv)	7.96795137
+FAM	om3_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	6.850734921	0.06830825	688214535	12	2	this session (om-controls-ab-results.tsv)	7.96795137
+FAM	om3_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	6.850734921	0.071774833	689260080	12	2	this session (om-controls-ab-results.tsv)	7.96795137
+FAM	om3_N256_E50k `-2d -N10`	old	1	-C -2d -N10	6.258611497	4.369131875	36804919335	3236	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om3_N256_E50k `-2d`)	
+FAM	om3_N256_E50k `-2d -N10`	new	1	-C -2d -N10	6.258611497	4.369131875	36804919335	3236	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om3_N256_E50k `-2d`)	
+FAM	om3_N256_E50k `-2d -N1`	new	1	-C -2d -N1	6.269691984	0.594269042	4577664510	3218	2	this session (om-controls-ab-results.tsv)	
+FAM	om3_N256_E50k `-2d -N1`	new	2	-C -2d -N1	6.269691984	0.528334875	4566219665	3218	2	this session (om-controls-ab-results.tsv)	
+FAM	om3_N256_E50k `-2d -N1`	new	3	-C -2d -N1	6.269691984	0.561289417	4572898874	3218	2	this session (om-controls-ab-results.tsv)	
+FAM	om3_N256_E50k `-d -N10`	old	1	-C -d -N10	5.851498646	4.716279917	44676775658	617	4	carried: inputs-snapshot.tsv new arm (C10 overlapping om3_N256_E50k `-d`)	
+FAM	om3_N256_E50k `-d -N10`	new	1	-C -d -N10	5.851498646	4.716279917	44676775658	617	4	carried: inputs-snapshot.tsv new arm (C10 overlapping om3_N256_E50k `-d`)	
+FAM	om3_N256_E50k `-d -N1`	old	1	-C -d -N1	5.854829799	0.4628595	4356898682	537	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E50k `-d`)	
+FAM	om3_N256_E50k `-d -N1`	old	2	-C -d -N1	5.854829799	0.524227292	4366107135	537	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E50k `-d`)	
+FAM	om3_N256_E50k `-d -N1`	old	3	-C -d -N1	5.854829799	0.47326475	4356974138	537	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E50k `-d`)	
+FAM	om3_N256_E50k `-d -N1`	new	1	-C -d -N1	5.854829799	0.4628595	4356898682	537	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E50k `-d`)	
+FAM	om3_N256_E50k `-d -N1`	new	2	-C -d -N1	5.854829799	0.524227292	4366107135	537	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E50k `-d`)	
+FAM	om3_N256_E50k `-d -N1`	new	3	-C -d -N1	5.854829799	0.47326475	4356974138	537	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E50k `-d`)	
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	8.141739503	0.074892834	771420197	12	2	this session (om-controls-ab-results.tsv)	7.969664223
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	8.141739503	0.084377667	772193359	12	2	this session (om-controls-ab-results.tsv)	7.969664223
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	8.141739503	0.077443709	771885899	12	2	this session (om-controls-ab-results.tsv)	7.969664223
+FAM	om3_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.925216272	2.534703458	22522135181	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.925216272	2.534703458	22522135181	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.925216272	0.592780625	5320088132	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.925216272	0.6939095	5323792001	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.925216272	0.660806708	5321380503	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.925216272	0.592780625	5320088132	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.925216272	0.6939095	5323792001	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.925216272	0.660806708	5321380503	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.925216272	2.5314105	22755997384	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.925216272	2.5314105	22755997384	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.925216272	0.775474167	6636998999	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.925216272	0.831165209	6631373857	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.925216272	0.738541833	6631904453	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.925216272	0.775474167	6636998999	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.925216272	0.831165209	6631373857	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.925216272	0.738541833	6631904453	89	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.837980937	0.087594584	926641581	12	2	carried: inputs-snapshot.tsv new arm	7.97489927
+FAM	om3_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.837980937	0.091321125	927029557	12	2	carried: inputs-snapshot.tsv new arm	7.97489927
+FAM	om3_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.837980937	0.094166083	926673266	12	2	carried: inputs-snapshot.tsv new arm	7.97489927
+FAM	om3_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.837980937	0.087594584	926641581	12	2	carried: inputs-snapshot.tsv new arm	7.97489927
+FAM	om3_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.837980937	0.091321125	927029557	12	2	carried: inputs-snapshot.tsv new arm	7.97489927
+FAM	om3_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.837980937	0.094166083	926673266	12	2	carried: inputs-snapshot.tsv new arm	7.97489927
+FAM	om3_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.822832994	6.917373875	77261012895	69	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om3_N256_E100k `-2d`)	
+FAM	om3_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.822832994	6.917373875	77261012895	69	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om3_N256_E100k `-2d`)	
+FAM	om3_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.823562921	1.205058959	12940915878	70	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E100k `-2d`)	
+FAM	om3_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.823562921	1.231083083	12943000206	70	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E100k `-2d`)	
+FAM	om3_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.823562921	1.131920417	12935395956	70	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E100k `-2d`)	
+FAM	om3_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.823562921	1.205058959	12940915878	70	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E100k `-2d`)	
+FAM	om3_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.823562921	1.231083083	12943000206	70	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E100k `-2d`)	
+FAM	om3_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.823562921	1.131920417	12935395956	70	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E100k `-2d`)	
+FAM	om3_N256_E100k `-d -N10`	old	1	-C -d -N10	6.822832994	5.552790708	59878803717	69	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om3_N256_E100k `-d`)	
+FAM	om3_N256_E100k `-d -N10`	new	1	-C -d -N10	6.822832994	5.552790708	59878803717	69	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om3_N256_E100k `-d`)	
+FAM	om3_N256_E100k `-d -N1`	old	1	-C -d -N1	6.823562921	1.508247584	17007838516	70	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E100k `-d`)	
+FAM	om3_N256_E100k `-d -N1`	old	2	-C -d -N1	6.823562921	1.522032375	17013505667	70	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E100k `-d`)	
+FAM	om3_N256_E100k `-d -N1`	old	3	-C -d -N1	6.823562921	1.48305175	17008256591	70	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E100k `-d`)	
+FAM	om3_N256_E100k `-d -N1`	new	1	-C -d -N1	6.823562921	1.508247584	17007838516	70	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E100k `-d`)	
+FAM	om3_N256_E100k `-d -N1`	new	2	-C -d -N1	6.823562921	1.522032375	17013505667	70	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E100k `-d`)	
+FAM	om3_N256_E100k `-d -N1`	new	3	-C -d -N1	6.823562921	1.48305175	17008256591	70	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om3_N256_E100k `-d`)	
+FAM	om3_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	7.283809081	0.153565458	1435617605	12	2	this session (om-controls-ab-results.tsv)	7.97414175
+FAM	om3_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	7.283809081	0.153392958	1434589620	12	2	this session (om-controls-ab-results.tsv)	7.97414175
+FAM	om3_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	7.283809081	0.164596334	1436461855	12	2	this session (om-controls-ab-results.tsv)	7.97414175
+FAM	om3_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.260835207	6.06487975	48028750660	29	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.260835207	6.06487975	48028750660	29	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.261268486	0.914030417	9212011255	34	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.261268486	0.932797292	9213537740	34	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.261268486	0.9310295	9212325625	34	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.261268486	0.914030417	9212011255	34	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.261268486	0.932797292	9213537740	34	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.261268486	0.9310295	9212325625	34	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.260835207	4.779059083	45061807264	29	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.260835207	4.779059083	45061807264	29	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.261268486	1.167652334	11974676863	34	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.261268486	1.188056125	11974175391	34	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.261268486	1.188332333	11971727988	34	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.261268486	1.167652334	11974676863	34	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.261268486	1.188056125	11974175391	34	2	carried: inputs-snapshot.tsv new arm	
+FAM	om3_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.261268486	1.188332333	11971727988	34	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	6.913283001	0.127529167	777768125	16	2	this session (om-controls-ab-results.tsv)	7.975617984
+FAM	om4_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	6.913283001	0.082339666	773261849	16	2	this session (om-controls-ab-results.tsv)	7.975617984
+FAM	om4_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	6.913283001	0.101936833	777480996	16	2	this session (om-controls-ab-results.tsv)	7.975617984
+FAM	om4_N256_E50k `-2d -N10`	old	1	-C -2d -N10	5.454385527	4.590055917	33747810655	4381	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om4_N256_E50k `-2d`)	
+FAM	om4_N256_E50k `-2d -N10`	new	1	-C -2d -N10	5.454385527	4.590055917	33747810655	4381	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om4_N256_E50k `-2d`)	
+FAM	om4_N256_E50k `-2d -N1`	new	1	-C -2d -N1	5.464632117	0.498112208	3919003092	4348	2	this session (om-controls-ab-results.tsv)	
+FAM	om4_N256_E50k `-2d -N1`	new	2	-C -2d -N1	5.464632117	0.632332542	3924956396	4348	2	this session (om-controls-ab-results.tsv)	
+FAM	om4_N256_E50k `-2d -N1`	new	3	-C -2d -N1	5.464632117	0.542826416	3921859941	4348	2	this session (om-controls-ab-results.tsv)	
+FAM	om4_N256_E50k `-d -N10`	old	1	-C -d -N10	4.873775655	5.416203375	48055377994	1200	4	carried: inputs-snapshot.tsv new arm (C10 overlapping om4_N256_E50k `-d`)	
+FAM	om4_N256_E50k `-d -N10`	new	1	-C -d -N10	4.873775655	5.416203375	48055377994	1200	4	carried: inputs-snapshot.tsv new arm (C10 overlapping om4_N256_E50k `-d`)	
+FAM	om4_N256_E50k `-d -N1`	old	1	-C -d -N1	4.898784516	0.442761583	4180294970	1867	3	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E50k `-d`)	
+FAM	om4_N256_E50k `-d -N1`	old	2	-C -d -N1	4.898784516	0.508578833	4187155824	1867	3	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E50k `-d`)	
+FAM	om4_N256_E50k `-d -N1`	old	3	-C -d -N1	4.898784516	0.441480375	4176701683	1867	3	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E50k `-d`)	
+FAM	om4_N256_E50k `-d -N1`	new	1	-C -d -N1	4.898784516	0.442761583	4180294970	1867	3	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E50k `-d`)	
+FAM	om4_N256_E50k `-d -N1`	new	2	-C -d -N1	4.898784516	0.508578833	4187155824	1867	3	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E50k `-d`)	
+FAM	om4_N256_E50k `-d -N1`	new	3	-C -d -N1	4.898784516	0.441480375	4176701683	1867	3	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E50k `-d`)	
+FAM	om4_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	8.594489658	0.143612291	1091931383	16	2	this session (om-controls-ab-results.tsv)	7.978790193
+FAM	om4_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	8.594489658	0.172405958	1095821085	16	2	this session (om-controls-ab-results.tsv)	7.978790193
+FAM	om4_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	8.594489658	0.200614083	1091713804	16	2	this session (om-controls-ab-results.tsv)	7.978790193
+FAM	om4_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.92621405	3.030267459	23061933547	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N10`	old	2	-C -2d --regularized -N10	7.92621405	2.784161458	23041757290	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N10`	old	3	-C -2d --regularized -N10	7.92621405	2.763717959	23035668070	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N10`	old	4	-C -2d --regularized -N10	7.92621405	2.827975917	23034718189	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.92621405	3.030267459	23061933547	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N10`	new	2	-C -2d --regularized -N10	7.92621405	2.784161458	23041757290	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N10`	new	3	-C -2d --regularized -N10	7.92621405	2.763717959	23035668070	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N10`	new	4	-C -2d --regularized -N10	7.92621405	2.827975917	23034718189	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.92621405	0.840882	6237684833	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.92621405	0.800398208	6245717094	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.92621405	0.726887666	6228958930	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.92621405	0.840882	6237684833	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.92621405	0.800398208	6245717094	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.92621405	0.726887666	6228958930	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.92621405	2.766798083	22943157401	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.92621405	2.766798083	22943157401	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.92621405	0.885860333	7563778568	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.92621405	1.124406083	7585382694	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.92621405	0.922526708	7568552694	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.92621405	0.885860333	7563778568	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.92621405	1.124406083	7585382694	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.92621405	0.922526708	7568552694	110	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.873858104	0.105849584	1011075098	16	2	carried: inputs-snapshot.tsv new arm	7.984181438
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.873858104	0.292015542	1016405228	16	2	carried: inputs-snapshot.tsv new arm	7.984181438
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.873858104	0.112158667	1011931136	16	2	carried: inputs-snapshot.tsv new arm	7.984181438
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.873858104	0.105849584	1011075098	16	2	carried: inputs-snapshot.tsv new arm	7.984181438
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.873858104	0.292015542	1016405228	16	2	carried: inputs-snapshot.tsv new arm	7.984181438
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.873858104	0.112158667	1011931136	16	2	carried: inputs-snapshot.tsv new arm	7.984181438
+FAM	om4_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.859843831	7.454258459	71665165100	173	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om4_N256_E100k `-2d`)	
+FAM	om4_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.859843831	7.454258459	71665165100	173	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om4_N256_E100k `-2d`)	
+FAM	om4_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.858825005	1.346694041	13459627776	179	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E100k `-2d`)	
+FAM	om4_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.858825005	1.466314791	13461848858	179	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E100k `-2d`)	
+FAM	om4_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.858825005	1.351800958	13456564388	179	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E100k `-2d`)	
+FAM	om4_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.858825005	1.346694041	13459627776	179	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E100k `-2d`)	
+FAM	om4_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.858825005	1.466314791	13461848858	179	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E100k `-2d`)	
+FAM	om4_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.858825005	1.351800958	13456564388	179	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E100k `-2d`)	
+FAM	om4_N256_E100k `-d -N10`	old	1	-C -d -N10	6.860084625	6.198033167	61282435249	176	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om4_N256_E100k `-d`)	
+FAM	om4_N256_E100k `-d -N10`	new	1	-C -d -N10	6.860084625	6.198033167	61282435249	176	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om4_N256_E100k `-d`)	
+FAM	om4_N256_E100k `-d -N1`	old	1	-C -d -N1	6.858825005	1.799857	18762023216	179	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E100k `-d`)	
+FAM	om4_N256_E100k `-d -N1`	old	2	-C -d -N1	6.858825005	1.968115959	18760965138	179	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E100k `-d`)	
+FAM	om4_N256_E100k `-d -N1`	old	3	-C -d -N1	6.858825005	1.862884167	18751336551	179	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E100k `-d`)	
+FAM	om4_N256_E100k `-d -N1`	new	1	-C -d -N1	6.858825005	1.799857	18762023216	179	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E100k `-d`)	
+FAM	om4_N256_E100k `-d -N1`	new	2	-C -d -N1	6.858825005	1.968115959	18760965138	179	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E100k `-d`)	
+FAM	om4_N256_E100k `-d -N1`	new	3	-C -d -N1	6.858825005	1.862884167	18751336551	179	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om4_N256_E100k `-d`)	
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	7.565393576	0.201876458	1554186905	16	2	this session (om-controls-ab-results.tsv)	7.984230648
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	7.565393576	0.1871375	1559666313	16	2	this session (om-controls-ab-results.tsv)	7.984230648
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	7.565393576	0.183064708	1554370294	16	2	this session (om-controls-ab-results.tsv)	7.984230648
+FAM	om4_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.534667081	5.436732959	48952163373	72	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.534667081	5.436732959	48952163373	72	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.535458803	1.077761792	10173664812	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.535458803	1.412853583	10182447467	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.535458803	1.105233375	10168707116	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.535458803	1.077761792	10173664812	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.535458803	1.412853583	10182447467	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.535458803	1.105233375	10168707116	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.535170166	5.295158791	46847051247	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.535170166	5.295158791	46847051247	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.535458803	1.351151542	12860887157	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.535458803	1.39876825	12856508723	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.535458803	1.308702792	12855361955	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.535458803	1.351151542	12860887157	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.535458803	1.39876825	12856508723	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om4_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.535458803	1.308702792	12855361955	71	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	6.936802565	0.092093417	814339864	20	2	this session (om-controls-ab-results.tsv)	7.985831683
+FAM	om5_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	6.936802565	0.092039791	812987335	20	2	this session (om-controls-ab-results.tsv)	7.985831683
+FAM	om5_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	6.936802565	0.114016791	816637997	20	2	this session (om-controls-ab-results.tsv)	7.985831683
+FAM	om5_N256_E50k `-2d -N10`	old	1	-C -2d -N10	4.903270512	4.346354084	31931821427	5443	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om5_N256_E50k `-2d`)	
+FAM	om5_N256_E50k `-2d -N10`	new	1	-C -2d -N10	4.903270512	4.346354084	31931821427	5443	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om5_N256_E50k `-2d`)	
+FAM	om5_N256_E50k `-2d -N1`	new	1	-C -2d -N1	4.914591856	0.498829958	3890996766	5421	2	this session (om-controls-ab-results.tsv)	
+FAM	om5_N256_E50k `-2d -N1`	new	2	-C -2d -N1	4.914591856	0.512591041	3890602792	5421	2	this session (om-controls-ab-results.tsv)	
+FAM	om5_N256_E50k `-2d -N1`	new	3	-C -2d -N1	4.914591856	0.553722583	3893108209	5421	2	this session (om-controls-ab-results.tsv)	
+FAM	om5_N256_E50k `-d -N10`	old	1	-C -d -N10	4.150346795	5.846149625	51389532005	2171	4	carried: inputs-snapshot.tsv new arm (C10 overlapping om5_N256_E50k `-d`)	
+FAM	om5_N256_E50k `-d -N10`	new	1	-C -d -N10	4.150346795	5.846149625	51389532005	2171	4	carried: inputs-snapshot.tsv new arm (C10 overlapping om5_N256_E50k `-d`)	
+FAM	om5_N256_E50k `-d -N1`	old	1	-C -d -N1	4.1554786	0.590319958	5018899929	2156	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E50k `-d`)	
+FAM	om5_N256_E50k `-d -N1`	old	2	-C -d -N1	4.1554786	0.603045125	5017122498	2156	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E50k `-d`)	
+FAM	om5_N256_E50k `-d -N1`	old	3	-C -d -N1	4.1554786	0.545757583	5009515287	2156	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E50k `-d`)	
+FAM	om5_N256_E50k `-d -N1`	new	1	-C -d -N1	4.1554786	0.590319958	5018899929	2156	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E50k `-d`)	
+FAM	om5_N256_E50k `-d -N1`	new	2	-C -d -N1	4.1554786	0.603045125	5017122498	2156	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E50k `-d`)	
+FAM	om5_N256_E50k `-d -N1`	new	3	-C -d -N1	4.1554786	0.545757583	5009515287	2156	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E50k `-d`)	
+FAM	om5_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	8.930493739	0.140507291	1153971107	20	2	this session (om-controls-ab-results.tsv)	7.98862707
+FAM	om5_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	8.930493739	0.146188583	1155339344	20	2	this session (om-controls-ab-results.tsv)	7.98862707
+FAM	om5_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	8.930493739	0.138552584	1153709579	20	2	this session (om-controls-ab-results.tsv)	7.98862707
+FAM	om5_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.956672505	2.790151333	23273789573	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.956672505	2.790151333	23273789573	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.956672505	0.772339916	6317361890	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.956672505	1.259708791	6338225829	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.956672505	0.74884275	6324215937	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.956672505	0.772339916	6317361890	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.956672505	1.259708791	6338225829	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.956672505	0.74884275	6324215937	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.956672505	2.94292475	22646530076	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.956672505	2.94292475	22646530076	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.956672505	0.871439458	7654241100	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.956672505	1.067538792	7669487586	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.956672505	0.891599541	7651551087	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.956672505	0.871439458	7654241100	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.956672505	1.067538792	7669487586	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.956672505	0.891599541	7651551087	101	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.911031376	0.11884525	1081138493	20	2	carried: inputs-snapshot.tsv new arm	7.989304757
+FAM	om5_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.911031376	0.19889975	1089669074	20	2	carried: inputs-snapshot.tsv new arm	7.989304757
+FAM	om5_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.911031376	0.11678175	1081419879	20	2	carried: inputs-snapshot.tsv new arm	7.989304757
+FAM	om5_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.911031376	0.11884525	1081138493	20	2	carried: inputs-snapshot.tsv new arm	7.989304757
+FAM	om5_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.911031376	0.19889975	1089669074	20	2	carried: inputs-snapshot.tsv new arm	7.989304757
+FAM	om5_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.911031376	0.11678175	1081419879	20	2	carried: inputs-snapshot.tsv new arm	7.989304757
+FAM	om5_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.880795013	7.608767625	66808565354	283	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om5_N256_E100k `-2d`)	
+FAM	om5_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.880795013	7.608767625	66808565354	283	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om5_N256_E100k `-2d`)	
+FAM	om5_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.948978287	1.61544575	15912112091	309	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E100k `-2d`)	
+FAM	om5_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.948978287	1.681218625	15915103466	309	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E100k `-2d`)	
+FAM	om5_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.948978287	1.644109166	15909400586	309	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E100k `-2d`)	
+FAM	om5_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.948978287	1.61544575	15912112091	309	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E100k `-2d`)	
+FAM	om5_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.948978287	1.681218625	15915103466	309	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E100k `-2d`)	
+FAM	om5_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.948978287	1.644109166	15909400586	309	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E100k `-2d`)	
+FAM	om5_N256_E100k `-d -N10`	old	1	-C -d -N10	6.880795013	6.215186833	58641510359	283	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om5_N256_E100k `-d`)	
+FAM	om5_N256_E100k `-d -N10`	new	1	-C -d -N10	6.880795013	6.215186833	58641510359	283	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om5_N256_E100k `-d`)	
+FAM	om5_N256_E100k `-d -N1`	old	1	-C -d -N1	7.795491139	0.763480375	7136299042	80	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E100k `-d`)	
+FAM	om5_N256_E100k `-d -N1`	old	2	-C -d -N1	7.795491139	0.985213333	7158994923	80	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E100k `-d`)	
+FAM	om5_N256_E100k `-d -N1`	old	3	-C -d -N1	7.795491139	0.749469542	7143789115	80	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E100k `-d`)	
+FAM	om5_N256_E100k `-d -N1`	new	1	-C -d -N1	7.795491139	0.763480375	7136299042	80	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E100k `-d`)	
+FAM	om5_N256_E100k `-d -N1`	new	2	-C -d -N1	7.795491139	0.985213333	7158994923	80	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E100k `-d`)	
+FAM	om5_N256_E100k `-d -N1`	new	3	-C -d -N1	7.795491139	0.749469542	7143789115	80	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om5_N256_E100k `-d`)	
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	7.82562597	0.193993834	1634477683	20	2	this session (om-controls-ab-results.tsv)	7.98922672
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	7.82562597	0.2027225	1638835057	20	2	this session (om-controls-ab-results.tsv)	7.98922672
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	7.82562597	0.194836417	1635452562	20	2	this session (om-controls-ab-results.tsv)	7.98922672
+FAM	om5_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.973194647	4.805384041	40933399846	98	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.973194647	4.805384041	40933399846	98	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.974202977	0.706207334	6144012827	93	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.974202977	0.8118065	6151152866	93	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.974202977	0.717558167	6149307009	93	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.974202977	0.706207334	6144012827	93	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.974202977	0.8118065	6151152866	93	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.974202977	0.717558167	6149307009	93	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.973146326	4.73199325	40972114233	98	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.973146326	4.73199325	40972114233	98	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.974202977	1.101548459	8822010555	93	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.974202977	1.232694417	8828013877	93	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.974202977	0.961555125	8813486717	93	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.974202977	1.101548459	8822010555	93	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.974202977	1.232694417	8828013877	93	2	carried: inputs-snapshot.tsv new arm	
+FAM	om5_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.974202977	0.961555125	8813486717	93	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	6.979560518	0.10804825	909173127	24	2	this session (om-controls-ab-results.tsv)	7.985288435
+FAM	om6_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	6.979560518	0.101589625	907225130	24	2	this session (om-controls-ab-results.tsv)	7.985288435
+FAM	om6_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	6.979560518	0.107255208	907643894	24	2	this session (om-controls-ab-results.tsv)	7.985288435
+FAM	om6_N256_E50k `-2d -N10`	old	1	-C -2d -N10	4.468778176	4.44915925	32373090214	6379	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om6_N256_E50k `-2d`)	
+FAM	om6_N256_E50k `-2d -N10`	new	1	-C -2d -N10	4.468778176	4.44915925	32373090214	6379	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om6_N256_E50k `-2d`)	
+FAM	om6_N256_E50k `-2d -N1`	new	1	-C -2d -N1	4.477224436	0.51354225	3910601690	6354	2	this session (om-controls-ab-results.tsv)	
+FAM	om6_N256_E50k `-2d -N1`	new	2	-C -2d -N1	4.477224436	0.52178475	3913187100	6354	2	this session (om-controls-ab-results.tsv)	
+FAM	om6_N256_E50k `-2d -N1`	new	3	-C -2d -N1	4.477224436	0.517050125	3908693511	6354	2	this session (om-controls-ab-results.tsv)	
+FAM	om6_N256_E50k `-d -N10`	old	1	-C -d -N10	3.617750514	6.03424775	51859238758	3050	4	carried: inputs-snapshot.tsv new arm (C10 overlapping om6_N256_E50k `-d`)	
+FAM	om6_N256_E50k `-d -N10`	new	1	-C -d -N10	3.617750514	6.03424775	51859238758	3050	4	carried: inputs-snapshot.tsv new arm (C10 overlapping om6_N256_E50k `-d`)	
+FAM	om6_N256_E50k `-d -N1`	old	1	-C -d -N1	3.620157111	0.776119166	5968467047	3056	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E50k `-d`)	
+FAM	om6_N256_E50k `-d -N1`	old	2	-C -d -N1	3.620157111	0.776016875	5967869810	3056	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E50k `-d`)	
+FAM	om6_N256_E50k `-d -N1`	old	3	-C -d -N1	3.620157111	0.668174708	5946577549	3056	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E50k `-d`)	
+FAM	om6_N256_E50k `-d -N1`	new	1	-C -d -N1	3.620157111	0.776119166	5968467047	3056	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E50k `-d`)	
+FAM	om6_N256_E50k `-d -N1`	new	2	-C -d -N1	3.620157111	0.776016875	5967869810	3056	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E50k `-d`)	
+FAM	om6_N256_E50k `-d -N1`	new	3	-C -d -N1	3.620157111	0.668174708	5946577549	3056	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E50k `-d`)	
+FAM	om6_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	9.181814653	0.155099542	1199779601	24	2	this session (om-controls-ab-results.tsv)	7.989209626
+FAM	om6_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	9.181814653	0.147190333	1201458228	24	2	this session (om-controls-ab-results.tsv)	7.989209626
+FAM	om6_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	9.181814653	0.157363166	1201048573	24	2	this session (om-controls-ab-results.tsv)	7.989209626
+FAM	om6_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.944047825	2.764837958	21862851555	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.944047825	2.764837958	21862851555	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.944047825	0.617121875	5180427989	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.944047825	0.796829833	5193154530	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.944047825	0.648958708	5184712220	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.944047825	0.617121875	5180427989	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.944047825	0.796829833	5193154530	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.944047825	0.648958708	5184712220	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.944047825	2.883362208	21637525698	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.944047825	2.883362208	21637525698	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.944047825	0.72108925	5595353028	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.944047825	0.795337875	5589797866	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.944047825	0.693118291	5580844914	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.944047825	0.72108925	5595353028	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.944047825	0.795337875	5589797866	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.944047825	0.693118291	5580844914	94	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.936312189	0.121579708	1112683601	24	2	carried: inputs-snapshot.tsv new arm	7.990780342
+FAM	om6_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.936312189	0.133871583	1115527464	24	2	carried: inputs-snapshot.tsv new arm	7.990780342
+FAM	om6_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.936312189	0.127104375	1112176364	24	2	carried: inputs-snapshot.tsv new arm	7.990780342
+FAM	om6_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.936312189	0.121579708	1112683601	24	2	carried: inputs-snapshot.tsv new arm	7.990780342
+FAM	om6_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.936312189	0.133871583	1115527464	24	2	carried: inputs-snapshot.tsv new arm	7.990780342
+FAM	om6_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.936312189	0.127104375	1112176364	24	2	carried: inputs-snapshot.tsv new arm	7.990780342
+FAM	om6_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.893434836	7.603843833	68230547503	440	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om6_N256_E100k `-2d`)	
+FAM	om6_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.893434836	7.603843833	68230547503	440	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om6_N256_E100k `-2d`)	
+FAM	om6_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.894797134	1.627649584	15172385108	447	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E100k `-2d`)	
+FAM	om6_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.894797134	1.819208083	15181624618	447	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E100k `-2d`)	
+FAM	om6_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.894797134	1.563843292	15162762944	447	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E100k `-2d`)	
+FAM	om6_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.894797134	1.627649584	15172385108	447	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E100k `-2d`)	
+FAM	om6_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.894797134	1.819208083	15181624618	447	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E100k `-2d`)	
+FAM	om6_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.894797134	1.563843292	15162762944	447	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E100k `-2d`)	
+FAM	om6_N256_E100k `-d -N10`	old	1	-C -d -N10	6.892138569	8.621706542	79568879453	431	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om6_N256_E100k `-d`)	
+FAM	om6_N256_E100k `-d -N10`	new	1	-C -d -N10	6.892138569	8.621706542	79568879453	431	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om6_N256_E100k `-d`)	
+FAM	om6_N256_E100k `-d -N1`	old	1	-C -d -N1	7.478431518	0.798768	7289289140	112	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E100k `-d`)	
+FAM	om6_N256_E100k `-d -N1`	old	2	-C -d -N1	7.478431518	0.842368792	7301196028	112	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E100k `-d`)	
+FAM	om6_N256_E100k `-d -N1`	old	3	-C -d -N1	7.478431518	0.783224459	7297173197	112	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E100k `-d`)	
+FAM	om6_N256_E100k `-d -N1`	new	1	-C -d -N1	7.478431518	0.798768	7289289140	112	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E100k `-d`)	
+FAM	om6_N256_E100k `-d -N1`	new	2	-C -d -N1	7.478431518	0.842368792	7301196028	112	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E100k `-d`)	
+FAM	om6_N256_E100k `-d -N1`	new	3	-C -d -N1	7.478431518	0.783224459	7297173197	112	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om6_N256_E100k `-d`)	
+FAM	om6_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	8.018519168	0.203104666	1691295236	24	2	this session (om-controls-ab-results.tsv)	7.991148021
+FAM	om6_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	8.018519168	0.21421825	1691727906	24	2	this session (om-controls-ab-results.tsv)	7.991148021
+FAM	om6_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	8.018519168	0.218683917	1693545098	24	2	this session (om-controls-ab-results.tsv)	7.991148021
+FAM	om6_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.979716886	5.151373	41988377933	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.979716886	5.151373	41988377933	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.979716886	0.76577775	6670448007	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.979716886	0.844734458	6674136855	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.979716886	0.78310125	6665803992	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.979716886	0.76577775	6670448007	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.979716886	0.844734458	6674136855	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.979716886	0.78310125	6665803992	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.981023534	5.050203583	41984879471	118	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.981023534	5.050203583	41984879471	118	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.979716886	1.052405458	9308517180	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.979716886	1.163888416	9316528585	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.979716886	1.0737545	9309506327	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.979716886	1.052405458	9308517180	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.979716886	1.163888416	9316528585	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om6_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.979716886	1.0737545	9309506327	121	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	7.022804611	0.09436675	851648765	28	2	this session (om-controls-ab-results.tsv)	7.989224103
+FAM	om7_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	7.022804611	0.100959375	853905697	28	2	this session (om-controls-ab-results.tsv)	7.989224103
+FAM	om7_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	7.022804611	0.097299375	852605039	28	2	this session (om-controls-ab-results.tsv)	7.989224103
+FAM	om7_N256_E50k `-2d -N10`	old	1	-C -2d -N10	4.143277395	4.705508917	31195203484	7097	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om7_N256_E50k `-2d`)	
+FAM	om7_N256_E50k `-2d -N10`	new	1	-C -2d -N10	4.143277395	4.705508917	31195203484	7097	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om7_N256_E50k `-2d`)	
+FAM	om7_N256_E50k `-2d -N1`	new	1	-C -2d -N1	4.150222813	0.434528167	3268670190	7068	2	this session (om-controls-ab-results.tsv)	
+FAM	om7_N256_E50k `-2d -N1`	new	2	-C -2d -N1	4.150222813	0.426846708	3268761157	7068	2	this session (om-controls-ab-results.tsv)	
+FAM	om7_N256_E50k `-2d -N1`	new	3	-C -2d -N1	4.150222813	0.4304315	3265737553	7068	2	this session (om-controls-ab-results.tsv)	
+FAM	om7_N256_E50k `-d -N10`	old	1	-C -d -N10	3.201872271	7.571225792	65402928918	3424	6	carried: inputs-snapshot.tsv new arm (C10 overlapping om7_N256_E50k `-d`)	
+FAM	om7_N256_E50k `-d -N10`	new	1	-C -d -N10	3.201872271	7.571225792	65402928918	3424	6	carried: inputs-snapshot.tsv new arm (C10 overlapping om7_N256_E50k `-d`)	
+FAM	om7_N256_E50k `-d -N1`	old	1	-C -d -N1	3.21639819	0.633765042	5565120879	3417	5	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E50k `-d`)	
+FAM	om7_N256_E50k `-d -N1`	old	2	-C -d -N1	3.21639819	0.751810541	5577411391	3417	5	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E50k `-d`)	
+FAM	om7_N256_E50k `-d -N1`	old	3	-C -d -N1	3.21639819	0.630397167	5570121735	3417	5	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E50k `-d`)	
+FAM	om7_N256_E50k `-d -N1`	new	1	-C -d -N1	3.21639819	0.633765042	5565120879	3417	5	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E50k `-d`)	
+FAM	om7_N256_E50k `-d -N1`	new	2	-C -d -N1	3.21639819	0.751810541	5577411391	3417	5	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E50k `-d`)	
+FAM	om7_N256_E50k `-d -N1`	new	3	-C -d -N1	3.21639819	0.630397167	5570121735	3417	5	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E50k `-d`)	
+FAM	om7_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	9.387158058	0.109938292	949108129	28	2	this session (om-controls-ab-results.tsv)	7.992344954
+FAM	om7_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	9.387158058	0.109151292	950877174	28	2	this session (om-controls-ab-results.tsv)	7.992344954
+FAM	om7_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	9.387158058	0.112361833	951099840	28	2	this session (om-controls-ab-results.tsv)	7.992344954
+FAM	om7_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.957532546	2.992117167	23280441059	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.957532546	2.992117167	23280441059	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.957532546	0.750551292	5796468962	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.957532546	0.7547565	5797618498	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.957532546	0.700670125	5796123005	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.957532546	0.750551292	5796468962	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.957532546	0.7547565	5797618498	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.957532546	0.700670125	5796123005	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.957532546	3.094834	22372910915	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.957532546	3.094834	22372910915	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.957532546	0.829618458	6197841942	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.957532546	0.875680875	6205632812	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.957532546	0.764232542	6197330408	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.957532546	0.829618458	6197841942	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.957532546	0.875680875	6205632812	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.957532546	0.764232542	6197330408	112	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.957516072	0.145675625	1268220133	28	2	carried: inputs-snapshot.tsv new arm	7.993763018
+FAM	om7_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.957516072	0.171789041	1273819625	28	2	carried: inputs-snapshot.tsv new arm	7.993763018
+FAM	om7_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.957516072	0.14482175	1267884823	28	2	carried: inputs-snapshot.tsv new arm	7.993763018
+FAM	om7_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.957516072	0.145675625	1268220133	28	2	carried: inputs-snapshot.tsv new arm	7.993763018
+FAM	om7_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.957516072	0.171789041	1273819625	28	2	carried: inputs-snapshot.tsv new arm	7.993763018
+FAM	om7_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.957516072	0.14482175	1267884823	28	2	carried: inputs-snapshot.tsv new arm	7.993763018
+FAM	om7_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.88992089	7.864813041	69152573843	663	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om7_N256_E100k `-2d`)	
+FAM	om7_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.88992089	7.864813041	69152573843	663	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om7_N256_E100k `-2d`)	
+FAM	om7_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.889674586	1.873360292	17238195512	649	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E100k `-2d`)	
+FAM	om7_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.889674586	1.999504791	17237674828	649	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E100k `-2d`)	
+FAM	om7_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.889674586	1.803356875	17227131875	649	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E100k `-2d`)	
+FAM	om7_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.889674586	1.873360292	17238195512	649	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E100k `-2d`)	
+FAM	om7_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.889674586	1.999504791	17237674828	649	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E100k `-2d`)	
+FAM	om7_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.889674586	1.803356875	17227131875	649	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E100k `-2d`)	
+FAM	om7_N256_E100k `-d -N10`	old	1	-C -d -N10	6.88945591	9.51016325	82810296573	666	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om7_N256_E100k `-d`)	
+FAM	om7_N256_E100k `-d -N10`	new	1	-C -d -N10	6.88945591	9.51016325	82810296573	666	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om7_N256_E100k `-d`)	
+FAM	om7_N256_E100k `-d -N1`	old	1	-C -d -N1	7.192756466	0.800144459	7474774793	149	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E100k `-d`)	
+FAM	om7_N256_E100k `-d -N1`	old	2	-C -d -N1	7.192756466	0.982617209	7496634587	149	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E100k `-d`)	
+FAM	om7_N256_E100k `-d -N1`	old	3	-C -d -N1	7.192756466	0.805915458	7477626357	149	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E100k `-d`)	
+FAM	om7_N256_E100k `-d -N1`	new	1	-C -d -N1	7.192756466	0.800144459	7474774793	149	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E100k `-d`)	
+FAM	om7_N256_E100k `-d -N1`	new	2	-C -d -N1	7.192756466	0.982617209	7496634587	149	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E100k `-d`)	
+FAM	om7_N256_E100k `-d -N1`	new	3	-C -d -N1	7.192756466	0.805915458	7477626357	149	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om7_N256_E100k `-d`)	
+FAM	om7_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	8.132958621	0.294480041	1743723782	28	2	this session (om-controls-ab-results.tsv)	7.992395554
+FAM	om7_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	8.132958621	0.242052959	1742487748	28	2	this session (om-controls-ab-results.tsv)	7.992395554
+FAM	om7_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	8.132958621	0.216782333	1739520730	28	2	this session (om-controls-ab-results.tsv)	7.992395554
+FAM	om7_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.948827768	5.110079417	41198439026	166	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.948827768	5.110079417	41198439026	166	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.950842444	0.747220541	6359880898	168	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.950842444	0.839300042	6362510572	168	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.950842444	0.74133225	6359550800	168	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.950842444	0.747220541	6359880898	168	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.950842444	0.839300042	6362510572	168	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.950842444	0.74133225	6359550800	168	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.948827768	4.935368	41196808870	166	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.948827768	4.935368	41196808870	166	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.950842444	1.108604042	9088591128	168	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.950842444	1.22303125	9096531625	168	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.950842444	1.038245375	9087254926	168	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.950842444	1.108604042	9088591128	168	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.950842444	1.22303125	9096531625	168	2	carried: inputs-snapshot.tsv new arm	
+FAM	om7_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.950842444	1.038245375	9087254926	168	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	7.034226119	0.101324417	880328434	32	2	this session (om-controls-ab-results.tsv)	7.991346102
+FAM	om8_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	7.034226119	0.101427792	879269162	32	2	this session (om-controls-ab-results.tsv)	7.991346102
+FAM	om8_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	7.034226119	0.104866125	881608082	32	2	this session (om-controls-ab-results.tsv)	7.991346102
+FAM	om8_N256_E50k `-2d -N10`	old	1	-C -2d -N10	3.859069372	4.519686458	31580787131	7985	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om8_N256_E50k `-2d`)	
+FAM	om8_N256_E50k `-2d -N10`	new	1	-C -2d -N10	3.859069372	4.519686458	31580787131	7985	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om8_N256_E50k `-2d`)	
+FAM	om8_N256_E50k `-2d -N1`	new	1	-C -2d -N1	3.864684914	0.490129791	3670869352	7961	2	this session (om-controls-ab-results.tsv)	
+FAM	om8_N256_E50k `-2d -N1`	new	2	-C -2d -N1	3.864684914	0.60246525	3673148602	7961	2	this session (om-controls-ab-results.tsv)	
+FAM	om8_N256_E50k `-2d -N1`	new	3	-C -2d -N1	3.864684914	0.528091084	3675706334	7961	2	this session (om-controls-ab-results.tsv)	
+FAM	om8_N256_E50k `-d -N10`	old	1	-C -d -N10	2.883308449	8.08495475	69991160151	4367	5	carried: inputs-snapshot.tsv new arm (C10 overlapping om8_N256_E50k `-d`)	
+FAM	om8_N256_E50k `-d -N10`	new	1	-C -d -N10	2.883308449	8.08495475	69991160151	4367	5	carried: inputs-snapshot.tsv new arm (C10 overlapping om8_N256_E50k `-d`)	
+FAM	om8_N256_E50k `-d -N1`	old	1	-C -d -N1	2.885785338	0.926753875	8130003576	4371	5	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E50k `-d`)	
+FAM	om8_N256_E50k `-d -N1`	old	2	-C -d -N1	2.885785338	1.009741292	8142311068	4371	5	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E50k `-d`)	
+FAM	om8_N256_E50k `-d -N1`	old	3	-C -d -N1	2.885785338	0.911604875	8113304185	4371	5	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E50k `-d`)	
+FAM	om8_N256_E50k `-d -N1`	new	1	-C -d -N1	2.885785338	0.926753875	8130003576	4371	5	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E50k `-d`)	
+FAM	om8_N256_E50k `-d -N1`	new	2	-C -d -N1	2.885785338	1.009741292	8142311068	4371	5	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E50k `-d`)	
+FAM	om8_N256_E50k `-d -N1`	new	3	-C -d -N1	2.885785338	0.911604875	8113304185	4371	5	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E50k `-d`)	
+FAM	om8_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	9.614433321	0.119028333	973064750	32	2	this session (om-controls-ab-results.tsv)	7.994534803
+FAM	om8_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	9.614433321	0.1153505	974200907	32	2	this session (om-controls-ab-results.tsv)	7.994534803
+FAM	om8_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	9.614433321	0.117654166	974732096	32	2	this session (om-controls-ab-results.tsv)	7.994534803
+FAM	om8_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.978376075	2.878298041	22633793825	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.978376075	2.878298041	22633793825	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.978376075	0.639994583	5186580606	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.978376075	0.664941666	5200383886	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.978376075	0.630114875	5184788133	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.978376075	0.639994583	5186580606	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.978376075	0.664941666	5200383886	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.978376075	0.630114875	5184788133	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.978376075	2.858660292	21840211695	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.978376075	2.858660292	21840211695	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.978376075	0.679425792	5555958565	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.978376075	0.843715208	5563455288	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.978376075	0.677300417	5549878110	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.978376075	0.679425792	5555958565	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.978376075	0.843715208	5563455288	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.978376075	0.677300417	5549878110	77	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.966510195	0.137368875	1189264475	32	2	carried: inputs-snapshot.tsv new arm	7.994997224
+FAM	om8_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.966510195	0.15741975	1190830304	32	2	carried: inputs-snapshot.tsv new arm	7.994997224
+FAM	om8_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.966510195	0.138440292	1186089107	32	2	carried: inputs-snapshot.tsv new arm	7.994997224
+FAM	om8_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.966510195	0.137368875	1189264475	32	2	carried: inputs-snapshot.tsv new arm	7.994997224
+FAM	om8_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.966510195	0.15741975	1190830304	32	2	carried: inputs-snapshot.tsv new arm	7.994997224
+FAM	om8_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.966510195	0.138440292	1186089107	32	2	carried: inputs-snapshot.tsv new arm	7.994997224
+FAM	om8_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.873356654	8.395855416	72610278816	848	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om8_N256_E100k `-2d`)	
+FAM	om8_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.873356654	8.395855416	72610278816	848	2	carried: inputs-snapshot.tsv new arm (C2_10 overlapping om8_N256_E100k `-2d`)	
+FAM	om8_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.876045079	2.043167708	18623251584	864	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E100k `-2d`)	
+FAM	om8_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.876045079	2.175343208	18629275237	864	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E100k `-2d`)	
+FAM	om8_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.876045079	1.992881708	18618102520	864	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E100k `-2d`)	
+FAM	om8_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.876045079	2.043167708	18623251584	864	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E100k `-2d`)	
+FAM	om8_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.876045079	2.175343208	18629275237	864	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E100k `-2d`)	
+FAM	om8_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.876045079	1.992881708	18618102520	864	2	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E100k `-2d`)	
+FAM	om8_N256_E100k `-d -N10`	old	1	-C -d -N10	6.87278322	9.676140875	86688262217	868	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om8_N256_E100k `-d`)	
+FAM	om8_N256_E100k `-d -N10`	new	1	-C -d -N10	6.87278322	9.676140875	86688262217	868	2	carried: inputs-snapshot.tsv new arm (C10 overlapping om8_N256_E100k `-d`)	
+FAM	om8_N256_E100k `-d -N1`	old	1	-C -d -N1	6.938347922	0.8996745	7790090023	186	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E100k `-d`)	
+FAM	om8_N256_E100k `-d -N1`	old	2	-C -d -N1	6.938347922	0.9832665	7787991742	186	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E100k `-d`)	
+FAM	om8_N256_E100k `-d -N1`	old	3	-C -d -N1	6.938347922	0.829712625	7781809703	186	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E100k `-d`)	
+FAM	om8_N256_E100k `-d -N1`	new	1	-C -d -N1	6.938347922	0.8996745	7790090023	186	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E100k `-d`)	
+FAM	om8_N256_E100k `-d -N1`	new	2	-C -d -N1	6.938347922	0.9832665	7787991742	186	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E100k `-d`)	
+FAM	om8_N256_E100k `-d -N1`	new	3	-C -d -N1	6.938347922	0.829712625	7781809703	186	4	carried: inputs-snapshot.tsv new arm (C1 overlapping om8_N256_E100k `-d`)	
+FAM	om8_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	8.282251146	0.222269291	1768349262	32	2	this session (om-controls-ab-results.tsv)	7.99515376
+FAM	om8_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	8.282251146	0.218976958	1770082450	32	2	this session (om-controls-ab-results.tsv)	7.99515376
+FAM	om8_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	8.282251146	0.22236125	1767541275	32	2	this session (om-controls-ab-results.tsv)	7.99515376
+FAM	om8_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.984638887	5.045597459	40868044297	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.984638887	5.045597459	40868044297	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.984638887	0.73827575	6146444907	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.984638887	0.920409166	6153367977	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.984638887	0.748968167	6143392241	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.984638887	0.73827575	6146444907	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.984638887	0.920409166	6153367977	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.984638887	0.748968167	6143392241	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.985651781	4.912982875	40618539436	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.985651781	4.912982875	40618539436	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.984638887	0.996563875	8805112367	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.984638887	1.327940292	8816670552	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.984638887	0.996201	8800851973	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.984638887	0.996563875	8805112367	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.984638887	1.327940292	8816670552	203	2	carried: inputs-snapshot.tsv new arm	
+FAM	om8_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.984638887	0.996201	8800851973	203	2	carried: inputs-snapshot.tsv new arm	

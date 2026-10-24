@@ -520,7 +520,7 @@ InnerParallelThresholdRun runInnerParallelThresholdNetwork(const std::string& fl
   return { im.getModules(), im.codelength(), im.getIndexCodelength(), report.at("threads_used").get<unsigned long>() };
 }
 
-TEST_CASE("Recorded teleportation stays stable across trial counts for the directed fixture [fast][core][flow]")
+TEST_CASE("Recorded teleportation stays stable across trial counts for the directed fixture [fast][core][flow][columnar-contract]")
 {
   const auto oneTrial = runDirectedFixture("--recorded-teleportation --num-trials 1");
   const auto twoTrials = runDirectedFixture("--recorded-teleportation --num-trials 2");
@@ -531,7 +531,7 @@ TEST_CASE("Recorded teleportation stays stable across trial counts for the direc
   CHECK(oneTrial.indexCodelength == doctest::Approx(twoTrials.indexCodelength));
 }
 
-TEST_CASE("Directed to-nodes teleportation keeps the expected coarse partition [fast][core][flow]")
+TEST_CASE("Directed to-nodes teleportation keeps the expected coarse partition [fast][core][flow][columnar-contract]")
 {
   const auto result = runDirectedFixture("--to-nodes");
 
@@ -759,7 +759,7 @@ TEST_CASE("Regularized multilayer flow without self-links sums to 1 and balances
   }
 }
 
-TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [fast][core][flow]")
+TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [fast][core][flow][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags(
       "--directed --regularized --matchable-multilayer-ids 2 --no-infomap --two-level"));
@@ -772,7 +772,7 @@ TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [f
   infomap::test::checkRunSanity(im);
 }
 
-TEST_CASE("Regularized multilayer ego flow matches analytic prior-strength sample [fast][core][flow]")
+TEST_CASE("Regularized multilayer ego flow matches analytic prior-strength sample [fast][core][flow][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--directed --regularized --no-infomap --two-level"));
 
@@ -807,7 +807,7 @@ TEST_CASE("Regularized multilayer ego flow matches analytic prior-strength sampl
   }
 }
 
-TEST_CASE("Regularized multilayer asymmetric flow matches analytic prior-strength sample [fast][core][flow]")
+TEST_CASE("Regularized multilayer asymmetric flow matches analytic prior-strength sample [fast][core][flow][columnar-contract]")
 {
   const std::vector<MultilayerIntraLink> intraLinks = {
       { 1, 1, 2, 2.0 },
@@ -827,7 +827,7 @@ TEST_CASE("Regularized multilayer asymmetric flow matches analytic prior-strengt
   checkRegularizedMultilayerFlow(im, analyticRegularizedMultilayerFlow(intraLinks));
 }
 
-TEST_CASE("Regularized multilayer matchable state-id flow matches analytic prior-strength sample [fast][core][flow]")
+TEST_CASE("Regularized multilayer matchable state-id flow matches analytic prior-strength sample [fast][core][flow][columnar-contract]")
 {
   const std::vector<MultilayerIntraLink> intraLinks = {
       { 1, 10, 20, 1.0 },
@@ -1096,7 +1096,7 @@ TEST_CASE("Regularized multilayer flow requires compile-time feature [fast][core
 }
 #endif
 
-TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fast][core][flow]")
+TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fast][core][flow][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags(
       "--directed --regularized --no-infomap --cluster-data "
@@ -1254,7 +1254,7 @@ TEST_CASE("Precomputed flow rejects higher-order input without state flows [fast
       infomap::InfomapError);
 }
 
-TEST_CASE("Precomputed flow fixture remains runnable in C++ tests [fast][core][flow]")
+TEST_CASE("Precomputed flow fixture remains runnable in C++ tests [fast][core][flow][columnar-contract]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--flow-model precomputed"));
   infomap::test::readNetworkFixture(im, "twotriangles_flow.net");
@@ -1268,7 +1268,7 @@ TEST_CASE("Precomputed flow fixture remains runnable in C++ tests [fast][core][f
   infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
 }
 
-TEST_CASE("multilayer-relax-to-self reproduces spread's codelength bit-exactly [fast][core][flow][multilayer]")
+TEST_CASE("multilayer-relax-to-self reproduces spread's codelength bit-exactly [fast][core][flow][multilayer][columnar-contract]")
 {
   // Two communities (1,2,3) and (4,5,6) present in two layers, weakly bridged.
   std::vector<MultilayerIntraLink> intraLinks;
@@ -1303,7 +1303,7 @@ TEST_CASE("multilayer-relax-to-self reproduces spread's codelength bit-exactly [
   infomap::test::checkApproxCodelength(toself.second, spread.second, 1e-9);
 }
 
-TEST_CASE("multilayer-relax-to-self matches spread on a single-node overlap [fast][core][flow][multilayer]")
+TEST_CASE("multilayer-relax-to-self matches spread on a single-node overlap [fast][core][flow][multilayer][columnar-contract]")
 {
   // Two triangles sharing only the central ego node (1): layer 1 = {1,2,3},
   // layer 2 = {1,4,5}. The optimum splits the ego's two copies into the two
@@ -1851,6 +1851,141 @@ TEST_CASE("Ordinary bipartite runs are unaffected by the flow post-condition [fa
   // omitted redistribution was a uniform scale the projection cancelled -- but the
   // link flows were uniformly too small, which is what the codelength reads.
   infomap::test::checkApproxCodelength(directed.codelength(), 1.2649313331);
+}
+
+// The columnar leaf takes each node's enter and exit flow from the flow calculator as stored:
+// TOTAL boundary rates, the node's own link flow plus, under recorded teleportation, its
+// teleport exit t(1 - w) and enter (T - t)w. The two sides have to agree on when that part is
+// stored, and the stored value has to come from the links as scaled. Until the columnar levels
+// switched to total rates the leaf stripped the teleport part instead, and this test pinned the
+// link-only remainder: under rawdir with --recorded-teleportation the strip removed teleportation
+// that was never added (exit 0.013 short on modular_wd.net), and under --regularized with
+// --markov-time 2 a shortcut through node flow missed the scaled links by up to 0.036. Whatever
+// the flow options, the leaf's enter and exit flow is its own link flow plus, exactly when the
+// run records teleportation, its own teleport flow.
+TEST_CASE("Columnar leaf: total enter and exit flow is the leaf's own link plus teleport flow under every flow option (#1194, #1189) [fast][core][flow][columnar-contract]")
+{
+  const auto check = [](const std::string& network, const std::string& flags, bool undirectedClustering) {
+    INFO(network << " " << flags);
+    InfomapWrapper im(infomap::test::defaultFlags("--columnar --num-trials 1 " + flags));
+    im.readInputData(infomap::test::repoPath("examples/networks/" + network));
+    im.run();
+    const auto& leaf = im.columnarLeafInput();
+    REQUIRE(leaf.n == static_cast<int>(im.numLeafNodes()));
+    const bool tele = im.recordsTeleportation();
+    double totalTele = 0.0;
+    for (int i = 0; i < leaf.n; ++i)
+      totalTele += leaf.teleFlow[i];
+    for (int i = 0; i < leaf.n; ++i) {
+      double outFlow = 0.0;
+      double inFlow = 0.0;
+      for (int e = leaf.outStart[i]; e < leaf.outStart[i + 1]; ++e)
+        outFlow += leaf.outFlow[e];
+      for (int e = leaf.inStart[i]; e < leaf.inStart[i + 1]; ++e)
+        inFlow += leaf.inFlow[e];
+      // An undirected link crosses either way with half its flow.
+      double exitFlow = undirectedClustering ? (outFlow + inFlow) / 2 : outFlow;
+      double enterFlow = undirectedClustering ? (outFlow + inFlow) / 2 : inFlow;
+      if (tele) {
+        exitFlow += leaf.teleFlow[i] * (1.0 - leaf.teleWeight[i]);
+        enterFlow += (totalTele - leaf.teleFlow[i]) * leaf.teleWeight[i];
+      }
+      CHECK(std::abs(leaf.exit[i] - exitFlow) < 1e-12);
+      CHECK(std::abs(leaf.enter[i] - enterFlow) < 1e-12);
+    }
+  };
+  for (const char* flags : { "-d", "-d --recorded-teleportation", "-d --markov-time 2", "-d --regularized",
+                             "-d --regularized --markov-time 2", "-d --regularized --markov-time 0.5",
+                             "-d --regularized --variable-markov-time", "--flow-model undirdir --recorded-teleportation",
+                             "--flow-model outdirdir --recorded-teleportation", "--flow-model rawdir --recorded-teleportation",
+                             "--flow-model outdirdir --regularized", "--flow-model rawdir --regularized" })
+    check("modular_wd.net", flags, false);
+  for (const char* flags : { "", "--recorded-teleportation", "--regularized", "--regularized --markov-time 2", "--variable-markov-time" })
+    check("modular_w.net", flags, true);
+
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  // Regularized multilayer flow teleports within the walker's layer (#828): no global teleport
+  // flow, and each leaf carries one per-layer entry whose own teleport part is exit t(W_l - w)
+  // and enter (T_l - t)w against its layer's totals. The link part is the leaf's out and in
+  // flow even when clustering undirected: the regularized multilayer walk is computed on the
+  // directed state network, so a link's flow differs between its two directions.
+  const auto checkLayered = [](const std::string& network, const std::string& flags) {
+    INFO(network << " " << flags);
+    InfomapWrapper im(infomap::test::defaultFlags("--columnar --num-trials 1 " + flags));
+    im.readInputData(infomap::test::repoPath("examples/networks/" + network));
+    im.run();
+    const auto& leaf = im.columnarLeafInput();
+    REQUIRE(leaf.n == static_cast<int>(im.numLeafNodes()));
+    REQUIRE(leaf.layerStart.size() == static_cast<std::size_t>(leaf.n) + 1);
+    std::map<int, double> layerFlow, layerWeight;
+    for (std::size_t k = 0; k < leaf.layerId.size(); ++k) {
+      layerFlow[leaf.layerId[k]] += leaf.layerTeleFlow[k];
+      layerWeight[leaf.layerId[k]] += leaf.layerTeleWeight[k];
+    }
+    CHECK(layerFlow.size() > 1);
+    for (int i = 0; i < leaf.n; ++i) {
+      CHECK(leaf.teleFlow[i] == 0.0);
+      REQUIRE(leaf.layerStart[i + 1] - leaf.layerStart[i] == 1);
+      const int k = leaf.layerStart[i];
+      const int l = leaf.layerId[k];
+      double outFlow = 0.0;
+      double inFlow = 0.0;
+      for (int e = leaf.outStart[i]; e < leaf.outStart[i + 1]; ++e)
+        outFlow += leaf.outFlow[e];
+      for (int e = leaf.inStart[i]; e < leaf.inStart[i + 1]; ++e)
+        inFlow += leaf.inFlow[e];
+      double exitFlow = outFlow;
+      double enterFlow = inFlow;
+      exitFlow += leaf.layerTeleFlow[k] * (layerWeight[l] - leaf.layerTeleWeight[k]);
+      enterFlow += (layerFlow[l] - leaf.layerTeleFlow[k]) * leaf.layerTeleWeight[k];
+      CHECK(std::abs(leaf.exit[i] - exitFlow) < 1e-12);
+      CHECK(std::abs(leaf.enter[i] - enterFlow) < 1e-12);
+    }
+  };
+  for (const char* network : { "multilayer_intra.net", "multilayer_intra_inter.net" }) {
+    checkLayered(network, "--regularized");
+    checkLayered(network, "--regularized --directed");
+  }
+#endif
+}
+
+// Markov time scales the link flow the map equation codes, not the flow of the network: the
+// reported link flow is that of Markov time 1 (test/python/reference_flow.py). The branch
+// stored the scaled flow in the network, so the output reported it, and --markov-time 0 left
+// no link flow and failed as degenerate. The columnar leaf codes the scaled flow.
+TEST_CASE("Columnar: Markov time scales the coded link flow and leaves the reported link flow at Markov time 1 [fast][core][flow][columnar-contract]")
+{
+  const auto links = [](const std::string& network, const std::string& flags) {
+    InfomapWrapper im(infomap::test::defaultFlags("--columnar --num-trials 1 " + flags));
+    im.readInputData(infomap::test::repoPath("examples/networks/" + network));
+    im.run();
+    return im.getLinks(true);
+  };
+  for (const char* network : { "modular_wd.net", "modular_w.net" }) {
+    for (const char* model : { "-d", "", "--flow-model undirdir", "-d --regularized" }) {
+      const auto reference = links(network, model);
+      for (const char* markov : { "--markov-time 0.5", "--markov-time 2", "--markov-time 0", "--variable-markov-time" }) {
+        INFO(network << " " << model << " " << markov);
+        const auto scaled = links(network, std::string(model) + " " + markov);
+        REQUIRE(scaled.size() == reference.size());
+        for (const auto& [link, flow] : reference)
+          CHECK(std::abs(scaled.at(link) - flow) < 1e-12);
+      }
+    }
+  }
+
+  InfomapWrapper im(infomap::test::defaultFlags("--columnar --num-trials 1 -d --markov-time 2"));
+  im.readInputData(infomap::test::repoPath("examples/networks/modular_wd.net"));
+  im.run();
+  const auto reported = im.getLinks(true);
+  const auto& leaf = im.columnarLeafInput();
+  for (int i = 0; i < leaf.n; ++i) {
+    for (int e = leaf.outStart[i]; e < leaf.outStart[i + 1]; ++e) {
+      const auto source = im.network().nodeId(static_cast<unsigned int>(i));
+      const auto target = im.network().nodeId(static_cast<unsigned int>(leaf.outTarget[e]));
+      CHECK(std::abs(leaf.outFlow[e] - 2 * reported.at({ source, target })) < 1e-12);
+    }
+  }
 }
 
 } // namespace

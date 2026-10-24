@@ -136,10 +136,12 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
     // physical nodes defined also. Every module, not only the leaf modules:
     // removeSubModules makes a module of modules a leaf module, and
     // calcCodelengthOnModuleOfLeafNodes reads its physical nodes (#1209).
+    // The columnar engine never runs that search, so it aggregates the leaf
+    // modules only and skips the cost on every trial's tree (#1368).
     if (depth > 1) {
       for (auto it(root.begin_post_depth_first()); !it.isEnd(); ++it) {
         InfoNode& module = *it;
-        if (module.isLeaf() || &module == &root)
+        if (module.isLeaf() || &module == &root || (m_config.columnarSearch && !module.isLeafModule()))
           continue;
         std::map<unsigned int, double> physToFlow;
         for (auto& node : module) {
@@ -193,7 +195,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
       // whole network with reconstructed tree, every module as above
       for (auto it(root.begin_post_depth_first()); !it.isEnd(); ++it) {
         InfoNode& module = *it;
-        if (module.isLeaf() || &module == &root)
+        if (module.isLeaf() || &module == &root || (m_config.columnarSearch && !module.isLeafModule()))
           continue;
         std::map<unsigned int, double> physToFlow;
         for (auto& node : module) {

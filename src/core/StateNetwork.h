@@ -119,6 +119,9 @@ protected:
   mutable std::vector<unsigned int> m_linkTargets; // dense target indices
   mutable std::vector<double> m_linkWeights;
   mutable std::vector<double> m_linkFlows;
+  // The link flow the map equation codes: m_linkFlows scaled by the global and variable
+  // Markov time. Empty when neither is set, and then the coded flow is m_linkFlows itself.
+  mutable std::vector<double> m_codedLinkFlows;
   unsigned int m_numStateNodesFound = 0;
   double m_sumNodeWeight = 0.0;
   unsigned int m_numLinks = 0;
@@ -243,6 +246,18 @@ public:
     for (unsigned int s = 0; s < m_nodeIds.size(); ++s)
       for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e)
         fn(s, m_linkTargets[e], m_linkWeights[e], m_linkFlows[e]);
+  }
+  // The link flow the map equation codes. Markov time scales it, not the flow of the
+  // network: node and link flow stay those of Markov time 1, as the output reports them.
+  double codedLinkFlow(unsigned int e) const { return m_codedLinkFlows.empty() ? m_linkFlows[e] : m_codedLinkFlows[e]; }
+  // fn(srcIndex, targetIndex, weight, codedFlow) in (src,tgt) order.
+  template <typename Fn>
+  void forEachCodedLink(Fn&& fn) const
+  {
+    ensureFinalized();
+    for (unsigned int s = 0; s < m_nodeIds.size(); ++s)
+      for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e)
+        fn(s, m_linkTargets[e], m_linkWeights[e], codedLinkFlow(e));
   }
   // Duplicate links are summed only when they have the same direction, so a pair listed
   // as a b and b a stays two links here, though it is one link of an undirected network

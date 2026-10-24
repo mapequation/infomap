@@ -189,6 +189,16 @@ private:
   bool m_undirectedLinks = false;
 
 public:
+  // The divisor of the entropy bias correction: the weighted total degree, floored at the
+  // unweighted one because the correction is derived from discrete counts (a network whose
+  // average link weight is below 1 would otherwise be corrected too hard). Exposed because
+  // the columnar engine builds the same correction outside this objective and the two
+  // divisors have to be the one figure, not two copies of a rule that can drift.
+  static double entropyBiasTotalDegree(const StateNetwork& network, bool undirectedLinks);
+  // Count a pair listed as a b and b a once on undirected input (#1203). The multilayer
+  // expansion lists undirected links in both directions itself, so it keeps its count.
+  static bool countsUndirectedLinks(const Config& config) { return config.flowModel == FlowModel::undirected && !config.isMultilayerNetwork(); }
+
   void setNetworkProperties(const StateNetwork& network);
 
   // Copy the whole-network properties from a parent objective. Sub/super Infomap instances

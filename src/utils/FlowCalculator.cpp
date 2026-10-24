@@ -1238,19 +1238,15 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   const double intraStepNorm = unrecordedIntraTeleportation ? movingFlow : 1.0;
 
   linkIndex = 0;
+  // Only the teleportation part of the enter and exit flow, added below. finalize() adds the
+  // link part once the link flow is final, after Markov time has scaled it (#1287).
   enterFlow.assign(numNodes, 0.0);
   exitFlow.assign(numNodes, 0.0);
   for (auto& link : flowLinks) {
-    if (isInterLink[linkIndex++]) {
+    if (isInterLink[linkIndex++])
       link.flow = alphaInter[link.source] * nodeFlow[link.source] * link.flow;
-      // Need to add enter/exit flow to eventually collapse
-      exitFlow[link.source] += link.flow;
-      enterFlow[link.target] += link.flow;
-    } else {
+    else
       link.flow = intraLinkRate(link.source) * link.flow * intraStepFlow[link.source] / intraStepNorm;
-      exitFlow[link.source] += link.flow;
-      enterFlow[link.target] += link.flow;
-    }
   }
 
   nodeTeleportFlow.assign(numNodes, 0.0);
@@ -1514,6 +1510,88 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
   }
 }
 
+// Variable Markov time: rescale each (non-self) link's flow by a local Markov-time
+// factor derived from the local out-transition entropy (damping >= 0 uses the local
+// effective degree instead). This was historically applied to the per-instance
+// InfoNode edge flows in InfomapBase::generateSubNetwork; centralizing it here makes
+// the coded link flow -- and the enter/exit derived from it -- the single source of
+// truth. It runs once, before trials, so scaling the shared coded flow is idempotent,
+// unlike the per-trial InfoNode scaling it replaces. Entropy is taken from link WEIGHTS
+// (undirected: both endpoints of each incident link contribute), self-links excluded
+// (they are never InfoNode edges).
+void FlowCalculator::applyVariableMarkovTime(StateNetwork& network, const Config& config) noexcept
+{
+  const bool undirected = config.isUndirectedFlow();
+  const double damping = config.variableMarkovTimeDamping;
+  const double minLocalScale = config.variableMarkovTimeMinLocalScale;
+  // Count a pair listed as a b and b a once on undirected input, as --regularized and the
+  // entropy correction do (#1203, #1264). The multilayer expansion lists undirected links in
+  // both directions itself, so it keeps its count.
+  const bool undirectedLinks = config.flowModel == FlowModel::undirected && !config.isMultilayerNetwork();
+  const double totDegree = static_cast<double>(undirectedLinks ? network.sumUndirectedDegree() : network.sumDegree());
+  // No links means nothing to rescale, and maxFlow * totDegree = 0 would give linlog(0) = log2(0).
+  if (totDegree <= 0)
+    return;
+
+  // Per-node local out-transition entropy from link weights.
+  std::vector<double> sumW(numNodes, 0.0);
+  std::vector<double> negPlogpW(numNodes, 0.0); // -sum plogp(weight)
+  for (unsigned int s = 0; s < numNodes; ++s) {
+    for (unsigned int e = network.m_linkOffsets[s]; e < network.m_linkOffsets[s + 1]; ++e) {
+      const unsigned int t = network.m_linkTargets[e];
+      if (t == s)
+        continue; // self-link excluded
+      const double w = network.m_linkWeights[e];
+      sumW[s] += w;
+      negPlogpW[s] -= infomath::plogp(w);
+      if (undirected) {
+        sumW[t] += w;
+        negPlogpW[t] -= infomath::plogp(w);
+      }
+    }
+  }
+
+  std::vector<double> entropy(numNodes, 0.0);
+  double maxEntropy = 0.0;
+  double maxFlow = 0.0;
+  for (unsigned int i = 0; i < numNodes; ++i) {
+    entropy[i] = sumW[i] > 1e-9 ? (negPlogpW[i] + infomath::plogp(sumW[i])) / sumW[i] : 0.0;
+    maxEntropy = std::max(maxEntropy, entropy[i]);
+    maxFlow = std::max(maxFlow, nodeFlow[i]);
+  }
+
+  // maxFlow * totDegree is the largest effective degree. With the walk's own flow it is at
+  // least 1, but node weights as flow or the teleportation flow under --regularized can put
+  // it below, and its log would scale the links by a negative Markov time (#1191). Each link
+  // divides by a local scale floored at minLocalScale, so floor the largest one there too:
+  // below it every link was scaled by less than 1, and two disjoint links by 0 (#1334).
+  const double maxScale = std::max(minLocalScale, damping < 0 ? infomath::linlog(std::pow(2.0, maxEntropy), -damping) : infomath::linlog(std::max(1.0, maxFlow * totDegree), damping));
+
+  for (unsigned int s = 0; s < numNodes; ++s) {
+    const double localScale = damping < 0
+        ? infomath::linlog(std::pow(2.0, entropy[s]), -damping)
+        : infomath::linlog(std::max(minLocalScale, nodeFlow[s] * totDegree), damping);
+    for (unsigned int e = network.m_linkOffsets[s]; e < network.m_linkOffsets[s + 1]; ++e) {
+      const unsigned int t = network.m_linkTargets[e];
+      if (t == s)
+        continue; // self-link: not an InfoNode edge, left unscaled
+      // Under undirected flow a link takes the larger scale of its two ends. Keep it per link,
+      // so the scale does not depend on the links listed before it (#1264).
+      double linkLocalScale = localScale;
+      if (undirected) {
+        const double oppositeLocalScale = damping < 0
+            ? infomath::linlog(std::pow(2.0, entropy[t]), -damping)
+            : infomath::linlog(std::max(minLocalScale, nodeFlow[t] * totDegree), damping);
+        linkLocalScale = std::max(localScale, oppositeLocalScale);
+      }
+      const double localMarkovTimeScale = maxScale / std::max(minLocalScale, linkLocalScale);
+      network.m_codedLinkFlows[e] *= localMarkovTimeScale;
+    }
+  }
+
+  addFlowNote("Rescaled link flow with variable Markov time");
+}
+
 void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow) noexcept
 {
   // Hand the power iteration's outcome to the network so it outlives this calculator.
@@ -1652,7 +1730,10 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     normalize(nodeFlow);
   }
 
-  // Write back flow to network
+  // Write back flow to network. The network keeps the flow of Markov time 1, which the
+  // output reports. Markov time scales the link flow the map equation codes, kept beside it
+  // for the enter/exit derived below and for both engines, so no consumer rescales.
+  const double markovTime = config.markovTime;
   double sumNodeFlow = 0.0;
   double sumLinkFlow = 0.0;
   unsigned int linkIndex = 0;
@@ -1666,6 +1747,20 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     }
     sumLinkFlow += flow;
   });
+
+  network.m_codedLinkFlows.clear();
+  if (markovTime != 1.0 || config.variableMarkovTime) {
+    network.m_codedLinkFlows.reserve(network.m_linkFlows.size());
+    for (const double flow : network.m_linkFlows)
+      network.m_codedLinkFlows.push_back(flow * markovTime);
+  }
+
+  // Variable Markov time scales the (already globally Markov-scaled) coded link flow, so the
+  // enter/exit derived below is variable-Markov-scaled too. Runs after node flow is
+  // normalized (it reads node flow) and before enter/exit.
+  if (config.variableMarkovTime) {
+    applyVariableMarkovTime(network, config);
+  }
 
   double fractionIntraFlow = config.isMultilayerNetwork() && config.regularized ? 1 : 0;
 
@@ -1693,8 +1788,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
       const auto srcIdx = network.indexOfId(node.id);
       for (unsigned int e = network.m_linkOffsets[srcIdx]; e < network.m_linkOffsets[srcIdx + 1]; ++e) {
         if (network.m_linkTargets[e] == srcIdx) { // self-link: target index == source index
-          node.enterFlow -= network.m_linkFlows[e] / norm;
-          node.exitFlow -= network.m_linkFlows[e] / norm;
+          node.enterFlow -= network.codedLinkFlow(e) / norm;
+          node.exitFlow -= network.codedLinkFlow(e) / norm;
           break;
         }
       }
@@ -1707,9 +1802,14 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   // Enter/exit flow
   if (enterFlow.empty()) {
     if (!config.isUndirectedClustering() && !config.usesRegularizedFlow()) {
+      // Directed enter/exit flow. Mirrors initEnterExitFlow()'s directed branch so the
+      // network-stored enter/exit is authoritative: link flow adds to source-exit and
+      // target-enter, self-links excluded (they don't cross a module boundary, and are
+      // never InfoNode edges), plus the recorded-teleportation contribution.
       enterFlow.assign(numNodes, 0);
       exitFlow.assign(numNodes, 0);
-      double alpha = config.teleportationProbability;
+      const double alpha = config.teleportationProbability;
+      const double beta = 1.0 - alpha;
       double sumDanglingFlow = 0.0;
       for (unsigned int i = 0; i < numNodes; ++i) {
         if (nodeOutDegree[i] == 0) {
@@ -1720,16 +1820,46 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
         auto& node = nodeIt.second;
         const auto sourceIndex = nodeIndexMap[node.id];
         const auto srcIdx = network.indexOfId(node.id);
-        double danglingFlow = network.isDangling(srcIdx) ? node.flow : 0.0;
+        const double danglingFlow = network.isDangling(srcIdx) ? node.flow : 0.0;
         if (config.recordsTeleportation()) {
-          // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
-          exitFlow[sourceIndex] += alpha * node.flow * (1.0 - node.weight);
-          enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + (1 - alpha) * (sumDanglingFlow - danglingFlow)) * node.weight;
+          // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.weight)).
+          exitFlow[sourceIndex] += (alpha * node.flow + beta * danglingFlow) * (1.0 - node.weight);
+          enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + beta * (sumDanglingFlow - danglingFlow)) * node.weight;
         }
         for (unsigned int e = network.m_linkOffsets[srcIdx]; e < network.m_linkOffsets[srcIdx + 1]; ++e) {
-          const auto targetIndex = nodeIndexMap[network.nodeId(network.m_linkTargets[e])];
-          exitFlow[sourceIndex] += network.m_linkFlows[e];
-          enterFlow[targetIndex] += network.m_linkFlows[e];
+          const auto tgtCsr = network.m_linkTargets[e];
+          if (tgtCsr == srcIdx)
+            continue; // self-link: doesn't cross a module boundary, not an InfoNode edge
+          const auto targetIndex = nodeIndexMap[network.nodeId(tgtCsr)];
+          exitFlow[sourceIndex] += network.codedLinkFlow(e);
+          enterFlow[targetIndex] += network.codedLinkFlow(e);
+        }
+      }
+    } else if (config.isUndirectedClustering() && !config.usesRegularizedFlow()) {
+      // Undirected enter/exit flow: each undirected link contributes half its
+      // flow to both endpoints, on both the enter and exit side (a walker is
+      // equally likely to traverse it either way). Self-links are excluded --
+      // they don't cross a module boundary. This mirrors initEnterExitFlow()'s
+      // undirected branch so the enter/exit stored on the network is
+      // authoritative for the map equation (see the "always add enter/exit from
+      // the flow calculator" TODO there); markov-time / variable-markov-time
+      // rescaling still happens after flow, so those paths recompute downstream.
+      enterFlow.assign(numNodes, 0);
+      exitFlow.assign(numNodes, 0);
+      for (auto& nodeIt : network.m_nodes) {
+        auto& node = nodeIt.second;
+        const auto sourceIndex = nodeIndexMap[node.id];
+        const auto srcIdx = network.indexOfId(node.id);
+        for (unsigned int e = network.m_linkOffsets[srcIdx]; e < network.m_linkOffsets[srcIdx + 1]; ++e) {
+          const auto tgtCsr = network.m_linkTargets[e];
+          if (tgtCsr == srcIdx)
+            continue; // self-link: doesn't add to enter/exit flow
+          const auto targetIndex = nodeIndexMap[network.nodeId(tgtCsr)];
+          const double halfFlow = network.codedLinkFlow(e) / 2.0;
+          exitFlow[sourceIndex] += halfFlow;
+          exitFlow[targetIndex] += halfFlow;
+          enterFlow[sourceIndex] += halfFlow;
+          enterFlow[targetIndex] += halfFlow;
         }
       }
     } else if (config.usesRegularizedFlow() && !config.isMultilayerNetwork()) {
@@ -1748,7 +1878,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
           if (network.m_linkTargets[e] == srcIdx)
             continue;
           const auto targetIndex = nodeIndexMap[network.nodeId(network.m_linkTargets[e])];
-          const double flow = undirectedLinks ? network.m_linkFlows[e] / 2 : network.m_linkFlows[e];
+          const double flow = undirectedLinks ? network.codedLinkFlow(e) / 2 : network.codedLinkFlow(e);
           exitFlow[sourceIndex] += flow;
           enterFlow[targetIndex] += flow;
           if (undirectedLinks) {
@@ -1756,6 +1886,23 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
             enterFlow[sourceIndex] += flow;
           }
         }
+      }
+    }
+  } else {
+    // Only the regularized multilayer flow sets enter and exit flow before this point, and
+    // only their teleportation part. Add the coded link flow, which global and variable
+    // Markov time have scaled. A self-link has the same physical node at both ends, so the
+    // multilayer flow takes it for an inter-layer link, but it never crosses a module
+    // boundary.
+    for (auto& nodeIt : network.m_nodes) {
+      const auto sourceIndex = nodeIndexMap[nodeIt.second.id];
+      const auto srcIdx = network.indexOfId(nodeIt.second.id);
+      for (unsigned int e = network.m_linkOffsets[srcIdx]; e < network.m_linkOffsets[srcIdx + 1]; ++e) {
+        if (network.m_linkTargets[e] == srcIdx)
+          continue;
+        const auto targetIndex = nodeIndexMap[network.nodeId(network.m_linkTargets[e])];
+        exitFlow[sourceIndex] += network.codedLinkFlow(e);
+        enterFlow[targetIndex] += network.codedLinkFlow(e);
       }
     }
   }
