@@ -10,6 +10,7 @@
 
 #include <atomic>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -799,6 +800,7 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(timingJson.find("\"thread_source\":\"") != std::string::npos);
   CHECK(timingJson.find("\"thread_source\":\"\"") == std::string::npos); // value is non-empty
   CHECK(timingJson.find("\"network\":{\"nodes\":") != std::string::npos);
+  CHECK(timingJson.find("\"directed\":false") != std::string::npos);
   CHECK(timingJson.find("\"timing\":{") != std::string::npos);
   CHECK(timingJson.find("\"flow_calculation_s\":") != std::string::npos);
   CHECK(timingJson.find("\"init_network_s\":") != std::string::npos);
@@ -816,6 +818,48 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(timingJson.find("\"memory\":{\"rss_peak_mb\":") != std::string::npos);
 
   removeFiles(paths);
+}
+
+TEST_CASE("undirdir keeps its links directed, and the run report, summary and parser say so [fast][core][lifecycle][output]")
+{
+  // undirdir computes the steady state as if the links were undirected, then takes one
+  // directed power step: every link stays directed as given, so 1 2 and 2 1 are two links.
+  const std::string links = "1 2 1\n2 1 3\n2 3 1\n3 1 1\n3 4 1\n4 5 1\n5 6 1\n6 4 1\n";
+  const auto runUndirdir = [&](const std::string& heading, std::string& timingJson) {
+    const std::vector<std::string> paths = { "undirdir_links.net", "undirdir_timing.json" };
+    removeFiles(paths);
+    {
+      std::ofstream network(paths[0]);
+      network << heading << "\n"
+              << links;
+    }
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      // Not defaultFlags: it carries --silent, which mutes the summary and the notes.
+      InfomapWrapper im("--seed 7 --num-trials 1 --no-file-output --flow-model undirdir --timing-json " + paths[1]);
+      im.readInputData(paths[0]);
+      im.run();
+    }
+    timingJson = infomap::test::readTextFile(paths[1]);
+    removeFiles(paths);
+    return captured.str();
+  };
+  const auto directionLine = [](const std::string& log) {
+    const auto start = log.find("Direction");
+    return start == std::string::npos ? std::string() : log.substr(start, log.find('\n', start) - start);
+  };
+
+  std::string timingJson;
+  const auto arcsLog = runUndirdir("*Arcs", timingJson);
+  CHECK(timingJson.find("\"network\":{\"nodes\":6,\"links\":8,\"directed\":true}") != std::string::npos);
+  CHECK(directionLine(arcsLog).find("directed") != std::string::npos);
+  CHECK(directionLine(arcsLog).find("undirected") == std::string::npos);
+  CHECK(arcsLog.find("undirected steady state, directed links") != std::string::npos);
+  CHECK(arcsLog.find("parsed as undirected") == std::string::npos);
+
+  const auto edgesLog = runUndirdir("*Edges", timingJson);
+  CHECK(edgesLog.find("Links marked as undirected but parsed as directed.") != std::string::npos);
 }
 
 TEST_CASE("Timing report counts the threads a run started [fast][core][lifecycle][output][openmp]")

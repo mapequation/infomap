@@ -13,10 +13,13 @@
 #include <fstream>
 #include <functional>
 #include <map>
+#include <memory>
 #include <random>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #ifdef _OPENMP
@@ -92,38 +95,118 @@ unsigned int findStateIndex(const std::vector<AnalyticStateFlow>& states, unsign
   throw std::logic_error("Missing analytic multilayer state");
 }
 
-AnalyticMultilayerFlow analyticRegularizedMultilayerFlow(const std::vector<MultilayerIntraLink>& intraLinks)
+// Mirrors calcDirectedRegularizedMultilayerFlow for a network without self-link
+// suppression. With skipAbsentNodes the prior spans only what each layer holds, the
+// way --multilayer-skip-absent-nodes builds the state network; otherwise every layer
+// holds every physical node. The two agree whenever the input fills the grid.
+AnalyticMultilayerFlow analyticRegularizedMultilayerFlow(const std::vector<MultilayerIntraLink>& intraLinks, bool skipAbsentNodes = false, double intraStrength = 1.0, double interStrength = 1.0)
 {
   std::map<unsigned int, unsigned int> layers;
   std::map<unsigned int, unsigned int> physicalIds;
+  std::set<std::pair<unsigned int, unsigned int>> observed;
   for (const auto& link : intraLinks) {
     layers.emplace(link.layer, layers.size());
     physicalIds.emplace(link.source, physicalIds.size());
     physicalIds.emplace(link.target, physicalIds.size());
+    observed.emplace(link.layer, link.source);
+    observed.emplace(link.layer, link.target);
   }
 
   std::vector<AnalyticStateFlow> states;
   states.reserve(layers.size() * physicalIds.size());
   for (const auto& layer : layers) {
     for (const auto& physicalId : physicalIds) {
-      states.push_back({ layer.first, physicalId.first, 0.0 });
+      if (!skipAbsentNodes || observed.count({ layer.first, physicalId.first }) > 0) {
+        states.push_back({ layer.first, physicalId.first, 0.0 });
+      }
     }
   }
 
   const auto numStates = states.size();
   const auto numLayers = layers.size();
   const auto numPhysicalIds = physicalIds.size();
-  const double intraPriorOutWeight = std::log(static_cast<double>(numPhysicalIds)) / static_cast<double>(numLayers);
-  const double interLinkWeight = std::log(static_cast<double>(numLayers)) / static_cast<double>(numLayers);
-  const double interOutWeight = interLinkWeight * static_cast<double>(numLayers);
+
+  // How many nodes a layer holds, and how many layers hold a node.
+  std::map<unsigned int, unsigned int> numNodesInLayer;
+  std::map<unsigned int, unsigned int> numLayersOfPhysNode;
+  for (const auto& state : states) {
+    ++numNodesInLayer[state.layer];
+    ++numLayersOfPhysNode[state.physicalId];
+  }
 
   std::vector<double> sOut(numStates, 0.0);
+  std::vector<double> sIn(numStates, 0.0);
+  std::vector<unsigned int> kOut(numStates, 0);
+  std::vector<unsigned int> kIn(numStates, 0);
   std::vector<std::vector<std::pair<unsigned int, double>>> intraProb(numStates);
   for (const auto& link : intraLinks) {
     const auto source = findStateIndex(states, link.layer, link.source);
     const auto target = findStateIndex(states, link.layer, link.target);
     sOut[source] += link.weight;
+    ++kOut[source];
+    sIn[target] += link.weight;
+    ++kIn[target];
     intraProb[source].push_back({ target, link.weight });
+  }
+
+  // Continuous configuration model, per layer: c_ij = (sum_kappa/sum_sigma) u_out(i) u_in(j).
+  std::map<unsigned int, double> minUOut;
+  std::map<unsigned int, double> minUIn;
+  for (unsigned int i = 0; i < numStates; ++i) {
+    const auto layer = states[i].layer;
+    if (kOut[i] > 0) {
+      const double u = sOut[i] / kOut[i];
+      auto it = minUOut.find(layer);
+      minUOut[layer] = it == minUOut.end() ? u : std::min(it->second, u);
+    }
+    if (kIn[i] > 0) {
+      const double u = sIn[i] / kIn[i];
+      auto it = minUIn.find(layer);
+      minUIn[layer] = it == minUIn.end() ? u : std::min(it->second, u);
+    }
+  }
+
+  std::vector<double> uOut(numStates, 0.0);
+  std::vector<double> uIn(numStates, 0.0);
+  std::map<unsigned int, double> sumUIn;
+  std::map<unsigned int, double> sumDegree;
+  std::map<unsigned int, double> sumStrength;
+  std::map<unsigned int, double> sumSOut;
+  for (unsigned int i = 0; i < numStates; ++i) {
+    const auto layer = states[i].layer;
+    uOut[i] = kOut[i] == 0 ? (minUOut.count(layer) ? minUOut.at(layer) : 1.0) : sOut[i] / kOut[i];
+    uIn[i] = kIn[i] == 0 ? (minUIn.count(layer) ? minUIn.at(layer) : 1.0) : sIn[i] / kIn[i];
+    sumUIn[layer] += uIn[i];
+    sumDegree[layer] += kIn[i] + kOut[i];
+    sumStrength[layer] += sIn[i] + sOut[i];
+    sumSOut[layer] += sOut[i];
+  }
+
+  std::vector<double> intraPriorOutWeight(numStates, 0.0);
+  std::vector<double> teleportWeight(numStates, 0.0);
+  std::vector<double> interOutWeight(numStates, 0.0);
+  std::vector<std::vector<unsigned int>> interTargets(numStates);
+  for (unsigned int i = 0; i < numStates; ++i) {
+    const auto layer = states[i].layer;
+    const auto numLayersForNode = numLayersOfPhysNode.at(states[i].physicalId);
+    const double lambdaIntra = intraStrength * std::log(static_cast<double>(numPhysicalIds)) / (static_cast<double>(numLayersForNode) * numPhysicalIds);
+    const double invMeanWeight = sumStrength.at(layer) > 0 ? sumDegree.at(layer) / sumStrength.at(layer) : 1.0;
+
+    intraPriorOutWeight[i] = lambdaIntra * invMeanWeight * uOut[i] * sumUIn.at(layer);
+    if (intraStrength == 0.0) {
+      // No prior to spread: teleportation falls back to the unregularized model and
+      // follows the layer's out-link weights.
+      teleportWeight[i] = sumSOut.at(layer) > 0 ? sOut[i] / sumSOut.at(layer) : 1.0 / numNodesInLayer.at(layer);
+    } else {
+      teleportWeight[i] = sumUIn.at(layer) > 0 ? uIn[i] / sumUIn.at(layer) : 1.0 / numNodesInLayer.at(layer);
+    }
+    // A node in a single layer has no inter-layer prior: ln(1) = 0.
+    interOutWeight[i] = numLayersForNode < 2 ? 0.0 : interStrength * std::log(static_cast<double>(numLayersForNode));
+    for (unsigned int j = 0; j < numStates; ++j) {
+      if (states[j].physicalId == states[i].physicalId) {
+        interTargets[i].push_back(j);
+      }
+    }
   }
   for (unsigned int source = 0; source < numStates; ++source) {
     if (sOut[source] == 0.0) {
@@ -137,8 +220,16 @@ AnalyticMultilayerFlow analyticRegularizedMultilayerFlow(const std::vector<Multi
   std::vector<double> alpha(numStates, 0.0);
   std::vector<double> alphaInter(numStates, 0.0);
   for (unsigned int i = 0; i < numStates; ++i) {
-    alpha[i] = sOut[i] == 0.0 ? 1.0 : intraPriorOutWeight / (intraPriorOutWeight + sOut[i]);
-    alphaInter[i] = interOutWeight / (interOutWeight + sOut[i] + intraPriorOutWeight);
+    alpha[i] = sOut[i] == 0.0 ? 1.0 : intraPriorOutWeight[i] / (intraPriorOutWeight[i] + sOut[i]);
+    double intraOutTotal = sOut[i] + intraPriorOutWeight[i];
+    if (intraStrength == 0.0 && kOut[i] == 0) {
+      // The unrecorded teleportation replaces the missing out-links, so it carries the
+      // out-strength of a typical node of the layer against the inter-layer step.
+      const auto layer = states[i].layer;
+      intraOutTotal = sumSOut.at(layer) / numNodesInLayer.at(layer);
+    }
+    const double sumOut = interOutWeight[i] + intraOutTotal;
+    alphaInter[i] = sumOut == 0.0 ? 0.0 : interOutWeight[i] / sumOut;
   }
 
   std::vector<double> stateFlow(numStates, 1.0 / static_cast<double>(numStates));
@@ -152,9 +243,12 @@ AnalyticMultilayerFlow analyticRegularizedMultilayerFlow(const std::vector<Multi
     std::fill(layerTeleFlow.begin(), layerTeleFlow.end(), 0.0);
 
     for (unsigned int source = 0; source < numStates; ++source) {
-      for (const auto& layer : layers) {
-        const auto target = findStateIndex(states, layer.first, states[source].physicalId);
-        unrecordedInterFlow[target] += alphaInter[source] * stateFlow[source] / static_cast<double>(numLayers);
+      const auto& targets = interTargets[source];
+      if (interOutWeight[source] == 0.0) {
+        continue;
+      }
+      for (const auto target : targets) {
+        unrecordedInterFlow[target] += alphaInter[source] * stateFlow[source] / static_cast<double>(targets.size());
       }
     }
 
@@ -165,7 +259,7 @@ AnalyticMultilayerFlow analyticRegularizedMultilayerFlow(const std::vector<Multi
 
     for (unsigned int i = 0; i < numStates; ++i) {
       const auto layerIndex = layers.at(states[i].layer);
-      nextFlow[i] += layerTeleFlow[layerIndex] / static_cast<double>(numPhysicalIds);
+      nextFlow[i] += layerTeleFlow[layerIndex] * teleportWeight[i];
     }
 
     for (unsigned int source = 0; source < numStates; ++source) {
@@ -187,6 +281,39 @@ AnalyticMultilayerFlow analyticRegularizedMultilayerFlow(const std::vector<Multi
     stateFlow = nextFlow;
     if (error < 1e-15 && iteration >= 50) {
       break;
+    }
+  }
+
+  if (intraStrength == 0.0) {
+    // Teleportation is unrecorded here, so a visit is an intra-layer link step: take one
+    // last step without teleportation and renormalize to the flow that moves along links.
+    std::vector<double> interStep(numStates, 0.0);
+    for (unsigned int source = 0; source < numStates; ++source) {
+      const auto& targets = interTargets[source];
+      if (interOutWeight[source] == 0.0) {
+        continue;
+      }
+      for (const auto target : targets) {
+        interStep[target] += alphaInter[source] * stateFlow[source] / static_cast<double>(targets.size());
+      }
+    }
+
+    std::vector<double> intraStepFlow(numStates, 0.0);
+    double movingFlow = 0.0;
+    for (unsigned int i = 0; i < numStates; ++i) {
+      intraStepFlow[i] = (1.0 - alphaInter[i]) * stateFlow[i] + interStep[i];
+      if (kOut[i] > 0) {
+        movingFlow += intraStepFlow[i];
+      }
+    }
+
+    if (movingFlow > 0.0) {
+      std::fill(stateFlow.begin(), stateFlow.end(), 0.0);
+      for (unsigned int source = 0; source < numStates; ++source) {
+        for (const auto& link : intraProb[source]) {
+          stateFlow[link.first] += (1.0 - alpha[source]) * link.second * intraStepFlow[source] / movingFlow;
+        }
+      }
     }
   }
 
@@ -219,11 +346,16 @@ void checkRegularizedMultilayerFlow(InfomapWrapper& im, const AnalyticMultilayer
     expectedStateFlows[{ stateFlow.layer, stateFlow.physicalId }] = stateFlow.flow;
   }
 
+  unsigned int numStates = 0;
   for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
     const auto& node = *it;
     const auto expectedFlow = expectedStateFlows.at({ node.layerId, node.physicalId });
     CHECK(node.data.flow == doctest::Approx(expectedFlow).epsilon(1e-10));
+    ++numStates;
   }
+  // Catches a state node the model should not have built, which an .at() lookup over
+  // the expected set cannot see.
+  CHECK(numStates == expectedStateFlows.size());
 }
 
 std::array<double, 3> solve3x3(std::array<std::array<double, 3>, 3> coefficients, std::array<double, 3> rhs)
@@ -558,31 +690,72 @@ TEST_CASE("Regularization strength 0 matches its small-strength limit with dangl
   }
 }
 
+TEST_CASE("Multilayer skip-absent-nodes needs a prior to restrict [fast][core][flow]")
+{
+  CHECK_THROWS_WITH_AS(
+      InfomapWrapper(infomap::test::defaultFlags("--multilayer-skip-absent-nodes --two-level")),
+      "--multilayer-skip-absent-nodes requires --regularized",
+      std::runtime_error);
+}
+
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-// examples/networks/multilayer_intra_inter.net -- a network we ship -- fails its
-// flow-imbalance check under --regularized. The imbalance itself is unresolved
-// (#1019 keeps that separate), but the failure has to arrive as an error the
-// caller can handle: calcDirectedRegularizedMultilayerFlow was noexcept, so the
-// throw called std::terminate and the process died on SIGABRT with a raw
-// libc++abi line instead of Infomap's own message.
+// examples/networks/multilayer_intra_inter.net -- a network we ship -- used to fail
+// its flow-imbalance check under --regularized (#1019). Its layers hold 3 of the 5
+// physical nodes each, while the flow model spread teleportation over all 5, so each
+// layer kept only 3/5 of the teleport flow it handed out and the rest vanished. The
+// model now reads the per-layer node count off the state network it is given, which
+// is what an *Intra/*Inter input builds: nodes only where the data puts them.
 //
-// Note what happens if the noexcept comes back: this test does not fail, it
-// aborts the whole test binary. That is louder than a failed assertion, not
-// quieter, and it is the only way to guard a terminate.
-TEST_CASE("A flow imbalance under regularized multilayer is thrown, not terminated [fast][core][flow]")
+// The throw itself has to stay reachable as an error the caller can handle:
+// calcDirectedRegularizedMultilayerFlow was noexcept, so a throw called
+// std::terminate and the process died on SIGABRT with a raw libc++abi line instead
+// of Infomap's own message. If the noexcept comes back, a future imbalance aborts
+// the whole test binary rather than failing an assertion.
+TEST_CASE("Regularized multilayer flow balances over each layer's own nodes [fast][core][flow]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--regularized --two-level"));
   im.readInputData(infomap::test::repoPath("examples/networks/multilayer_intra_inter.net"));
 
-  CHECK_THROWS_AS(im.run(), std::runtime_error);
+  CHECK_NOTHROW(im.run());
+  infomap::test::checkRunSanity(im);
 
-  try {
-    im.run();
-    FAIL("expected the flow imbalance to be reported");
-  } catch (const std::runtime_error& e) {
-    // The number is the imbalance and is not asserted -- it belongs to the
-    // unresolved half of the issue and would pin this test to today's value.
-    CHECK(std::string(e.what()).find("Total flow differs from 1") != std::string::npos);
+  // Only the 6 (node, layer) pairs the input mentions, and i is the one node in both
+  // layers. Flow summing to 1 is what the imbalance check would have caught.
+  double sumFlow = 0.0;
+  unsigned int numStates = 0;
+  for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+    sumFlow += (*it).data.flow;
+    ++numStates;
+  }
+  CHECK(numStates == 6);
+  CHECK(sumFlow == doctest::Approx(1.0).epsilon(1e-12));
+}
+
+TEST_CASE("Regularized multilayer flow without self-links sums to 1 and balances each state (#1363) [fast][core][flow]")
+{
+  // --no-self-links inflates a state's teleportation rate to alpha / (1 - w) and leaves out
+  // the part that lands on the state itself. The power iteration left it out of the state's
+  // flow instead of its intra-step flow, so on multilayer_intra.net the total drifted from 1
+  // and the run stopped. The link flows written after it followed the links at 1 - alpha with
+  // the inflated rate, short of the walk's 1 - alpha (1 - w), so on multilayer_intra_inter.net
+  // a state's enter and exit flow differed by up to 0.01.
+  for (const std::string network : { "multilayer_intra.net", "multilayer_intra_inter.net" }) {
+    for (const std::string flags : { "--regularized --no-self-links", "--regularized --no-self-links --directed" }) {
+      CAPTURE(network);
+      CAPTURE(flags);
+      InfomapWrapper im(infomap::test::defaultFlags(flags + " --no-infomap --two-level"));
+      im.readInputData(infomap::test::repoPath("examples/networks/" + network));
+      REQUIRE_NOTHROW(im.run());
+
+      double sumFlow = 0.0;
+      double maxImbalance = 0.0;
+      for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+        sumFlow += (*it).data.flow;
+        maxImbalance = std::max(maxImbalance, std::abs((*it).data.enterFlow - (*it).data.exitFlow));
+      }
+      CHECK(sumFlow == doctest::Approx(1.0).epsilon(1e-12));
+      CHECK(maxImbalance < 1e-12);
+    }
   }
 }
 
@@ -670,6 +843,201 @@ TEST_CASE("Regularized multilayer matchable state-id flow matches analytic prior
   im.run();
 
   checkRegularizedMultilayerFlow(im, analyticRegularizedMultilayerFlow(intraLinks));
+}
+
+TEST_CASE("Multilayer skip-absent-nodes flow matches analytic prior-strength sample [fast][core][flow]")
+{
+  // Node 2 is in both layers, node 3 only in layer 1 and node 4 only in layer 2.
+  const std::vector<MultilayerIntraLink> intraLinks = {
+      { 1, 1, 2, 2.0 },
+      { 1, 2, 1, 1.0 },
+      { 1, 1, 3, 1.0 },
+      { 1, 3, 1, 1.0 },
+      { 2, 1, 2, 1.0 },
+      { 2, 2, 4, 3.0 },
+      { 2, 4, 1, 1.0 },
+  };
+
+  InfomapWrapper im(infomap::test::defaultFlags(
+      "--directed --regularized --multilayer-skip-absent-nodes --no-infomap --two-level"));
+  addMultilayerIntraLinks(im, intraLinks);
+
+  im.run();
+
+  checkRegularizedMultilayerFlow(im, analyticRegularizedMultilayerFlow(intraLinks, true));
+}
+
+TEST_CASE("Multilayer skip-absent-nodes drops the state nodes a layer never observes [fast][core][flow]")
+{
+  const std::vector<MultilayerIntraLink> intraLinks = {
+      { 1, 1, 2, 1.0 },
+      { 1, 2, 1, 1.0 },
+      { 1, 1, 3, 1.0 },
+      { 1, 3, 1, 1.0 },
+      { 2, 1, 2, 1.0 },
+      { 2, 2, 1, 1.0 },
+  };
+
+  auto stateNodes = [&intraLinks](const std::string& extraFlags) {
+    InfomapWrapper im(infomap::test::defaultFlags(
+        "--directed --regularized --no-infomap --two-level " + extraFlags));
+    addMultilayerIntraLinks(im, intraLinks);
+    im.run();
+
+    std::set<std::pair<unsigned int, unsigned int>> states;
+    double sumFlow = 0.0;
+    for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+      states.emplace((*it).layerId, (*it).physicalId);
+      sumFlow += (*it).data.flow;
+    }
+    CHECK(sumFlow == doctest::Approx(1.0).epsilon(1e-12));
+    return states;
+  };
+
+  // Node 3 has no link in layer 2. By default it is assumed to be there but
+  // unobserved, so the prior still gives it a state node and a share of the flow.
+  const auto assumedPresent = stateNodes("");
+  CHECK(assumedPresent.size() == 6);
+  CHECK(assumedPresent.count({ 2, 3 }) == 1);
+
+  // Told that the absence is real, the prior spans only what layer 2 holds.
+  const auto absent = stateNodes("--multilayer-skip-absent-nodes");
+  CHECK(absent.size() == 5);
+  CHECK(absent.count({ 2, 3 }) == 0);
+}
+
+TEST_CASE("Separate regularization strengths match analytic prior-strength samples [fast][core][flow]")
+{
+  const std::vector<MultilayerIntraLink> intraLinks = {
+      { 1, 1, 2, 3.0 },
+      { 1, 2, 1, 1.0 },
+      { 1, 1, 3, 1.0 },
+      { 1, 3, 1, 1.0 },
+      { 2, 1, 2, 1.0 },
+      { 2, 2, 3, 5.0 },
+      { 2, 3, 1, 1.0 },
+  };
+
+  auto run = [&intraLinks](const std::string& extraFlags) {
+    auto im = std::make_unique<InfomapWrapper>(infomap::test::defaultFlags(
+        "--directed --regularized --no-infomap --two-level " + extraFlags));
+    addMultilayerIntraLinks(*im, intraLinks);
+    im->run();
+    return im;
+  };
+
+  SUBCASE("no intra-layer prior")
+  {
+    auto im = run("--intra-regularization-strength 0");
+    checkRegularizedMultilayerFlow(*im, analyticRegularizedMultilayerFlow(intraLinks, false, 0.0, 1.0));
+  }
+
+  SUBCASE("no inter-layer prior")
+  {
+    auto im = run("--inter-regularization-strength 0");
+    checkRegularizedMultilayerFlow(*im, analyticRegularizedMultilayerFlow(intraLinks, false, 1.0, 0.0));
+  }
+
+  SUBCASE("the two strengths scale independently")
+  {
+    auto im = run("--intra-regularization-strength 0.5 --inter-regularization-strength 2");
+    checkRegularizedMultilayerFlow(*im, analyticRegularizedMultilayerFlow(intraLinks, false, 0.5, 2.0));
+  }
+
+  SUBCASE("they compose with the overall strength")
+  {
+    // Halving both parts has to land exactly where halving the whole prior lands.
+    auto split = run("--intra-regularization-strength 0.5 --inter-regularization-strength 0.5");
+    auto whole = run("--regularization-strength 0.5");
+    CHECK(split->codelength() == doctest::Approx(whole->codelength()).epsilon(1e-12));
+  }
+}
+
+TEST_CASE("A zero intra-layer prior records no teleport flow at all [fast][core][flow]")
+{
+  // Every state node here has an observed out-link in its own layer.
+  const std::vector<MultilayerIntraLink> connected = {
+      { 1, 1, 2, 1.0 },
+      { 1, 2, 1, 1.0 },
+      { 2, 1, 2, 1.0 },
+      { 2, 2, 1, 1.0 },
+  };
+
+  // Node 3 is in layer 1 only, and only as a link target, so its layer-1 state node has
+  // no out-link to follow.
+  auto dangling = connected;
+  dangling.push_back({ 1, 1, 3, 1.0 });
+
+  struct LayerTeleportUse {
+    double sumFlow = 0.0;
+    unsigned int nodesCarryingData = 0;
+  };
+
+  auto layerTeleportUse = [](const std::vector<MultilayerIntraLink>& links, const std::string& extraFlags) {
+    InfomapWrapper im(infomap::test::defaultFlags(
+        "--directed --regularized --multilayer-skip-absent-nodes --no-infomap --two-level " + extraFlags));
+    addMultilayerIntraLinks(im, links);
+    im.run();
+
+    LayerTeleportUse use;
+    for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+      const auto& layerFlows = (*it).layerTeleFlowData();
+      if (!layerFlows.empty()) {
+        ++use.nodesCarryingData;
+      }
+      for (const auto& layerFlow : layerFlows) {
+        use.sumFlow += layerFlow.teleportFlow;
+      }
+    }
+    return use;
+  };
+
+  auto sumLayerTeleportFlow = [&layerTeleportUse](const std::vector<MultilayerIntraLink>& links, const std::string& extraFlags) {
+    return layerTeleportUse(links, extraFlags).sumFlow;
+  };
+
+  // With the prior on, every state node teleports a little.
+  CHECK(sumLayerTeleportFlow(connected, "") > 1e-6);
+  CHECK(sumLayerTeleportFlow(dangling, "") > 1e-6);
+
+  // Turning the intra-layer prior off leaves nothing recorded to teleport. Where every
+  // node has an out-link that is because none teleports at all; where one does not, its
+  // flow is still passed on, but as unrecorded teleportation the codelength is not
+  // charged for, exactly as in the unregularized flow model. Either way the per-layer
+  // teleport bookkeeping is all zeros and could be skipped.
+  CHECK(sumLayerTeleportFlow(connected, "--intra-regularization-strength 0") == doctest::Approx(0.0).epsilon(1e-12));
+  CHECK(sumLayerTeleportFlow(dangling, "--intra-regularization-strength 0") == doctest::Approx(0.0).epsilon(1e-12));
+
+  // Nothing teleports, so the per-layer bookkeeping is not built at all: no node carries
+  // layer teleport data, which is what saves the allocation and the per-move lookup.
+  CHECK(layerTeleportUse(connected, "").nodesCarryingData > 0);
+  CHECK(layerTeleportUse(connected, "--intra-regularization-strength 0").nodesCarryingData == 0);
+  CHECK(layerTeleportUse(dangling, "--intra-regularization-strength 0").nodesCarryingData == 0);
+}
+
+TEST_CASE("Skipping the per-layer teleport bookkeeping leaves the partition unchanged [fast][core][flow]")
+{
+  // Two triangles joined by a weak link, in two layers, so the optimizer has a real
+  // choice of modules to make while the bookkeeping is skipped.
+  std::vector<MultilayerIntraLink> intraLinks;
+  for (unsigned int layer = 1; layer <= 2; ++layer) {
+    for (const auto& pair : std::vector<std::pair<unsigned int, unsigned int>> {
+             { 1, 2 }, { 2, 3 }, { 3, 1 }, { 4, 5 }, { 5, 6 }, { 6, 4 } }) {
+      intraLinks.push_back({ layer, pair.first, pair.second, 1.0 });
+      intraLinks.push_back({ layer, pair.second, pair.first, 1.0 });
+    }
+    intraLinks.push_back({ layer, 3, 4, 0.01 });
+    intraLinks.push_back({ layer, 4, 3, 0.01 });
+  }
+
+  InfomapWrapper im(infomap::test::defaultFlags(
+      "--directed --regularized --intra-regularization-strength 0 --two-level"));
+  addMultilayerIntraLinks(im, intraLinks);
+
+  CHECK_NOTHROW(im.run());
+  infomap::test::checkRunSanity(im);
+  // The optimizer still separates the two triangles without the teleport terms.
+  CHECK(im.numTopModules() == 2);
 }
 
 TEST_CASE("Inner parallelization with regularized multilayer input falls back to stable serial optimization [fast][core][flow][openmp]")
@@ -970,6 +1338,63 @@ TEST_CASE("multilayer-relax-to-self matches spread on a single-node overlap [fas
   infomap::test::checkApproxCodelength(toself.second, spread.second, 1e-9);
 }
 
+TEST_CASE("multilayer-relax-to-self gives spread's state flow for every teleportation mode (#1313, #1314) [fast][core][flow][multilayer]")
+{
+  // Node 3 is missing from layer 3. With recorded teleportation to links the
+  // teleport weights must be spread's in-weights (#1313), and an explicit
+  // inter-layer link to node 3 in layer 3 must be dropped as spread drops it,
+  // not lose the flow that crosses it (#1314).
+  const std::vector<MultilayerIntraLink> intraLinks {
+    { 1, 1, 2, 1.0 }, { 1, 2, 3, 2.0 }, { 1, 3, 1, 1.0 }, { 1, 3, 4, 0.5 }, { 1, 4, 1, 1.0 },
+    { 2, 1, 3, 1.0 }, { 2, 3, 2, 1.0 }, { 2, 2, 1, 3.0 }, { 2, 2, 4, 1.0 }, { 2, 4, 3, 2.0 },
+    { 3, 4, 1, 1.0 }, { 3, 1, 2, 2.0 }, { 3, 2, 4, 1.0 },
+  };
+  const std::vector<MultilayerIntraLink> interLinks {
+    { 1, 1, 2, 0.5 }, { 2, 1, 1, 0.5 }, { 2, 4, 1, 1.0 }, { 1, 3, 3, 0.3 }, // layer, node, target layer, weight
+  };
+
+  const auto flows = [&](const std::string& flags, bool withInterLinks) {
+    InfomapWrapper im(infomap::test::defaultFlags("--no-infomap --two-level " + flags));
+    addMultilayerIntraLinks(im, intraLinks);
+    if (withInterLinks) {
+      for (const auto& link : interLinks) {
+        im.addMultilayerInterLink(link.layer, link.source, link.target, link.weight);
+      }
+    }
+    im.run();
+    std::map<std::pair<unsigned int, unsigned int>, double> stateFlows;
+    for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+      stateFlows[{ it->layerId, it->physicalId }] += it->data.flow;
+    }
+    return std::make_pair(stateFlows, im.codelength());
+  };
+
+  for (const std::string model : { "--directed", "--flow-model undirected" }) {
+    for (const std::string teleportation : { "", "--to-nodes", "--recorded-teleportation", "--recorded-teleportation --to-nodes" }) {
+      for (const bool withInterLinks : { false, true }) {
+        const auto flags = model + " " + teleportation;
+        CAPTURE(flags);
+        CAPTURE(withInterLinks);
+        const auto spread = flows(flags, withInterLinks);
+        const auto toself = flows(flags + " --multilayer-relax-to-self", withInterLinks);
+
+        double sumFlow = 0.0;
+        for (const auto& state : toself.first) {
+          sumFlow += state.second;
+        }
+        CHECK(sumFlow == doctest::Approx(1.0).epsilon(1e-12));
+        CHECK(toself.first.size() == spread.first.size());
+        for (const auto& state : spread.first) {
+          const auto it = toself.first.find(state.first);
+          REQUIRE(it != toself.first.end());
+          CHECK(it->second == doctest::Approx(state.second).epsilon(1e-10));
+        }
+        infomap::test::checkApproxCodelength(toself.second, spread.second, 1e-9);
+      }
+    }
+  }
+}
+
 // Multilayer input with intra-layer links expands them to both directions and runs the directed
 // model under undirected flow, and undirdir was replaced by that flow with only a -v note (#1233).
 // It now warns. outdirdir and rawdir compute their own flow, and *Multilayer input keeps undirdir.
@@ -1013,6 +1438,51 @@ TEST_CASE("undirdir on multilayer input with intra-layer links warns that it has
   }
 
   CHECK(run("undirdir", readFile("examples/networks/multilayer.net")).first.find(warning) == std::string::npos);
+}
+
+// Undirected flow walks every state link in both directions, which a memory network's states
+// cannot take: a backward step lands in a state with the wrong memory. State input that is not
+// multilayer warns under the two models with undirected flow, and keeps running them (#1384).
+TEST_CASE("undirected flow on state input that is not multilayer warns about memory networks (#1384) [fast][core][flow]")
+{
+  const std::string warning = "flow model walks every state link in both directions";
+  const auto warns = [&warning](const std::string& model, const std::function<void(InfomapWrapper&)>& addInput) {
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      // Not defaultFlags: it carries --silent, which mutes the warning under test.
+      InfomapWrapper im("--seed 1 --num-trials 1 --no-file-output --flow-model " + model);
+      addInput(im);
+      im.run();
+      CHECK(std::string(flowModelToString(im.flowModel)) == model);
+    }
+    return captured.str().find(warning) != std::string::npos;
+  };
+  const auto readFile = [](const std::string& path) {
+    return [path](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath(path)); };
+  };
+  // The second-order path 1 -> 2 -> 3 and back, with each state named by its memory.
+  const auto memoryStates = [](InfomapWrapper& im) {
+    im.addStateNode(12, 2);
+    im.addStateNode(23, 3);
+    im.addStateNode(32, 2);
+    im.addStateNode(21, 1);
+    im.addLink(12, 23);
+    im.addLink(23, 32);
+    im.addLink(32, 21);
+  };
+
+  for (const char* model : { "undirected", "undirdir" }) {
+    CAPTURE(model);
+    CHECK(warns(model, readFile("examples/networks/states.net")));
+    CHECK(warns(model, memoryStates));
+    CHECK_FALSE(warns(model, readFile("examples/networks/multilayer.net")));
+    CHECK_FALSE(warns(model, readFile("examples/networks/twotriangles.net")));
+  }
+  for (const char* model : { "directed", "outdirdir", "rawdir" }) {
+    CAPTURE(model);
+    CHECK_FALSE(warns(model, readFile("examples/networks/states.net")));
+  }
 }
 
 // The canonical bipartite shape: every link runs primary -> feature, as in
@@ -1097,6 +1567,103 @@ TEST_CASE("Bipartite teleportation runs when the feature side links back [fast][
   infomap::test::checkRunSanity(im);
   CHECK(im.codelength() > 0.0);
   CHECK(im.network().flowConverged());
+}
+
+std::map<unsigned int, double> networkNodeFlows(InfomapWrapper& im)
+{
+  std::map<unsigned int, double> flows;
+  for (const auto& node : im.network().nodes()) {
+    flows[node.first] = node.second.flow;
+  }
+  return flows;
+}
+
+std::map<std::pair<unsigned int, unsigned int>, double> networkLinkFlows(InfomapWrapper& im)
+{
+  std::map<std::pair<unsigned int, unsigned int>, double> flows;
+  const auto& network = im.network();
+  network.forEachLink([&](unsigned int s, unsigned int t, double, double flow) {
+    flows[{ network.nodeId(s), network.nodeId(t) }] = flow;
+  });
+  return flows;
+}
+
+TEST_CASE("Bipartite teleportation gives feature -> primary links the flow through the feature (#1310) [fast][core][flow]")
+{
+  // Primary nodes 1 and 2 both link to feature 3, which links back to 1 with weight 3 and
+  // to 2 with weight 1, so every two-step move ends on 1 with probability 3/4. Recorded
+  // teleportation to links teleports by the in-weight from features, also (3/4, 1/4), so
+  // the primary flow is p = (3/4, 1/4) and feature 3 gets beta = 0.85 of it. Every link
+  // carries the flow of its half of the move, doubled for Markov time 2: 2 * 0.85 * 3/4 =
+  // 1.275 and 2 * 0.85 * 1/4 = 0.425 on both sides. The feature -> primary links had
+  // zero flow, as the feature flow was reset before it was used.
+  //
+  // Unrecorded teleportation teleports by out-weight, (1/2, 1/2), so p = 0.15 * (1/2, 1/2) +
+  // 0.85 * (3/4, 1/4) = (0.7125, 0.2875), and the node flow is one more move of it, (3/4,
+  // 1/4). The links carry p without beta: 2 * 0.7125, 2 * 0.2875, 2 * 3/4 and 2 * 1/4.
+  struct Expected {
+    std::string flags;
+    std::map<unsigned int, double> nodes;
+    std::map<std::pair<unsigned int, unsigned int>, double> links;
+  };
+  for (const auto& expected : {
+           Expected { "--recorded-teleportation", { { 1, 0.75 }, { 2, 0.25 }, { 3, 0.0 } }, { { { 1, 3 }, 1.275 }, { { 2, 3 }, 0.425 }, { { 3, 1 }, 1.275 }, { { 3, 2 }, 0.425 } } },
+           Expected { "", { { 1, 0.75 }, { 2, 0.25 }, { 3, 0.0 } }, { { { 1, 3 }, 1.425 }, { { 2, 3 }, 0.575 }, { { 3, 1 }, 1.5 }, { { 3, 2 }, 0.5 } } },
+       }) {
+    CAPTURE(expected.flags);
+    InfomapWrapper im(infomap::test::defaultFlags(std::string("-N 1 --seed 7 --directed --bipartite-teleportation ") + expected.flags));
+    im.network().setBipartiteStartId(3);
+    im.addLink(1, 3);
+    im.addLink(2, 3);
+    im.addLink(3, 1, 3.0);
+    im.addLink(3, 2, 1.0);
+    im.run();
+
+    const auto nodes = networkNodeFlows(im);
+    for (const auto& node : expected.nodes) {
+      CAPTURE(node.first);
+      CHECK(nodes.at(node.first) == doctest::Approx(node.second).epsilon(1e-10));
+    }
+    const auto links = networkLinkFlows(im);
+    REQUIRE(links.size() == expected.links.size());
+    for (const auto& link : expected.links) {
+      CAPTURE(link.first.first);
+      CAPTURE(link.first.second);
+      CHECK(links.at(link.first) == doctest::Approx(link.second).epsilon(1e-10));
+    }
+  }
+}
+
+TEST_CASE("Unrecorded bipartite teleportation normalizes node flow with a dangling primary node (#1309) [fast][core][flow]")
+{
+  // The two-step walk runs 1 -> 2 -> 3, and 3 is dangling. Teleportation lands on nodes 1
+  // and 2 in equal parts, and on node 3 too with --to-nodes, so either way p2 = p1 + beta * p1.
+  // Unrecorded node flow is the flow of one more move, p1 into 2 and p2 into 3, normalized:
+  // 1 / (2 + beta) and (1 + beta) / (2 + beta). It summed to p1 + p2 = 1 - p3. The links
+  // carry the same flow, doubled for Markov time 2.
+  const double beta = 0.85;
+  const double flow2 = 1 / (2 + beta);
+  const double flow3 = (1 + beta) / (2 + beta);
+  for (const auto* flags : { "", "--to-nodes" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(infomap::test::defaultFlags(std::string("-N 1 --seed 7 --directed --bipartite-teleportation ") + flags));
+    im.network().setBipartiteStartId(4);
+    im.addLink(1, 4);
+    im.addLink(2, 5);
+    im.addLink(4, 2);
+    im.addLink(5, 3);
+    im.run();
+
+    const auto nodes = networkNodeFlows(im);
+    CHECK(nodes.at(1) == doctest::Approx(0.0));
+    CHECK(nodes.at(2) == doctest::Approx(flow2).epsilon(1e-10));
+    CHECK(nodes.at(3) == doctest::Approx(flow3).epsilon(1e-10));
+    const auto links = networkLinkFlows(im);
+    CHECK(links.at({ 1, 4 }) == doctest::Approx(2 * flow2).epsilon(1e-10));
+    CHECK(links.at({ 4, 2 }) == doctest::Approx(2 * flow2).epsilon(1e-10));
+    CHECK(links.at({ 2, 5 }) == doctest::Approx(2 * flow3).epsilon(1e-10));
+    CHECK(links.at({ 5, 3 }) == doctest::Approx(2 * flow3).epsilon(1e-10));
+  }
 }
 
 TEST_CASE("Reaching tolerance on the last allowed iteration counts as converged [fast][core][flow]")

@@ -4,9 +4,9 @@ name: Threads
 # comparison with an OpenMP build and 4 threads (make test-python-threads,
 # #1258). The PR test legs run the oracles with whatever thread count the
 # runner gives and leave out the slow sweeps and the comparison, which needs
-# networks of up to 10,000 nodes. TSan (tsan.yml) checks the same paths for
+# networks of up to 10,000 nodes. TSan (_tsan.yml) checks the same paths for
 # races, not results. A separate workflow so it never gates PRs while it
-# settles in, but it goes RED on a failure. Same pattern as tsan.yml -- do NOT
+# settles in, but it goes RED on a failure. Same pattern as fuzz.yml -- do NOT
 # add continue-on-error, that would mask the alert. PRs run it only when they
 # touch the thread setup; src/ changes are covered by the weekly run.
 on:
@@ -37,12 +37,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
 
       - name: Install editable package
         # GCC with OpenMP, the default build.
