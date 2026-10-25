@@ -93,10 +93,10 @@ def _teleportation(G, teleportation_probability, options):
 
     Only a directed flow model reads it. Like the native functions, an
     undirected graph accepts any value, and it never reaches the engine (which
-    would reject a nan); a caller who names a flow model gets it checked and
-    passed on.
+    would reject a nan); a caller who names a flow model, or asks for directed
+    flow with the ``directed`` shorthand, gets it checked and passed on.
     """
-    if not G.is_directed() and "flow_model" not in options:
+    if not (G.is_directed() or "flow_model" in options or options.get("directed")):
         return {}
     if not 0 <= teleportation_probability <= 1:
         raise ValueError("teleportation_probability must be between 0 and 1")
@@ -126,9 +126,10 @@ def _run(G, weight, seed, num_trials, teleportation, infomap_kwargs, *, two_leve
     net, options = _network(G, weight, infomap_kwargs)
     if seed is not None:
         # NetworkX passes a random-state object (py_random_state); Infomap's C++
-        # RNG needs an integer seed, so draw one from it.
+        # RNG needs an integer seed, so draw one from it. The engine takes seeds
+        # from 1 up, so 0 is not a draw it can use.
         if hasattr(seed, "randint"):
-            seed = seed.randint(0, 2**31 - 1)
+            seed = seed.randint(1, 2**31 - 1)
         options.setdefault("seed", int(seed))
     options.setdefault("num_trials", num_trials)
     options.update(teleportation)

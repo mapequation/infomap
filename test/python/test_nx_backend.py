@@ -138,6 +138,14 @@ def test_networkx_arguments_are_forwarded_to_the_run(monkeypatch):
     )
     assert "teleportation_probability" not in captured
 
+    # The directed shorthand asks for directed flow on an undirected graph, so
+    # teleportation_probability is forwarded then too, as with a flow_model.
+    captured.clear()
+    backend.BackendInterface.infomap_communities(
+        nx.karate_club_graph(), directed=True, teleportation_probability=0.2
+    )
+    assert captured["teleportation_probability"] == 0.2
+
 
 @pytest.mark.parametrize(
     ("multi", "simple"),
@@ -378,6 +386,40 @@ def test_backend_graphs_without_edges_match_native(G):
         if func is nx.community.infomap_partitions:
             native, backend = list(native), list(backend)
         assert backend == native
+
+
+@pytest.mark.parametrize("offset", [-10, 2**40], ids=["negative", "too-large"])
+def test_backend_int_labels_outside_the_engine_id_range(offset):
+    """Int labels the engine cannot take as node ids (negative, or past 32 bits)
+    are enumerated internally, so all three functions work and return the
+    original labels, as native does."""
+    G = nx.Graph([(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3), (2, 3)])
+    G = nx.relabel_nodes(G, lambda node: node + offset)
+
+    native = nx.community.infomap_communities(G, backend="networkx", seed=1)
+    backend = nx.community.infomap_communities(G, backend="infomap", seed=1)
+    assert _normalized(backend) == _normalized(native)
+    for partition in nx.community.infomap_partitions(G, backend="infomap", seed=1):
+        assert nx.community.is_partition(G, partition)
+    assert nx.community.map_equation(G, native, backend="infomap") == pytest.approx(
+        nx.community.map_equation(G, native, backend="networkx"), abs=1e-6
+    )
+
+
+def test_backend_seed_draw_is_a_valid_engine_seed():
+    """NetworkX hands the backend a random state, and the seed drawn from it
+    must be one the engine accepts. Engine seeds start at 1."""
+    import random
+
+    class LowestDraw(random.Random):
+        def randint(self, a, b):
+            return a
+
+    G = nx.karate_club_graph()
+    partition = nx.community.infomap_communities(
+        G, backend="infomap", seed=LowestDraw()
+    )
+    assert nx.community.is_partition(G, partition)
 
 
 def test_backend_emits_no_deprecation_warnings():
