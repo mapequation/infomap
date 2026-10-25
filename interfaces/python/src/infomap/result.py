@@ -932,23 +932,36 @@ class Result(_ResultWritersMixin):
         )
 
     def multilevel_modules(self, *, states: bool = False) -> dict[int, tuple[int, ...]]:
-        """Map ``node_id`` (or ``state_id`` when ``states``) to a tuple of
-        ``module_id``, one per module level from the top down.
+        """Map each node to its module on every level, from the top down.
+
+        Read the tuples column by column: the first entries give the partition
+        at the top level, the second entries the partition one level down, and
+        so on. Module ids are numbered per level, so the same id can mean
+        different modules on different levels.
+
+        For example, this tree has a top module 2 with no submodules::
+
+            root
+            ├── 1
+            │   ├── 1:1   nodes a, b
+            │   └── 1:2   nodes c, d
+            └── 2         nodes e, f
+
+        and gives::
+
+            {a: (1, 1), b: (1, 1), c: (1, 2), d: (1, 2), e: (2, 3), f: (2, 3)}
+
+        The top level is {a, b, c, d} and {e, f}; the level below is {a, b},
+        {c, d} and {e, f}.
 
         Equivalent to the legacy ``Infomap.get_multilevel_modules(states)``.
 
-        Entry ``i`` is the node's module in the flat partition at level
-        ``i + 1``, the same id :meth:`modules` gives for that level. Module ids
-        are numbered across the whole level, not within the parent module.
-
-        Every tuple has one entry per module level of the deepest branch, so
-        the tuples are not tree paths when leaf modules sit at different
-        depths. A branch that ends above the deepest level repeats its leaf
-        module at each deeper level, under that level's id. For example, in a
-        three-level tree, a leaf module that sits directly under the root
-        appears as ``(4, 8)``: it is module 4 at the top level and module 8 at
-        the level below. For the tree itself, read ``node.path`` from
-        :meth:`nodes`.
+        Notes
+        -----
+        The tuples are not tree paths. All tuples have the same length, so a
+        module without submodules appears again on each lower level, under
+        that level's id: ``e`` gets ``(2, 3)`` although its tree path is
+        ``(2,)``. For tree paths, read ``node.path`` from :meth:`nodes`.
 
         Parameters
         ----------
@@ -959,12 +972,12 @@ class Result(_ResultWritersMixin):
         Returns
         -------
         dict of int to tuple of int
-            ``{node_or_state_id: (level_1_module_id, ..., level_n_module_id)}``,
-            all of the same length.
+            One tuple per node, all of the same length: one module id per
+            level, top level first.
 
         See Also
         --------
-        modules : Module ids for a single level.
+        modules : The partition at a single level.
         nodes : Leaf nodes with their tree ``path``.
         """
         self._check_generation()
