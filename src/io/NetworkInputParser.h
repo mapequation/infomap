@@ -32,7 +32,9 @@ namespace infomap {
 namespace input {
 
   struct NetworkInputOptions {
-    bool undirectedFlow = true;
+    // Whether the run treats the links as undirected: only the undirected flow model.
+    // undirdir has an undirected steady state but keeps every link directed as given.
+    bool undirectedLinks = true;
     unsigned int matchableMultilayerIds = 0;
   };
 
@@ -461,13 +463,13 @@ namespace input {
         } else if (!shouldIgnoreHeading && headingLowerCase == "*states") {
           heading = parseStateNodes(input, heading, sink);
         } else if (!shouldIgnoreHeading && headingLowerCase == "*edges") {
-          if (!options.undirectedFlow) {
+          if (!options.undirectedLinks) {
             Log() << "\n";
             Console::note(0, "Links marked as undirected but parsed as directed.");
           }
           heading = parseLinks(input, sink, progress);
         } else if (!shouldIgnoreHeading && headingLowerCase == "*arcs") {
-          if (options.undirectedFlow) {
+          if (options.undirectedLinks) {
             Log() << "\n";
             Console::note(0, "Links marked as directed but parsed as undirected.");
           }
@@ -495,7 +497,7 @@ namespace input {
   template <typename Sink>
   void parseNetworkInput(const std::string& filename, Sink& sink, const NetworkInputOptions& options)
   {
-    Console::detail(1, "parsing {} network from {}", options.undirectedFlow ? "undirected" : "directed", filename);
+    Console::detail(1, "parsing {} network from {}", options.undirectedLinks ? "undirected" : "directed", filename);
     detail::parseNetwork(filename, detail::generalValidHeadings(), detail::generalIgnoredHeadings(), sink, options);
   }
 

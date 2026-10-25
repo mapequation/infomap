@@ -15,7 +15,7 @@ if not (SCRIPTS / "check_reference_edits.py").is_file():
     pytest.skip("scripts not available in this layout", allow_module_level=True)
 sys.path.insert(0, str(SCRIPTS))
 
-from check_reference_edits import changed, mixed  # noqa: E402
+from check_reference_edits import changed, edited, mixed  # noqa: E402
 
 
 def test_a_reference_edit_with_a_core_edit_is_refused():
@@ -78,3 +78,53 @@ def test_a_move_counts_at_both_paths(tmp_path, moved, to):
     _git(tmp_path, "commit", "-qam", "change")
     references, core = mixed(changed("base", cwd=str(tmp_path)))
     assert references and core
+
+
+def _write(repo: Path, path: str, text: str) -> None:
+    (repo / path).parent.mkdir(parents=True, exist_ok=True)
+    (repo / path).write_text(text)
+
+
+def test_a_sync_of_master_into_a_branch_passes_and_a_branch_edit_does_not(tmp_path):
+    # master edits an oracle and the core in separate pull requests; a long-lived
+    # branch then merges master in, bringing both, which it did not edit itself.
+    reference, core = "test/python/reference_flow.py", "src/core/Flow.cpp"
+    _write(tmp_path, reference, "oracle\n")
+    _write(tmp_path, core, "core\n")
+    _git(tmp_path, "init", "-q", "-b", "master")
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "base")
+    _git(tmp_path, "switch", "-qc", "branch")
+    _write(tmp_path, "src/core/Branch.cpp", "branch\n")
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "branch work")
+    _git(tmp_path, "switch", "-q", "master")
+    _write(tmp_path, reference, "oracle, revised\n")
+    _git(tmp_path, "commit", "-qam", "oracle edit")
+    _write(tmp_path, core, "core, fixed\n")
+    _git(tmp_path, "commit", "-qam", "core fix")
+
+    _git(tmp_path, "switch", "-qc", "sync", "branch")
+    _git(tmp_path, "merge", "-q", "--no-ff", "-m", "sync", "master")
+    paths = changed("branch", cwd=str(tmp_path))
+    assert mixed(paths) == ([reference], [core])
+    assert mixed(edited(paths, "master", cwd=str(tmp_path))) == ([], [])
+
+    _git(tmp_path, "switch", "-qc", "change", "branch")
+    _write(tmp_path, reference, "oracle, edited on the branch\n")
+    _write(tmp_path, "src/core/Branch.cpp", "branch, fixed\n")
+    _git(tmp_path, "commit", "-qam", "both")
+    paths = changed("branch", cwd=str(tmp_path))
+    assert mixed(edited(paths, "master", cwd=str(tmp_path))) == (
+        [reference],
+        ["src/core/Branch.cpp"],
+    )
+
+
+def test_without_the_upstream_branch_every_changed_file_counts(tmp_path):
+    _write(tmp_path, "a.txt", "a\n")
+    _git(tmp_path, "init", "-q", "-b", "base")
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "base")
+    paths = ["test/python/reference_flow.py", "src/core/Flow.cpp"]
+    assert edited(paths, "origin/no-such-branch", cwd=str(tmp_path)) == paths

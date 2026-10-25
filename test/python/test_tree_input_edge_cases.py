@@ -15,7 +15,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from infomap import run
+from infomap import InfomapError, run
 from reference_codelength import Leaf, Partition, codelength, tree_depth
 
 pytestmark = pytest.mark.fast
@@ -164,13 +164,13 @@ def test_repeated_physical_row_keeps_the_first(tmp_path):
     _assert_partition(_run(tree), dict(THREE_LEVEL))
 
 
-@pytest.mark.xfail(
-    strict=True, reason="#1335: a repeated state id in a multi-level tree crashes"
-)
-def test_repeated_state_row_does_not_crash(tmp_path):
-    # Run in a subprocess: the crash is a segmentation fault.
+def test_repeated_state_row_is_refused(tmp_path):
+    # It used to be a segmentation fault (#1335), so the crash check runs in a
+    # subprocess before the refusal is checked here.
     tree = _write_tree(
         tmp_path / "seed.tree", THREE_LEVEL + [(3, (2, 2, 2))], state_ids=True
     )
     completed = _subprocess_run(tree)
     assert completed.returncode == 0, completed.stderr
+    with pytest.raises(InfomapError, match="State id 3 appears more than once"):
+        _run(tree)

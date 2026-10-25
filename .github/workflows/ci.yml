@@ -39,6 +39,7 @@ jobs:
       docker: ${{ steps.filter.outputs.docker }}
       notebooks: ${{ steps.filter.outputs.notebooks }}
       meta: ${{ steps.filter.outputs.meta }}
+      differential: ${{ steps.filter.outputs.differential }}
 
     steps:
       - name: Checkout repository
@@ -81,6 +82,7 @@ jobs:
       || needs.changes.outputs.docs == 'true'
       || needs.changes.outputs.docker == 'true'
       || needs.changes.outputs.notebooks == 'true'
+      || needs.changes.outputs.differential == 'true'
     name: pre-commit
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -260,6 +262,131 @@ jobs:
       full-matrix: ${{ github.event_name != 'pull_request' }}
       build-release-artifacts: false
 
+  # The current CLI against the last release on the corpus in test/differential,
+  # with the same seed and options. Every difference must be listed with the
+  # RESULT_CHANGES.csv rows that explain it. One platform only: the default RNG
+  # maps draws through the standard library (#342).
+  differential-release:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.differential == 'true'
+    name: Differential check against the last release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: ./.github/actions/setup-python-build
+        with:
+          python-version: "3.14"
+
+      - name: Set up ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          key-prefix: differential-release
+
+      - name: Build the current and the released CLI
+        run: |
+          set -euo pipefail
+          reference="$(python test/differential/differential.py release-reference)"
+          latest="$(git ls-remote --tags --refs origin 'v*' | sed 's#.*refs/tags/##' | sort -V | tail -n 1)"
+          if [ "$latest" != "$reference" ]; then
+            echo "::warning::test/differential/release_differences.tsv compares with $reference, but $latest is out. Set the reference to $latest and empty the list."
+          fi
+          git fetch --no-tags --depth 1 origin "refs/tags/$reference:refs/tags/$reference"
+          git worktree add --detach "$RUNNER_TEMP/reference" "$reference"
+          make -j build-native
+          make -C "$RUNNER_TEMP/reference" -j build-native
+
+      - name: Compare on the corpus
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/differential"
+          python test/differential/differential.py run-cli "$RUNNER_TEMP/reference/Infomap" "$out/reference"
+          python test/differential/differential.py run-cli ./Infomap "$out/current"
+          status=0
+          python test/differential/differential.py compare-release "$out/reference" "$out/current" > "$out/report.txt" || status=$?
+          cat "$out/report.txt"
+          { echo '### Differences from the last release'; echo '```'; cat "$out/report.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
+  # The CLI, Python, R and JavaScript front ends on the same corpus, seed and
+  # options. macOS, so that all four build against one standard library (libc++,
+  # Emscripten's included) and draw the same random numbers.
+  differential-frontends:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.differential == 'true'
+    name: Differential check across front ends
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: ./.github/actions/setup-python-build
+        with:
+          python-version: "3.14"
+
+      - name: Set up ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          key-prefix: differential-frontends
+
+      # uv installs the Python package without extras (".[]"), which pip refuses
+      # for an editable install.
+      - name: Set up uv
+        uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+
+      - name: Set up JavaScript build
+        uses: ./.github/actions/setup-js-build
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Install the R package dependencies and the OpenMP runtime
+        run: |
+          brew install libomp
+          mkdir -p ~/.R
+          {
+            printf 'CPPFLAGS += -I%s/include\n' "$(brew --prefix libomp)"
+            printf 'LDFLAGS  += -L%s/lib\n' "$(brew --prefix libomp)"
+          } >> ~/.R/Makevars
+          Rscript -e 'install.packages("R6")'
+
+      # Results do not depend on OpenMP (the inner-parallel move loop is off by
+      # default), so the CLI and Python builds skip it.
+      - name: Build the CLI and the Python, R and JavaScript packages
+        run: |
+          set -euo pipefail
+          make -j build-native OPENMP=0
+          UV_SYSTEM_PYTHON=1 make dev-python-install OPENMP=0 PIP="uv pip" PYTHON_DEV_EXTRAS=
+          make dev-r-install
+          make -j build-js
+
+      - name: Compare on the corpus
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/differential"
+          python test/differential/differential.py run-cli ./Infomap "$out/cli"
+          python test/differential/differential.py run-python "$out/python"
+          Rscript test/differential/run_r.R "$out/r"
+          node test/differential/run_js.mjs "$out/js"
+          status=0
+          python test/differential/differential.py compare "$out/cli" "$out/python" "$out/r" "$out/js" > "$out/report.txt" || status=$?
+          cat "$out/report.txt"
+          { echo '### Disagreements between front ends'; echo '```'; cat "$out/report.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
   docs:
     needs: changes
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.docs == 'true'
@@ -296,7 +423,7 @@ jobs:
 
   ci-summary:
     name: CI Summary
-    needs: [changes, pre-commit, sanitizers, tsan, clang-tidy, native, python, notebooks, javascript, r, docs, docker]
+    needs: [changes, pre-commit, sanitizers, tsan, clang-tidy, native, python, notebooks, javascript, r, differential-release, differential-frontends, docs, docker]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 10
