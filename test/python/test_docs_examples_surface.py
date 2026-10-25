@@ -30,7 +30,8 @@ DOCS = REPO_ROOT / "interfaces" / "python" / "source"
 SRC = REPO_ROOT / "interfaces" / "python" / "src" / "infomap"
 
 # The legacy result/build/config mirror on Infomap (deprecated in 2.15;
-# silent-by-default PendingDeprecationWarning; see test_deprecations.py).
+# LEGACY_SURFACE_WARNING, visible in __main__ under PEP 565; see
+# test_deprecations.py).
 # Curated by hand: introspecting
 # docstrings would misclassify blessed members whose docstrings merely
 # *contain* parameter-level deprecation directives (e.g. run()).
@@ -96,7 +97,17 @@ DEPRECATED_ANY_RECEIVER = (
     "run_with_options",
 )
 
+# Deprecated module-level functions (#791): matched by bare name, since they are
+# usually imported and called unqualified (`from infomap.export import
+# annotate_networkx_graph; annotate_networkx_graph(...)`) or referenced as
+# ``{func}`...``` in prose, neither of which the receiver-based regexes see.
+DEPRECATED_FUNCTIONS = (
+    "annotate_networkx_graph",
+    "annotate_igraph_graph",
+)
+
 _IM_RECEIVER = re.compile(r"\bim\.(" + "|".join(DEPRECATED_INSTANCE_MEMBERS) + r")\b")
+_DEPRECATED_FUNCTIONS = re.compile(r"\b(" + "|".join(DEPRECATED_FUNCTIONS) + r")\b")
 _ANY_RECEIVER = re.compile(r"\.(" + "|".join(DEPRECATED_ANY_RECEIVER) + r")\(")
 _DEPRECATED_CLASSMETHODS = re.compile(
     r"\bInfomap\.(from_options|from_scipy_sparse_matrix|from_edge_index)\("
@@ -258,6 +269,22 @@ def _allowed(rel: str, name: str) -> bool:
     return name in ALLOWLIST.get(rel, set())
 
 
+def test_deprecated_function_regex_matches_bare_and_referenced_uses():
+    """The safeguard must see the ways docs actually spell a function: a bare
+    call after an import, a module-qualified call, and a Sphinx role."""
+    for text in (
+        (
+            "from infomap.export import annotate_networkx_graph\n"
+            "annotate_networkx_graph(graph, im)"
+        ),
+        "infomap.io.export.annotate_igraph_graph(g, im)",
+        "{func}`infomap.io.export.annotate_networkx_graph`",
+    ):
+        assert _DEPRECATED_FUNCTIONS.search(text), text
+    assert not _DEPRECATED_FUNCTIONS.search("annotate_networkx(graph, im)")
+    assert not _DEPRECATED_FUNCTIONS.search("_annotate_networkx_graph_impl")
+
+
 def test_docs_and_examples_avoid_the_deprecated_surface():
     if not DOCS.is_dir():
         pytest.skip("docs source not available (wheel/sdist test run)")
@@ -282,6 +309,12 @@ def test_docs_and_examples_avoid_the_deprecated_surface():
                 violations.append(
                     f"{rel}: Infomap.{match.group(1)}() (use Network.from_* or run())"
                 )
+        for match in _DEPRECATED_FUNCTIONS.finditer(text):
+            if not _allowed(str(rel), match.group(1)):
+                violations.append(
+                    f"{rel}: {match.group(1)} (deprecated spelling; drop the "
+                    "_graph suffix)"
+                )
         for span in _call_argument_spans(text):
             span = _strip_nested_option_calls(span)
             for kwarg in _KWARG.findall(span):
@@ -304,7 +337,7 @@ def test_docs_and_examples_avoid_the_deprecated_surface():
 # instance-accessor rules do NOT, because the deprecated members are *defined*
 # and documented on their own in these files. The console-quieting
 # silent/verbosity_level knobs are excluded: they default to silent, do not emit
-# the pending-deprecation warning, and are covered by the separate
+# the legacy-tier deprecation warning, and are covered by the separate
 # silent->logging migration.
 _CONSOLE_KWARGS = {"silent", "verbosity_level"}
 

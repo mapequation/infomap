@@ -126,6 +126,28 @@ def test_run_time_input_failure_raises_network_parse_error(make_infomap):
         im.run()
 
 
+@pytest.mark.parametrize(
+    ("filename", "content", "message"),
+    [
+        ("bad.clu", "1 1\nx\n", "Couldn't parse node key and cluster id"),
+        ("bad.tree", '# path flow name node\n1:x 0.5 "1" 1\n', "Invalid tree path"),
+        ("bad.", None, "must match the pattern"),
+    ],
+)
+def test_malformed_cluster_data_raises_network_parse_error(
+    make_infomap, tmp_path, filename, content, message
+):
+    # #1263: a cluster file that cannot be parsed is input, like a missing one.
+    path = tmp_path / filename
+    if content is not None:
+        path.write_text(content, encoding="utf-8")
+    im = make_infomap(cluster_data=str(path))
+    im.add_link(1, 2)
+
+    with pytest.raises(NetworkParseError, match=message):
+        im.run()
+
+
 def test_writer_failure_raises_infomap_error_not_parse_error(make_infomap):
     im = make_infomap()
     im.add_link(1, 2)
@@ -200,14 +222,27 @@ def test_stale_result_message_names_the_engine_that_was_re_run():
 
 def test_export_before_run_raises_not_run_error(make_infomap):
     networkx = pytest.importorskip("networkx")
-    from infomap.io.export import annotate_networkx_graph
+    from infomap.io.export import annotate_networkx
 
     graph = networkx.Graph([(0, 1)])
     im = make_infomap()
     im.add_networkx_graph(graph)
 
     with pytest.raises(NotRunError, match="Run Infomap"):
-        annotate_networkx_graph(graph, im)
+        annotate_networkx(graph, im)
+
+
+def test_merge_error_is_an_infomap_error():
+    # #791 §6: `except InfomapError` is the documented way to catch any Infomap
+    # failure, and the shard-merge tool's error used to sit outside it.
+    from infomap.merge import MergeError
+
+    assert issubclass(MergeError, InfomapError)
+    assert issubclass(MergeError, Exception)
+    try:
+        raise MergeError("shards disagree")
+    except InfomapError as caught:
+        assert isinstance(caught, MergeError)
 
 
 def test_run_time_parse_message_fragments_still_appear_in_engine_source():

@@ -16,6 +16,7 @@ import infomap
 import networkx as nx
 import pytest
 from infomap import Infomap, Network
+from infomap._options import LEGACY_SURFACE_WARNING
 from infomap.result import Result, _StaleResultError
 
 pytestmark = pytest.mark.fast
@@ -112,10 +113,10 @@ def test_stateful_infomap_is_silent_by_default(capfd):
 
 def test_stateful_infomap_silent_false_prints_engine_log(capfd):
     _engine_log(capfd)
-    # silent as a bare keyword is pending-deprecated (it moves to logging in
+    # silent as a bare keyword warns on the legacy tier (it moves to logging in
     # 3.0) but still overrides the default in 2.x; the carrier/logging paths are
     # the warning-free replacements.
-    with pytest.warns(PendingDeprecationWarning, match="silent"):
+    with pytest.warns(LEGACY_SURFACE_WARNING, match="silent"):
         im = Infomap(silent=False, num_trials=1, seed=1)
     im.add_links(_LINKS)
     im.run()
@@ -155,7 +156,14 @@ def test_network_silent_advisory_warns_once_per_instance():
     with pytest.warns(UserWarning, match="silent for its whole lifetime"):
         net.run(options={"silent": False, "num_trials": 1, "seed": 1})
     with warnings.catch_warnings():
-        warnings.simplefilter("error")  # any further warning fails the test
+        warnings.simplefilter("error")  # any further *advisory* fails the test
+        # The legacy tier is a different contract: silent is a field the 3.0
+        # policy removes, so typing it on every call is announced on every call
+        # (deduplicated per call site by the warnings module under default
+        # filters, like any DeprecationWarning). That tier is asserted in
+        # test_deprecations.py; here it is out of scope, and the class is its
+        # own subclass precisely so it can be named alone (#915).
+        warnings.simplefilter("ignore", LEGACY_SURFACE_WARNING)
         net.run(options={"silent": False, "num_trials": 1, "seed": 1})
 
 
@@ -177,7 +185,9 @@ def test_run_file_matches_oo(example_network_path):
 
     expected = _oo_codelength(lambda im: im.read_file(str(path)), **settings)
     assert result.codelength == pytest.approx(expected)
-    assert result.codelength == pytest.approx(3.385830820341408, abs=1e-4)
+    # Three top groups of three triangles, with one group dissolved into its
+    # triangles: the ragged optimum a level-wide test cannot see (#1074).
+    assert result.codelength == pytest.approx(3.371875026, abs=1e-4)
 
 
 class _FsPathOnly:
@@ -492,6 +502,25 @@ def test_network_run_initial_partition_matches_infomap():
 
 
 # -- adapter-argument guard (run() configures the engine, not input building) --
+
+
+def test_run_rejects_a_foreign_adapter_kwarg_instead_of_dropping_it():
+    # The boundary keeps only engine fields on the Options it builds; anything
+    # else the caller typed has to be rejected, not dropped -- including an
+    # adapter kwarg of a *different* input kind, which the per-kind guard does
+    # not know, and any adapter kwarg on an already built engine, which takes
+    # none.
+    graph = nx.Graph([(0, 1), (1, 2)])
+    with pytest.raises(TypeError, match="'edge_weight'.*Network.from_edge_index"):
+        infomap.run(graph, edge_weight=[1.0, 1.0])
+    with pytest.raises(TypeError, match="'weight'.*already built Network"):
+        infomap.run(Network().add_links(_LINKS), weight="capacity")
+    im = Infomap(num_trials=1, seed=1)
+    im.add_links(_LINKS)
+    with pytest.raises(TypeError, match="'node_ids'.*already built Infomap"):
+        infomap.run(im, node_ids=[1, 2, 3])
+    with pytest.raises(TypeError, match="'weight'.*already built Network"):
+        infomap.run(Network().add_links(_LINKS), options={"weight": "capacity"})
 
 
 def test_run_rejects_networkx_adapter_kwarg():

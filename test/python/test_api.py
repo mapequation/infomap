@@ -11,7 +11,7 @@ from infomap._bindings import InfomapWrapper
 pytestmark = pytest.mark.fast
 
 
-@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+@pytest.mark.filterwarnings("ignore::infomap._options.LEGACY_SURFACE_WARNING")
 def test_run_with_empty_initial_partition_overrides_persisted_partition(make_infomap):
     baseline = make_infomap()
     baseline.add_links([(1, 2), (1, 3), (2, 3), (2, 4)])
@@ -428,8 +428,12 @@ def test_run_with_options_forwards_to_run(monkeypatch):
     assert result == "ok"
     assert captured["kwargs"]["args"] == "--existing"
     assert captured["kwargs"]["initial_partition"] == {1: 1}
-    assert captured["kwargs"]["variable_markov_time"] is True
-    assert captured["kwargs"]["num_trials"] == 5
+    # Forwarded as the carrier, not flattened into keywords: an Options
+    # announced its removed fields where it was built, and flattened fields
+    # would be announced again by run()'s merge as freshly typed (#915).
+    assert captured["kwargs"]["options"] is options
+    assert options.variable_markov_time is True
+    assert options.num_trials == 5
 
 
 def test_infomap_repr_shows_readable_state(make_infomap):

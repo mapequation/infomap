@@ -35,6 +35,7 @@ from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacke
 from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
 from ._options import (
     _UNSET,
+    TYPED_PARAMETER_WARNING,
     # The Literal aliases are referenced by the generated __init__/run
     # signatures below, which are evaluated at class-definition time.
     FlowModel,
@@ -43,6 +44,7 @@ from ._options import (
     OutputFormat,
     _construct_args,
     _explicit_options,
+    _external_stacklevel,
     _merge_options,
     _warn_advanced_tier_kwargs,
 )
@@ -210,6 +212,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         # The stale-silent advisory in _run_from_options fires at most once.
         self._warned_stale_silent = False
         self._core = Core(_package_construct_args()(args, **kwargs))
+        # The configuration this instance was built with, kept so a program can
+        # log it without a manifest-file round trip (#1026); see `options`.
+        self._options = options
         self._network = Network(core=self._core)
         self.node_id_to_label = {}
         # Run-generation token: incremented on every run(). A Result stamps the
@@ -269,6 +274,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         flow_tolerance: float = 1e-15,
         regularized: bool = False,
         regularization_strength: float = 1.0,
+        intra_regularization_strength: float = 1.0,
+        inter_regularization_strength: float = 1.0,
+        multilayer_skip_absent_nodes: bool = False,
         entropy_corrected: bool = False,
         entropy_correction_strength: float = 1.0,
         markov_time: float = _UNSET,
@@ -396,7 +404,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         no_file_output : bool, optional
@@ -408,7 +416,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         tree : bool, optional
@@ -421,7 +429,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         ftree : bool, optional
@@ -434,7 +442,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         clu : bool, optional
@@ -446,7 +454,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         clu_level : int, optional
@@ -459,7 +467,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         output : sequence of str, optional
@@ -473,7 +481,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         hide_bipartite_nodes : bool, optional
@@ -494,7 +502,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         no_overwrite : bool, optional
@@ -507,7 +515,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
 
             .. deprecated:: 2.15
                 This keyword leaves the ``Infomap`` signature in 3.0. Use
-                Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or
+                Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or
                 Network.write_pajek/write_state_network. The flag only acts when an
                 output directory is passed via the raw args escape hatch.
         print_config_fingerprint : bool, optional
@@ -577,7 +585,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
                 log.
         pretty : bool | None, optional
             Deprecated. Accepted for backward compatibility; has no effect. Passing it
-            explicitly emits a DeprecationWarning.
+            explicitly emits a FutureWarning.
         two_level : bool, optional
             Optimize a two-level partition instead of the default multi-level hierarchy
             (default False).
@@ -641,6 +649,26 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         regularization_strength : float, optional
             Scale the relative strength of the Bayesian prior network used by
             --regularized.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
+        intra_regularization_strength : float, optional
+            Scale the intra-layer part of the multilayer prior used by --regularized,
+            relative to --regularization-strength. Set to 0 to regularize only between
+            layers.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
+        inter_regularization_strength : float, optional
+            Scale the inter-layer part of the multilayer prior used by --regularized,
+            relative to --regularization-strength. Set to 0 to leave the layers
+            uncoupled.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
+        multilayer_skip_absent_nodes : bool, optional
+            Treat a physical node's absence from a layer as real rather than unobserved,
+            so the prior network of --regularized spans only the nodes each layer holds.
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
@@ -831,8 +859,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         if pretty is not None:
             warnings.warn(
                 "pretty is deprecated and has no effect",
-                DeprecationWarning,
-                stacklevel=2,
+                TYPED_PARAMETER_WARNING,
+                stacklevel=_external_stacklevel(),
             )
         _warn_advanced_tier_kwargs(locals(), "init")
         options = _merge_options(options, _explicit_options(locals(), "init"), "init")
@@ -888,6 +916,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         flow_tolerance: float = 1e-15,
         regularized: bool = False,
         regularization_strength: float = 1.0,
+        intra_regularization_strength: float = 1.0,
+        inter_regularization_strength: float = 1.0,
+        multilayer_skip_absent_nodes: bool = False,
         entropy_corrected: bool = False,
         entropy_correction_strength: float = 1.0,
         markov_time: float = _UNSET,
@@ -955,8 +986,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         if pretty is not None:
             warnings.warn(
                 "pretty is deprecated and has no effect",
-                DeprecationWarning,
-                stacklevel=2,
+                TYPED_PARAMETER_WARNING,
+                stacklevel=_external_stacklevel(),
             )
         _warn_advanced_tier_kwargs(locals(), "run")
         options = _merge_options(options, _explicit_options(locals(), "run"), "run")
@@ -1007,7 +1038,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         )
         if not isinstance(options, Options):
             raise TypeError("options must be an Options instance")
-        return cls(args=args, **options.to_kwargs())
+        # As the carrier, not flattened: its removed fields were announced where
+        # it was built and must not be re-announced by the merge (#915).
+        return cls(args=args, options=options)
 
     @classmethod
     def from_scipy_sparse_matrix(
@@ -1112,7 +1145,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         node_id : int
         name : str, optional
         teleportation_weight : float, optional
-            Used for teleporting between layers in multilayer networks.
+            Node weight, used by ``to_nodes`` teleportation and by
+            ``use_node_weights_as_flow``. A weight read later from a file for
+            the same node replaces it.
         """
         if name is None:
             name = ""
@@ -1438,7 +1473,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         bool
             ``True`` if the link existed and was removed.
         """
-        return self._core.network().removeLink(source_id, target_id)
+        return self._core.removeLink(source_id, target_id)
 
     def remove_links(self, links: Any) -> None:
         """Remove several links.
@@ -1786,9 +1821,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         """
         if meta_category is None and hasattr(node_id, "items"):
             for nid, category in node_id.items():
-                self._core.network().addMetaData(nid, category)
+                self._core.addMetaData(nid, category)
             return
-        self._core.network().addMetaData(node_id, meta_category)
+        self._core.addMetaData(node_id, meta_category)
 
     def add_networkx_graph(
         self,
@@ -2357,15 +2392,38 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         )
         if not isinstance(options, Options):
             raise TypeError("options must be an Options instance")
+        # As the carrier, not flattened (see from_options).
         return self.run(
             args=args,
             initial_partition=initial_partition,
-            **options.to_kwargs(),
+            options=options,
         )
 
     @property
+    def options(self) -> Options:
+        """The :class:`Options` this instance was constructed with.
+
+        The merged result of the ``options=`` carrier and the keyword
+        arguments given to :class:`Infomap`, resolved once at construction and
+        kept so a program can record what it ran without a manifest-file round
+        trip. Per-run keywords passed to :meth:`run` are not folded in; the
+        engine's own view of the configuration a run actually used, including
+        those, is :meth:`Result.provenance` (its ``"config"`` entry).
+
+        .. versionadded:: 2.16
+        """
+        return self._options
+
+    @property
     def network(self):
-        """Get the internal network."""
+        """Get the internal network.
+
+        An escape hatch, not the supported build surface. Mutating through it
+        bypasses this class, so the run's input file identity is not dropped
+        and the published artifacts keep naming a file that no longer
+        describes the network (#1026). Build with the ``add_*`` and
+        ``remove_*`` methods instead.
+        """
         return _with_owner(self._core.network(), self._core)
 
     @property

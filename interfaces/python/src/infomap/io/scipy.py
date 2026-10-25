@@ -28,15 +28,17 @@ def _validate_sparse_matrix(sparse: Any, A: Any) -> Any:
     return A
 
 
-def _validate_node_ids(node_ids: Sequence[Any] | None, n_nodes: int) -> list[Any]:
+def _validate_node_ids(
+    node_ids: Sequence[Any] | None, n_nodes: int, *, name: str = "node_ids"
+) -> list[Any]:
     if node_ids is None:
         return list(range(n_nodes))
 
     labels = list(node_ids)
     if len(labels) != n_nodes:
-        raise ValueError("`node_ids` length must match `A.shape[0]`.")
+        raise ValueError(f"`{name}` length must match `A.shape[0]`.")
     if len(set(labels)) != len(labels):
-        raise ValueError("`node_ids` values must be unique.")
+        raise ValueError(f"`{name}` values must be unique.")
     return labels
 
 
@@ -74,6 +76,7 @@ def add_scipy_sparse_matrix(
     directed: bool = False,
     weighted: bool = True,
     node_ids: Sequence[Any] | None = None,
+    labels_parameter: str = "node_ids",
 ) -> dict[int, Any]:
     """Add links and nodes from a SciPy sparse adjacency matrix.
 
@@ -94,7 +97,7 @@ def add_scipy_sparse_matrix(
     """
     sparse = _import_sparse()
     matrix = _validate_sparse_matrix(sparse, A)
-    labels = _validate_node_ids(node_ids, matrix.shape[0])
+    labels = _validate_node_ids(node_ids, matrix.shape[0], name=labels_parameter)
     coo = matrix.tocoo(copy=False)
     coo.sum_duplicates()
     _validate_weights(coo)

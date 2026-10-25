@@ -239,15 +239,6 @@ def metric_stats(values: list[float]) -> dict[str, float]:
     }
 
 
-def collect_module_size_bucket_labels(
-    run_samples: list[dict[str, object]],
-) -> list[str]:
-    labels: set[str] = set()
-    for run in run_samples:
-        labels.update(run.get("rebuild", {}).get("module_size_buckets", {}).keys())
-    return sorted(labels)
-
-
 def build_benchmark_cases(
     profile: str, repo_root: Path, generated_dir: Path
 ) -> list[dict[str, str | Path]]:
@@ -398,9 +389,35 @@ def benchmark_command(
     ]
 
 
-def collect_sample(command: list[str]) -> dict[str, object]:
-    completed = subprocess.run(command, check=True, capture_output=True, text=True)
+def collect_sample(command: list[str], timeout_sec: float | None) -> dict[str, object]:
+    # On timeout subprocess.run kills the child with SIGKILL rather than SIGTERM, so
+    # a binary that ignores SIGTERM -- as the #1134 hang did for 9 h 25 min -- still
+    # goes down. A benchmark process holds nothing worth a graceful shutdown.
+    completed = subprocess.run(
+        command, check=True, capture_output=True, text=True, timeout=timeout_sec
+    )
     return json.loads(completed.stdout)
+
+
+def timed_out_case(
+    name: str,
+    network_path: Path,
+    repeats: int,
+    warmup_runs: int,
+    iterations: int,
+    flags: str,
+    timeout_sec: float | None,
+) -> dict[str, object]:
+    return {
+        "name": name,
+        "path": str(network_path),
+        "repeats": repeats,
+        "warmup_runs": warmup_runs,
+        "iterations": iterations,
+        "flags": flags,
+        "timed_out": True,
+        "sample_timeout_sec": timeout_sec,
+    }
 
 
 def benchmark_case_pair(
@@ -411,6 +428,7 @@ def benchmark_case_pair(
     warmup_runs: int,
     iterations: int,
     flags: str,
+    timeout_sec: float | None = None,
 ) -> dict[str, dict[str, object]]:
     """Measure several binaries on one case, alternating between them.
 
@@ -424,6 +442,9 @@ def benchmark_case_pair(
     Alternating instead puts both binaries in the same few seconds of machine state,
     and swapping which one leads each round keeps the lead position from favouring
     either.
+
+    A binary whose run passes ``timeout_sec`` is killed and reported as timed out on
+    this case instead of failing the whole report.
     """
     labels = list(binaries)
     commands = {
@@ -432,17 +453,30 @@ def benchmark_case_pair(
     }
     samples: dict[str, list[dict[str, object]]] = {label: [] for label in labels}
     run_samples: dict[str, list[dict[str, object]]] = {label: [] for label in labels}
+    timed_out: set[str] = set()
 
     def rotated(round_index: int) -> list[str]:
         offset = round_index % len(labels)
         return labels[offset:] + labels[:offset]
+
+    def measure(label: str) -> dict[str, object] | None:
+        # A binary that ran out the clock once is not run again on this case: that
+        # would only multiply the wait. The others carry on, so the report still says
+        # which side hung.
+        if label in timed_out:
+            return None
+        try:
+            return collect_sample(commands[label], timeout_sec)
+        except subprocess.TimeoutExpired:
+            timed_out.add(label)
+            return None
 
     for warmup in range(warmup_runs):
         # Rotated like the measured rounds. A no-op at the one warmup run the gate
         # uses, since a single round has nothing to alternate with, but it keeps the
         # warmup from preconditioning one binary's slot at higher warmup counts.
         for label in rotated(warmup):
-            subprocess.run(commands[label], check=True, capture_output=True, text=True)
+            measure(label)
 
     for repeat in range(repeats):
         # Rotate the order so no binary is always measured first. Going first costs
@@ -453,7 +487,9 @@ def benchmark_case_pair(
         # binary keeps a single extra lead, worth about 0.13%/repeats.
         order = rotated(repeat)
         for label in order:
-            sample = collect_sample(commands[label])
+            sample = measure(label)
+            if sample is None:
+                continue
             samples[label].append(sample)
             for run in sample.get("runs", [sample]):
                 run_sample = dict(run)
@@ -461,7 +497,11 @@ def benchmark_case_pair(
                 run_samples[label].append(run_sample)
 
     return {
-        label: summarize_case(
+        label: timed_out_case(
+            name, network_path, repeats, warmup_runs, iterations, flags, timeout_sec
+        )
+        if label in timed_out
+        else summarize_case(
             samples[label],
             run_samples[label],
             name,
@@ -482,9 +522,17 @@ def benchmark_case(
     warmup_runs: int,
     iterations: int,
     flags: str,
+    timeout_sec: float | None = None,
 ) -> dict[str, object]:
     return benchmark_case_pair(
-        {"only": binary}, name, network_path, repeats, warmup_runs, iterations, flags
+        {"only": binary},
+        name,
+        network_path,
+        repeats,
+        warmup_runs,
+        iterations,
+        flags,
+        timeout_sec,
     )["only"]
 
 
@@ -511,131 +559,6 @@ def summarize_case(
         samples[0]["edge_size_bytes"]
     )
     peak_rss_bytes_max = max(int(run["peak_rss_bytes"]) for run in run_samples)
-    rebuild_total = [
-        float(run.get("rebuild", {}).get("total_sec", 0.0)) for run in run_samples
-    ]
-    rebuild_network = [
-        float(run.get("rebuild", {}).get("network_sec", 0.0)) for run in run_samples
-    ]
-    rebuild_module = [
-        float(run.get("rebuild", {}).get("module_sec", 0.0)) for run in run_samples
-    ]
-    rebuild_module_prep = [
-        float(run.get("rebuild", {}).get("module_prep_sec", 0.0)) for run in run_samples
-    ]
-    rebuild_module_index = [
-        float(run.get("rebuild", {}).get("module_index_sec", 0.0))
-        for run in run_samples
-    ]
-    rebuild_module_reserve = [
-        float(run.get("rebuild", {}).get("module_reserve_sec", 0.0))
-        for run in run_samples
-    ]
-    rebuild_module_clone = [
-        float(run.get("rebuild", {}).get("module_clone_sec", 0.0))
-        for run in run_samples
-    ]
-    rebuild_module_edge_clone = [
-        float(run.get("rebuild", {}).get("module_edge_clone_sec", 0.0))
-        for run in run_samples
-    ]
-    rebuild_total_stats = metric_stats(rebuild_total)
-    rebuild_network_stats = metric_stats(rebuild_network)
-    rebuild_module_stats = metric_stats(rebuild_module)
-    rebuild_module_prep_stats = metric_stats(rebuild_module_prep)
-    rebuild_module_index_stats = metric_stats(rebuild_module_index)
-    rebuild_module_reserve_stats = metric_stats(rebuild_module_reserve)
-    rebuild_module_clone_stats = metric_stats(rebuild_module_clone)
-    rebuild_module_edge_clone_stats = metric_stats(rebuild_module_edge_clone)
-    rebuild_bucket_stats: dict[str, dict[str, float | int]] = {}
-    for label in collect_module_size_bucket_labels(run_samples):
-        bucket_calls = [
-            int(
-                run.get("rebuild", {})
-                .get("module_size_buckets", {})
-                .get(label, {})
-                .get("calls", 0)
-            )
-            for run in run_samples
-        ]
-        bucket_sec = [
-            float(
-                run.get("rebuild", {})
-                .get("module_size_buckets", {})
-                .get(label, {})
-                .get("sec", 0.0)
-            )
-            for run in run_samples
-        ]
-        bucket_prep_sec = [
-            float(
-                run.get("rebuild", {})
-                .get("module_size_buckets", {})
-                .get(label, {})
-                .get("prep_sec", 0.0)
-            )
-            for run in run_samples
-        ]
-        bucket_index_sec = [
-            float(
-                run.get("rebuild", {})
-                .get("module_size_buckets", {})
-                .get(label, {})
-                .get("index_sec", 0.0)
-            )
-            for run in run_samples
-        ]
-        bucket_reserve_sec = [
-            float(
-                run.get("rebuild", {})
-                .get("module_size_buckets", {})
-                .get(label, {})
-                .get("reserve_sec", 0.0)
-            )
-            for run in run_samples
-        ]
-        bucket_clone_sec = [
-            float(
-                run.get("rebuild", {})
-                .get("module_size_buckets", {})
-                .get(label, {})
-                .get("clone_sec", 0.0)
-            )
-            for run in run_samples
-        ]
-        bucket_edge_clone_sec = [
-            float(
-                run.get("rebuild", {})
-                .get("module_size_buckets", {})
-                .get(label, {})
-                .get("edge_clone_sec", 0.0)
-            )
-            for run in run_samples
-        ]
-        bucket_sec_stats = metric_stats(bucket_sec)
-        bucket_prep_sec_stats = metric_stats(bucket_prep_sec)
-        bucket_index_sec_stats = metric_stats(bucket_index_sec)
-        bucket_reserve_sec_stats = metric_stats(bucket_reserve_sec)
-        bucket_clone_sec_stats = metric_stats(bucket_clone_sec)
-        bucket_edge_clone_sec_stats = metric_stats(bucket_edge_clone_sec)
-        rebuild_bucket_stats[label] = {
-            "median_calls": statistics.median(bucket_calls),
-            "mean_calls": statistics.mean(bucket_calls) if bucket_calls else 0.0,
-            "median_sec": statistics.median(bucket_sec),
-            "mean_sec": bucket_sec_stats["mean"],
-            "stdev_sec": bucket_sec_stats["stdev"],
-            "cv_sec": bucket_sec_stats["cv"],
-            "median_prep_sec": statistics.median(bucket_prep_sec),
-            "mean_prep_sec": bucket_prep_sec_stats["mean"],
-            "median_index_sec": statistics.median(bucket_index_sec),
-            "mean_index_sec": bucket_index_sec_stats["mean"],
-            "median_reserve_sec": statistics.median(bucket_reserve_sec),
-            "mean_reserve_sec": bucket_reserve_sec_stats["mean"],
-            "median_clone_sec": statistics.median(bucket_clone_sec),
-            "mean_clone_sec": bucket_clone_sec_stats["mean"],
-            "median_edge_clone_sec": statistics.median(bucket_edge_clone_sec),
-            "mean_edge_clone_sec": bucket_edge_clone_sec_stats["mean"],
-        }
 
     return {
         "name": name,
@@ -666,6 +589,9 @@ def summarize_case(
         "cv_run_sec": run_stats["cv"],
         "min_run_sec": run_stats["min"],
         "min_total_sec": total_stats["min"],
+        "median_peak_rss_bytes": statistics.median(
+            int(run["peak_rss_bytes"]) for run in run_samples
+        ),
         "mean_peak_rss_bytes": peak_rss_stats["mean"],
         "stdev_peak_rss_bytes": peak_rss_stats["stdev"],
         "cv_peak_rss_bytes": peak_rss_stats["cv"],
@@ -688,48 +614,6 @@ def summarize_case(
         "edge_budget_peak_rss_ratio": (edge_budget_bytes / peak_rss_bytes_max)
         if peak_rss_bytes_max
         else 0.0,
-        "rebuild": {
-            "median_total_sec": statistics.median(rebuild_total),
-            "mean_total_sec": rebuild_total_stats["mean"],
-            "stdev_total_sec": rebuild_total_stats["stdev"],
-            "cv_total_sec": rebuild_total_stats["cv"],
-            "median_network_sec": statistics.median(rebuild_network),
-            "mean_network_sec": rebuild_network_stats["mean"],
-            "median_module_sec": statistics.median(rebuild_module),
-            "mean_module_sec": rebuild_module_stats["mean"],
-            "median_module_prep_sec": statistics.median(rebuild_module_prep),
-            "mean_module_prep_sec": rebuild_module_prep_stats["mean"],
-            "median_module_index_sec": statistics.median(rebuild_module_index),
-            "mean_module_index_sec": rebuild_module_index_stats["mean"],
-            "median_module_reserve_sec": statistics.median(rebuild_module_reserve),
-            "mean_module_reserve_sec": rebuild_module_reserve_stats["mean"],
-            "median_module_clone_sec": statistics.median(rebuild_module_clone),
-            "mean_module_clone_sec": rebuild_module_clone_stats["mean"],
-            "median_module_edge_clone_sec": statistics.median(
-                rebuild_module_edge_clone
-            ),
-            "mean_module_edge_clone_sec": rebuild_module_edge_clone_stats["mean"],
-            "median_total_calls": statistics.median(
-                int(run.get("rebuild", {}).get("total_calls", 0)) for run in run_samples
-            ),
-            "median_network_calls": statistics.median(
-                int(run.get("rebuild", {}).get("network_calls", 0))
-                for run in run_samples
-            ),
-            "median_module_calls": statistics.median(
-                int(run.get("rebuild", {}).get("module_calls", 0))
-                for run in run_samples
-            ),
-            "peak_rss_bytes_max": max(
-                int(run.get("rebuild", {}).get("peak_rss_bytes_max", 0))
-                for run in run_samples
-            ),
-            "peak_rss_delta_bytes_max": max(
-                int(run.get("rebuild", {}).get("peak_rss_delta_bytes_max", 0))
-                for run in run_samples
-            ),
-            "module_size_buckets": rebuild_bucket_stats,
-        },
     }
 
 
@@ -741,6 +625,12 @@ def render_markdown(results: list[dict[str, object]]) -> str:
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for result in results:
+        if result.get("timed_out"):
+            lines.append(
+                f"| {result['name']} | timed out after {float(result['sample_timeout_sec']):g}s |"
+                + " |" * 7
+            )
+            continue
         lines.append(
             "| {name} | {num_nodes} | {num_links} | {median_total_sec:.6f} | {median_run_sec:.6f} | {peak_rss_mib:.2f} | {node_budget_peak_rss_ratio:.3f} | {num_top_modules} | {num_levels} |".format(
                 peak_rss_mib=float(result["peak_rss_bytes_max"]) / (1024.0 * 1024.0),
@@ -818,6 +708,15 @@ def main() -> None:
         default="--silent --no-file-output --num-trials 1 --seed 123",
         help="Infomap flags forwarded to the native benchmark executable.",
     )
+    parser.add_argument(
+        "--sample-timeout-sec",
+        type=float,
+        default=None,
+        help=(
+            "Kill a benchmark run that takes longer than this and report the case as "
+            "timed out for that binary. Default: no limit."
+        ),
+    )
     args = parser.parse_args()
 
     if args.iterations < 1:
@@ -826,6 +725,8 @@ def main() -> None:
         parser.error("--repeats must be at least 1")
     if args.warmup_runs < 0:
         parser.error("--warmup-runs must be at least 0")
+    if args.sample_timeout_sec is not None and args.sample_timeout_sec <= 0:
+        parser.error("--sample-timeout-sec must be positive")
 
     if (args.compare_binary is None) != (args.compare_output is None):
         parser.error("--compare-binary and --compare-output must be given together")
@@ -868,6 +769,7 @@ def main() -> None:
                 " ".join(
                     part for part in (args.flags, str(case["flags"])) if part
                 ).strip(),
+                args.sample_timeout_sec,
             )
             for label, result in per_label.items():
                 collected[label].append(result)
@@ -890,6 +792,7 @@ def main() -> None:
             "repeats": args.repeats,
             "warmup_runs": args.warmup_runs,
             "iterations": args.iterations,
+            "sample_timeout_sec": args.sample_timeout_sec,
             "binary": str(binary),
             "generated_dir": generated_dir_text,
             # Recorded so a comparison can tell an interleaved measurement from two

@@ -1,0 +1,11 @@
+# path flow name node_id
+# twotriangles_top_level_leaf.tree with the bare row FIRST. Row order carries no meaning
+# in a tree file, so this must score exactly like the other two spellings -- it did not
+# before #1067, because haveModules() tests only the root's first child and answered
+# "no modules" for the whole file when a leaf sorted first.
+2 0.15 "A" 1
+1:1:1 0.3 "C" 3
+1:1:2 0.2 "B" 2
+1:2:1 0.15 "D" 4
+1:2:2 0.1 "E" 5
+1:2:3 0.1 "F" 6

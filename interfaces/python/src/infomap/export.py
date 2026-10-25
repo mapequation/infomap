@@ -8,7 +8,13 @@ may be removed in a future major release.
 from __future__ import annotations
 
 from .io.export import (
+    annotate_igraph as annotate_igraph,
+)
+from .io.export import (
     annotate_igraph_graph as annotate_igraph_graph,
+)
+from .io.export import (
+    annotate_networkx as annotate_networkx,
 )
 from .io.export import (
     annotate_networkx_graph as annotate_networkx_graph,
@@ -27,7 +33,9 @@ from .io.export import (
 )
 
 __all__ = [
+    "annotate_igraph",
     "annotate_igraph_graph",
+    "annotate_networkx",
     "annotate_networkx_graph",
     "to_igraph",
     "to_networkx",

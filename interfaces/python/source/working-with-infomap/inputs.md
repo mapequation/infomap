@@ -217,7 +217,7 @@ result = run(net, two_level=True, seed=123, num_trials=5)
 print(f"via Network: {result.num_top_modules} modules")
 ```
 
-Pass ``node_ids=`` to give the matrix rows external ids; the constructor
+Pass ``node_labels=`` to give the matrix rows external labels; the constructor
 stores the mapping on {attr}`~infomap.Network.node_id_to_label`, the same
 pattern as ``from_networkx``.
 

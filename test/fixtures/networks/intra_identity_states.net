@@ -1,0 +1,11 @@
+# A single-layer multilayer network whose expansion is identity: the state ids are
+# auto-generated from 0 upwards in insertion order, so with physical ids 0,1,2 in that
+# order every state id equals its physical id. StateNetwork only sets m_haveMemoryInput
+# when node.id != node.physicalId, so the expanded network stays first-order in
+# substance -- while the expansion still marks the input as directed, which makes
+# configureNetworkMode() switch the flow model to directed.
+*Intra
+# layer node node weight
+1 0 1 1
+1 1 2 1
+1 2 0 1

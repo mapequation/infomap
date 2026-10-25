@@ -42,9 +42,11 @@ two tiers:
     replacement.
 
 Passing an advanced-tier keyword to :class:`Infomap` or :meth:`Infomap.run`
-emits a :class:`PendingDeprecationWarning` (silent by default; surface it with
-``python -W`` or a logging filter). Routing the option through :class:`Options`
-is the warning-free path, so existing code keeps running unchanged until 3.0.
+emits a :class:`DeprecationWarning`, shown by default when the calling code runs
+as a script (``__main__``, per PEP 565) and surfaced everywhere else by
+``python -W`` or a warning-escalating tool. Routing the option through
+:class:`Options` is the warning-free path, so existing code keeps running
+unchanged until 3.0.
 
 Redesigned result access
 -------------------------
@@ -52,25 +54,64 @@ Redesigned result access
 The stateful accessors on :class:`Infomap` (``get_modules``, ``codelength``,
 ``num_top_modules``, and friends) are ``.. deprecated:: 2.15`` in favour of the
 immutable :class:`Result` that :func:`run` and :meth:`Infomap.run` return.
-Reading one from user code emits the same silent-by-default
-:class:`PendingDeprecationWarning` as the advanced-tier keywords. Read scalars
+Reading one from user code emits the same :class:`DeprecationWarning` as the
+advanced-tier keywords. Read scalars
 as properties (``result.codelength``) and collections as methods
 (``result.modules()``, ``result.nodes()``, ``result.tree()``). See
 :doc:`/working-with-infomap/results-and-iteration`.
 
+The tree-level selector
+-----------------------
+
+From 2.16 the :class:`Result` readers and ``write_clu`` select a level of the
+hierarchy with ``level`` (``1`` is the top, coarsest level; ``-1`` the bottom)::
+
+    result.modules(level=2)
+    result.to_dataframe(level=-1)
+    result.write_clu("bottom.clu", level=-1)
+
+``depth`` was the selector through 2.15, but the same word is
+:attr:`TreeNode.depth`, a node's distance from the root, so
+``result.nodes(depth=1)`` yielded nodes whose ``.depth`` is ``2``. ``depth``
+and the older ``depth_level`` keep working as aliases through 2.x and emit the
+legacy tier's :class:`DeprecationWarning`; they leave in 3.0. On the same
+grounds :attr:`Result.max_depth` is a deprecated alias of
+:attr:`Result.num_levels`.
+
 Compatibility aliases
 ---------------------
 
+- On the graph constructors and finders, ``node_id`` and ``layer_id`` were
+  the *attribute names* to read ids from, while ``node_ids`` on the matrix
+  constructors was a *sequence of labels* -- two unrelated parameters that read
+  as singular and plural of one. From 2.16 the attribute names are
+  ``node_id_attribute`` / ``layer_id_attribute`` (the ``*_attribute`` spelling
+  ``meta_attribute`` already uses) and the label sequence is ``node_labels``,
+  on :meth:`Network.from_networkx`, :meth:`Network.from_igraph`,
+  :meth:`Network.from_scipy_sparse_matrix`, :meth:`Network.from_edge_index`,
+  :func:`find_communities` and :func:`find_igraph_communities`. The old
+  spellings keep working, emit the legacy tier's :class:`DeprecationWarning`,
+  and leave in 3.0.
+- ``annotate_networkx_graph`` and ``annotate_igraph_graph`` are the pre-2.16
+  spellings of :func:`infomap.io.export.annotate_networkx` and
+  :func:`infomap.io.export.annotate_igraph` -- the ``_graph`` suffix that
+  ``to_networkx`` / ``from_networkx`` never carried. Same arguments; the long
+  names emit the legacy tier's :class:`DeprecationWarning` and leave in 3.0.
 - ``include_self_links`` is a deprecated alias kept for backward compatibility.
   Infomap includes self-links by default. Pass ``no_self_links=True`` to
   exclude them. Passing ``include_self_links`` explicitly emits a
-  :class:`DeprecationWarning`.
+  :class:`FutureWarning` -- the louder tier, shown under every filter, because
+  an argument you actually typed is being ignored.
 - ``pretty`` is a deprecated no-op — the API accepts it for backward
   compatibility but it has no effect. Passing it explicitly emits a
-  :class:`DeprecationWarning`.
+  :class:`FutureWarning`, for the same reason as ``include_self_links``.
 
 Error base classes
 ------------------
+
+:class:`infomap.merge.MergeError` derives from :class:`InfomapError` since 2.16,
+so ``except InfomapError`` catches shard-merge failures too; it derived from
+plain ``Exception`` before. ``except MergeError`` keeps working.
 
 Through 2.x, :class:`InfomapError` inherits :class:`RuntimeError`, and
 :class:`NotRunError` also keeps :class:`ValueError` in its MRO. Pre-taxonomy

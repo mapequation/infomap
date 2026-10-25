@@ -1,6 +1,14 @@
 #include "TestUtils.h"
+#include "core/MapEquation.h"
+#include "io/InfomapError.h"
 
 #include <cmath>
+#include <cstdio>
+#include <filesystem>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 // Invariant tests for the map-equation objective family.
 //
@@ -47,6 +55,178 @@ TEST_CASE("MapEquation invariant: BiasedMapEquation (ordinary), tracked == recom
   checkTrackedMatchesRecompute(im);
 }
 
+// The same invariant with a module-count preference in play. The existing biased
+// case above passes at the default --preferred-number-of-modules 0, where the
+// |K - K_pref| term is identically zero, so it never covered the term itself.
+//
+// #1021: biasedCost is one scalar for the whole partition, so calcCodelength has
+// no per-node share to return and calcCodelengthOnTree's sum lost the term
+// completely. The tracked side kept it, so the two disagreed by |K - K_pref| --
+// unbounded in K_pref, and 7 bits on a six-node fixture.
+TEST_CASE("MapEquation invariant: BiasedMapEquation with a module preference, tracked == recompute [fast][core][mapeq][biased]")
+{
+  for (const unsigned int preference : { 1u, 3u, 40u }) {
+    InfomapWrapper im(defaultFlags("--two-level --preferred-number-of-modules " + std::to_string(preference)));
+    im.readInputData(networkFixturePath("lossy_benchmark.net"));
+    im.run();
+    INFO("--preferred-number-of-modules " << preference << ", found " << im.numTopModules());
+    // The invariant is vacuous where the search satisfies the preference exactly,
+    // since |K - K_pref| is then zero and the term under test never appears. At
+    // least one of these has to leave a residual, or the case proves nothing --
+    // 40 exceeds what this fixture can be split into.
+    if (preference == 40u)
+      REQUIRE(im.numTopModules() != preference);
+    checkTrackedMatchesRecompute(im);
+  }
+}
+
+// The one-level reference has to price the same objective as the partition it is
+// compared against. m_oneLevelCodelength was calcCodelength on the bare root -- a
+// tree with no module level at all -- so a partition-level term was missing from it
+// while the reported codelength carried one. Scoring the one-module partition then
+// gave `Relative savings` of -84% against a reference that is that very partition,
+// and the one-level collapse installs this value verbatim on a tree that does have
+// one module (#1020).
+//
+// The entropy-corrected half of that issue is no longer reachable: #1033 gave a
+// module that cannot be left no exit codeword, which made the lone module's
+// correction match the bare root's. --preferred-number-of-modules is what still
+// showed it, and its cost is exactly |K - K_pref| so the expected values follow.
+TEST_CASE("The one-level reference prices the same objective as a one-module partition [fast][core][mapeq][biased]")
+{
+  for (const unsigned int preference : { 0u, 1u, 5u, 9u }) {
+    const auto flags = preference == 0u
+        ? std::string("--two-level --no-infomap --cluster-data ")
+        : "--two-level --preferred-number-of-modules " + std::to_string(preference) + " --no-infomap --cluster-data ";
+    InfomapWrapper im(defaultFlags(flags + clusterFixturePath("twotriangles_single_module.clu")));
+    im.readInputData(repoPath("test/fixtures/graphs/twotriangles_unweighted.edges"));
+    im.run();
+
+    REQUIRE(im.numTopModules() == 1);
+    INFO("--preferred-number-of-modules " << preference
+                                          << " one-level=" << im.getOneLevelCodelength()
+                                          << " codelength=" << im.codelength());
+    // The partition under test *is* the one-module partition, so the reference and
+    // the reported codelength are the same number and the saving is zero.
+    checkApproxCodelength(im.getOneLevelCodelength(), im.codelength());
+    CHECK(im.getRelativeCodelengthSavings() == doctest::Approx(0.0).epsilon(1e-9));
+  }
+}
+
+// The user-visible half of #1021, and the shape the issue reported: scoring a
+// tracked partition with --no-infomap never moved, whatever K_pref was, because
+// the reported number on that path is calcCodelengthOnTree's sum. The partition
+// here has two modules, so the term is exactly |2 - K_pref| and the expected
+// values follow from the unbiased run rather than from a hardcoded constant.
+TEST_CASE("A module preference reaches a scored partition, not only the search [fast][core][mapeq][biased]")
+{
+  const auto scoredCodelength = [](const std::string& extraFlags) {
+    InfomapWrapper im(defaultFlags(
+        "--two-level --no-infomap --cluster-data "
+        + clusterFixturePath("twotriangles_two_modules.clu") + " " + extraFlags));
+    im.readInputData(repoPath("test/fixtures/graphs/twotriangles_unweighted.edges"));
+    im.run();
+    REQUIRE(im.numTopModules() == 2);
+    return im.codelength();
+  };
+
+  const double unbiased = scoredCodelength("");
+
+  for (const unsigned int preference : { 1u, 2u, 5u, 9u }) {
+    const double expected = unbiased + std::abs(2.0 - static_cast<double>(preference));
+    const double scored = scoredCodelength("--preferred-number-of-modules " + std::to_string(preference));
+    INFO("K_pref=" << preference << " scored=" << scored << " expected=" << expected);
+    checkApproxCodelength(scored, expected);
+  }
+}
+
+// The same term through the recursive search. recursivePartition rebuilt the total
+// from the top modules' terms, which do not hold the module-count term, so a deep
+// tree with K != K_pref top modules was reported |K - K_pref| short: 3.579251676 for
+// ninetriangles with -s 3 on macOS, against 4.579251676 for the same tree scored
+// with --no-infomap. Seeds reach different trees on different standard libraries
+// (std::uniform_int_distribution is implementation-defined), so this sweeps seeds
+// and requires that some run reaches the case.
+TEST_CASE("A module preference reaches a deep tree from the recursive search [fast][core][mapeq][biased]")
+{
+  const std::vector<std::string> networks {
+    networkFixturePath("unbalanced_hierarchy.net"),
+    repoPath("examples/networks/ninetriangles.net"),
+  };
+  unsigned int numDeepTreesOffPreference = 0;
+  for (const auto& network : networks) {
+    for (unsigned int seed = 1; seed <= 20; ++seed) {
+      InfomapWrapper im(defaultFlags("--preferred-number-of-modules 2 --seed " + std::to_string(seed)));
+      im.readInputData(network);
+      im.run();
+      if (im.numLevels() > 2 && im.numTopModules() != 2)
+        ++numDeepTreesOffPreference;
+
+      const double reported = im.codelength();
+      const double recomputed = im.calcCodelengthOnTree(im.root(), true);
+      INFO(network << " seed " << seed << ": " << im.numLevels() << " levels, " << im.numTopModules() << " top modules");
+      INFO("reported=" << reported << " recomputed=" << recomputed);
+      checkApproxCodelength(reported, recomputed);
+    }
+  }
+  REQUIRE(numDeepTreesOffPreference > 0);
+}
+
+// The preference counts the top modules only. A sub-search used to carry it and charge
+// |K_sub - K_pref| on its own module count, a term the tree does not have, so the subtree it
+// kept priced one bit below the sub-search: from this seed tree with --seed 1, 1.18 bits
+// against 2.18. Builds with INFOMAP_CHECK_INVARIANTS throw on that when keeping a
+// sub-partition (#1292). Seeds reach different trees on different standard libraries, so
+// this sweeps them.
+TEST_CASE("Sub-searches from a seed tree do not charge the module preference (#1292) [fast][core][mapeq][biased]")
+{
+  const std::string network = networkFixturePath("unbalanced_hierarchy.net");
+  const std::string treePath = (std::filesystem::temp_directory_path() / "infomap_1292_seed.tree").string();
+  for (unsigned int seed = 1; seed <= 5; ++seed) {
+    InfomapWrapper seedRun(defaultFlags("--seed " + std::to_string(seed)));
+    seedRun.readInputData(network);
+    seedRun.run();
+    REQUIRE(seedRun.numLevels() > 2);
+    seedRun.writeTree(treePath);
+
+    InfomapWrapper im(defaultFlags("--preferred-number-of-modules 2 --seed " + std::to_string(seed) + " --cluster-data " + treePath));
+    im.readInputData(network);
+    im.run();
+    const double reported = im.codelength();
+    const double recomputed = im.calcCodelengthOnTree(im.root(), true);
+    INFO("seed " << seed << ": reported=" << reported << " recomputed=" << recomputed);
+    checkApproxCodelength(reported, recomputed);
+  }
+  std::remove(treePath.c_str());
+}
+
+// A single node is never moved, so the search never initialised the objective's terms
+// and reported 0 bits for a tree that prices to |1 - K_pref| (#1293).
+TEST_CASE("A module preference reaches a one-node network (#1293) [fast][core][mapeq][biased]")
+{
+  const std::vector<std::string> flagSets {
+    "",
+    "--two-level",
+    "--directed",
+    "--regularized",
+    "--entropy-corrected",
+  };
+  for (const auto& flags : flagSets) {
+    for (const bool selfLink : { true, false }) {
+      InfomapWrapper im(defaultFlags("--preferred-number-of-modules 4 " + flags));
+      if (selfLink)
+        im.addLink(1, 1);
+      else
+        im.addNode(1);
+      im.run();
+      INFO("flags '" << flags << "', self-link " << selfLink);
+      REQUIRE(im.numLeafNodes() == 1);
+      CHECK(im.codelength() == doctest::Approx(3.0));
+      checkApproxCodelength(im.codelength(), im.calcCodelengthOnTree(im.root(), true));
+    }
+  }
+}
+
 TEST_CASE("MapEquation invariant: MemMapEquation (memory), tracked == recompute [fast][core][mapeq][mem]")
 {
   InfomapWrapper im(defaultFlags("--two-level"));
@@ -78,6 +258,27 @@ TEST_CASE("MapEquation invariant: MetaMapEquation (meta-data), tracked == recomp
   checkTrackedMatchesRecompute(im);
 }
 
+// Regression for #1138: coarse-tune splits each module into sub-modules and
+// consolidates them, and by then InfomapOptimizer has overwritten each
+// sub-module's index with its former module's index. MetaMapEquation looked the
+// sub-modules' metadata up by that index, so they received each other's
+// collections. The tune loop runs coarse-tune under --two-level too, so the case
+// above reaches it, but no module of states.net splits and the two indices never
+// diverge there. Here they do: before the fix the tracked meta term fell to 0 and
+// the run reported 3.4965 against 5.0757 recomputed from the leaves.
+TEST_CASE("MapEquation invariant: MetaMapEquation through coarse-tune, tracked == recompute (repro #1138) [fast][core][mapeq][meta]")
+{
+  InfomapWrapper im(defaultFlags("--two-level --meta-data " + repoPath("test/fixtures/meta/ninetriangles_crossing.meta")));
+  im.readInputData(repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+
+  const double metaCodelength = im.getMetaCodelength();
+  INFO("metaCodelength=" << metaCodelength);
+  CHECK(metaCodelength > 0.0);
+
+  checkTrackedMatchesRecompute(im);
+}
+
 #if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
 TEST_CASE("MapEquation invariant: RegularizedMultilayerMapEquation, tracked == recompute [fast][core][mapeq][regularized]")
 {
@@ -89,18 +290,179 @@ TEST_CASE("MapEquation invariant: RegularizedMultilayerMapEquation, tracked == r
 }
 #endif
 
-// Regression for #830: under --entropy-corrected the tracked codelength drifts
-// from a fresh recompute (observed tracked 2.9815 vs recompute 2.9911). Marked
-// should_fail so it stays green while the bug is present and turns RED the
-// moment #830 is fixed -- at which point drop the decorator so it becomes a
-// normal passing invariant.
-TEST_CASE("MapEquation invariant: entropy-corrected tracked == recompute (repro #830) [core][mapeq][entropy-corrected]"
-          * doctest::should_fail())
+// Regression for #830: the tracked codelength used to drift from a fresh
+// recompute under --entropy-corrected (before this fix: tracked 2.9815 against
+// recompute 2.9911), because the recompute charged the root index codebook
+// childDegree free parameters where it has childDegree - 1 -- an index codebook
+// has no exit codeword. Deeper trees are not covered: there the recompute also
+// charges the intermediate module-of-modules codebooks that the tracked side
+// never sees. The reported codelength of a deep tree is covered by #1176 below.
+TEST_CASE("MapEquation invariant: entropy-corrected tracked == recompute (repro #830) [core][mapeq][entropy-corrected]")
 {
   InfomapWrapper im(defaultFlags("--two-level --entropy-corrected"));
   im.readInputData(networkFixturePath("lossy_benchmark.net"));
   im.run();
   checkTrackedMatchesRecompute(im);
+}
+
+// The recursive search builds a module of modules from a sub-Infomap, whose root
+// has no exit codeword, and used to keep that root's term. In the main tree the
+// module does have one, so under --entropy-corrected each module of modules below
+// the root was one free parameter short, in the reported codelength and in the
+// per-level table (#1176: 2.372190815 against 2.391846060 for unbalanced_hierarchy
+// with -s 4 on macOS). Swept over seeds, as the module-preference case above.
+TEST_CASE("Entropy correction charges every codebook of a deep tree (repro #1176) [fast][core][mapeq][entropy-corrected]")
+{
+  const std::vector<std::pair<std::string, std::string>> inputs {
+    { networkFixturePath("unbalanced_hierarchy.net"), "--entropy-corrected --preferred-number-of-modules 2" },
+    { repoPath("examples/networks/modular_w.net"), "--entropy-corrected -d" },
+  };
+  unsigned int numDeepTrees = 0;
+  for (const auto& input : inputs) {
+    for (unsigned int seed = 1; seed <= 20; ++seed) {
+      InfomapWrapper im(defaultFlags(input.second + " --seed " + std::to_string(seed)));
+      im.readInputData(input.first);
+      im.run();
+      if (im.numLevels() > 2)
+        ++numDeepTrees;
+
+      // The per-level table reads the node terms; the module-count term belongs to no node.
+      double sumOfNodeTerms = im.calcTreeCodelengthCost(im.numTopModules());
+      for (const auto& node : im.root().infomapTree()) {
+        if (!node.isLeaf())
+          sumOfNodeTerms += node.codelength;
+      }
+      const double reported = im.codelength();
+      const double recomputed = im.calcCodelengthOnTree(im.root(), true);
+      INFO(input.first << " " << input.second << " seed " << seed << ": " << im.numLevels() << " levels, " << im.numTopModules() << " top modules");
+      INFO("reported=" << reported << " node terms=" << sumOfNodeTerms << " recomputed=" << recomputed);
+      checkApproxCodelength(reported, recomputed);
+      checkApproxCodelength(sumOfNodeTerms, recomputed);
+    }
+  }
+  REQUIRE(numDeepTrees > 0);
+}
+
+// A sub-Infomap searches the nodes of one module, and a super-Infomap the modules of
+// its parent, so each module codebook it builds has a free parameter per node of that
+// network. Both used to take the node count of the whole network from their parent, so
+// the tracked codelength charged N - n parameters more than the tree it describes
+// (#1283: on twotriangles a sub-search of one triangle charged 6 node parameters, its
+// tree 3). The one-level codelength is priced on the tree, so a search compared an
+// overcharged partition against a correctly priced single module and kept too few levels.
+TEST_CASE("Entropy-corrected sub- and super-searches charge their own nodes (repro #1283) [fast][core][mapeq][entropy-corrected]")
+{
+  InfomapWrapper im(defaultFlags("--two-level --no-infomap --entropy-corrected --cluster-data "
+                                 + clusterFixturePath("twotriangles_two_modules.clu")));
+  im.readInputData(repoPath("examples/networks/twotriangles.net"));
+  im.run();
+  REQUIRE(im.numTopModules() == 2);
+
+  // The tracked codelength of a pinned partition against the same partition priced on the tree.
+  const auto checkPinned = [](InfomapBase& infomap, std::vector<unsigned int> modules) {
+    infomap.initPartition(modules);
+    double priced = infomap.calcCodelength(infomap.root());
+    for (const auto& module : infomap.root())
+      priced += infomap.calcCodelength(module);
+    INFO(modules.size() << " nodes in " << infomap.numTopModules() << " modules: tracked=" << infomap.getCodelength() << " priced=" << priced);
+    checkApproxCodelength(infomap.getCodelength(), priced);
+  };
+
+  InfoNode& triangle = *im.root().firstChild;
+  REQUIRE(triangle.childDegree() == 3);
+  auto& subInfomap = im.getSubInfomap(triangle).initNetwork(triangle);
+  checkPinned(subInfomap, { 0, 0, 0 });
+  checkPinned(subInfomap, { 0, 0, 1 });
+
+  InfoNode superOwner(im.root().data);
+  auto& superInfomap = im.getSuperInfomap(superOwner).initNetwork(im.root(), true);
+  checkPinned(superInfomap, { 0, 0 });
+  checkPinned(superInfomap, { 0, 1 });
+}
+
+// The size of the correction, on a partition pinned from a file so no search
+// enters the comparison. twotriangles has N = 6 nodes and total degree D = 14,
+// and the codebooks of an m-module partition hold m - 1 + N free parameters:
+// m - 1 in the index codebook and, per module, its nodes plus an exit codeword
+// less the codebook's own normalisation. Miller-Madow charges (K - 1) / (2n)
+// nats per codebook and the map equation is in bits, so each parameter costs
+// 1 / (2 D ln2) bits -- the ln2 is what makes the corrected codelength of a
+// fixed partition stay flat as links are removed.
+TEST_CASE("Entropy correction charges m - 1 + N parameters at 1/(2 D ln2) bits [fast][core][mapeq][entropy-corrected]")
+{
+  const auto codelengthOf = [](const std::string& flags) {
+    InfomapWrapper im(defaultFlags("--two-level --no-infomap --cluster-data "
+                                   + clusterFixturePath("twotriangles_two_modules.clu") + " " + flags));
+    im.readInputData(repoPath("examples/networks/twotriangles.net"));
+    im.run();
+    return im.codelength();
+  };
+
+  const double correction = codelengthOf("--entropy-corrected") - codelengthOf("");
+  const double expected = (2 - 1 + 6) / (2 * 14.0 * std::log(2.0));
+  INFO("correction=" << correction << " expected=" << expected);
+  checkApproxCodelength(correction, expected);
+}
+
+// A module holding the whole network cannot be exited, so its codebook has no
+// exit codeword and the partition has one free parameter less: N - 1, not N.
+// Unlike an unobserved node or an unobserved boundary link -- which the declared
+// alphabet keeps charging, since a sample that misses them does not make them
+// impossible -- this codeword cannot occur in any sample. The index codebook of
+// a single module is likewise never used, and both sides of the equality have to
+// agree about that.
+TEST_CASE("A single module covering the network has no exit codeword [fast][core][mapeq][entropy-corrected]")
+{
+  const auto run = [](const std::string& flags) {
+    auto im = std::make_unique<InfomapWrapper>(defaultFlags("--two-level --no-infomap --cluster-data "
+                                                            + clusterFixturePath("twotriangles_single_module.clu") + " " + flags));
+    im->readInputData(repoPath("examples/networks/twotriangles.net"));
+    im->run();
+    return im;
+  };
+
+  const auto plain = run("");
+  const auto corrected = run("--entropy-corrected");
+
+  const double correction = corrected->codelength() - plain->codelength();
+  const double expected = (6 - 1) / (2 * 14.0 * std::log(2.0));
+  INFO("correction=" << correction << " expected=" << expected);
+  checkApproxCodelength(correction, expected);
+
+  checkTrackedMatchesRecompute(*corrected);
+}
+
+// Without links the total degree D is 0: there is no sample to correct, so the
+// correction is 0. Dividing by D made every codelength inf or nan, no trial beat the
+// initial best, and no tree was written (#1296).
+TEST_CASE("Entropy correction on a network without links is 0 (#1296) [fast][core][mapeq][entropy-corrected]")
+{
+  const std::vector<std::string> flagSets {
+    "",
+    "--two-level",
+    "--directed",
+  };
+  for (const auto& flags : flagSets) {
+    for (const unsigned int numNodes : { 1u, 3u }) {
+      const auto run = [numNodes](const std::string& runFlags) {
+        auto im = std::make_unique<InfomapWrapper>(defaultFlags(runFlags));
+        for (unsigned int node = 1; node <= numNodes; ++node)
+          im->addNode(node);
+        im->run();
+        return im;
+      };
+      const auto plain = run(flags);
+      const auto corrected = run("--entropy-corrected " + flags);
+      auto& im = *corrected;
+      INFO("flags '" << flags << "', " << numNodes << " nodes");
+      REQUIRE(im.numLeafNodes() == numNodes);
+      CHECK(im.numTopModules() == plain->numTopModules());
+      CHECK(im.numLevels() == plain->numLevels());
+      CHECK(im.getOneLevelCodelength() == 0.0);
+      CHECK(im.codelength() == 0.0);
+      checkApproxCodelength(im.codelength(), im.calcCodelengthOnTree(im.root(), true));
+    }
+  }
 }
 
 // The entropy-bias correction must reach the move loop, not only the reported
@@ -167,6 +529,478 @@ TEST_CASE("Super level never leaves the trial worse than its own two-level solut
   CHECK(std::abs(twoLevel - uncorrected) > 0.1);
 }
 
+// The tree has no self-links, but a node whose only out-link is a self-link is not dangling:
+// the flow follows the self-link, so the node teleports at rate alpha like any other and the
+// teleport flow sums to alpha. Without the self-link the node is dangling in both places (#1182).
+TEST_CASE("Recorded teleportation does not take a node with only a self-link for dangling [fast][core][mapeq]")
+{
+  for (const bool selfLink : { true, false }) {
+    INFO("selfLink=" << selfLink);
+    InfomapWrapper im(defaultFlags("--directed --recorded-teleportation --no-infomap"));
+    for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 2 }, { 2, 3 }, { 3, 1 }, { 3, 4 }, { 4, 5 }, { 5, 6 }, { 6, 4 }, { 6, 7 } })
+      im.addLink(link.first, link.second);
+    if (selfLink)
+      im.addLink(7, 7);
+    im.setInitialPartition({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 2 }, { 5, 2 }, { 6, 2 }, { 7, 2 } });
+    im.run();
+
+    double sumTeleportFlow = 0.0;
+    for (const auto* leaf : im.leafNodes())
+      sumTeleportFlow += leaf->data.teleportFlow;
+    if (selfLink) {
+      CHECK(sumTeleportFlow == doctest::Approx(0.15).epsilon(1e-12));
+      checkApproxCodelength(im.codelength(), 2.033045821, 1e-9);
+    } else {
+      CHECK(sumTeleportFlow > 0.15);
+      checkApproxCodelength(im.codelength(), 2.637456030, 1e-9);
+    }
+  }
+}
+
+#if INFOMAP_CHECK_INVARIANTS
+// The flow invariants are compiled into debug, sanitizer and fuzz builds and run after
+// each phase (#1171). They hold on a real run, and they catch a module whose exit flow
+// no longer balances against its children's.
+TEST_CASE("Flow invariants hold after a run and catch an unbalanced module [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags());
+  im.readInputData(repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+  CHECK_NOTHROW(im.checkInvariants(im.root(), "a test"));
+
+  auto& module = *im.root().firstChild;
+  module.data.exitFlow += 0.01;
+  CHECK_THROWS_AS(im.checkInvariants(im.root(), "a test"), InfomapError);
+}
+
+// Enter and exit flow scale with the Markov time, so they are checked relative to it. At
+// t = 1e7 the rounding of the boundary rates alone exceeds an absolute 1e-9.
+TEST_CASE("Flow invariants accept the boundary rates of a large Markov time [fast][core][mapeq]")
+{
+  for (const std::string flags : { "--directed", "--flow-model rawdir", "" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(defaultFlags("--markov-time 1e7 -N 1 --seed 1 " + flags));
+    im.readInputData(repoPath("examples/networks/modular_wd.net"));
+    CHECK_NOTHROW(im.run());
+  }
+}
+
+// Whether the leaf flow must sum to 1 is decided per run. A link-free run after a linked one
+// on the same instance has zero flow, which is its correct result, not a violation.
+TEST_CASE("Flow invariants accept a link-free run on an instance that ran a linked network [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags("-N 1 --seed 7"));
+  im.addLink(1, 2);
+  im.addLink(2, 3);
+  im.addLink(3, 1);
+  CHECK_NOTHROW(im.run());
+  CHECK(im.m_flowSumsToOne);
+
+  im.network().clear();
+  im.addNode(1);
+  im.addNode(2);
+  CHECK_NOTHROW(im.run());
+  CHECK_FALSE(im.m_flowSumsToOne);
+  CHECK(im.numLeafNodes() == 2);
+}
+#endif
+
+// The run's own negative-module-flow guard, which every build has, scales the same way. Module
+// enter and exit flow carry rounding residues of about t * 1e-16, which an absolute -1e-10 refused
+// from t = 1e7 on (#1192).
+TEST_CASE("The negative module flow guard accepts the boundary rates of a large Markov time (#1192) [fast][core][mapeq]")
+{
+  for (const std::string flags : { "--directed --markov-time 1e7", "--flow-model rawdir --markov-time 3e7", "--flow-model rawdir --markov-time 1e8", "--flow-model undirdir --markov-time 1e8" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(defaultFlags("-N 1 --seed 1 " + flags));
+    im.readInputData(repoPath("examples/networks/modular_wd.net"));
+    CHECK_NOTHROW(im.run());
+  }
+}
+
+// Open bugs found by the fuzz_run target (#1171), stated as what should happen and
+// marked should_fail, so each turns red when its bug is fixed. Release builds refuse
+// some through the negative-flow guard and report a codelength for the others; builds
+// with the invariants refuse all of them. When one is fixed, drop its marker here and
+// its entry in isKnownFinding() in test/fuzz/fuzz_run.cpp.
+namespace {
+
+void checkLeafFlowBalances(InfomapWrapper& im)
+{
+  CHECK_NOTHROW(im.run());
+  double sumEnter = 0.0;
+  double sumExit = 0.0;
+  for (const auto& node : im.network().nodes()) {
+    sumEnter += node.second.enterFlow;
+    sumExit += node.second.exitFlow;
+  }
+  INFO("leaf enter flow " << sumEnter << ", exit flow " << sumExit);
+  CHECK(sumExit == doctest::Approx(sumEnter));
+}
+
+} // namespace
+
+// Under --regularized the leaves' enter and exit flow came from the node flow, which Markov
+// time does not scale, while a module subtracts its scaled internal link flow. Above 1 that
+// left a module with negative enter and exit flow, and --variable-markov-time did the same
+// wherever it scaled a node's links up (#1191). Below 1 a module kept exit flow the walk
+// does not have, so one module over the whole network cost more than the one-level
+// codelength (#1231). The leaves' enter and exit flow now come from the scaled links plus
+// the teleportation to and from other nodes.
+TEST_CASE("--regularized with --markov-time above 1 keeps module flow non-negative (#1191) [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags("--regularized --markov-time 2"));
+  im.addLink(1, 2);
+  CHECK_NOTHROW(im.run());
+}
+
+TEST_CASE("--regularized with --variable-markov-time keeps module flow non-negative (#1191) [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags("--directed --regularized --variable-markov-time"));
+  im.readInputData(repoPath("examples/networks/modular_w.net"));
+  CHECK_NOTHROW(im.run());
+}
+
+TEST_CASE("--regularized with --markov-time below 1: one module costs the one-level codelength (#1231) [fast][core][mapeq]")
+{
+  for (const char* flags : { "", "--directed" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(defaultFlags(std::string(flags) + " --regularized --markov-time 0.5 --no-infomap --cluster-data " + clusterFixturePath("twotriangles_single_module.clu")));
+    im.readInputData(repoPath("examples/networks/twotriangles.net"));
+    im.run();
+    REQUIRE(im.numTopModules() == 1);
+    checkApproxCodelength(im.codelength(), im.getOneLevelCodelength());
+  }
+}
+
+// The recorded-teleportation enter and exit terms assumed the directed model's
+// teleporting flow. Under undirdir, outdirdir, rawdir and precomputed flow they came on
+// top of link flow that already sums to 1, so the leaves exited at a higher rate than
+// they were entered. On a single link a release run reported codelength 2 against a
+// one-level codelength of 0. Undirected flow kept them out of the leaves, but the module
+// terms still came back when the best of several trials was restored. None of these
+// models teleport, so the option now has no effect on them: the run equals one without
+// it, over one trial and over several (#1188).
+namespace {
+
+template <typename AddInput>
+void checkOptionHasNoEffect(const std::string& option, const std::string& flags, AddInput addInput)
+{
+  for (const char* trials : { "--num-trials 1", "--num-trials 2" }) {
+    INFO(option << " " << flags << " " << trials);
+    InfomapWrapper recorded(defaultFlags(flags + " " + trials + " " + option));
+    addInput(recorded);
+    checkLeafFlowBalances(recorded);
+    InfomapWrapper unrecorded(defaultFlags(flags + " " + trials));
+    addInput(unrecorded);
+    CHECK_NOTHROW(unrecorded.run());
+    CHECK(recorded.codelength() == unrecorded.codelength());
+    CHECK(recorded.getOneLevelCodelength() == unrecorded.getOneLevelCodelength());
+    std::vector<std::pair<double, double>> recordedModules;
+    std::vector<std::pair<double, double>> unrecordedModules;
+    for (auto& node : recorded.root().infomapTree())
+      recordedModules.emplace_back(node.data.enterFlow, node.data.exitFlow);
+    for (auto& node : unrecorded.root().infomapTree())
+      unrecordedModules.emplace_back(node.data.enterFlow, node.data.exitFlow);
+    CHECK(recordedModules == unrecordedModules);
+  }
+}
+
+} // namespace
+
+TEST_CASE("--recorded-teleportation has no effect under undirdir, outdirdir and rawdir (#1188) [fast][core][mapeq]")
+{
+  for (const char* model : { "undirdir", "outdirdir", "rawdir" }) {
+    checkOptionHasNoEffect("--recorded-teleportation", std::string("--flow-model ") + model, [](InfomapWrapper& im) { im.addLink(1, 2); });
+    checkOptionHasNoEffect("--recorded-teleportation", std::string("--flow-model ") + model, [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
+  }
+}
+
+TEST_CASE("--recorded-teleportation has no effect under precomputed flow (#1188) [fast][core][mapeq]")
+{
+  checkOptionHasNoEffect("--recorded-teleportation", "--flow-model precomputed", [](InfomapWrapper& im) { im.readInputData(networkFixturePath("twotriangles_flow.net")); });
+}
+
+TEST_CASE("--recorded-teleportation has no effect under undirected flow, over several trials (#1188) [fast][core][mapeq]")
+{
+  checkOptionHasNoEffect("--recorded-teleportation", "--flow-model undirected", [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
+}
+
+// undirdir, outdirdir, rawdir and precomputed flow ignored --regularized and left every teleport
+// weight at 0, but the run still took the regularized path: the leaves' enter and exit flow came
+// from the node flow, not from the links, and teleportation left every module without entering
+// any. The search priced a module from its leaves' own flow, while a restored tree (initTree, for
+// the super-level fallback, the best of several trials, or cluster data) and the reference
+// codelength priced it from the links. A release run could then report a worse tree than the
+// recursive search found: on the network below with --seed 1 (libc++), 3.73 bits against 2.00
+// for the super-level tree it restored. These models now ignore --regularized altogether, so the
+// run equals one without it (#1189).
+namespace {
+
+void addRegularizedFindingLinks(InfomapWrapper& im)
+{
+  for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 0, 2 }, { 1, 3 }, { 2, 3 }, { 4, 5 }, { 5, 6 }, { 7, 9 }, { 3, 7 } })
+    im.addLink(link.first, link.second);
+  im.addLink(5, 1, 0.8);
+}
+
+// The tree the search found, rebuilt through initTree as a restore does, is priced as the
+// search priced it.
+void checkRestoredTreeKeepsCodelength(const std::string& network, const std::string& flags)
+{
+  CAPTURE(flags);
+  InfomapWrapper im(defaultFlags(flags));
+  im.readInputData(repoPath(network));
+  im.run();
+  REQUIRE(im.numLevels() > 2);
+  const double searched = im.getHierarchicalCodelength();
+  NodePaths tree;
+  for (auto it(im.iterLeafNodes()); !it.isEnd(); ++it)
+    tree.emplace_back(it->stateId, it.path());
+  im.initTree(tree);
+  checkApproxCodelength(im.getHierarchicalCodelength(), searched);
+}
+
+} // namespace
+
+TEST_CASE("--regularized has no effect under undirdir, outdirdir, rawdir and precomputed (#1189) [fast][core][mapeq]")
+{
+  for (const char* model : { "undirdir", "outdirdir", "rawdir" }) {
+    checkOptionHasNoEffect("--regularized", std::string("--flow-model ") + model, addRegularizedFindingLinks);
+    checkOptionHasNoEffect("--regularized", std::string("--flow-model ") + model, [](InfomapWrapper& im) { im.readInputData(repoPath("examples/networks/ninetriangles.net")); });
+  }
+  checkOptionHasNoEffect("--regularized", "--flow-model precomputed", [](InfomapWrapper& im) { im.readInputData(networkFixturePath("twotriangles_flow.net")); });
+}
+
+// Which seeds take the restore path differs between standard libraries, so sweep them.
+TEST_CASE("--regularized under outdirdir balances module flow in the finished tree (#1189) [fast][core][mapeq]")
+{
+  const auto moduleFlowBalances = [](InfomapWrapper& im) {
+    try {
+      im.run();
+    } catch (const InfomapError&) {
+      return false; // the invariants, in builds that have them
+    }
+    for (auto& node : im.root().infomapTree()) {
+      if (node.isLeaf() || node.isRoot())
+        continue;
+      double sumEnter = 0.0;
+      double sumExit = 0.0;
+      for (const InfoNode& child : node) {
+        sumEnter += child.data.enterFlow;
+        sumExit += child.data.exitFlow;
+      }
+      if (std::abs((sumExit - node.data.exitFlow) - (sumEnter - node.data.enterFlow)) > 1e-9)
+        return false;
+    }
+    return true;
+  };
+
+  unsigned int numUnbalanced = 0;
+  for (unsigned int seed = 1; seed <= 100; ++seed) {
+    InfomapWrapper im(defaultFlags("--flow-model outdirdir --regularized --core-loop-limit 1 --seed " + std::to_string(seed)));
+    addRegularizedFindingLinks(im);
+    if (!moduleFlowBalances(im))
+      ++numUnbalanced;
+  }
+  CHECK(numUnbalanced == 0);
+}
+
+TEST_CASE("--regularized under outdirdir: a restored tree keeps the search's codelength (#1189) [fast][core][mapeq]")
+{
+  checkRestoredTreeKeepsCodelength("examples/networks/ninetriangles.net", "--flow-model outdirdir --regularized --seed 3");
+}
+
+// --regularized with --use-node-weights-as-flow had the same mismatch: the leaves' enter and
+// exit flow came from the node weights, while a restored tree is priced from the links. The
+// leaves' enter and exit flow now come from the links too (#1189).
+TEST_CASE("--regularized with --use-node-weights-as-flow: a restored tree keeps the search's codelength (#1189) [fast][core][mapeq]")
+{
+  checkRestoredTreeKeepsCodelength("examples/networks/ninetriangles.net", "--regularized --regularization-strength 0.01 --use-node-weights-as-flow --seed 1");
+}
+
+// --variable-markov-time scales each link by the log of the largest effective degree, node
+// flow times the number of link ends, over the local one. With the walk's own flow that degree
+// is at least 1, but with --use-node-weights-as-flow, or the teleportation flow under
+// --regularized, an isolated node takes flow from the linked ones and can put it below 1.
+// The links were then scaled by a negative Markov time: refused with negative enter flow, or
+// under --regularized not refused at all (#1191).
+TEST_CASE("--variable-markov-time keeps link flow non-negative with flow on isolated nodes (#1191) [fast][core][mapeq]")
+{
+  for (const char* flags : { "--use-node-weights-as-flow", "--directed --use-node-weights-as-flow", "--regularized", "--directed --regularized" }) {
+    INFO(flags);
+    InfomapWrapper im(defaultFlags(std::string(flags) + " --variable-markov-time"));
+    im.addNode(3);
+    im.addLink(1, 2);
+    CHECK_NOTHROW(im.run());
+    for (auto* node : im.leafNodes())
+      for (const auto* edge : node->outEdges())
+        CHECK(edge->data.flow >= 0.0);
+  }
+}
+
+// Each link's Markov time is the largest local scale over its own, and the local scales are
+// floored at --variable-markov-min-scale (an effective degree of 2 by default). With no node
+// above that floor every node is at it, so every link keeps Markov time 1 and the run is the one
+// without --variable-markov-time. The largest scale was not floored: two disjoint links had
+// every link scaled to 0 and reported 0 bits, and node weights as flow left a walk without
+// link steps (#1191).
+TEST_CASE("--variable-markov-time changes nothing when no node has effective degree 2 (#1191) [fast][core][mapeq]")
+{
+  for (const char* flags : { "", "--directed", "--use-node-weights-as-flow", "--directed --use-node-weights-as-flow" }) {
+    INFO(flags);
+    const auto run = [&](const std::string& extraFlags) {
+      InfomapWrapper im(defaultFlags(std::string(flags) + extraFlags));
+      im.addNode(5);
+      im.addLink(1, 2);
+      im.addLink(3, 4);
+      im.run();
+      for (auto* node : im.leafNodes())
+        for (const auto* edge : node->outEdges())
+          CHECK(edge->data.flow > 0.0);
+      return im.codelength();
+    };
+    CHECK(run(" --variable-markov-time") == doctest::Approx(run("")).epsilon(1e-12));
+  }
+}
+
+// The relax-to-self relay in the flow calculation treated any link between two states of
+// one physical node as a layer switch and relayed its flow onward, on state networks
+// too. Under --regularized that extra link flow left a module with negative enter flow.
+// The option is for multilayer input, so a state network now runs as without it (#1191).
+TEST_CASE("--multilayer-relax-to-self has no effect on state networks (#1191) [fast][core][mapeq]")
+{
+  const auto addInput = [](InfomapWrapper& im) {
+    im.addStateNode(1, 1);
+    im.addStateNode(2, 2);
+    im.addStateNode(3, 3);
+    im.addStateNode(4, 2);
+    im.addLink(2, 3, 1.0);
+    im.addLink(4, 2, 0.2);
+  };
+  for (const char* flags : { "", "--directed", "--regularized", "--directed --regularized" }) {
+    INFO(flags);
+    InfomapWrapper relaxed(defaultFlags(std::string(flags) + " --multilayer-relax-to-self"));
+    addInput(relaxed);
+    CHECK_NOTHROW(relaxed.run());
+    InfomapWrapper plain(defaultFlags(flags));
+    addInput(plain);
+    CHECK_NOTHROW(plain.run());
+    CHECK(relaxed.codelength() == plain.codelength());
+    std::vector<std::pair<double, double>> relaxedModules;
+    std::vector<std::pair<double, double>> plainModules;
+    for (auto& node : relaxed.root().infomapTree())
+      relaxedModules.emplace_back(node.data.enterFlow, node.data.exitFlow);
+    for (auto& node : plain.root().infomapTree())
+      plainModules.emplace_back(node.data.enterFlow, node.data.exitFlow);
+    CHECK(relaxedModules == plainModules);
+  }
+}
+
+// Only the *Bipartite section was checked for links that cross the start id, so a
+// *Links section or the API could still link feature nodes to each other. Directed
+// PageRank with --bipartite-teleportation then diverged to a total node flow of 1.7e27,
+// and the other flow models silently uncoded primary nodes. Such links are now refused
+// as input on every path (#1190).
+namespace {
+
+void checkRefusesLinkInsideBipartiteSide(InfomapWrapper& im, const std::string& link)
+{
+  try {
+    im.run();
+    FAIL("expected a bipartite link inside one side to be refused");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    const std::string message(e.what());
+    INFO(message);
+    CHECK(message.find("Link " + link + " does not cross bipartite start id") != std::string::npos);
+  }
+}
+
+} // namespace
+
+TEST_CASE("Bipartite input refuses links inside one side (#1190) [fast][core][mapeq]")
+{
+  for (const char* flags : { "", "--directed", "--directed --bipartite-teleportation -N 1 --seed 1" }) {
+    INFO(flags);
+    InfomapWrapper im(defaultFlags(flags));
+    im.setBipartiteStartId(4);
+    im.addLink(2, 4, 1.0);
+    im.addLink(4, 6, 3.0);
+    im.addLink(6, 7, 8.0);
+    im.addLink(6, 8, 5.0);
+    im.addLink(8, 10, 2.0);
+    im.addLink(7, 11, 3.0);
+    im.addLink(10, 33, 1.0);
+    im.addLink(33, 35, 1.0);
+    im.addLink(35, 36, 1.0);
+    im.addLink(36, 10, 0.5);
+    checkRefusesLinkInsideBipartiteSide(im, "4 -> 6");
+  }
+  // Links added before the start id is set are checked too.
+  InfomapWrapper late(defaultFlags());
+  late.addLink(1, 3);
+  late.addLink(1, 2);
+  late.setBipartiteStartId(3);
+  checkRefusesLinkInsideBipartiteSide(late, "1 -> 2");
+  // A *Links section after the *Bipartite section.
+  InfomapWrapper file(defaultFlags("--directed --bipartite-teleportation"));
+  file.readInputData(networkFixturePath("bipartite_link_inside_side.net"));
+  checkRefusesLinkInsideBipartiteSide(file, "3 -> 4");
+}
+
+// On bipartite input the feature nodes are not coded, and their teleport weights were set to 0
+// without renormalising the others: they summed to 0.6 on this network. Part of the recorded
+// teleportation then went nowhere, and the leaves exited at 0.795 but were entered at 0.735
+// (#1175).
+TEST_CASE("Bipartite input renormalises the teleport weights of the coded nodes (#1175) [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags("--directed --recorded-teleportation --to-nodes"));
+  im.readInputData(repoPath("examples/networks/bipartite.net"));
+  checkLeafFlowBalances(im);
+  double sumWeight = 0.0;
+  for (const auto& node : im.network().nodes())
+    sumWeight += node.second.weight;
+  CHECK(sumWeight == doctest::Approx(1.0));
+}
+
+// On bipartite input the feature nodes are not coded, so a module of them has no flow,
+// yet the walker enters its children. The search priced that index codebook from its
+// running terms, while calcCodelength returned 0 for any module without flow, so a
+// sub-search kept 0.667 bits for a tree that priced to 0 (#1290).
+TEST_CASE("A module without flow prices the entry of its children as the search does (#1290) [fast][core][mapeq]")
+{
+  InfoNode module;
+  std::vector<InfoNode*> subModules;
+  for (int i = 0; i < 2; ++i) {
+    FlowData data;
+    data.enterFlow = 1.0 / 3;
+    auto* subModule = new InfoNode(data);
+    subModule->addChild(new InfoNode());
+    module.addChild(subModule);
+    subModules.push_back(subModule);
+  }
+  MapEquation<> objective;
+  objective.initSubNetwork(module);
+  objective.initPartition(subModules);
+  // Two codewords used at a third each: plogp(2/3) - 2 plogp(1/3) = 2/3 bits.
+  CHECK(objective.indexCodelength == doctest::Approx(2.0 / 3));
+  CHECK(objective.calcCodelength(module) == doctest::Approx(2.0 / 3));
+}
+
+// --use-node-weights-as-flow replaces the node flow after the link flow is computed, and
+// the regularized path took enter and exit flow from the node flow. Where a node's weight
+// gave it less flow than its links carry, enter flow went negative, on the node itself or
+// on the module that holds it (#1191).
+TEST_CASE("--regularized with --use-node-weights-as-flow keeps flow non-negative (#1191) [fast][core][mapeq]")
+{
+  InfomapWrapper im(defaultFlags("--regularized --use-node-weights-as-flow"));
+  // Unit node weights give each node a third of the flow; the links give node 7 a twentieth.
+  im.addLink(36, 10, 0.5);
+  im.addLink(7, 10, 0.05);
+  CHECK_NOTHROW(im.run());
+}
+
 // Follow-ups (not reproduced here): #831 (two-level initPartition/consolidate
 // reentrancy corrupting the recomputed codelength after a prior multi-level
 // trial) and #837 (hierarchical super-step degrading a two-level memory
@@ -176,3 +1010,4 @@ TEST_CASE("Super level never leaves the trial worse than its own two-level solut
 
 } // namespace test
 } // namespace infomap
+

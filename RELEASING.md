@@ -80,14 +80,28 @@ Configure these integrations before the first release:
    `vX.Y.Z` tag. If a version field did not move, the issue is in
    `release-please-config.json` `extra-files`, not in the PR.
 
+   If `RESULT_CHANGES.csv` has `unreleased` rows, merge a small `docs:` PR
+   that sets them to `X.Y.Z` before you merge the release PR. Release Please
+   does not edit that file.
+
    The R package is not a separate Release Please component. Release Please
    bumps its committed `DESCRIPTION` version as a generic `extra-files` entry so
    release artifacts and repository metadata stay aligned.
    `scripts/stage_r_package.py` also resyncs the staged `DESCRIPTION` from
    `_version.py` whenever `make build-r` or the r-universe `configure` script
    runs.
+
+   Before you merge, run `make bench-correctness` on the release PR's branch.
+   It runs a debug build over the benchmark networks and re-scores every
+   tree, in about two hours with three jobs. It is not in CI because the
+   networks are fetched with the private `mapequation-networks` package; the
+   docstring of `scripts/benchmarks/run_correctness_sweep.py` says how to get
+   them.
 4. Merge the release PR.
 5. Release Please creates the `vX.Y.Z` tag and the GitHub Release.
+   Add a link to the result changes page
+   (`https://mapequation.org/infomap-python-docs/result-changes.html`) to the release
+   notes when the release has rows in `RESULT_CHANGES.csv`.
 6. `.github/workflows/release.yml` runs for that tag and:
    - waits for the CI run on the release commit to have passed
      (`verify-master-ci`) before it publishes anything. That commit's push to
@@ -206,18 +220,72 @@ runtime depends on how the caller reaches it — three tiers, all pinned by
 `test/python/test_deprecations.py` (plus `test/python/test_wrapper_args.py`
 for the parameters):
 
-- **Silent-by-default `PendingDeprecationWarning`** — the legacy stateful
+The two runtime classes are named once each, as `LEGACY_SURFACE_WARNING` and
+`TYPED_PARAMETER_WARNING` in `interfaces/python/src/infomap/_options.py` (generated
+from `scripts/generate_binding_options.py`). Change them there, not at the call
+sites, and keep them ordered by volume.
+
+Each is a dedicated subclass (`LegacySurfaceWarning(DeprecationWarning)`,
+`TypedParameterWarning(FutureWarning)`), not the built-in class itself. Filters
+match by class hierarchy, so every `-W` spelling on the base class still catches
+them; naming the tier silences that tier alone. That is what the suite does —
+`ignore::infomap._options.LEGACY_SURFACE_WARNING` where a test exercises the
+legacy surface on purpose, rather than `ignore::DeprecationWarning`, which would
+also hide the warnings a test is there to catch.
+
+- **`LEGACY_SURFACE_WARNING`, a `DeprecationWarning`** — the legacy stateful
   surface: the `Result` accessors mirrored on `Infomap` (`get_modules`,
   `codelength`, …), the advanced-tier keywords on `Infomap()` / `Infomap.run`,
-  and `from_options` / `run_with_options` / `from_scipy_sparse_matrix` /
-  `from_edge_index`. Silent under the default warning filter, so existing code
-  is not disrupted; surface it with `python -W` or a logging filter.
+  `from_options` / `run_with_options` / `from_scipy_sparse_matrix` /
+  `from_edge_index`, the `depth` / `depth_level` spellings of the `level`
+  selector on the `Result` readers and `write_clu` together with the
+  `Result.max_depth` alias of `num_levels` (#789, 2.16), the
+  `annotate_networkx_graph` / `annotate_igraph_graph` spellings of
+  `annotate_networkx` / `annotate_igraph` (#791, 2.16), the `node_id` /
+  `layer_id` / `node_ids` spellings of `node_id_attribute` /
+  `layer_id_attribute` / `node_labels` on the graph constructors and finders
+  (#791 §2, 2.16), and the
+  `Options` fields the parameter policy classifies
+  `remove` for Python (`threads`, `silent`, `verbosity_level`,
+  `print_config_fingerprint`) when one is set on `Options` itself — those leave
+  `Options` too, so the object the migration points at has to say so. Shown in
+  `__main__` under PEP 565, so `python analysis.py` sees it while a library that
+  merely imports Infomap does not. This tier was `PendingDeprecationWarning`
+  until #915: CPython's default filters ignore that class outright, so the
+  removal window reached nobody and the exit criterion it was supposed to
+  satisfy was self-certifying.
+
+  The removed-field warning fires from `Options.__post_init__`, so every place
+  the package builds an `Options` on its own behalf (merging keyword overrides,
+  the run-context base, the rendered-args funnel, folding in an inferred flow
+  model) runs under `_internal_construction()` from `_options.py`. A new
+  internal funnel that constructs an `Options` from values the caller already
+  supplied must do the same, or the caller hears about one field once per
+  plumbing step and `test_no_self_warnings_on_import_construct_run_repr_summary`
+  fails. A caller's mapping or bare keywords are *not* internal: converting
+  them is where their removed fields get announced.
 - **Docs-only, no runtime warning** — the `add_*` build-from-graph adapters
   (`add_networkx_graph`, `add_scipy_sparse_matrix`, `add_edge_index`,
   `add_igraph_graph`). The `.. deprecated::` note is the only signal.
-- **Louder `DeprecationWarning`** — an explicitly passed deprecated *parameter*
-  (`include_self_links`, `pretty`): silently ignoring or rewriting an argument
-  the caller actually typed hides a migration they need to make.
+- **`TYPED_PARAMETER_WARNING`, a `FutureWarning`** — an explicitly passed
+  deprecated *parameter* (`include_self_links`, `pretty`): silently ignoring or
+  rewriting an argument the caller actually typed hides a migration they need to
+  make. Shown under every filter, which is where scikit-learn, pandas and NumPy
+  each landed for a scientific audience. It moved up with the tier below it, so
+  the two stay distinct rather than collapsing into one class.
+
+The R package follows the same policy from the same data: `construct_args()`
+announces an `infomap_options()` field the policy classifies `remove` for R
+(`threads`, `print_config_fingerprint`) with `.Deprecated()` when it is set
+away from its default, and `?infomap_options` carries the note for both
+`remove` and `deprecate` fields — all generated by
+`scripts/generate_binding_options.py` from `overrides.json`, so a policy change
+regenerates the R stamps along with the Python ones. `deprecate`-classified R
+fields (`silent`, `verbosity_level`) get the documentation note only until the
+R option-surface decision (#757) settles their fate.
+
+On the command line, a flag that is a no-op pending removal (`--pretty`) warns
+once when typed, after logging is initialised so `--silent` mutes it.
 
 **Removal is a major-version event** (`feat!:` / `BREAKING CHANGE`), never part
 of a minor or patch release.
@@ -226,6 +294,51 @@ Always include the version in the directive (`.. deprecated:: 2.15`) — Sphinx
 renders an empty version otherwise. Use the release in which the deprecation
 first shipped; the 2.x → 3.0 wave deprecating the pre-redesign API is `2.15`
 (2.14.0 shipped the redesign but no versioned markers or runtime warnings).
+
+### Python version support policy
+
+The supported Python versions follow
+[SPEC 0](https://scientific-python.org/specs/spec-0000/) one release behind:
+Python 3.N is dropped on the date SPEC 0 drops 3.N+1 (#813). Infomap has no
+runtime dependencies, so nothing upstream forces a faster pace. 3.11 is still
+the largest single cohort in the PyPI download data, so the calendar alone
+would strand the most users.
+
+| Python | SPEC 0 drops it | Infomap drops it                        |
+| ------ | --------------- | --------------------------------------- |
+| 3.11   | 2025-10-23      | due 2026-10-01; first release after 3.0 |
+| 3.12   | 2026-10-01      | 2027-10-07                              |
+| 3.13   | 2027-10-07      | 2028-10-06                              |
+
+The date is when a bump becomes due, not a release trigger: the bump ships in
+the next release after it. It never ships in a major that also removes API
+surface, so one upgrade does not carry two unrelated breaks. That is why 3.0
+ships on `>=3.11` even though 3.11 is due earlier. A floor bump does not need
+a major version, because pip keeps an older interpreter on the last release
+that supports it.
+
+Bump everything in one PR:
+
+- `requires-python` and the `Programming Language :: Python :: 3.N`
+  classifiers in `pyproject.toml` (ruff's pyupgrade target follows
+  `requires-python`)
+- pyright `pythonVersion` in `pyproject.toml`
+- the `python-version` test matrix and `CIBW_BUILD` in
+  `.github/workflows/_python-package.yml`
+- the baseline tools line in `AGENTS.md`
+
+Each floor unlocks cleanups in `interfaces/python/src/infomap/`. Do them in the
+bump PR or in a follow-up:
+
+- **`>=3.12`:** replace the `_external_stacklevel()` frame walker in
+  `_options.py` with `warnings.warn(..., skip_file_prefixes=...)`.
+- **`>=3.13`:** use `warnings.deprecated` (PEP 702) for the method
+  deprecations instead of hand-rolled `DeprecationWarning`s, which also gives
+  pyright and IDEs a strike-through.
+- **`>=3.14`:** the interpreter's own "did you mean" for keyword arguments
+  makes the `_OptionsMeta` suggestion shim in `_options.py` nearly redundant.
+  Keep the richer variant in `_run.py`, which also points at the parameter
+  reference.
 
 ### Red flags that block merge
 

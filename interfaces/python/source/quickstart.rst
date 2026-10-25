@@ -119,7 +119,7 @@ as methods with defaults:
     result.num_levels            # depth of the hierarchy
 
     result.modules()             # {node_id: module_id} at the top level
-    result.modules(depth=2)      # one level deeper
+    result.modules(level=2)      # one level deeper
     for node in result.nodes():  # per-node views
         node.node_id, node.module_id, node.flow
 

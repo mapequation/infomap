@@ -1,6 +1,7 @@
 #include "vendor/doctest.h"
 
 #include "Infomap.h"
+#include "io/InfomapError.h"
 #include "io/OutputView.h"
 #include "utils/Log.h"
 
@@ -8,6 +9,7 @@
 
 #include <atomic>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -245,6 +247,34 @@ TEST_CASE("requestInterrupt() aborts the run even when the handler returns false
   CHECK_THROWS_AS(im.run(), infomap::InterruptionError);
 }
 
+TEST_CASE("A handler that fires only inside the nested super-module run stops the run and unmutes logging [fast][core][lifecycle][crash]")
+{
+  // Not --silent: findHierarchicalSuperModules sets Log silent only while the super
+  // Infomap runs, so this handler can return true only when a nested instance polls
+  // it. The main instance never polls during that run, so before #1134 the signal
+  // went unseen and the run completed.
+  std::ostringstream out;
+  std::streambuf* originalOut = std::cout.rdbuf(out.rdbuf());
+  bool threw = false;
+  {
+    InfomapWrapper im("--seed 1 --num-trials 1 --no-file-output");
+    buildClusteredNetwork(im, 16);
+    im.setInterruptHandler([](void*) { return infomap::Log::isSilent(); });
+    try {
+      im.run();
+    } catch (const infomap::InterruptionError&) {
+      threw = true;
+    }
+  }
+  const bool silentAfter = infomap::Log::isSilent();
+  infomap::Log::setSilent(false);
+  std::cout.rdbuf(originalOut);
+
+  CHECK(threw);
+  // The nested run's mute must not outlive the interrupted run.
+  CHECK_FALSE(silentAfter);
+}
+
 // Cancel inside optimization, clear the handler, rerun, return the result.
 // We do NOT compare against a *fresh* instance: the RNG is seeded once at
 // construction (not per run()), so a reused instance legitimately differs from a
@@ -383,6 +413,27 @@ TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][l
   CHECK(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
   CHECK(im.codelength() == doctest::Approx(firstCodelength));
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
+}
+
+TEST_CASE("A rerun counts the dangling flow once under recorded teleportation [fast][core][lifecycle][flow]")
+{
+  // The dangling-flow sum behind the recorded teleportation enter flow was never
+  // reset, so a second run charged the dangling nodes twice: 2.9177 against 2.8237
+  // for the same two modules (#1201). Two cycles bridged by one arc, then the
+  // dangling path 6 -> 7 -> 8.
+  InfomapWrapper im(infomap::test::defaultFlags("--directed --recorded-teleportation --two-level --no-file-output"));
+  for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 2 }, { 2, 3 }, { 3, 1 }, { 3, 4 }, { 4, 5 }, { 5, 6 }, { 6, 4 }, { 6, 7 }, { 7, 8 } }) {
+    im.addLink(link.first, link.second);
+  }
+
+  im.run();
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules());
+  const auto firstCodelength = im.codelength();
+
+  im.run();
+
+  REQUIRE(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
 }
 
 // A copy-constructible, seedable UniformRandomBitGenerator (a small LCG) that
@@ -688,10 +739,11 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(timingJson.find("\"version\":\"") != std::string::npos);
   CHECK(timingJson.find("\"openmp\":") != std::string::npos);
   CHECK(timingJson.find("\"threads_requested\":") != std::string::npos);
-  CHECK(timingJson.find("\"threads_used\":1,") != std::string::npos);
+  CHECK(timingJson.find("\"threads_used\":") != std::string::npos);
   CHECK(timingJson.find("\"thread_source\":\"") != std::string::npos);
   CHECK(timingJson.find("\"thread_source\":\"\"") == std::string::npos); // value is non-empty
   CHECK(timingJson.find("\"network\":{\"nodes\":") != std::string::npos);
+  CHECK(timingJson.find("\"directed\":false") != std::string::npos);
   CHECK(timingJson.find("\"timing\":{") != std::string::npos);
   CHECK(timingJson.find("\"flow_calculation_s\":") != std::string::npos);
   CHECK(timingJson.find("\"init_network_s\":") != std::string::npos);
@@ -707,6 +759,125 @@ TEST_CASE("Run reports write machine-readable JSON with no-file-output [fast][co
   CHECK(timingJson.find("\"top_modules\":") != std::string::npos);
   CHECK(timingJson.find("\"num_levels\":") != std::string::npos);
   CHECK(timingJson.find("\"memory\":{\"rss_peak_mb\":") != std::string::npos);
+
+  removeFiles(paths);
+}
+
+TEST_CASE("undirdir keeps its links directed, and the run report, summary and parser say so [fast][core][lifecycle][output]")
+{
+  // undirdir computes the steady state as if the links were undirected, then takes one
+  // directed power step: every link stays directed as given, so 1 2 and 2 1 are two links.
+  const std::string links = "1 2 1\n2 1 3\n2 3 1\n3 1 1\n3 4 1\n4 5 1\n5 6 1\n6 4 1\n";
+  const auto runUndirdir = [&](const std::string& heading, std::string& timingJson) {
+    const std::vector<std::string> paths = { "undirdir_links.net", "undirdir_timing.json" };
+    removeFiles(paths);
+    {
+      std::ofstream network(paths[0]);
+      network << heading << "\n"
+              << links;
+    }
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      // Not defaultFlags: it carries --silent, which mutes the summary and the notes.
+      InfomapWrapper im("--seed 7 --num-trials 1 --no-file-output --flow-model undirdir --timing-json " + paths[1]);
+      im.readInputData(paths[0]);
+      im.run();
+    }
+    timingJson = infomap::test::readTextFile(paths[1]);
+    removeFiles(paths);
+    return captured.str();
+  };
+  const auto directionLine = [](const std::string& log) {
+    const auto start = log.find("Direction");
+    return start == std::string::npos ? std::string() : log.substr(start, log.find('\n', start) - start);
+  };
+
+  std::string timingJson;
+  const auto arcsLog = runUndirdir("*Arcs", timingJson);
+  CHECK(timingJson.find("\"network\":{\"nodes\":6,\"links\":8,\"directed\":true}") != std::string::npos);
+  CHECK(directionLine(arcsLog).find("directed") != std::string::npos);
+  CHECK(directionLine(arcsLog).find("undirected") == std::string::npos);
+  CHECK(arcsLog.find("undirected steady state, directed links") != std::string::npos);
+  CHECK(arcsLog.find("parsed as undirected") == std::string::npos);
+
+  const auto edgesLog = runUndirdir("*Edges", timingJson);
+  CHECK(edgesLog.find("Links marked as undirected but parsed as directed.") != std::string::npos);
+}
+
+TEST_CASE("Timing report counts the threads a run started [fast][core][lifecycle][output][openmp]")
+{
+  // threads_used is the largest OpenMP team the run started, not the number of
+  // trial workers (#1145). A single trial still runs its recursive partition on
+  // the whole budget; a two-level run without --inner-parallelization starts no
+  // team; parallel trials start one worker per trial, up to the budget.
+  const std::string path = "run_report_threads_used.json";
+  const auto threadsUsed = [&path](const std::string& flags) {
+    removeFiles({ path });
+    InfomapWrapper im("--silent --seed 7 --no-file-output --timing-json " + path + " " + flags);
+    infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+    im.run();
+    const auto timingJson = infomap::test::readTextFile(path);
+    removeFiles({ path });
+    const std::string key = "\"threads_used\":";
+    const auto at = timingJson.find(key);
+    REQUIRE(at != std::string::npos);
+    return std::stoul(timingJson.substr(at + key.size()));
+  };
+
+#ifdef _OPENMP
+  CHECK(threadsUsed("--num-trials 1 --num-threads 3") == 3);
+  CHECK(threadsUsed("--num-trials 1 --num-threads 3 --two-level") == 1);
+  CHECK(threadsUsed("--num-trials 1 --num-threads 3 --two-level --inner-parallelization") == 1); // below the size threshold
+  CHECK(threadsUsed("--num-trials 2 --num-threads 3 --parallel-trials") == 2);
+  CHECK(threadsUsed("--num-trials 1 --num-threads 1") == 1);
+
+  // The Runtime line printed the size of a default OpenMP team, which is not the
+  // budget and contradicted the Threads section printed below it.
+  LogCapture capture;
+  InfomapWrapper im("--seed 7 --num-trials 1 --num-threads 2 --no-file-output");
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+  im.run();
+  CHECK(capture.output.str().find("Runtime    OpenMP " + std::to_string(_OPENMP) + "\n") != std::string::npos);
+#else
+  CHECK(threadsUsed("--num-trials 1 --num-threads 3") == 1);
+#endif
+}
+
+TEST_CASE("Per-trial num_levels reports the tree's depth, not the first-child branch's [fast][core][lifecycle][output]")
+{
+  // numLevels() used to walk the first-child chain only, so on a ragged tree it reported
+  // one arbitrary branch's depth while the console summary, the .tree file and the JSON
+  // tree output all counted over every branch. --timing-json and --trial-results share
+  // the record, so both carried the shallow branch (#1036). --no-infomap keeps the
+  // fixture's ragged shape through the trial, where the difference is observable.
+  const std::vector<std::string> paths = {
+    "run_report_ragged_timing.json",
+    "run_report_ragged_trials.json",
+  };
+  removeFiles(paths);
+
+  InfomapWrapper im("--silent --seed 1 --num-trials 1 --no-file-output --no-infomap"
+                    " --cluster-data "
+                    + infomap::test::clusterFixturePath("twotriangles_ragged_branches.tree")
+                    + " --timing-json " + paths[0] + " --trial-results " + paths[1]);
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+
+  im.run();
+
+  // The fixture's shape, pinned so an edit to it cannot silently stop exercising this:
+  // three deep, with the SHALLOW branch first. Root's leftmost top module ends at depth
+  // 2 while another branch runs to 3, which is what made the leftmost-branch walk report
+  // 2 for a three-level tree.
+  REQUIRE(im.maxTreeDepth() == 3);
+  REQUIRE(im.numLevels() == im.maxTreeDepth());
+  const infomap::InfoNode* firstTopModule = im.root().firstChild;
+  REQUIRE(firstTopModule != nullptr);
+  REQUIRE(firstTopModule->firstChild != nullptr);
+  REQUIRE(firstTopModule->firstChild->isLeaf());
+
+  CHECK(infomap::test::readTextFile(paths[0]).find("\"num_levels\":3") != std::string::npos);
+  CHECK(infomap::test::readTextFile(paths[1]).find("\"num_levels\":3") != std::string::npos);
 
   removeFiles(paths);
 }
@@ -1211,6 +1382,19 @@ TEST_CASE("Higher-order subnetwork rebuild preserves state identities and intern
   CHECK(std::get<0>(secondRun) == std::get<0>(firstRun));
   CHECK(std::get<1>(secondRun) == doctest::Approx(std::get<1>(firstRun)));
   CHECK(std::get<2>(secondRun) == doctest::Approx(std::get<2>(firstRun)));
+}
+
+TEST_CASE("Meta data input with no records is rejected instead of crashing the run [fast][core][lifecycle][parser][crash]")
+{
+  // With no records there are no meta-data columns, so every node got an empty
+  // meta-data vector and MetaMapEquation read past its end. A directory reads as an
+  // empty stream on POSIX (on Windows it fails to open), so it took the same path.
+  for (const auto& noRecordsPath : { infomap::test::fixturePath("meta/no_records.meta"), infomap::test::fixturePath("meta") }) {
+    CAPTURE(noRecordsPath);
+    InfomapWrapper im(infomap::test::defaultFlags("--meta-data " + noRecordsPath));
+    im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    CHECK_THROWS_AS(im.run(), infomap::InfomapError);
+  }
 }
 
 TEST_CASE("Metadata-bearing subnetwork rebuild preserves leaf metadata [fast][core][lifecycle][subnetwork][parser]")

@@ -36,6 +36,7 @@ policy:
   - "interfaces/swig/**"
   - "interfaces/R/generated/**"
   - "scripts/check_cpp_stream_policy.py"
+  - "scripts/check_reference_edits.py"
   - ".github/workflows/ci.yml"
   - ".github/filters.yml"
 
@@ -51,6 +52,13 @@ native:
   - ".github/filters.yml"
   - ".github/actions/setup-ccache/action.yml"
 
+# The TSan job (ci.yml `tsan`) also runs on every `native` change; this adds
+# the inputs only it reads.
+tsan:
+  - "test/tsan.supp"
+  - ".github/workflows/_tsan.yml"
+  - ".github/filters.yml"
+
 python-core:
   - *build_core
   - *cmake_core
@@ -62,6 +70,7 @@ python-core:
   - "examples/notebooks/**"
   - "examples/networks/**"
   - "test/python/**"
+  - "RESULT_CHANGES.csv"
   - "test/scripts/**"
   - "test/schemas/**"
   - "scripts/build_config.py"
@@ -176,6 +185,7 @@ docs:
   - ".github/workflows/ci.yml"
   - "README.rst"
   - "BUILD.md"
+  - "RESULT_CHANGES.csv"
   - "pyproject.toml"
   - "setup.py"
   - "examples/notebooks/**"
@@ -202,11 +212,38 @@ docker:
 notebooks:
   - "interfaces/python/**"
   - "test/python/**"
+  - "RESULT_CHANGES.csv"
   - "examples/notebooks/**"
   - "scripts/notebook_manifest.py"
   - ".github/actions/setup-python-build/action.yml"
   - ".github/workflows/ci.yml"
   - ".github/workflows/notebooks.yml"
+  - ".github/filters.yml"
+
+# The differential checks (test/differential/README.md) build the CLI, the
+# released CLI, and the Python, R and JavaScript packages, and compare them on a
+# fixture corpus, so any of their inputs fires them.
+differential:
+  - *build_core
+  - "test/differential/**"
+  - "test/fixtures/**"
+  - "examples/networks/**"
+  - "RESULT_CHANGES.csv"
+  - "pyproject.toml"
+  - "setup.py"
+  - "scripts/build_config.py"
+  - "scripts/stage_r_package.py"
+  - "scripts/prepare_npm_package.py"
+  - "package.json"
+  - "package-lock.json"
+  - "interfaces/swig/**"
+  - "interfaces/python/**"
+  - "interfaces/R/**"
+  - "interfaces/js/**"
+  - ".github/actions/setup-python-build/action.yml"
+  - ".github/actions/setup-js-build/action.yml"
+  - ".github/actions/setup-ccache/action.yml"
+  - ".github/workflows/ci.yml"
   - ".github/filters.yml"
 
 # The CI surface with no build lane of its own: workflow definitions, composite
@@ -218,9 +255,11 @@ notebooks:
 meta:
   - ".github/**"
   - ".pre-commit-config.yaml"
-  # The fuzz harness and the native benchmark sources are built only by
-  # schedule-triggered or opt-in targets (make fuzz, bench-native), so they match
+  # The fuzz harness, the native benchmark sources and the mutation script are
+  # run only by schedule-triggered or opt-in targets (make fuzz, bench-native,
+  # test/mutation/oracle_mutants.py), so they match
   # no lane filter. Without them here a PR that only edits them runs zero jobs --
   # not even the pre-commit hygiene gate -- and ci-summary reports green.
   - "test/fuzz/**"
   - "test/bench/**"
+  - "test/mutation/**"

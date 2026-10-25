@@ -212,7 +212,7 @@ for line in data_lines(clu_path):
 The `.tree` path column uses colon-separated integers: `1:3` means the third
 node listed inside top module 1. For hierarchical runs with more than two levels
 you will see paths like `2:1:4`. The `.clu` format uses the top-level module
-number only; pass `depth` to `write_clu` to report a different level.
+number only; pass `level` to `write_clu` to report a different level.
 `result.write_flow_tree` writes a `.ftree` file that adds intra-module link
 flows.
 
@@ -249,13 +249,13 @@ print("Temp directory removed.")
 - **Alluvial diagrams live on mapequation.org, not in this package.** Write a
   `.ftree` and open it in the Network Navigator; the docs helper draws static
   module-coloured layouts only.
-- **`.clu` records the top level.** Pass `depth` to `write_clu` for a
+- **`.clu` records the top level.** Pass `level` to `write_clu` for a
   deeper level; `.tree` / `.ftree` carry the full hierarchy.
 - **`to_networkx` builds a new graph, not a copy of yours.** Its nodes are the
   result's (state) nodes keyed by `state_id`, so your original graph is left
   untouched: its attributes are *not* carried into the export. Use
   {func}`infomap.find_communities` or
-  {func}`infomap.io.export.annotate_networkx_graph` to annotate your own graph
+  {func}`infomap.io.export.annotate_networkx` to annotate your own graph
   instead.
 
 ## API pointers
@@ -275,7 +275,7 @@ print("Temp directory removed.")
   `nx.write_gexf`.
 - {func}`infomap.to_igraph` builds the same graph as an `igraph.Graph`.
 - {func}`infomap.io.export.write_graphml`, {func}`infomap.io.export.write_gexf`,
-  and {func}`infomap.io.export.annotate_networkx_graph` instead annotate *your
+  and {func}`infomap.io.export.annotate_networkx` instead annotate *your
   own* graph with the partition. They accept either a post-run stateful
   {class}`~infomap.Infomap` or the {class}`~infomap.Result` it returned.
   (`write_gexf` supports NetworkX only.)
@@ -285,7 +285,13 @@ print("Temp directory removed.")
 - {meth}`infomap.Result.write_tree` writes a `.tree` file with the hierarchical
   path, flow, name, and node id for every node.
 - {meth}`infomap.Result.write_clu` writes a `.clu` flat table; pass
-  `depth` to choose the level.
+  `level` to choose the level.
+- `.tree`, `.ftree`, `.clu` and the JSON tree head their content with the run's
+  provenance: version, seed, codelength, and the fingerprint of every input file
+  (see {meth}`infomap.Result.provenance`). **CSV and Newick carry none** -- a
+  comment row breaks readers that take the first line as the header, and Newick
+  has no comment syntax -- so pair them with a `.tree` or a `--manifest-json`
+  file when the result is published.
 - {meth}`infomap.Result.write_flow_tree` writes a `.ftree` file that adds
   intra-module link flows.
 - {meth}`infomap.Result.write_csv`, {meth}`infomap.Result.write_json`, and

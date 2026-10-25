@@ -95,7 +95,7 @@ instead. See {doc}`Reading the Result <working-with-infomap/results-and-iteratio
 The Python API is quiet by default. Call `infomap.enable_log()` once to route the
 engine log through the standard `logging` module
 (`infomap.enable_log(logging.DEBUG)` for more detail), and `infomap.disable_log()`
-to stop. Prefer this over the legacy `silent` keyword, which is pending-deprecated
+to stop. Prefer this over the legacy `silent` keyword, which is deprecated
 and leaves the API in 3.0. One caveat: `enable_log()` covers the `Infomap` class
 and `infomap.run(...)` on an edge list, graph, or file path. But a pre-built
 `Network` (including the bundled {mod}`infomap.datasets`) runs silently for its
@@ -166,8 +166,8 @@ and {doc}`Hierarchy and the multilevel map equation <concepts/hierarchy-and-the-
 ### Does Infomap choose the hierarchy depth for me, and how do I read each level?
 
 Yes: multilevel is the default, and Infomap adds levels only when they shorten
-the description. Read a given level with `result.modules(depth=k)`
-(`k=1` is the coarsest, `depth=-1` the finest). Check `result.num_levels`.
+the description. Read a given level with `result.modules(level=k)`
+(`k=1` is the coarsest, `level=-1` the finest). Check `result.num_levels`.
 See {doc}`Hierarchy and the multilevel map equation <concepts/hierarchy-and-the-multilevel-map>`.
 
 ## Flow and directed networks

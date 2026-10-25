@@ -128,6 +128,9 @@ class Config(object):
     recordedTeleportation = property(_infomap.Config_recordedTeleportation_get, _infomap.Config_recordedTeleportation_set)
     regularized = property(_infomap.Config_regularized_get, _infomap.Config_regularized_set)
     regularizationStrength = property(_infomap.Config_regularizationStrength_get, _infomap.Config_regularizationStrength_set)
+    multilayerSkipAbsentNodes = property(_infomap.Config_multilayerSkipAbsentNodes_get, _infomap.Config_multilayerSkipAbsentNodes_set)
+    intraRegularizationStrength = property(_infomap.Config_intraRegularizationStrength_get, _infomap.Config_intraRegularizationStrength_set)
+    interRegularizationStrength = property(_infomap.Config_interRegularizationStrength_get, _infomap.Config_interRegularizationStrength_set)
     teleportationProbability = property(_infomap.Config_teleportationProbability_get, _infomap.Config_teleportationProbability_set)
     preferredNumberOfModules = property(_infomap.Config_preferredNumberOfModules_get, _infomap.Config_preferredNumberOfModules_set)
     preferredNumberOfLevels = property(_infomap.Config_preferredNumberOfLevels_get, _infomap.Config_preferredNumberOfLevels_set)
@@ -2300,7 +2303,7 @@ class Network(StateNetwork):
     	"""
     	return self.isMultilayerNetwork()
 
-    def add_multilayer_node(self, state_id, layer_id, node_id, weight=1.0):
+    def add_multilayer_node(self, state_id, layer_id, node_id, weight=1.0, name=None):
     	"""Add a multilayer node with predefined state id.
 
     	Parameters
@@ -2313,13 +2316,19 @@ class Network(StateNetwork):
     		The physical node id of the state node
     	weight : float
     		The optional weight of the state node, default 1.0
+    	name : str, optional
+    		The optional name of the state node, exposed as
+    		``Result.state_names``. An already existing state node
+    		keeps its name.
 
     	Returns
     	-------
     	int
     		The state id
     	"""
-    	return self.addMultilayerNode(state_id, layer_id, node_id, weight)
+    	if name is None:
+    		return self.addMultilayerNode(state_id, layer_id, node_id, weight)
+    	return self.addMultilayerNode(state_id, layer_id, node_id, weight, name)
 
     def add_multilayer_state_link(self, source_state_id, source_layer_id, source_node_id, target_state_id, target_layer_id, target_node_id, weight=1.0):
     	"""Add a multilayer link with predefined state ids.
@@ -3125,6 +3134,15 @@ class InfomapWrapper(InfomapBase):
 
     def readInputData(self, *args):
         return _infomap.InfomapWrapper_readInputData(self, *args)
+
+    def provenanceJson(self):
+        return _infomap.InfomapWrapper_provenanceJson(self)
+
+    def removeLink(self, sourceId, targetId):
+        return _infomap.InfomapWrapper_removeLink(self, sourceId, targetId)
+
+    def addMetaData(self, nodeId, meta):
+        return _infomap.InfomapWrapper_addMetaData(self, nodeId, meta)
 
     def addNode(self, *args):
         return _infomap.InfomapWrapper_addNode(self, *args)

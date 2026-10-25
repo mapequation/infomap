@@ -8,7 +8,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from parameter_catalog import GROUPS, ParameterCatalog
+from parameter_catalog import GROUPS, ParameterCatalog, resolve_policy_decision
 from render_parameter_policy import render as render_parameter_policy_md
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -34,28 +34,35 @@ FACADE_END = "    # === END generated ==="
 _FACADE_ONLY_PARAMS = {
     "pretty": {
         # None (not False) so an explicitly passed value is distinguishable
-        # from the default and can trigger the DeprecationWarning below --
+        # from the default and can trigger the FutureWarning below --
         # the same sentinel trick as include_self_links.
         "default": "None",
         "type": "bool | None",
         "doc_type": "bool | None, optional",
         "doc": (
             "Deprecated. Accepted for backward compatibility; has no effect. "
-            "Passing it explicitly emits a DeprecationWarning."
+            "Passing it explicitly emits a FutureWarning."
         ),
         # Deprecated no-op; never part of the common signature tier.
         "tier": "advanced",
     },
 }
 
-# Emitted verbatim into the generated Infomap.__init__/run bodies, at the
-# public boundary so stacklevel=2 attributes the warning to user code.
+# Emitted verbatim into the generated Infomap.__init__/run bodies. The stacklevel
+# is computed rather than fixed at 2: these methods are a public boundary only on a
+# direct Infomap()/im.run() call. infomap.run(graph, pretty=True) reaches the same
+# body through _run.run building Infomap(**resolved), where a fixed 2 named
+# _run.py's own line as the offending code -- an internal frame the caller cannot
+# act on, and now visible under every filter since the tier moved to
+# TYPED_PARAMETER_WARNING (#915). _external_stacklevel walks out to the first frame
+# outside the package, so both entry points point at the user's line, matching what
+# the include_self_links warning already does.
 _PRETTY_WARNING_LINES = [
     "        if pretty is not None:",
     "            warnings.warn(",
     '                "pretty is deprecated and has no effect",',
-    "                DeprecationWarning,",
-    "                stacklevel=2,",
+    "                TYPED_PARAMETER_WARNING,",
+    "                stacklevel=_external_stacklevel(),",
     "            )",
 ]
 
@@ -168,7 +175,7 @@ def _facade_params(catalog: ParameterCatalog):
                 "doc_type": param.python_doc_type(),
                 "doc": param.python_doc_description(),
                 # The 3.0 cleanup-policy decision (issue #755) drives both the
-                # docstring migration note and the runtime PendingDeprecationWarning
+                # docstring migration note and the runtime deprecation warning
                 # so the two never diverge from render_parameter_policy.py.
                 "policy": param.policy("python"),
                 "init_default": param.python_default_expr(),
@@ -220,9 +227,9 @@ def _python_literal_alias_lines(catalog: ParameterCatalog) -> list[str]:
 _ADVANCED_TIER_WARNING_HELPER = [
     "def _warn_advanced_tier_kwargs(passed, context):",
     "    # Advanced-tier keywords are docs-only deprecated on the Infomap()/run()",
-    "    # signatures and move off them in 3.0. Emit a",
-    "    # PendingDeprecationWarning -- silent by default, so it nags no one until",
-    "    # 3.0 nears -- when one is set to a non-default value on a direct call.",
+    "    # signatures and move off them in 3.0. Emit a LEGACY_SURFACE_WARNING --",
+    "    # visible in __main__ under PEP 565, see its definition for the tier -- when",
+    "    # one is set to a non-default value on a direct call.",
     "    # Internal funnels (the Options path builds Infomap(**resolved), the graph",
     "    # adapters, the from_* class methods) reach the same methods from inside",
     "    # the package; the caller-frame check skips them so only user-typed",
@@ -235,6 +242,14 @@ _ADVANCED_TIER_WARNING_HELPER = [
     "        default = spec[baseline]",
     "        if passed.get(name, default) != default:",
     "            action, replacement = spec[2], spec[3]",
+    "            # A keyword classified `remove` leaves the Python surface altogether",
+    "            # -- its replacement is another option, the logging module or the CLI",
+    "            # binary, never Options -- so the signature lead below would name a",
+    "            # refuge that does not exist. Those are announced by the option merge",
+    "            # instead (_warn_removed_overrides), which every route reaches,",
+    "            # including the in-package adapters this frame gate skips (#915).",
+    '            if action == "remove":',
+    "                continue",
     "            lead = (",
     "                f\"'{name}' is deprecated on the Infomap() and run() \"",
     '                "signatures and leaves them in 3.0. "',
@@ -249,7 +264,48 @@ _ADVANCED_TIER_WARNING_HELPER = [
     "            else:",
     '                guidance = ""',
     "            warnings.warn(",
-    "                lead + guidance, PendingDeprecationWarning, stacklevel=3",
+    "                lead + guidance, LEGACY_SURFACE_WARNING, stacklevel=3",
+    "            )",
+]
+
+
+# Emitted right after _warn_advanced_tier_kwargs. The fields the 3.0 policy
+# classifies `remove` for Python leave Options too -- their replacement is another
+# option, the logging module or the CLI binary -- so Options itself has to say so
+# when one is set. Same lead and guidance as the signature route above, read
+# from the same _OptionSpec, so a caller who moves a removed keyword onto Options
+# meets one message on both routes. Gated by _INTERNAL_CONSTRUCTION at the call
+# site in __post_init__, so the package's own constructions stay quiet (#915).
+_REMOVED_FIELDS_WARNING_HELPER = [
+    "",
+    "",
+    "# The Options fields that leave the Python surface in 3.0, by policy action.",
+    "_REMOVED_FIELDS = {",
+    "    name: spec",
+    "    for name, spec in _OPTION_TABLE.items()",
+    '    if spec.action == "remove"',
+    "}",
+    "",
+    "",
+    "def _removed_field_message(name, spec):",
+    "    # One sentence for every route a removed field can arrive by --",
+    "    # Options(), a mapping carrier, a bare keyword on any entry point -- and",
+    "    # none of them names the signatures, since Options is not where these",
+    "    # survive either.",
+    '    return f"\'{name}\' leaves the Python surface in 3.0. " + (spec.replacement or "")',
+    "",
+    "",
+    "def _warn_removed_fields(options):",
+    "    # Announce a removed field set to a non-default value on Options itself,",
+    "    # as visibly as the same keyword on the Infomap() signature: the migration",
+    "    # points every advanced keyword at Options, and for these four that is not",
+    "    # where they survive.",
+    "    for name, spec in _REMOVED_FIELDS.items():",
+    "        if options[name] != spec.default:",
+    "            warnings.warn(",
+    "                _removed_field_message(name, spec),",
+    "                LEGACY_SURFACE_WARNING,",
+    "                stacklevel=_external_stacklevel(),",
     "            )",
 ]
 
@@ -371,7 +427,7 @@ _OPTION_TABLE_VIEWS = [
     "",
     "# Advanced-tier keywords on the Infomap()/run() signatures:",
     "# the init/run 'unset' defaults plus the policy action/replacement that",
-    "# shape the PendingDeprecationWarning. Infomap.run() re-renders keywords on",
+    "# shape the deprecation warning. Infomap.run() re-renders keywords on",
     "# top of the constructed state and a rendered flag can only switch on, so a",
     "# truthy-by-default flag (silent) keeps the no-op False default in run",
     "# context.",
@@ -428,6 +484,7 @@ def _option_table_lines(catalog: ParameterCatalog) -> list[str]:
     lines.extend(_OPTION_TABLE_VIEWS)
     lines.extend(["", ""])
     lines.extend(_ADVANCED_TIER_WARNING_HELPER)
+    lines.extend(_REMOVED_FIELDS_WARNING_HELPER)
     lines.extend(["", ""])
     lines.extend(_VALIDATE_OPTION_DOMAINS_HELPER)
     lines.extend(["", ""])
@@ -645,6 +702,12 @@ def _python_engine_default_doc(param) -> str:
     return f"Engine default: {default}."
 
 
+# The release in which this deprecation wave first shipped. RELEASING.md fixes it at
+# 2.15 -- 2.14.0 shipped the redesign but no versioned markers or runtime warnings --
+# and Sphinx renders an empty version if the directive carries none.
+DEPRECATION_WAVE_VERSION = "2.15"
+
+
 def _options_doc_policy_note(policy: dict) -> str:
     """A short note for the Options docstring flagging fields that are not a
     first-class engine option on the Python library surface.
@@ -677,17 +740,61 @@ def _options_doc_policy_note(policy: dict) -> str:
     return f"{lead} {replacement}".strip()
 
 
+# Actions that make a field deprecated on the Python surface, so it needs the
+# versioned directive RELEASING.md requires. An alias is documented, not deprecated,
+# and `hide` is not on the surface to deprecate in the first place.
+DEPRECATED_POLICY_ACTIONS = {"remove", "args-only", "deprecate"}
+
+
+def _options_doc_deprecation_lines(policy: dict, note: str, indent: str) -> list[str]:
+    """The `.. deprecated::` block for one Options field, or nothing.
+
+    The published Options reference -- which the package docstring points at as the
+    parameter reference -- carried no directive for any field, while RELEASING.md
+    requires one on every deprecated member (#915). The directive goes on its own
+    line with the note indented beneath it: Sphinx reads everything after the
+    directive name as the version, so folding the note onto that line renders the
+    whole sentence as the version string.
+    """
+    action = (policy or {}).get("action", "keep")
+    if action not in DEPRECATED_POLICY_ACTIONS:
+        return []
+    lines = [f"{indent}.. deprecated:: {DEPRECATION_WAVE_VERSION}"]
+    body = note
+    if action == "args-only":
+        # A directive's body reads as migration guidance, and an args-only note
+        # describes how to use the field *today* -- `hide_bipartite_nodes` says to
+        # set it via Options, which is the very surface it leaves. Naming the
+        # post-removal route here keeps the two apart, for every args-only field
+        # rather than depending on how each replacement string happens to be worded
+        # (the policy defines args-only as reachable through the raw args escape
+        # hatch on library surfaces).
+        # Single backticks: wrap_doc promotes them to the RST double form.
+        route = (
+            "The guidance above applies through 2.x; in 3.0 the field leaves "
+            "`Options` and is reachable only through the raw `args` escape hatch."
+        )
+        body = f"{note} {route}".strip() if note else route
+    if body:
+        lines.extend(wrap_doc(body, indent + "   "))
+    return lines
+
+
 def generate_python(catalog: ParameterCatalog) -> str:
     grouped = catalog.grouped()
     include_self_links = catalog.binding_only_entry("python", "include_self_links")
     lines = [
         "from __future__ import annotations",
         "",
+        "import dataclasses",
         "import os",
         "import sys",
         "import warnings",
         "from collections.abc import Mapping",
+        "from contextlib import contextmanager",
+        "from contextvars import ContextVar",
         "from dataclasses import dataclass, fields, replace",
+        "from types import FrameType",
         "from typing import Any, Literal, NamedTuple, get_args",
         "",
         "",
@@ -696,6 +803,44 @@ def generate_python(catalog: ParameterCatalog) -> str:
         "# make build-binding-options.",
         "",
         "_PACKAGE_PREFIX = os.path.dirname(os.path.abspath(__file__)) + os.sep",
+        "",
+        "# The two classes the pre-3.0 surface announces itself with, in one place each",
+        "# so a change of mind is one edit rather than forty (#915).",
+        "#",
+        "# RELEASING.md keeps two tiers on purpose, and they have to stay ordered by",
+        "# volume. The lower one used to be PendingDeprecationWarning, which CPython's",
+        "# default filters ignore outright, so it reached nobody; DeprecationWarning is",
+        "# shown in __main__ under PEP 565, which is exactly the `python analysis.py`",
+        "# audience that has to migrate. Promoting only that one would have collapsed",
+        "# the two tiers into the same class, erasing a distinction the suite pins, so",
+        "# the louder tier moves up too: FutureWarning is shown under every filter, and",
+        "# is where scikit-learn, pandas and NumPy all landed for a scientific audience.",
+        "#",
+        "# Subclasses rather than the built-in classes themselves. A filter matches by",
+        "# class hierarchy, so every -W and filterwarnings spelling that worked on the",
+        "# base class still catches these -- PEP 565's __main__ visibility included --",
+        "# while naming the subclass silences one Infomap tier and nothing else. Bound",
+        "# to the base classes directly, the tiers were unaddressable: silencing the",
+        "# legacy tier in a test meant ignoring every DeprecationWarning in the process,",
+        "# including the ones the same test was there to catch.",
+        "class LegacySurfaceWarning(DeprecationWarning):",
+        '    """The legacy stateful surface: Result accessors mirrored on ``Infomap``,',
+        "    advanced-tier keywords, ``from_options`` and friends.",
+        '    """',
+        "",
+        "",
+        "class TypedParameterWarning(FutureWarning):",
+        '    """A deprecated parameter the caller actually typed, where silently ignoring',
+        "    or rewriting it hides a migration they have to make.",
+        '    """',
+        "",
+        "",
+        "# The names the call sites and the test suite use, and the ones RELEASING.md",
+        "# documents. Aliases so a tier is one edit here, and so a filter spelling",
+        "# (`ignore::infomap._options.LEGACY_SURFACE_WARNING`) names the tier rather",
+        "# than a class whose base a later change of mind would move.",
+        "LEGACY_SURFACE_WARNING = LegacySurfaceWarning",
+        "TYPED_PARAMETER_WARNING = TypedParameterWarning",
         "",
         "",
         "# Sentinel default for the common-tier keywords on the Infomap()/run()",
@@ -715,17 +860,66 @@ def generate_python(catalog: ParameterCatalog) -> str:
         "_UNSET: Any = _Unset()",
         "",
         "",
+        "# Set while the package builds an Options on its own behalf: the run-context",
+        "# base in _merge_options, keyword merging through dataclasses.replace(), the",
+        "# rendered-args funnel in _construct_args, an adapter folding in its inferred",
+        "# flow model. Those re-create fields the caller already typed -- or set",
+        "# silent=False purely as a rendering device -- so the removed-field warning in",
+        "# Options.__post_init__ would otherwise fire at the library, once per plumbing",
+        "# step. A caller-frame gate cannot tell the two apart: Options is built through",
+        "# _OptionsMeta.__call__, so the frame above the synthesized __init__ is always",
+        "# this package. Hence an explicit marker, scoped by a context variable so a",
+        "# construction on another thread is judged on its own (#915).",
+        '_INTERNAL_CONSTRUCTION: ContextVar[bool] = ContextVar("_INTERNAL_CONSTRUCTION", default=False)',
+        "",
+        "",
+        "@contextmanager",
+        "def _internal_construction():",
+        '    """Mark the Options constructions inside the block as the package\'s own.',
+        "",
+        "    Every internal funnel that builds or re-builds an Options from values the",
+        "    caller already supplied has to run under this, or the caller hears about",
+        "    the same removed field once per internal step -- and the package warns",
+        "    about its own defaults.",
+        '    """',
+        "    token = _INTERNAL_CONSTRUCTION.set(True)",
+        "    try:",
+        "        yield",
+        "    finally:",
+        "        _INTERNAL_CONSTRUCTION.reset(token)",
+        "",
+        "",
+        '_DATACLASSES_FILE = getattr(dataclasses, "__file__", None) or ""',
+        "",
+        "",
+        "def _is_package_frame(frame: FrameType) -> bool:",
+        "    filename = frame.f_code.co_filename",
+        "    # Two frames sit between this package and the caller when an Options is",
+        "    # constructed, and neither is ours by filename: the __init__ that",
+        "    # dataclasses synthesizes for Options is compiled from a string, and",
+        "    # dataclasses.replace() lives in the standard library. A warning",
+        "    # attributed to either is invisible even in __main__, since PEP 565's",
+        "    # default filter matches on the module (#915). The string-compiled",
+        "    # frame is ours only when it runs in this module's globals, which is",
+        '    # what dataclasses gives the functions it builds; a "<string>" frame',
+        "    # from python -c, exec() or compile() is the caller's own and must be",
+        "    # the one the warning names.",
+        "    return (",
+        "        filename.startswith(_PACKAGE_PREFIX)",
+        '        or (filename == "<string>" and frame.f_globals.get("__name__") == __name__)',
+        "        or filename == _DATACLASSES_FILE",
+        "    )",
+        "",
+        "",
         "def _external_stacklevel() -> int:",
         "    # Compute a warnings.warn stacklevel that attributes the warning to",
         "    # the first caller frame outside this package, whichever public entry",
-        "    # point (Infomap(), Infomap.run(), infomap.run(), Options.to_args())",
-        "    # reached this module. Python 3.12's skip_file_prefixes does this",
-        "    # natively; the supported floor is 3.11.",
+        "    # point (Infomap(), Infomap.run(), infomap.run(), Options.to_args(),",
+        "    # Options()) reached this module. Python 3.12's skip_file_prefixes does",
+        "    # the prefix half natively; the supported floor is 3.11.",
         "    frame = sys._getframe(1)",
         "    level = 1",
-        "    while frame is not None and frame.f_code.co_filename.startswith(",
-        "        _PACKAGE_PREFIX",
-        "    ):",
+        "    while frame is not None and _is_package_frame(frame):",
         "        frame = frame.f_back",
         "        level += 1",
         "    return level",
@@ -809,16 +1003,35 @@ def generate_python(catalog: ParameterCatalog) -> str:
             lines.append(f"    {name} : {param.python_doc_type()}")
             lines.extend(wrap_doc(description, "        "))
             note = _options_doc_policy_note(param.policy("python"))
-            if note:
+            deprecation = _options_doc_deprecation_lines(
+                param.policy("python"), note, "        "
+            )
+            if deprecation:
+                lines.append("")
+                lines.extend(deprecation)
+            elif note:
                 lines.append("")
                 lines.extend(wrap_doc(note, "        "))
+    # The alias is binding-only, so it has no catalog entry and never reaches the
+    # loop above -- but its flag does carry a policy decision, so the note and the
+    # directive are resolved from that same source rather than restated here. A
+    # hand-written copy would go stale the moment the replacement guidance in
+    # overrides.json changes (#915).
     lines.append("    include_self_links : bool, optional")
-    lines.extend(
-        wrap_doc(
-            "Deprecated. Self-links are included by default; use no_self_links=True to exclude them.",
-            "        ",
-        )
+    lines.extend(wrap_doc("Whether to include self-links.", "        "))
+    alias_policy = resolve_policy_decision(
+        catalog.overrides, include_self_links.flag, "python"
     )
+    alias_note = _options_doc_policy_note(alias_policy)
+    alias_deprecation = _options_doc_deprecation_lines(
+        alias_policy, alias_note, "        "
+    )
+    if alias_deprecation:
+        lines.append("")
+        lines.extend(alias_deprecation)
+    elif alias_note:
+        lines.append("")
+        lines.extend(wrap_doc(alias_note, "        "))
     lines.extend(['    """', ""])
     for group in GROUPS:
         lines.append(f"    # {group.lower()}")
@@ -848,6 +1061,12 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "        _validate_option_domains(options)",
             "        _validate_option_choices(options)",
             "        _validate_option_arg_strings(options)",
+            "        # A field the 3.0 policy removes from the Python surface warns",
+            "        # here, on the object the migration points everyone at -- unless",
+            "        # this construction is the package's own plumbing, which only",
+            "        # re-creates values the caller already typed (#915).",
+            "        if not _INTERNAL_CONSTRUCTION.get():",
+            "            _warn_removed_fields(options)",
             "",
             "    def __repr__(self) -> str:",
             "        # Show only the fields set away from their defaults; the full",
@@ -944,7 +1163,7 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "        if self.include_self_links is not None:",
             "            warnings.warn(",
             '                "include_self_links is deprecated, use no_self_links to exclude self-links",',
-            "                DeprecationWarning,",
+            "                TYPED_PARAMETER_WARNING,",
             "                stacklevel=_external_stacklevel(),",
             "            )",
             "",
@@ -1011,6 +1230,27 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "    return getattr(_OPTION_DEFAULTS, name)",
             "",
             "",
+            "def _warn_removed_overrides(overrides, context):",
+            '    """Announce the removed fields among keyword ``overrides`` the caller typed.',
+            "",
+            "    The counterpart of the construction-time check in ``Options.__post_init__``",
+            "    for values that never build an Options of their own: bare keywords on",
+            "    ``Infomap()`` / ``Infomap.run()`` / ``Network.run()`` / ``infomap.run()``",
+            "    and on the in-package adapters (``find_communities`` and friends), which",
+            "    are merged into an existing carrier under ``_internal_construction()``.",
+            "    Measured against the context default, so ``run(silent=True)`` on an",
+            "    instance -- a real choice in the run context, where the no-op default",
+            "    is False -- is announced and ``run(silent=False)`` is not.",
+            '    """',
+            "    for name, spec in _REMOVED_FIELDS.items():",
+            "        if name in overrides and overrides[name] != _context_default(name, context):",
+            "            warnings.warn(",
+            "                _removed_field_message(name, spec),",
+            "                LEGACY_SURFACE_WARNING,",
+            "                stacklevel=_external_stacklevel(),",
+            "            )",
+            "",
+            "",
             "# The starting point when no options= carrier is supplied: the dataclass",
             "# defaults, with the run context's no-op flag defaults applied on top (see",
             "# _RUN_DEFAULT_OVERRIDES).",
@@ -1061,21 +1301,36 @@ def generate_python(catalog: ParameterCatalog) -> str:
             "    sentinel.",
             '    """',
             "    if base is None:",
-            "        base = Options(**_CONTEXT_BASE_OVERRIDES.get(context, {}))",
+            "        # The run-context base sets silent=False as a rendering device (a",
+            "        # rendered flag can only switch on); that is the package's own",
+            "        # construction, not a caller typing the removed field.",
+            "        with _internal_construction():",
+            "            base = Options(**_CONTEXT_BASE_OVERRIDES.get(context, {}))",
             "    elif isinstance(base, Mapping):",
+            "        # A caller's mapping: a removed field in it is theirs to hear about,",
+            "        # attributed to their Infomap()/run() line.",
             "        base = Options(**base)",
             "    elif not isinstance(base, Options):",
             "        raise TypeError(",
             '            "options must be an Options instance, a mapping, or None"',
             "        )",
-            "    return replace(base, **keyword_overrides)",
+            "    # The keyword overrides are the caller's typing whichever frame reached",
+            "    # the constructor -- a direct call, or an in-package adapter such as",
+            "    # find_communities() forwarding its caller's kwargs -- so their removed",
+            "    # fields are announced here, once. Merging them is then plumbing.",
+            "    _warn_removed_overrides(keyword_overrides, context)",
+            "    with _internal_construction():",
+            "        return replace(base, **keyword_overrides)",
             "",
             "",
             "def _construct_args(args=None, **options):",
             "    # Internal rendered-args funnel behind Infomap()/run()/Network.run().",
             "    # Unknown option names raise through the Options constructor, with",
-            "    # the same 'did you mean' guidance as direct construction.",
-            "    return Options(**options).to_args(base_args=args)",
+            "    # the same 'did you mean' guidance as direct construction. The kwargs",
+            "    # come from an Options the caller already built (plus the routed-log",
+            "    # override), so this re-construction is the package's own.",
+            "    with _internal_construction():",
+            "        return Options(**options).to_args(base_args=args)",
             "",
         ]
     )
@@ -1138,6 +1393,38 @@ def generate_r(catalog: ParameterCatalog) -> str:
         suffix = "," if i + 1 < len(defaults) else ""
         lines.append(f"  {default}{suffix}")
     lines.append(")")
+    # The R side of the 3.0 parameter policy (#915, item 4). `remove` options
+    # are announced at construct_args() with .Deprecated() when set away from
+    # their default; `deprecate` options get a note in ?infomap_options only,
+    # because a runtime warning on an option that is merely marked, not going
+    # anywhere yet, would nag every current script. The R policy carries no
+    # `deprecate` decisions today -- #757 settled the last two as `keep` -- but
+    # the branch stays, since the vocabulary allows them.
+    # include_self_links is binding-only and keeps its hand-written stamp above.
+    removed = []
+    for group in GROUPS:
+        for param in grouped[group]:
+            decision = param.policy("r")
+            if decision["action"] == "remove":
+                removed.append((param.name("r"), decision.get("replacement", "")))
+    lines.extend(
+        [
+            "",
+            "# Options the 3.0 parameter policy removes from the R surface",
+            "# (interfaces/parameters/overrides.json, action `remove`). construct_args()",
+            "# announces one that is set away from its default; options classified",
+            "# `deprecate` carry a note in ?infomap_options only, with no runtime",
+            "# warning.",
+            "REMOVED_OPTIONS <- list(",
+        ]
+    )
+    for i, (name, replacement) in enumerate(removed):
+        msg = f"{name} leaves the infomap R surface in 3.0. {replacement}".strip()
+        suffix = "," if i + 1 < len(removed) else ""
+        lines.append(
+            f"  list(name = {json.dumps(name)}, msg = {json.dumps(msg)}){suffix}"
+        )
+    lines.append(")")
     lines.extend(
         [
             "",
@@ -1165,8 +1452,18 @@ def generate_r(catalog: ParameterCatalog) -> str:
             )
         for param in grouped[group]:
             name = param.name("r")
+            decision = param.policy("r")
+            text = param.description
+            # The policy note, in the words the runtime warning uses, so the
+            # reference and the .Deprecated() message never diverge.
+            if decision["action"] == "remove":
+                text += f" Deprecated: leaves the R surface in 3.0. {decision.get('replacement', '')}".rstrip()
+            elif decision["action"] == "deprecate":
+                text += (
+                    f" Deprecated in 2.x. {decision.get('replacement', '')}".rstrip()
+                )
             desc = (
-                param.description.replace("\\", "\\\\")
+                text.replace("\\", "\\\\")
                 .replace("{", "\\{")
                 .replace("}", "\\}")
                 .replace("[", "\\[")
@@ -1338,6 +1635,12 @@ def generate_r(catalog: ParameterCatalog) -> str:
             '      old = "include_self_links",',
             '      msg = "include_self_links is deprecated; use no_self_links = TRUE to exclude self-links."',
             "    )",
+            "  }",
+            "",
+            "  for (removed in REMOVED_OPTIONS) {",
+            "    if (!identical(opts[[removed$name]], OPTION_DEFAULTS[[removed$name]])) {",
+            '      .Deprecated(package = "infomap", old = removed$name, msg = removed$msg)',
+            "    }",
             "  }",
             "",
             "  parts <- .append_specs(parts, opts, INPUT_OPTIONS)",

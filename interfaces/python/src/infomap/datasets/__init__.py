@@ -97,7 +97,7 @@ def nine_triangles() -> _Network:
     >>> net.num_nodes, net.num_links
     (27, 39)
     >>> net.run(options={"seed": 123, "num_trials": 10}).num_top_modules
-    3
+    5
     """
     return _load("ninetriangles.net")
 

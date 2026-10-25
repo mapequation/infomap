@@ -15,7 +15,8 @@
 #include "../utils/format.h"
 #include "../version.h"
 
-#include <fstream>
+#include <cstdio>
+#include <memory>
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -24,6 +25,7 @@
 #include <utility>
 #include <vector>
 #include <algorithm>
+#include <cstdint>
 
 namespace infomap {
 
@@ -56,32 +58,134 @@ namespace {
     return out.str();
   }
 
-  std::string fileContentFingerprint(const std::string& path, unsigned long long size)
+  // XXH64 (seed 0), the 64-bit xxHash: https://github.com/Cyan4973/xxHash
+  // It consumes the input eight bytes at a time in four independent lanes, where
+  // byte-at-a-time FNV-1a cost about 7.5 instructions per input byte on every run
+  // (#1167). The value is the one `xxhsum -H64` prints for the same file.
+  constexpr std::uint64_t XXH_PRIME1 = 11400714785074694791ull;
+  constexpr std::uint64_t XXH_PRIME2 = 14029467366897019727ull;
+  constexpr std::uint64_t XXH_PRIME3 = 1609587929392839161ull;
+  constexpr std::uint64_t XXH_PRIME4 = 9650029242287828579ull;
+  constexpr std::uint64_t XXH_PRIME5 = 2870177450012600261ull;
+  constexpr std::size_t XXH_STRIPE = 32;
+
+  inline std::uint64_t rotl64(std::uint64_t x, int r) { return (x << r) | (x >> (64 - r)); }
+
+  // Little-endian on every host; compilers fold this into a single load.
+  inline std::uint64_t readLE64(const unsigned char* p)
   {
-    std::ifstream input(path.c_str(), std::ios_base::binary);
+    std::uint64_t v = 0;
+    for (int i = 7; i >= 0; --i)
+      v = (v << 8) | p[i];
+    return v;
+  }
+
+  inline std::uint32_t readLE32(const unsigned char* p)
+  {
+    return static_cast<std::uint32_t>(p[0]) | (static_cast<std::uint32_t>(p[1]) << 8) | (static_cast<std::uint32_t>(p[2]) << 16) | (static_cast<std::uint32_t>(p[3]) << 24);
+  }
+
+  inline std::uint64_t xxhRound(std::uint64_t acc, std::uint64_t input)
+  {
+    acc += input * XXH_PRIME2;
+    acc = rotl64(acc, 31);
+    return acc * XXH_PRIME1;
+  }
+
+  inline std::uint64_t xxhMergeRound(std::uint64_t acc, std::uint64_t val)
+  {
+    acc ^= xxhRound(0, val);
+    return acc * XXH_PRIME1 + XXH_PRIME4;
+  }
+
+  class Xxh64 {
+  public:
+    // Whole stripes only; the caller passes any remainder to finish().
+    void stripes(const unsigned char* p, std::size_t size)
+    {
+      for (const auto* end = p + size; p != end; p += XXH_STRIPE) {
+        m_v1 = xxhRound(m_v1, readLE64(p));
+        m_v2 = xxhRound(m_v2, readLE64(p + 8));
+        m_v3 = xxhRound(m_v3, readLE64(p + 16));
+        m_v4 = xxhRound(m_v4, readLE64(p + 24));
+      }
+      m_length += size;
+    }
+
+    std::uint64_t finish(const unsigned char* p, std::size_t size) const
+    {
+      std::uint64_t h;
+      if (m_length >= XXH_STRIPE) {
+        h = rotl64(m_v1, 1) + rotl64(m_v2, 7) + rotl64(m_v3, 12) + rotl64(m_v4, 18);
+        h = xxhMergeRound(h, m_v1);
+        h = xxhMergeRound(h, m_v2);
+        h = xxhMergeRound(h, m_v3);
+        h = xxhMergeRound(h, m_v4);
+      } else {
+        h = XXH_PRIME5;
+      }
+      h += m_length + size;
+
+      for (; size >= 8; p += 8, size -= 8)
+        h = rotl64(h ^ xxhRound(0, readLE64(p)), 27) * XXH_PRIME1 + XXH_PRIME4;
+      if (size >= 4) {
+        h = rotl64(h ^ (readLE32(p) * XXH_PRIME1), 23) * XXH_PRIME2 + XXH_PRIME3;
+        p += 4;
+        size -= 4;
+      }
+      for (; size > 0; ++p, --size)
+        h = rotl64(h ^ (*p * XXH_PRIME5), 11) * XXH_PRIME1;
+
+      h ^= h >> 33;
+      h *= XXH_PRIME2;
+      h ^= h >> 29;
+      h *= XXH_PRIME3;
+      h ^= h >> 32;
+      return h;
+    }
+
+  private:
+    std::uint64_t m_v1 = XXH_PRIME1 + XXH_PRIME2;
+    std::uint64_t m_v2 = XXH_PRIME2;
+    std::uint64_t m_v3 = 0;
+    std::uint64_t m_v4 = 0 - XXH_PRIME1;
+    std::uint64_t m_length = 0;
+  };
+
+  // A hash of the whole file, one streaming pass. It used to hash the size
+  // plus the first and last 64 KiB, which was blind to a same-size edit anywhere
+  // in the interior of a file larger than 128 KiB -- precisely the edit-and-rerun
+  // workflow the fingerprint exists to catch (#1026).
+  std::string fileContentFingerprint(const std::string& path)
+  {
+    // stdio, unbuffered: std::ifstream::read copied every byte through the
+    // stream's own buffer, which cost more than the hash itself (#1167).
+    const std::unique_ptr<std::FILE, int (*)(std::FILE*)> input(std::fopen(path.c_str(), "rb"), &std::fclose);
     if (!input) {
       throw std::runtime_error(fmt::format(FMT_STRING("Cannot open input file '{}'. Check that the path points to a file and that you have read permissions."), path));
     }
+    std::setvbuf(input.get(), nullptr, _IONBF, 0);
 
-    auto hash = FNV_OFFSET;
-    const std::string sizeText = fmt::to_string(size);
-    hashBytes(hash, sizeText.data(), static_cast<std::streamsize>(sizeText.size()));
-
-    constexpr std::streamoff CHUNK_SIZE = 65536;
-    std::vector<char> buffer(static_cast<std::size_t>(CHUNK_SIZE));
-
-    const auto firstSize = static_cast<std::streamsize>(std::min<unsigned long long>(size, CHUNK_SIZE));
-    input.read(buffer.data(), firstSize);
-    hashBytes(hash, buffer.data(), input.gcount());
-
-    if (size > static_cast<unsigned long long>(CHUNK_SIZE)) {
-      input.clear();
-      const auto tailOffset = static_cast<std::streamoff>(size - CHUNK_SIZE);
-      input.seekg(tailOffset, std::ios_base::beg);
-      input.read(buffer.data(), static_cast<std::streamsize>(CHUNK_SIZE));
-      hashBytes(hash, buffer.data(), input.gcount());
+    // A multiple of the stripe size, so only the last chunk leaves a remainder.
+    constexpr std::size_t CHUNK_SIZE = 65536;
+    static_assert(CHUNK_SIZE % XXH_STRIPE == 0, "chunks must hold whole stripes");
+    std::vector<unsigned char> buffer(CHUNK_SIZE);
+    Xxh64 hasher;
+    std::size_t got = 0;
+    std::size_t whole = 0;
+    do {
+      got = std::fread(buffer.data(), 1, CHUNK_SIZE, input.get());
+      whole = got - got % XXH_STRIPE;
+      hasher.stripes(buffer.data(), whole);
+    } while (got == CHUNK_SIZE);
+    // A short read is EOF *or* an I/O error, and the two must not be confused:
+    // hashing only the readable prefix would publish a valid-looking identity
+    // for content nobody read.
+    if (std::ferror(input.get())) {
+      throw std::runtime_error(fmt::format(FMT_STRING("Cannot read input file '{}': the read failed partway through."), path));
     }
 
+    const auto hash = hasher.finish(buffer.data() + whole, got - whole);
     std::ostringstream out;
     out << std::hex << std::setw(16) << std::setfill('0') << hash;
     return out.str();
@@ -112,10 +216,13 @@ std::string canonicalConfigJson(const Config& config)
   Json json;
 
   // Input identity (path, size, content) is captured separately by the input
-  // fingerprint; the config fingerprint covers only algorithm-affecting
-  // settings, so it stays stable when the same input is referenced via a
-  // different path. The cluster/meta-data paths below have no separate content
-  // fingerprint, so they remain the only available signal and are kept.
+  // fingerprints -- network, cluster data and metadata each get one in the
+  // manifest and the artifact headers (#1026); the config fingerprint covers
+  // only algorithm-affecting settings. That makes it stable across paths for
+  // the *network* alone: the cluster-data and meta-data paths are still fields
+  // below, so moving either of those unchanged files does change this
+  // fingerprint. Their identities are published beside it, so a consumer that
+  // wants path-independence can compare hashes instead.
   //
   // How the trial budget is *divided* is deliberately excluded -- numTrials and
   // trialOffset name which slice of one budget a run executed, not what it
@@ -142,6 +249,9 @@ std::string canonicalConfigJson(const Config& config)
   json["no_infomap"] = config.noInfomap;
   json["regularized"] = config.regularized;
   addCanonicalNumber(json, "regularization_strength", config.regularizationStrength);
+  addCanonicalNumber(json, "intra_regularization_strength", config.intraRegularizationStrength);
+  addCanonicalNumber(json, "inter_regularization_strength", config.interRegularizationStrength);
+  json["multilayer_skip_absent_nodes"] = config.multilayerSkipAbsentNodes;
   json["recorded_teleportation"] = config.recordedTeleportation;
   addCanonicalNumber(json, "teleportation_probability", config.teleportationProbability);
   addCanonicalNumber(json, "markov_time", config.markovTime);
@@ -208,40 +318,50 @@ std::string configFingerprint(const Config& config)
   return fnvHex(canonicalConfigJson(config));
 }
 
-std::string inputFingerprintJson(const std::string& path)
+InputIdentity inputIdentity(const std::string& path)
 {
+  InputIdentity identity;
   if (path.empty())
-    return "null";
+    return identity;
 
   struct stat info;
   if (stat(path.c_str(), &info) != 0) {
-    throw std::runtime_error(fmt::format(FMT_STRING("Cannot read input file metadata for '{}'."), path));
+    // Not an error here: a missing --cluster-data or network file is reported
+    // by the reader that opens it, as a parse error the bindings classify
+    // (NetworkParseError). Capturing identity first must not change that.
+    return identity;
   }
 
-  const auto size = static_cast<unsigned long long>(info.st_size);
+  identity.path = path;
+  identity.size = static_cast<unsigned long long>(info.st_size);
+  identity.mtime = static_cast<long long>(info.st_mtime);
+  identity.hash = fileContentFingerprint(path);
+  return identity;
+}
+
+std::string inputIdentityJson(const InputIdentity& identity)
+{
+  if (!identity.known())
+    return "null";
   Json json;
-  json["path"] = path;
-  json["size"] = size;
-  json["mtime"] = static_cast<long long>(info.st_mtime);
-  json["hash"] = fileContentFingerprint(path, size);
+  json["path"] = identity.path;
+  json["size"] = identity.size;
+  json["mtime"] = identity.mtime;
+  json["hash"] = identity.hash;
   return json.dump();
+}
+
+std::string inputFingerprintJson(const std::string& path)
+{
+  return inputIdentityJson(inputIdentity(path));
 }
 
 std::string networkFingerprint(const std::string& path)
 {
-  if (path.empty())
-    return "";
-
-  struct stat info;
-  if (stat(path.c_str(), &info) != 0) {
-    throw std::runtime_error(fmt::format(FMT_STRING("Cannot read input file metadata for '{}'."), path));
-  }
-
-  const auto size = static_cast<unsigned long long>(info.st_size);
-  return fileContentFingerprint(path, size);
+  return inputIdentity(path).hash;
 }
 
-std::string runManifestJson(const Config& config)
+std::string runManifestJson(const Config& config, const RunIdentities& identities)
 {
   const auto canonicalConfig = canonicalConfigJson(config);
   Json json;
@@ -249,10 +369,29 @@ std::string runManifestJson(const Config& config)
   json["command"] = config.parsedString;
   json["num_trials"] = config.numTrials;
   json["config"] = Json::parse(canonicalConfig);
-  json["config_fingerprint"] = fnvHex(canonicalConfig);
-  json["input"] = Json::parse(inputFingerprintJson(config.networkFile));
+  json["config_fingerprint"] = identities.configFingerprint.empty() ? fnvHex(canonicalConfig) : identities.configFingerprint;
+  // The identities the run captured when it started, not a re-hash of whatever
+  // the paths point at now: re-reading could disagree if a file changed since,
+  // and a network built through the bindings has no path in the config to
+  // re-read at all, so the manifest used to report a null input for a run whose
+  // headers named a file (#1026).
+  json["input"] = Json::parse(inputIdentityJson(identities.input));
+  // Every file that changes the published partition, not only the network:
+  // a --cluster-data seed and a --meta-data file used to be recorded by path
+  // alone, so two runs on different files could not be told apart.
+  json["cluster_data"] = Json::parse(inputIdentityJson(identities.clusterData));
+  json["meta_data"] = Json::parse(inputIdentityJson(identities.metaData));
   json["outputs"] = Json::parse(outputArtifactsJson(config));
   return json.dump() + '\n';
+}
+
+std::string runManifestJson(const Config& config)
+{
+  RunIdentities identities;
+  identities.input = inputIdentity(config.networkFile);
+  identities.clusterData = inputIdentity(config.clusterDataFile);
+  identities.metaData = inputIdentity(config.metaDataFile);
+  return runManifestJson(config, identities);
 }
 
 } // namespace infomap

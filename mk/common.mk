@@ -157,7 +157,7 @@ help:
 		"  test-python-doctest   Run Python doctests and ruff checks for the installed package." \
 		"  test-python-examples  Run the Python example smoke tests." \
 		"  test-python-typecheck  Type-check the whole Python package with pyright." \
-		"  test-python-typecheck-core  Type-check the core Python surface (pre-push / quick-mode scope)." \
+		"  test-python-typecheck-core  Type-check the core Python surface (pre-push scope)." \
 		"  test-python-notebooks-smoke  Run PR-safe tutorial notebook smoke tests with nbmake." \
 		"  test-python-notebooks-full   Run all CI-maintained tutorial notebooks with nbmake." \
 		"  test-python-swig-freshness  Verify tracked SWIG outputs are up to date." \
@@ -172,8 +172,16 @@ help:
 		"  test-node             Build the Node module and smoke-test its CLI and programmatic API." \
 		"  test-fast             Run the fast native + Python feedback suite." \
 		"  test-sanitizers       Run the C++ test suite under ASan/UBSan." \
+		"  test-tsan             Run the C++ tests and threaded CLI runs under TSan with OpenMP." \
+		"  test-python-asan      Run the Python tests against an ASan/UBSan build of the extension." \
+		"  test-python-threads   Run the oracle-backed Python tests and the thread comparison with 4 threads." \
+		"  test-python-slow      Run every Python test marked slow, single-threaded." \
+		"  test-r-asan           Run the R tests and examples against an ASan/UBSan build." \
+		"  test-r-valgrind       Run the R tests and examples under valgrind (Linux)." \
+		"  coverage              Build a one-off llvm-cov coverage map of src/ (tests, CLI, fuzz)." \
 		"  bench-native          Run the native benchmark and memory baseline harness." \
 		"  bench-python          Run the nightly-style Python benchmark harness." \
+		"  bench-correctness     Run a debug build over the benchmark networks and re-score every tree." \
 		"" \
 		"Dev" \
 		"  help                  Show this guide." \
@@ -297,15 +305,19 @@ dev-bootstrap:
 		"  make build-python dev-python-install" \
 		"  make test-fast"
 
-# Install the pre-commit git hook. Idempotent; safe to re-run. Never fails the
+# Install the pre-commit git hooks. Idempotent; safe to re-run. Never fails the
 # build: a native-only checkout may not have pre-commit yet, and a repo with
 # core.hooksPath set (pre-commit refuses to auto-install there) can still lint
 # via `pre-commit run --all-files` or CI.
+#
+# Which hooks get written is `default_install_hook_types` in
+# .pre-commit-config.yaml, not flags here -- an explicit --hook-type overrides
+# that list, so the two would silently drift apart.
 hooks:
 	@if ! $(PRECOMMIT) --version >/dev/null 2>&1; then \
 		printf "pre-commit not installed; run 'make dev-bootstrap' or 'pip install pre-commit'.\n"; \
-	elif $(PRECOMMIT) install --hook-type pre-commit --hook-type pre-push >/dev/null 2>&1; then \
-		printf "pre-commit and pre-push git hooks installed.\n"; \
+	elif $(PRECOMMIT) install >/dev/null 2>&1; then \
+		printf "git hooks installed (pre-commit, pre-push, commit-msg).\n"; \
 	else \
 		printf "pre-commit is installed but the git hook was not auto-installed:\n"; \
 		printf "  core.hooksPath is set (%s), so pre-commit refuses to manage it.\n" "$$(git config core.hooksPath)"; \

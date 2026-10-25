@@ -14,6 +14,15 @@ def run(*args):
     ).stdout
 
 
+def assert_output_lines_aligned(output):
+    # Every "Output" status line starts its path in the value column, the first line of
+    # a multi-file group included: no file-count prefix, no indented continuation lines.
+    lines = [line for line in output.splitlines() if line.startswith("  - Output ")]
+    assert lines
+    for line in lines:
+        assert re.match(r"  - Output {8}\S", line), line
+
+
 def main():
     cli = sys.argv[1]
     repo_root = Path(sys.argv[2])
@@ -107,7 +116,8 @@ def main():
         assert Path(tmpdir, "test.tree").is_file()
         assert Path(tmpdir, "test.ftree").is_file()
         assert Path(tmpdir, "test.clu").is_file()
-        assert "3 files ->" in output_pretty
+        assert "files ->" not in output_pretty
+        assert_output_lines_aligned(output_pretty)
         assert ".{tree,ftree,clu}" in output_pretty
         assert "flow tree ->" not in output_pretty
 
@@ -140,7 +150,8 @@ def main():
         assert "state network ->" in output_pretty
         assert "Pajek network ->" in output_pretty
         assert "flow network ->" in output_pretty
-        assert "6 files ->" in output_pretty
+        assert "files ->" not in output_pretty
+        assert_output_lines_aligned(output_pretty)
         assert ".{tree,ftree,nwk,json,csv,clu}" in output_pretty
         assert "Writing " not in output_pretty
 
@@ -163,7 +174,6 @@ def main():
             "test.csv",
             "test.ftree",
             "test.json",
-            "test.net",
             "test.nwk",
             "test.tree",
             "test_states.clu",
@@ -173,11 +183,18 @@ def main():
             "test_states.net",
             "test_states.nwk",
             "test_states.tree",
+            # The Pajek dump of a state network is the `_states_as_physical` one,
+            # matching its own "# State network as physical network" header and the
+            # flow variant below it. It was written as a bare `test.net` until the
+            # artifact stopped being written ahead of the higher-order
+            # classification that names it.
+            "test_states_as_physical.net",
             "test_states_as_physical_flow.net",
         ):
             assert Path(tmpdir, filename).is_file()
         assert "flow state network as Pajek ->" in output_pretty
-        assert "12 files ->" in output_pretty
+        assert "files ->" not in output_pretty
+        assert_output_lines_aligned(output_pretty)
         assert "test.{tree,ftree,nwk,json,csv,clu}" in output_pretty
         assert "test_states.{tree,ftree,nwk,json,csv,clu}" in output_pretty
         assert "test.{tree,ftree,nwk,json,csv,clu,states" not in output_pretty

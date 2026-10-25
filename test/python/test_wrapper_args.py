@@ -6,6 +6,7 @@ import sys
 import infomap as infomap_module
 import pytest
 from infomap._bindings import InfomapWrapper
+from infomap._options import TYPED_PARAMETER_WARNING
 
 pytestmark = pytest.mark.fast
 
@@ -38,8 +39,12 @@ def test_construct_args_renders_expected_cli_flags():
 
 
 def test_construct_args_deduplicates_no_self_links():
-    with pytest.deprecated_call(
-        match="include_self_links is deprecated, use no_self_links to exclude self-links"
+    # pytest.deprecated_call would pass too -- pytest 9.1 accepts FutureWarning
+    # alongside the two Deprecation categories -- but it matches any of the three,
+    # so it cannot tell the tiers apart. Naming the tier is the point here (#915).
+    with pytest.warns(
+        TYPED_PARAMETER_WARNING,
+        match="include_self_links is deprecated, use no_self_links to exclude self-links",
     ):
         args = infomap_module._construct_args(
             include_self_links=False,
@@ -50,10 +55,10 @@ def test_construct_args_deduplicates_no_self_links():
     assert tokens.count("--no-self-links") == 1
 
 
-@pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
+@pytest.mark.filterwarnings("ignore::infomap._options.LEGACY_SURFACE_WARNING")
 def test_run_forwards_variable_markov_options(monkeypatch):
     # Deliberately forwards advanced-tier engine kwargs through the stateful
-    # run() to assert they reach the engine; the pending-deprecation is expected.
+    # run() to assert they reach the engine; the legacy-tier warning is expected.
     captured = {}
     im = infomap_module.Infomap(silent=True)
 
@@ -171,22 +176,60 @@ def test_cli_completion_invalid_shell_exits_without_traceback():
 
 
 def test_pretty_warns_when_passed_explicitly():
-    with pytest.deprecated_call(match="pretty is deprecated and has no effect"):
+    # Named rather than pytest.deprecated_call, which accepts FutureWarning too on
+    # pytest 9.1 and so cannot tell the tiers apart -- the same reason as the note
+    # on test_construct_args_deduplicates_no_self_links above (#915).
+    with pytest.warns(
+        TYPED_PARAMETER_WARNING, match="pretty is deprecated and has no effect"
+    ):
         infomap_module.Infomap(silent=True, pretty=True)
 
     im = infomap_module.Infomap(silent=True)
     im.add_link(0, 1)
-    with pytest.deprecated_call(match="pretty is deprecated and has no effect"):
+    with pytest.warns(
+        TYPED_PARAMETER_WARNING, match="pretty is deprecated and has no effect"
+    ):
         im.run(pretty=False)
+
+
+def test_pretty_warning_points_at_caller_through_the_functional_path():
+    """The `pretty` warning names the user's line, not an internal frame.
+
+    ``infomap.run(graph, pretty=True)`` reaches the same generated body through
+    ``_run.run`` building ``Infomap(**resolved)``, so the fixed ``stacklevel=2``
+    this used to carry attributed the warning to ``_run.py`` -- an internal line
+    the caller cannot act on, and one every filter now shows since the tier moved
+    to ``TYPED_PARAMETER_WARNING`` (#915). The direct call is asserted alongside
+    it because a computed stacklevel has to keep that case right too.
+    """
+    import warnings
+
+    nx = pytest.importorskip("networkx")
+    graph = nx.Graph([(1, 2), (2, 3), (3, 1)])
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        infomap_module.run(graph, pretty=True, silent=True)
+    functional = [w for w in caught if "pretty is deprecated" in str(w.message)]
+    assert functional, "expected a pretty warning from the functional path"
+    assert functional[0].filename == __file__
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        infomap_module.Infomap(silent=True, pretty=True)
+    direct = [w for w in caught if "pretty is deprecated" in str(w.message)]
+    assert direct, "expected a pretty warning from the direct constructor"
+    assert direct[0].filename == __file__
 
 
 def test_include_self_links_warning_points_at_caller():
     import warnings
 
     with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always", DeprecationWarning)
+        warnings.simplefilter("always")
         infomap_module.Infomap(silent=True, include_self_links=True)
 
     matching = [w for w in caught if "include_self_links" in str(w.message)]
-    assert matching, "expected an include_self_links DeprecationWarning"
+    assert matching, "expected an include_self_links warning"
+    assert issubclass(matching[0].category, TYPED_PARAMETER_WARNING)
     assert matching[0].filename == __file__

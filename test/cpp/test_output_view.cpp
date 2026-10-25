@@ -2,12 +2,15 @@
 
 #include "Infomap.h"
 #include "io/Output.h"
+#include "io/RunMetadata.h"
 #include "io/OutputView.h"
 
 #include "TestUtils.h"
 
 #include <algorithm>
 #include <cstdio>
+#include <fstream>
+#include <map>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -55,6 +58,37 @@ std::string outputPath(const std::string& name)
 void removeOutput(const std::string& path)
 {
   std::remove(path.c_str());
+}
+
+// Two 4-cliques joined by two links, one listed from each side, so the stored
+// directions of the links between the modules disagree.
+void addTwoCliquesLinkedBothWays(InfomapWrapper& infomap)
+{
+  for (unsigned int offset : { 0u, 4u }) {
+    for (unsigned int i = 1; i <= 4; ++i) {
+      for (unsigned int j = i + 1; j <= 4; ++j) {
+        infomap.addLink(offset + i, offset + j);
+      }
+    }
+  }
+  infomap.addLink(4, 5);
+  infomap.addLink(7, 2);
+}
+
+struct ModuleLinkRow {
+  double enterFlow = 0.0;
+  double exitFlow = 0.0;
+  infomap::OutputModuleLinkMap links;
+};
+
+std::map<std::string, ModuleLinkRow> moduleLinkRows(InfomapWrapper& im)
+{
+  infomap::OutputView view(im, im.network(), false);
+  std::map<std::string, ModuleLinkRow> rows;
+  view.forEachModule([&](const infomap::OutputModuleRow& module) {
+    rows[module.linkPathLabel] = { module.enterFlow, module.exitFlow, module.links };
+  });
+  return rows;
 }
 
 } // namespace
@@ -142,6 +176,104 @@ TEST_CASE("The tree header records how many trials produced it [fast][core][outp
   CHECK(tree.find("# trials 3 of 3") != std::string::npos);
 
   std::remove(treePath.c_str());
+}
+
+TEST_CASE("The tree header records the input fingerprint and the config fingerprint [fast][core][output]")
+{
+  // The header had the seed (#1055) but nothing identifying the input, so a
+  // published .tree could not say which of the day's network.net versions it came
+  // from (#1026). The fingerprint is the whole-content hash the manifest records.
+  const auto networkPath = infomap::test::repoPath("examples/networks/twotriangles.net");
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap.readInputData(networkPath); });
+
+  const std::string treePath = "input_fingerprint_header.tree";
+  std::remove(treePath.c_str());
+  infomap::writeTree(*im, im->network(), treePath, false);
+  const auto tree = infomap::test::readTextFile(treePath);
+  std::remove(treePath.c_str());
+
+  const auto identity = infomap::inputIdentity(networkPath);
+  CHECK(identity.known());
+  CHECK(identity.hash.size() == 16);
+  CHECK(tree.find("# input fingerprint " + identity.hash + " (" + std::to_string(identity.size) + " bytes)") != std::string::npos);
+  CHECK(tree.find("# config fingerprint " + infomap::configFingerprint(im->getConfig())) != std::string::npos);
+  // Not used by this run, so not claimed by its header.
+  CHECK(tree.find("# cluster data fingerprint") == std::string::npos);
+  CHECK(tree.find("# meta data fingerprint") == std::string::npos);
+
+  // The same record, programmatically.
+  const auto provenance = im->provenanceJson();
+  CHECK(provenance.find("\"hash\":\"" + identity.hash + "\"") != std::string::npos);
+  CHECK(provenance.find("\"clusterData\":null") != std::string::npos);
+}
+
+TEST_CASE("An in-memory network has no input identity, and its header says nothing about one [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap([&](InfomapWrapper& infomap) {
+    infomap.addLink(1, 2);
+    infomap.addLink(2, 3);
+    infomap.addLink(3, 1);
+  });
+
+  const std::string treePath = "in_memory_header.tree";
+  std::remove(treePath.c_str());
+  infomap::writeTree(*im, im->network(), treePath, false);
+  const auto tree = infomap::test::readTextFile(treePath);
+  std::remove(treePath.c_str());
+
+  CHECK(tree.find("# input fingerprint") == std::string::npos);
+  CHECK(tree.find("# config fingerprint ") != std::string::npos);
+  CHECK(im->provenanceJson().find("\"input\":null") != std::string::npos);
+}
+
+TEST_CASE("The input fingerprint covers the whole file [fast][core][output]")
+{
+  // It used to hash the size plus the first and last 64 KiB, which was blind to
+  // a same-size edit anywhere in the interior of a file larger than 128 KiB --
+  // the edit-and-rerun case the fingerprint exists to catch (#1026).
+  const std::string a = "fingerprint_a.net";
+  const std::string b = "fingerprint_b.net";
+  {
+    std::string body(200 * 1024, 'x');
+    std::ofstream(a, std::ios::binary) << body;
+    body[body.size() / 2] = 'y';
+    std::ofstream(b, std::ios::binary) << body;
+  }
+  const auto identityA = infomap::inputIdentity(a);
+  const auto identityB = infomap::inputIdentity(b);
+  std::remove(a.c_str());
+  std::remove(b.c_str());
+
+  CHECK(identityA.size == identityB.size);
+  CHECK(identityA.hash != identityB.hash);
+  CHECK(infomap::inputIdentity("").known() == false);
+}
+
+TEST_CASE("The input fingerprint is XXH64 of the file content [fast][core][output]")
+{
+  // The value `xxhsum -H64` prints for the same file (#1167). The lengths cover
+  // the short-input path, a remainder of 8 + 4 + 3 bytes after whole stripes,
+  // and a file longer than one read chunk.
+  const auto alphabet = [](std::size_t length) {
+    std::string body(length, ' ');
+    for (std::size_t i = 0; i < length; ++i)
+      body[i] = static_cast<char>('a' + i % 26);
+    return body;
+  };
+  const std::vector<std::pair<std::string, std::string>> cases = {
+    { "", "ef46db3751d8e999" },
+    { "abc", "44bc2cf5ad770999" },
+    { alphabet(1007), "b9b71e9fae244e6d" },
+    { alphabet(70000), "7fe3374511863fe6" },
+  };
+  const std::string path = "fingerprint_xxh64.net";
+  for (const auto& c : cases) {
+    std::ofstream(path, std::ios::binary) << c.first;
+    CAPTURE(c.first.size());
+    CHECK(infomap::inputIdentity(path).hash == c.second);
+  }
+  std::remove(path.c_str());
 }
 
 TEST_CASE("A node name with a quote survives the tree and csv writers [fast][core][output][parser]")
@@ -253,6 +385,62 @@ TEST_CASE("OutputView owns module-link projection [fast][core][output]")
     }
   }
   CHECK(foundPositiveFlow);
+}
+
+TEST_CASE("Undirected module links aggregate to one row per module pair [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(addTwoCliquesLinkedBothWays, "--two-level");
+  REQUIRE(im->numTopModules() == 2);
+
+  const auto rows = moduleLinkRows(*im);
+  const auto& rootLinks = rows.at("root").links;
+  REQUIRE(rootLinks.size() == 1);
+  CHECK(rootLinks.begin()->first == infomap::OutputModuleLink(1, 2));
+  // Both links between the cliques, both directions combined: 2 * w / W with W = 14.
+  CHECK(rootLinks.begin()->second == doctest::Approx(2.0 / 14));
+  // Without recorded teleportation, each direction carries half of that.
+  for (const auto* module : { "1", "2" }) {
+    CHECK(rows.at(module).enterFlow == doctest::Approx(1.0 / 14));
+    CHECK(rows.at(module).exitFlow == doctest::Approx(1.0 / 14));
+  }
+
+  const auto ftreePath = outputPath("undirected.ftree");
+  removeOutput(ftreePath);
+  im->writeFlowTree(ftreePath);
+  const auto ftreeText = infomap::test::readTextFile(ftreePath);
+  CHECK(ftreeText.find("*Links undirected\n# link flow is both directions combined, one row per module pair\n") != std::string::npos);
+  CHECK(ftreeText.find("*Links root 0 0 1 2\n1 2 0.142857\n") != std::string::npos);
+  removeOutput(ftreePath);
+}
+
+TEST_CASE("Module links under --flow-model undirdir are directed rows [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(addTwoCliquesLinkedBothWays, "--two-level --flow-model undirdir");
+  REQUIRE(im->numTopModules() == 2);
+
+  // The flow is undirected but the clustering is directed, so the two links between
+  // the cliques stay separate rows, each one a module's exit flow.
+  const auto rows = moduleLinkRows(*im);
+  const auto& rootLinks = rows.at("root").links;
+  REQUIRE(rootLinks.size() == 2);
+  CHECK(rootLinks.at({ 1, 2 }) == doctest::Approx(rows.at("1").exitFlow));
+  CHECK(rootLinks.at({ 2, 1 }) == doctest::Approx(rows.at("2").exitFlow));
+
+  const auto ftreePath = outputPath("undirdir.ftree");
+  removeOutput(ftreePath);
+  im->writeFlowTree(ftreePath);
+  const auto ftreeText = infomap::test::readTextFile(ftreePath);
+  CHECK(ftreeText.find("*Links directed\n#*Links path enterFlow exitFlow numEdges numChildren\n") != std::string::npos);
+  CHECK(ftreeText.find("both directions combined") == std::string::npos);
+  removeOutput(ftreePath);
+
+  const auto jsonPath = outputPath("undirdir.json");
+  removeOutput(jsonPath);
+  im->writeJsonTree(jsonPath);
+  const auto jsonText = infomap::test::readTextFile(jsonPath);
+  CHECK(jsonText.find("\"directed\":true") != std::string::npos);
+  CHECK(jsonText.find("\"flowModel\":\"undirdir\"") != std::string::npos);
+  removeOutput(jsonPath);
 }
 
 TEST_CASE("OutputView exposes serializable module rows for output adapters [fast][core][output]")

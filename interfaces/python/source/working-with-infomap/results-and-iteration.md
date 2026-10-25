@@ -99,9 +99,9 @@ one convention:
   There is nothing to choose, so you read them like attributes, without
   parentheses.
 - **Call a method to slice, walk, or convert the partition** — either you pass a
-  view (`result.modules(depth=1)`, `result.nodes(states=True)`,
-  `result.effective_num_modules(depth)`) or you ask for a built structure
-  (`result.summary()`, `result.to_dataframe()`). The two canonical depths of
+  view (`result.modules(level=1)`, `result.nodes(states=True)`,
+  `result.effective_num_modules(level)`) or you ask for a built structure
+  (`result.summary()`, `result.to_dataframe()`). The two canonical levels of
   `effective_num_modules` are also exposed as the
   `result.effective_num_top_modules` / `result.effective_num_leaf_modules`
   properties.
@@ -112,7 +112,7 @@ raises a plain `TypeError` (`'dict' object is not callable`); drop them.
 A `Result` from an earlier run of a reused stateful {class}`~infomap.Infomap`
 raises if you read its node data after a later `run()`. The eagerly captured
 scalar properties stay readable. The lazily computed `effective_num_top_modules`
-and `effective_num_leaf_modules` properties, and the `effective_num_modules(depth)`
+and `effective_num_leaf_modules` properties, and the `effective_num_modules(level)`
 method, stay readable only if you read them at least once before the re-run.
 
 ### Summary statistics
@@ -134,8 +134,39 @@ single module, the natural baseline for judging how much structure Infomap found
 larger number means stronger, more compressible community structure.
 
 `result.num_top_modules` is the number of top-level modules.
-`result.num_levels` is the depth of the hierarchical tree; a value of 2 means one
+`result.num_levels` is the depth of the hierarchical tree (its deepest branch, on a ragged tree); a value of 2 means one
 level of modules above the leaves, the standard two-level result.
+
+### Recording what produced a result
+
+`result.provenance()` returns, as a plain `dict`, the same record the engine
+writes into the `.tree` / `.clu` headers, the JSON tree and `--manifest-json`:
+the engine version, the effective seed and trial counts, the canonical
+configuration with its fingerprint, and the identity (`path`, `size`, `mtime`
+and a whole-content `hash`) of every file the run read. A network built in
+memory has no input identity, so `result.provenance()["input"]` is `None`
+then; the configuration and seed are always present.
+
+```{code-cell} python
+record = result.provenance()
+print(f"seed:        {record['seed']}")
+print(f"config hash: {record['configFingerprint']}")
+print(f"input:       {record['input']}")
+```
+
+Log it next to `result.summary()` and a published number can be re-run months
+later.
+
+`.tree`, `.ftree`, `.clu` and the JSON tree stamp *part* of this record into
+the file: the version, seed, trial counts and the fingerprints, plus the input
+size. The canonical configuration and the input paths live only in
+`result.provenance()` and in `--manifest-json`, so a standalone tree tells you
+*which* configuration and input produced it, not what they were -- keep the
+manifest, or the record above, if you want to re-run from the artifact alone.
+
+**CSV and Newick carry none of it**: a comment row breaks readers that take the
+first line as the header, and Newick has no comment syntax. Ship them next to a
+`.tree` or a `--manifest-json` file, or record `result.provenance()` yourself.
 
 ### Getting assignments: `modules()`
 
@@ -150,8 +181,8 @@ print(f"Unique modules: {sorted(set(modules.values()))}")
 Module ids are positive integers with no guaranteed ordering, but the numbering
 is stable across calls for the same run.
 
-For hierarchical results with more than two levels, pass `depth=k` to slice the
-tree at depth $k$. Level 1 gives top modules; level 2 gives sub-modules, and so
+For hierarchical results with more than two levels, pass `level=k` to slice the
+tree at level $k$. Level 1 gives top modules; level 2 gives sub-modules, and so
 on down to the finest module level, `result.num_levels - 1` (the leaf nodes
 themselves occupy the last level).
 
@@ -170,10 +201,10 @@ for cluster in range(3):
 result_hier = infomap.run(g_hier, seed=123, num_trials=10)
 
 print(f"Hierarchy levels: {result_hier.num_levels}")
-top_mods = result_hier.modules(depth=1)
-sub_mods = result_hier.modules(depth=2)
-print(f"Top-level modules (depth 1): {sorted(set(top_mods.values()))}")
-print(f"Sub-modules      (depth 2): {sorted(set(sub_mods.values()))}")
+top_mods = result_hier.modules(level=1)
+sub_mods = result_hier.modules(level=2)
+print(f"Top-level modules (level 1): {sorted(set(top_mods.values()))}")
+print(f"Sub-modules      (level 2): {sorted(set(sub_mods.values()))}")
 ```
 
 ### Iterating over nodes
@@ -324,7 +355,7 @@ never go stale after a re-run.
   properties stay readable.
 - **Module ids carry no order or meaning.** They are stable within one run but
   arbitrary across runs; compare partitions with a metric, not id equality.
-- **`modules()` returns the top level by default.** Pass `depth=-1` for the
+- **`modules()` returns the top level by default.** Pass `level=-1` for the
   finest level of a multilevel result.
 
 ## API pointers

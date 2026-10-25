@@ -19,6 +19,7 @@ import warnings
 import networkx as nx
 import pytest
 from infomap import Infomap, Network, Options, find_communities, run
+from infomap._options import LEGACY_SURFACE_WARNING
 from infomap.result import Result
 
 pytestmark = pytest.mark.fast
@@ -200,7 +201,7 @@ def test_network_run_accepts_advanced_override_without_warning():
     assert isinstance(result, Result)
     # A bare advanced engine kwarg forwards to Options without a deprecation,
     # exactly like the functional infomap.run() front door.
-    assert not any(issubclass(r.category, PendingDeprecationWarning) for r in records)
+    assert not any(issubclass(r.category, LEGACY_SURFACE_WARNING) for r in records)
 
 
 def test_network_run_advanced_override_matches_options_carrier():

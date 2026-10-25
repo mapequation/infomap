@@ -10,6 +10,9 @@ so existing ``except RuntimeError`` code keeps working; the base may detach
 in 3.0. :class:`NotRunError` additionally keeps ``ValueError`` in its MRO
 through 2.x because the results-before-run guard used to raise ``ValueError``.
 
+:class:`infomap.merge.MergeError`, raised by the offline shard-merge tool,
+also derives from :class:`InfomapError` and is defined next to that tool.
+
 This module is pure Python and importable without the compiled bindings.
 """
 
@@ -82,6 +85,14 @@ _PARSE_MESSAGE_PREFIXES = (
     "Can't open file",
     "Unrecognized heading",
     "JSON parse error",
+    # Malformed --cluster-data (.clu, .tree, .ftree); src/io/ClusterMap.cpp.
+    "Couldn't parse",
+    "Invalid tree path",
+    "Missing node id from line",
+    "Mixed state and physical tree ids",
+    "Input cluster data from file",
+    # FileURI's malformed-name error; it only checks input file names.
+    "Filename '",
 )
 _PARSE_MESSAGE_SUBSTRINGS = (
     # SafeFile's read-side open error ("... read permissions."); the

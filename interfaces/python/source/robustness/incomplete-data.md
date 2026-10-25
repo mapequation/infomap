@@ -100,7 +100,13 @@ evidence does not support any community structure.
 
 A separate option, `entropy_corrected`, corrects the small-sample bias in the
 entropy estimate itself; it is independent of the prior-network regularization
-described here.
+described here. It applies the Miller-Madow correction to every codebook: with
+$N$ nodes, $m$ modules and total degree $D$, an $m$-module partition has
+$m - 1 + N$ free parameters -- $m - 1$ in the index codebook, and, per module,
+its nodes plus an exit codeword less the codebook's own normalisation -- each
+charged $1 / (2 D \ln 2)$ bits. That keeps the description length of a *given*
+partition roughly constant as links go missing, but it is far too small to stop
+the splitting described above, which is what the prior network is for.
 :::
 
 ## A 70%-sparse planted partition

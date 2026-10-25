@@ -27,8 +27,9 @@ Before you open an agreed pull request, read:
 - `BUILD.md` for local build and verification commands
 - `ARCHITECTURE.md` for source-of-truth and ownership rules
 - `AGENTS.md` for repo-local maintenance guidance and the verification matrix
-- `RELEASING.md` before you touch release or publishing behavior, and for the
-  Python API deprecation policy before you deprecate or remove public names
+- `RELEASING.md` before you touch release or publishing behavior, for the
+  Python API deprecation policy before you deprecate or remove public names,
+  and for the Python version support policy before you change the floor
 
 Branch from `master`. Do not push directly to `master`. Use
 [Conventional Commits](https://www.conventionalcommits.org/) for commit

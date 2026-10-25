@@ -72,6 +72,9 @@ public:
 
   double calcCodelength(const InfoNode& parent) const;
 
+  // The |K - K_pref| cost, charged once from the tree's own top-module count.
+  double calcTreeCodelengthCost(unsigned int numTopModules) const;
+
   using Base::addMemoryContributions;
 
   using Base::addTeleportationFlow;
@@ -136,8 +139,10 @@ private:
 
   unsigned int numModulesAfterMove(int deltaNumModules) const;
 
+  double bitsPerFreeParameter() const;
+  double calcCodebookFreeParameters(const InfoNode& parent) const;
   double calcIndexEntropyBiasCorrection(unsigned int numModules) const;
-  double calcModuleEntropyBiasCorrection() const;
+  double calcModuleEntropyBiasCorrection(unsigned int numModules) const;
   double calcEntropyBiasCorrection(unsigned int numModules) const;
 
   // ===================================================
@@ -181,18 +186,26 @@ private:
   double moduleEntropyBiasCorrection = 0;
   double m_totalDegree = 1;
   unsigned int m_numNodes = 0;
+  bool m_undirectedLinks = false;
 
 public:
   void setNetworkProperties(const StateNetwork& network);
 
   // Copy the whole-network properties from a parent objective. Sub/super Infomap instances
   // partition InfoNodes and have no StateNetwork of their own, but the entropy bias correction
-  // must keep using the full network's total degree and node count (previously a shared static).
+  // must keep using the full network's total degree, the sample size every codebook is
+  // estimated from (previously a shared static).
   void setNetworkPropertiesFrom(const BiasedMapEquation& other)
   {
     m_totalDegree = other.m_totalDegree;
-    m_numNodes = other.m_numNodes;
   }
+
+  // The node count is that of the network this instance partitions: a module codebook has a
+  // free parameter per node it holds, so the modules of a sub- or super-network hold only its
+  // own nodes. With the parent's count, such a search charged every partition it tracked for
+  // the nodes of the whole network, but not the one-level codelength it is compared with,
+  // which is priced on the tree. So it fell back to one module too often (#1283).
+  void setNumNodes(unsigned int numNodes) { m_numNodes = numNodes; }
 
   // Copy what the objective minimises from a parent objective. The super-level Infomap is built
   // without memory, which today means from a default Config, so its objective would otherwise run

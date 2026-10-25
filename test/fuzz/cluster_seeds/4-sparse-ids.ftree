@@ -1,0 +1,21 @@
+# path flow name node_id
+1:1 0.103432 "a" 1
+1:2 0.117739 "b" 2
+1:3 0.1299 "c" 3
+2:1 0.256984 "e" 5
+2:2 0.350892 "h" 8
+2:3 0.0410536 "i" 9
+3:1 0 "m" 13
+*Links directed
+#*Links path enterFlow exitFlow numEdges numChildren
+*Links root 0 0 1 3
+1 2 0.0517159
+*Links 1 0 0.0517159 3 3
+1 2 0.117739
+2 3 0.1299
+3 1 0.103432
+*Links 2 0.0517159 -6.93889e-17 3 3
+1 2 0.248258
+2 1 0.205268
+2 3 0.0410536
+*Links 3 0 0 0 1

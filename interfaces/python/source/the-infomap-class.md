@@ -59,8 +59,10 @@ The on-instance result accessors (`im.get_modules()`, `im.codelength`,
 and leave in 3.0**. Read the equivalently named members off the returned
 {class}`~infomap.Result` instead. Mind the shape shift: `im.modules` is a
 property, while `result.modules()` is a method. These accessors emit a
-silent-by-default `PendingDeprecationWarning` (surface it with `-W`). The
-migration table below maps each one across.
+`DeprecationWarning`, which Python shows by default when the code that reads
+them runs as a script (`__main__`, per PEP 565) and which any `-W` setting or
+warning-escalating tool surfaces everywhere else. The migration table below
+maps each one across.
 
 ## Migrating to the functional API
 
@@ -73,7 +75,7 @@ Each stateful pattern has a direct functional or `Network` equivalent:
 | Reusable configuration | repeat the keyword arguments | `options = Options(**opts)`, then `infomap.run(g, options=options)` |
 | Top-level modules | `im.get_modules()` | `result.modules()` |
 | Iterate `(node_id, module_id)` pairs | `for k, v in im.modules:` | `for k, v in result.modules().items():` |
-| Modules at level *k* | `im.get_modules(depth_level=k)` | `result.modules(depth=k)` |
+| Modules at level *k* | `im.get_modules(depth_level=k)` | `result.modules(level=k)` |
 | State-node modules | `im.get_modules(states=True)` | `result.modules(states=True)` |
 | Per-node flow | `for n in im.nodes: n.data.flow` | `for n in result.nodes(states=True): n.flow` (`im.nodes` iterates state nodes; plain `result.nodes()` gives physical nodes, identical for first-order networks) |
 | DataFrame | `im.to_dataframe([...])` | `result.to_dataframe([...])` |
@@ -89,8 +91,8 @@ the stateful instance. You read results through the immutable
 ## Migrating deprecated keyword arguments
 
 Advanced engine keywords still work on `Infomap()` and `infomap.run()` in 2.x,
-but they are pending-deprecated and leave those signatures in 3.0. Passing one
-directly emits a (default-silent) `PendingDeprecationWarning`. Each
+but they are deprecated and leave those signatures in 3.0. Passing one directly
+emits a `DeprecationWarning`, visible by default in `__main__` (PEP 565). Each
 falls into one of three groups, with a recommended replacement:
 
 | Deprecated keyword | Where it moves |

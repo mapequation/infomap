@@ -42,6 +42,9 @@ extensions = [
     "myst_nb",
     "sphinx_reredirects",
     "sphinxcontrib.bibtex",
+    # Local, in _ext/: keeps an unreachable external inventory from ending a -W
+    # build. See the module docstring for why suppress_warnings cannot.
+    "intersphinx_offline",
 ]
 
 # Consolidated bibliography (see references.bib and the References page).
@@ -144,6 +147,13 @@ intersphinx_mapping = {
     "networkx": ("https://networkx.org/documentation/stable/", None),
     "igraph": ("https://python.igraph.org/en/main/", None),
 }
+
+# Bound the per-inventory fetch. The default is None, i.e. the socket's own
+# connect timeout, which is how a single unresponsive site cost the docs job six
+# minutes before failing it. Six inventories at 15 s each is the worst case, and
+# the outcome of a timeout is now a demoted warning (see the intersphinx_offline
+# extension) rather than a red build.
+intersphinx_timeout = 15
 
 # -- Copy button -------------------------------------------------------------
 

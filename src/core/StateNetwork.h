@@ -49,6 +49,9 @@ public:
   struct PhysNode {
     unsigned int physId = 0;
     double weight = 1.0;
+    // Whether the weight was given, as in a *Vertices record. Only then does it
+    // replace a weight already set on the state node (#1183).
+    bool hasWeight = false;
     PhysNode(unsigned int physId) : physId(physId) {}
     PhysNode(unsigned int physId, double weight) : physId(physId), weight(weight) {}
     PhysNode(double weight = 1.0) : weight(weight) {}
@@ -121,6 +124,8 @@ protected:
   unsigned int m_numLinks = 0;
   double m_sumLinkWeight = 0.0;
   unsigned int m_numSelfLinksFound = 0;
+  // Distinct self-links after aggregation, like m_numLinks, so that sumDegree()
+  // compares like with like. m_numSelfLinksFound counts every occurrence.
   unsigned int m_numSelfLinks = 0;
   double m_sumSelfLinkWeight = 0.0;
   unsigned int m_numAggregatedLinks = 0;
@@ -239,6 +244,12 @@ public:
       for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e)
         fn(s, m_linkTargets[e], m_linkWeights[e], m_linkFlows[e]);
   }
+  // Duplicate links are summed only when they have the same direction, so a pair listed
+  // as a b and b a stays two links here, though it is one link of an undirected network
+  // (#1203). Whether a link is the second listing of such a pair (counted at the lower
+  // source index), and the degree sum of an undirected network that counts it once.
+  bool isReverseOfLink(unsigned int sourceIndex, unsigned int targetIndex) const;
+  unsigned int sumUndirectedDegree() const;
 #endif
 
   // Mode A (first-order and the main multilayer network) defers dedup to
@@ -266,7 +277,15 @@ public:
     return m_numLinks;
   }
   double sumLinkWeight() const { return m_sumLinkWeight; }
-  unsigned int numSelfLinks() const { return m_numSelfLinks; }
+  // Finalizes like numLinks(): parallel self-links are only merged in the CSR build,
+  // so sumDegree() must not see a count from before it, whichever operand runs first.
+  unsigned int numSelfLinks() const
+  {
+#ifndef SWIG
+    if (!m_useMapBuild) ensureFinalized();
+#endif
+    return m_numSelfLinks;
+  }
   double sumSelfLinkWeight() const { return m_sumSelfLinkWeight; }
   // Use convention of counting self-links only once, treating them as directed
   double sumWeightedDegree() const { return 2 * sumLinkWeight() - sumSelfLinkWeight(); }

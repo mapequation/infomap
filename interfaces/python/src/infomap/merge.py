@@ -33,6 +33,8 @@ import sys
 from collections.abc import Iterable, Sequence
 from typing import TypedDict
 
+from .errors import InfomapError
+
 __all__ = ["MergeError", "MergeSummary", "merge_trial_results"]
 
 SUPPORTED_FORMATS = ("tree", "clu")
@@ -69,8 +71,17 @@ _REQUIRED_FILE_KEYS = (
 _REQUIRED_TRIAL_KEYS = ("trial", "codelength")
 
 
-class MergeError(Exception):
-    """Raised when shard files are missing, inconsistent, or unmergeable."""
+class MergeError(InfomapError):
+    """Raised when shard files are missing, inconsistent, or unmergeable.
+
+    Part of the package's error taxonomy: ``except InfomapError`` -- the
+    documented way to catch any Infomap failure -- catches merge failures too.
+
+    .. versionchanged:: 2.16
+        Inherits :class:`~infomap.InfomapError` (it derived from plain
+        ``Exception`` before, so ``except InfomapError`` let it through).
+        ``except MergeError`` and ``except Exception`` are unaffected.
+    """
 
 
 def _expand_patterns(patterns: Iterable[str | os.PathLike[str]]) -> list[str]:

@@ -53,6 +53,9 @@ ALGORITHM_OPTIONS <- list(
   list(type = "value", name = "flow_tolerance", flag = "--flow-tolerance", default = 1e-15, include = .skip_when_not_equal(1e-15)),
   list(type = "flag", name = "regularized", flag = "--regularized", default = FALSE),
   list(type = "value", name = "regularization_strength", flag = "--regularization-strength", default = 1.0, include = .skip_when_not_equal(1.0)),
+  list(type = "value", name = "intra_regularization_strength", flag = "--intra-regularization-strength", default = 1.0, include = .skip_when_not_equal(1.0)),
+  list(type = "value", name = "inter_regularization_strength", flag = "--inter-regularization-strength", default = 1.0, include = .skip_when_not_equal(1.0)),
+  list(type = "flag", name = "multilayer_skip_absent_nodes", flag = "--multilayer-skip-absent-nodes", default = FALSE),
   list(type = "flag", name = "entropy_corrected", flag = "--entropy-corrected", default = FALSE),
   list(type = "value", name = "entropy_correction_strength", flag = "--entropy-correction-strength", default = 1.0, include = .skip_when_not_equal(1.0)),
   list(type = "value", name = "markov_time", flag = "--markov-time", default = 1.0, include = .skip_when_not_equal(1.0)),
@@ -100,14 +103,15 @@ OPTION_FIELD_NAMES <- c(
   "silent", "two_level", "flow_model", "directed",
   "recorded_teleportation", "use_node_weights_as_flow", "to_nodes", "teleportation_probability",
   "max_flow_iterations", "min_flow_iterations", "flow_tolerance", "regularized",
-  "regularization_strength", "entropy_corrected", "entropy_correction_strength", "markov_time",
-  "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules",
-  "preferred_number_of_levels", "preferred_number_of_levels_strength", "multilayer_relax_rate", "multilayer_relax_limit",
-  "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd", "multilayer_relax_to_self",
-  "seed", "num_trials", "core_loop_limit", "core_level_limit",
-  "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution",
-  "inner_parallelization", "parallel_trials", "converge", "num_threads",
-  "threads", "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
+  "regularization_strength", "intra_regularization_strength", "inter_regularization_strength", "multilayer_skip_absent_nodes",
+  "entropy_corrected", "entropy_correction_strength", "markov_time", "variable_markov_time",
+  "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules", "preferred_number_of_levels",
+  "preferred_number_of_levels_strength", "multilayer_relax_rate", "multilayer_relax_limit", "multilayer_relax_limit_up",
+  "multilayer_relax_limit_down", "multilayer_relax_by_jsd", "multilayer_relax_to_self", "seed",
+  "num_trials", "core_loop_limit", "core_level_limit", "tune_iteration_limit",
+  "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution", "inner_parallelization",
+  "parallel_trials", "converge", "num_threads", "threads",
+  "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
 )
 
 OPTION_DEFAULTS <- list(
@@ -156,6 +160,9 @@ OPTION_DEFAULTS <- list(
   flow_tolerance = 1e-15,
   regularized = FALSE,
   regularization_strength = 1.0,
+  intra_regularization_strength = 1.0,
+  inter_regularization_strength = 1.0,
+  multilayer_skip_absent_nodes = FALSE,
   entropy_corrected = FALSE,
   entropy_correction_strength = 1.0,
   markov_time = 1.0,
@@ -187,6 +194,16 @@ OPTION_DEFAULTS <- list(
   prefer_modular_solution = FALSE,
   num_random_moves = 5L,
   max_degree_for_random_moves = 2L
+)
+
+# Options the 3.0 parameter policy removes from the R surface
+# (interfaces/parameters/overrides.json, action `remove`). construct_args()
+# announces one that is set away from its default; options classified
+# `deprecate` carry a note in ?infomap_options only, with no runtime
+# warning.
+REMOVED_OPTIONS <- list(
+  list(name = "print_config_fingerprint", msg = "print_config_fingerprint leaves the infomap R surface in 3.0. A print-and-exit CLI diagnostic; run the infomap binary."),
+  list(name = "threads", msg = "threads leaves the infomap R surface in 3.0. Use num_threads; threads is a redundant alias of the same engine option.")
 )
 
 #' Build a reusable Infomap options list
@@ -231,7 +248,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`hide_bipartite_nodes`}{Hide bipartite nodes in output by projecting the solution to primary nodes.}
 #'   \item{`print_all_trials`}{Write each trial to separate output files. Has effect only when --num-trials is greater than 1.}
 #'   \item{`no_overwrite`}{Fail with an output error if any target output file already exists. By default existing files are replaced.}
-#'   \item{`print_config_fingerprint`}{Print the canonical configuration fingerprint and exit.}
+#'   \item{`print_config_fingerprint`}{Print the canonical configuration fingerprint and exit. Deprecated: leaves the R surface in 3.0. A print-and-exit CLI diagnostic; run the infomap binary.}
 #'   \item{`timing_json`}{Write machine-readable run timing JSON to this path. Use - for stdout.}
 #'   \item{`summary_json`}{Write machine-readable final run summary JSON to this path. Use - for stdout.}
 #'   \item{`manifest_json`}{Write a machine-readable run manifest JSON to this path. Use - for stdout.}
@@ -257,6 +274,9 @@ OPTION_DEFAULTS <- list(
 #'   \item{`flow_tolerance`}{Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run.}
 #'   \item{`regularized`}{Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.}
 #'   \item{`regularization_strength`}{Scale the relative strength of the Bayesian prior network used by --regularized.}
+#'   \item{`intra_regularization_strength`}{Scale the intra-layer part of the multilayer prior used by --regularized, relative to --regularization-strength. Set to 0 to regularize only between layers.}
+#'   \item{`inter_regularization_strength`}{Scale the inter-layer part of the multilayer prior used by --regularized, relative to --regularization-strength. Set to 0 to leave the layers uncoupled.}
+#'   \item{`multilayer_skip_absent_nodes`}{Treat a physical node's absence from a layer as real rather than unobserved, so the prior network of --regularized spans only the nodes each layer holds.}
 #'   \item{`entropy_corrected`}{Correct for negative entropy bias in small samples, especially solutions with many modules.}
 #'   \item{`entropy_correction_strength`}{Scale the default correction used by --entropy-corrected.}
 #'   \item{`markov_time`}{Scale link flow to change the cost of moving between modules. Higher values result in fewer modules.}
@@ -288,7 +308,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`parallel_trials`}{Run independent trials in parallel with OpenMP. --num-trials remains the total number of trials; the number of parallel workers follows the OpenMP thread count (e.g. OMP_NUM_THREADS), clamped to --num-trials. Peak memory scales with the worker count. Nested OpenMP and --inner-parallelization are disabled inside workers.}
 #'   \item{`converge`}{Treat the trial count as a cap and stop early once the best codelength has plateaued (no meaningful improvement over several consecutive trials). Runs trials serially; cannot be combined with parallel trials or distributed sharding. With no explicit trial count, a default cap is used.}
 #'   \item{`num_threads`}{Effective thread budget: 'auto' (resolve from --num-threads > INFOMAP_NUM_THREADS > SLURM_CPUS_PER_TASK > OMP_NUM_THREADS > cpuset > hardware), or a positive integer. 1 forces fully serial. Governs the recursive partition, parallel trials, and inner parallelization.}
-#'   \item{`threads`}{Alias for --num-threads.}
+#'   \item{`threads`}{Alias for --num-threads. Deprecated: leaves the R surface in 3.0. Use num_threads; threads is a redundant alias of the same engine option.}
 #'   \item{`prefer_modular_solution`}{Prefer a modular solution even when one module gives a lower codelength.}
 #'   \item{`num_random_moves`}{Try this many random moves in each core loop to merge weakly connected nodes.}
 #'   \item{`max_degree_for_random_moves`}{Try random moves only for nodes with degree at most this value.}
@@ -455,6 +475,12 @@ construct_args <- function(args = NULL, opts = NULL) {
       old = "include_self_links",
       msg = "include_self_links is deprecated; use no_self_links = TRUE to exclude self-links."
     )
+  }
+
+  for (removed in REMOVED_OPTIONS) {
+    if (!identical(opts[[removed$name]], OPTION_DEFAULTS[[removed$name]])) {
+      .Deprecated(package = "infomap", old = removed$name, msg = removed$msg)
+    }
   }
 
   parts <- .append_specs(parts, opts, INPUT_OPTIONS)

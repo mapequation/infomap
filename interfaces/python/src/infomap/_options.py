@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import dataclasses
 import os
 import sys
 import warnings
 from collections.abc import Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, fields, replace
+from types import FrameType
 from typing import Any, Literal, NamedTuple, get_args
 
 
@@ -13,6 +17,44 @@ from typing import Any, Literal, NamedTuple, get_args
 # make build-binding-options.
 
 _PACKAGE_PREFIX = os.path.dirname(os.path.abspath(__file__)) + os.sep
+
+# The two classes the pre-3.0 surface announces itself with, in one place each
+# so a change of mind is one edit rather than forty (#915).
+#
+# RELEASING.md keeps two tiers on purpose, and they have to stay ordered by
+# volume. The lower one used to be PendingDeprecationWarning, which CPython's
+# default filters ignore outright, so it reached nobody; DeprecationWarning is
+# shown in __main__ under PEP 565, which is exactly the `python analysis.py`
+# audience that has to migrate. Promoting only that one would have collapsed
+# the two tiers into the same class, erasing a distinction the suite pins, so
+# the louder tier moves up too: FutureWarning is shown under every filter, and
+# is where scikit-learn, pandas and NumPy all landed for a scientific audience.
+#
+# Subclasses rather than the built-in classes themselves. A filter matches by
+# class hierarchy, so every -W and filterwarnings spelling that worked on the
+# base class still catches these -- PEP 565's __main__ visibility included --
+# while naming the subclass silences one Infomap tier and nothing else. Bound
+# to the base classes directly, the tiers were unaddressable: silencing the
+# legacy tier in a test meant ignoring every DeprecationWarning in the process,
+# including the ones the same test was there to catch.
+class LegacySurfaceWarning(DeprecationWarning):
+    """The legacy stateful surface: Result accessors mirrored on ``Infomap``,
+    advanced-tier keywords, ``from_options`` and friends.
+    """
+
+
+class TypedParameterWarning(FutureWarning):
+    """A deprecated parameter the caller actually typed, where silently ignoring
+    or rewriting it hides a migration they have to make.
+    """
+
+
+# The names the call sites and the test suite use, and the ones RELEASING.md
+# documents. Aliases so a tier is one edit here, and so a filter spelling
+# (`ignore::infomap._options.LEGACY_SURFACE_WARNING`) names the tier rather
+# than a class whose base a later change of mind would move.
+LEGACY_SURFACE_WARNING = LegacySurfaceWarning
+TYPED_PARAMETER_WARNING = TypedParameterWarning
 
 
 # Sentinel default for the common-tier keywords on the Infomap()/run()
@@ -32,17 +74,66 @@ class _Unset:
 _UNSET: Any = _Unset()
 
 
+# Set while the package builds an Options on its own behalf: the run-context
+# base in _merge_options, keyword merging through dataclasses.replace(), the
+# rendered-args funnel in _construct_args, an adapter folding in its inferred
+# flow model. Those re-create fields the caller already typed -- or set
+# silent=False purely as a rendering device -- so the removed-field warning in
+# Options.__post_init__ would otherwise fire at the library, once per plumbing
+# step. A caller-frame gate cannot tell the two apart: Options is built through
+# _OptionsMeta.__call__, so the frame above the synthesized __init__ is always
+# this package. Hence an explicit marker, scoped by a context variable so a
+# construction on another thread is judged on its own (#915).
+_INTERNAL_CONSTRUCTION: ContextVar[bool] = ContextVar("_INTERNAL_CONSTRUCTION", default=False)
+
+
+@contextmanager
+def _internal_construction():
+    """Mark the Options constructions inside the block as the package's own.
+
+    Every internal funnel that builds or re-builds an Options from values the
+    caller already supplied has to run under this, or the caller hears about
+    the same removed field once per internal step -- and the package warns
+    about its own defaults.
+    """
+    token = _INTERNAL_CONSTRUCTION.set(True)
+    try:
+        yield
+    finally:
+        _INTERNAL_CONSTRUCTION.reset(token)
+
+
+_DATACLASSES_FILE = getattr(dataclasses, "__file__", None) or ""
+
+
+def _is_package_frame(frame: FrameType) -> bool:
+    filename = frame.f_code.co_filename
+    # Two frames sit between this package and the caller when an Options is
+    # constructed, and neither is ours by filename: the __init__ that
+    # dataclasses synthesizes for Options is compiled from a string, and
+    # dataclasses.replace() lives in the standard library. A warning
+    # attributed to either is invisible even in __main__, since PEP 565's
+    # default filter matches on the module (#915). The string-compiled
+    # frame is ours only when it runs in this module's globals, which is
+    # what dataclasses gives the functions it builds; a "<string>" frame
+    # from python -c, exec() or compile() is the caller's own and must be
+    # the one the warning names.
+    return (
+        filename.startswith(_PACKAGE_PREFIX)
+        or (filename == "<string>" and frame.f_globals.get("__name__") == __name__)
+        or filename == _DATACLASSES_FILE
+    )
+
+
 def _external_stacklevel() -> int:
     # Compute a warnings.warn stacklevel that attributes the warning to
     # the first caller frame outside this package, whichever public entry
-    # point (Infomap(), Infomap.run(), infomap.run(), Options.to_args())
-    # reached this module. Python 3.12's skip_file_prefixes does this
-    # natively; the supported floor is 3.11.
+    # point (Infomap(), Infomap.run(), infomap.run(), Options.to_args(),
+    # Options()) reached this module. Python 3.12's skip_file_prefixes does
+    # the prefix half natively; the supported floor is 3.11.
     frame = sys._getframe(1)
     level = 1
-    while frame is not None and frame.f_code.co_filename.startswith(
-        _PACKAGE_PREFIX
-    ):
+    while frame is not None and _is_package_frame(frame):
         frame = frame.f_back
         level += 1
     return level
@@ -98,15 +189,15 @@ _OPTION_TABLE = {
     "no_infomap": _OptionSpec("--no-infomap", "flag", False),
     "no_self_links": _OptionSpec("--no-self-links", "no_self_links", False),
     # output
-    "out_name": _OptionSpec("--out-name", "value", None, free_string=True, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
-    "no_file_output": _OptionSpec("--no-file-output", "flag", False, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
-    "tree": _OptionSpec("--tree", "flag", False, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
-    "ftree": _OptionSpec("--ftree", "flag", False, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
-    "clu": _OptionSpec("--clu", "flag", False, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
-    "clu_level": _OptionSpec("--clu-level", "value", None, domain=(-1, None), action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "out_name": _OptionSpec("--out-name", "value", None, free_string=True, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "no_file_output": _OptionSpec("--no-file-output", "flag", False, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "tree": _OptionSpec("--tree", "flag", False, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "ftree": _OptionSpec("--ftree", "flag", False, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "clu": _OptionSpec("--clu", "flag", False, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "clu_level": _OptionSpec("--clu-level", "value", None, domain=(-1, None), action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
     "hide_bipartite_nodes": _OptionSpec("--hide-bipartite-nodes", "flag", False, action="args-only", replacement="It projects the secondary (type-B) bipartite nodes out of what result.write_tree/write_clu emit, leaving the in-memory result covering both node types. Set it via Options and write from the Result to use it."),
-    "print_all_trials": _OptionSpec("--print-all-trials", "flag", False, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
-    "no_overwrite": _OptionSpec("--no-overwrite", "flag", False, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "print_all_trials": _OptionSpec("--print-all-trials", "flag", False, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "no_overwrite": _OptionSpec("--no-overwrite", "flag", False, action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
     "print_config_fingerprint": _OptionSpec("--print-config-fingerprint", "flag", False, action="remove", replacement="A print-and-exit CLI diagnostic; run the infomap binary."),
     "timing_json": _OptionSpec("--timing-json", "value", None, path=True),
     "summary_json": _OptionSpec("--summary-json", "value", None, path=True),
@@ -117,7 +208,7 @@ _OPTION_TABLE = {
     "no_final_output": _OptionSpec("--no-final-output", "flag", False),
     "silent": _OptionSpec("--silent", "flag", True, action="remove", replacement="The Python API is quiet by default; logging is the control. Attach handlers to logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log."),
     "verbosity_level": _OptionSpec("--verbose", "verbosity", 1, action="remove", replacement="A DEBUG-enabled 'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity; logger levels filter the records."),
-    "output": _OptionSpec("--output", "comma_list", None, choices=get_args(OutputFormat), action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes depth) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
+    "output": _OptionSpec("--output", "comma_list", None, choices=get_args(OutputFormat), action="args-only", replacement="Use Result.write_tree/write_flow_tree/write_clu (write_clu takes level) or Network.write_pajek/write_state_network. The flag only acts when an output directory is passed via the raw args escape hatch."),
     # algorithm
     "two_level": _OptionSpec("--two-level", "flag", False, common=True),
     "flow_model": _OptionSpec("--flow-model", "value", None, choices=get_args(FlowModel)),
@@ -130,6 +221,9 @@ _OPTION_TABLE = {
     "flow_tolerance": _OptionSpec("--flow-tolerance", "value", 1e-15, domain=(0.0, None)),
     "regularized": _OptionSpec("--regularized", "flag", False),
     "regularization_strength": _OptionSpec("--regularization-strength", "value", 1.0, domain=(0.0, None)),
+    "intra_regularization_strength": _OptionSpec("--intra-regularization-strength", "value", 1.0, domain=(0.0, None)),
+    "inter_regularization_strength": _OptionSpec("--inter-regularization-strength", "value", 1.0, domain=(0.0, None)),
+    "multilayer_skip_absent_nodes": _OptionSpec("--multilayer-skip-absent-nodes", "flag", False),
     "entropy_corrected": _OptionSpec("--entropy-corrected", "flag", False),
     "entropy_correction_strength": _OptionSpec("--entropy-correction-strength", "value", 1.0, domain=(0.0, None)),
     "markov_time": _OptionSpec("--markov-time", "value", 1.0, domain=(0.0, None), common=True),
@@ -194,7 +288,7 @@ _COMMON_TIER_FIELDS = frozenset(
 
 # Advanced-tier keywords on the Infomap()/run() signatures:
 # the init/run 'unset' defaults plus the policy action/replacement that
-# shape the PendingDeprecationWarning. Infomap.run() re-renders keywords on
+# shape the deprecation warning. Infomap.run() re-renders keywords on
 # top of the constructed state and a rendered flag can only switch on, so a
 # truthy-by-default flag (silent) keeps the no-op False default in run
 # context.
@@ -212,9 +306,9 @@ _ADVANCED_TIER_KWARGS = {
 
 def _warn_advanced_tier_kwargs(passed, context):
     # Advanced-tier keywords are docs-only deprecated on the Infomap()/run()
-    # signatures and move off them in 3.0. Emit a
-    # PendingDeprecationWarning -- silent by default, so it nags no one until
-    # 3.0 nears -- when one is set to a non-default value on a direct call.
+    # signatures and move off them in 3.0. Emit a LEGACY_SURFACE_WARNING --
+    # visible in __main__ under PEP 565, see its definition for the tier -- when
+    # one is set to a non-default value on a direct call.
     # Internal funnels (the Options path builds Infomap(**resolved), the graph
     # adapters, the from_* class methods) reach the same methods from inside
     # the package; the caller-frame check skips them so only user-typed
@@ -227,6 +321,14 @@ def _warn_advanced_tier_kwargs(passed, context):
         default = spec[baseline]
         if passed.get(name, default) != default:
             action, replacement = spec[2], spec[3]
+            # A keyword classified `remove` leaves the Python surface altogether
+            # -- its replacement is another option, the logging module or the CLI
+            # binary, never Options -- so the signature lead below would name a
+            # refuge that does not exist. Those are announced by the option merge
+            # instead (_warn_removed_overrides), which every route reaches,
+            # including the in-package adapters this frame gate skips (#915).
+            if action == "remove":
+                continue
             lead = (
                 f"'{name}' is deprecated on the Infomap() and run() "
                 "signatures and leaves them in 3.0. "
@@ -241,7 +343,37 @@ def _warn_advanced_tier_kwargs(passed, context):
             else:
                 guidance = ""
             warnings.warn(
-                lead + guidance, PendingDeprecationWarning, stacklevel=3
+                lead + guidance, LEGACY_SURFACE_WARNING, stacklevel=3
+            )
+
+
+# The Options fields that leave the Python surface in 3.0, by policy action.
+_REMOVED_FIELDS = {
+    name: spec
+    for name, spec in _OPTION_TABLE.items()
+    if spec.action == "remove"
+}
+
+
+def _removed_field_message(name, spec):
+    # One sentence for every route a removed field can arrive by --
+    # Options(), a mapping carrier, a bare keyword on any entry point -- and
+    # none of them names the signatures, since Options is not where these
+    # survive either.
+    return f"'{name}' leaves the Python surface in 3.0. " + (spec.replacement or "")
+
+
+def _warn_removed_fields(options):
+    # Announce a removed field set to a non-default value on Options itself,
+    # as visibly as the same keyword on the Infomap() signature: the migration
+    # points every advanced keyword at Options, and for these four that is not
+    # where they survive.
+    for name, spec in _REMOVED_FIELDS.items():
+        if options[name] != spec.default:
+            warnings.warn(
+                _removed_field_message(name, spec),
+                LEGACY_SURFACE_WARNING,
+                stacklevel=_external_stacklevel(),
             )
 
 
@@ -463,58 +595,89 @@ class Options(metaclass=_OptionsMeta):
     out_name : str, optional
         Base name for output files, for example [out_directory]/[out-name].tree.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     no_file_output : bool, optional
         Do not write output files.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     tree : bool, optional
         Write the modular hierarchy to a tree file. Enabled by default when no other
         output format is selected.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     ftree : bool, optional
         Write the modular hierarchy and aggregated links between nested modules to an
         ftree file. Used by Network Navigator.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     clu : bool, optional
         Write top-level module ids for each node to a clu file.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     clu_level : int, optional
         With --clu or --output clu, write module ids at this depth from the root. Use -1
         for bottom-level modules. Valid range: >= -1. Engine default: 1.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     output : sequence of str, optional
         Write selected output formats as a comma-separated list without spaces, e.g. -o
         clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states,
         flow.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     hide_bipartite_nodes : bool, optional
         Hide bipartite nodes in output by projecting the solution to primary nodes.
 
-        Args-only on the Python library surface. It projects the secondary (type-B)
-        bipartite nodes out of what result.write_tree/write_clu emit, leaving the
-        in-memory result covering both node types. Set it via Options and write from the
-        Result to use it.
+        .. deprecated:: 2.15
+           Args-only on the Python library surface. It projects the secondary (type-B)
+           bipartite nodes out of what result.write_tree/write_clu emit, leaving the
+           in-memory result covering both node types. Set it via Options and write from
+           the Result to use it. The guidance above applies through 2.x; in 3.0 the
+           field leaves ``Options`` and is reachable only through the raw ``args``
+           escape hatch.
     print_all_trials : bool, optional
         Write each trial to separate output files. Has effect only when --num-trials is
         greater than 1.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     no_overwrite : bool, optional
         Fail with an output error if any target output file already exists. By default
         existing files are replaced.
 
-        Args-only in library mode (see the note above).
+        .. deprecated:: 2.15
+           Args-only in library mode (see the note above). The guidance above applies
+           through 2.x; in 3.0 the field leaves ``Options`` and is reachable only
+           through the raw ``args`` escape hatch.
     print_config_fingerprint : bool, optional
         Print the canonical configuration fingerprint and exit.
 
-        Not a Python library option; it leaves the surface in 3.0. A print-and-exit CLI
-        diagnostic; run the infomap binary.
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. A print-and-exit
+           CLI diagnostic; run the infomap binary.
     timing_json : str or os.PathLike, optional
         Write machine-readable run timing JSON to this path. Use - for stdout.
     summary_json : str or os.PathLike, optional
@@ -539,17 +702,19 @@ class Options(metaclass=_OptionsMeta):
         Verbosity level on the console. 1 keeps the default output level, 2 renders -vv
         and so on.
 
-        Not a Python library option; it leaves the surface in 3.0. A DEBUG-enabled
-        'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity;
-        logger levels filter the records.
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. A DEBUG-enabled
+           'infomap' logger (infomap.enable_log(logging.DEBUG)) raises engine verbosity;
+           logger levels filter the records.
     silent : bool, optional
         Suppress console output. The Python API is already quiet by default; to see the
         engine log, use infomap.enable_log() rather than this flag. The command-line
         interface is unaffected.
 
-        Not a Python library option; it leaves the surface in 3.0. The Python API is
-        quiet by default; logging is the control. Attach handlers to
-        logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log.
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. The Python API is
+           quiet by default; logging is the control. Attach handlers to
+           logging.getLogger('infomap') (e.g. infomap.enable_log()) for the engine log.
     two_level : bool, optional
         Optimize a two-level partition instead of the default multi-level hierarchy.
     flow_model : str, optional
@@ -584,6 +749,17 @@ class Options(metaclass=_OptionsMeta):
     regularization_strength : float, optional
         Scale the relative strength of the Bayesian prior network used by --regularized.
         Valid range: >= 0.0.
+    intra_regularization_strength : float, optional
+        Scale the intra-layer part of the multilayer prior used by --regularized,
+        relative to --regularization-strength. Set to 0 to regularize only between
+        layers. Valid range: >= 0.0.
+    inter_regularization_strength : float, optional
+        Scale the inter-layer part of the multilayer prior used by --regularized,
+        relative to --regularization-strength. Set to 0 to leave the layers uncoupled.
+        Valid range: >= 0.0.
+    multilayer_skip_absent_nodes : bool, optional
+        Treat a physical node's absence from a layer as real rather than unobserved, so
+        the prior network of --regularized spans only the nodes each layer holds.
     entropy_corrected : bool, optional
         Correct for negative entropy bias in small samples, especially solutions with
         many modules.
@@ -679,8 +855,9 @@ class Options(metaclass=_OptionsMeta):
     threads : str or int, optional
         Alias for --num-threads.
 
-        Not a Python library option; it leaves the surface in 3.0. Use num_threads;
-        threads is a redundant alias of the same engine option.
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. Use num_threads;
+           threads is a redundant alias of the same engine option.
     prefer_modular_solution : bool, optional
         Prefer a modular solution even when one module gives a lower codelength.
     num_random_moves : int, optional
@@ -690,8 +867,11 @@ class Options(metaclass=_OptionsMeta):
         Try random moves only for nodes with degree at most this value. Valid range: >=
         0.
     include_self_links : bool, optional
-        Deprecated. Self-links are included by default; use no_self_links=True to
-        exclude them.
+        Whether to include self-links.
+
+        .. deprecated:: 2.15
+           Not a Python library option; it leaves the surface in 3.0. Self-links are
+           included by default; pass no_self_links=True to exclude them.
     """
 
     # input
@@ -742,6 +922,9 @@ class Options(metaclass=_OptionsMeta):
     flow_tolerance: float = 1e-15
     regularized: bool = False
     regularization_strength: float = 1.0
+    intra_regularization_strength: float = 1.0
+    inter_regularization_strength: float = 1.0
+    multilayer_skip_absent_nodes: bool = False
     entropy_corrected: bool = False
     entropy_correction_strength: float = 1.0
     markov_time: float = 1.0
@@ -790,6 +973,12 @@ class Options(metaclass=_OptionsMeta):
         _validate_option_domains(options)
         _validate_option_choices(options)
         _validate_option_arg_strings(options)
+        # A field the 3.0 policy removes from the Python surface warns
+        # here, on the object the migration points everyone at -- unless
+        # this construction is the package's own plumbing, which only
+        # re-creates values the caller already typed (#915).
+        if not _INTERNAL_CONSTRUCTION.get():
+            _warn_removed_fields(options)
 
     def __repr__(self) -> str:
         # Show only the fields set away from their defaults; the full
@@ -886,7 +1075,7 @@ class Options(metaclass=_OptionsMeta):
         if self.include_self_links is not None:
             warnings.warn(
                 "include_self_links is deprecated, use no_self_links to exclude self-links",
-                DeprecationWarning,
+                TYPED_PARAMETER_WARNING,
                 stacklevel=_external_stacklevel(),
             )
 
@@ -953,6 +1142,27 @@ def _context_default(name, context):
     return getattr(_OPTION_DEFAULTS, name)
 
 
+def _warn_removed_overrides(overrides, context):
+    """Announce the removed fields among keyword ``overrides`` the caller typed.
+
+    The counterpart of the construction-time check in ``Options.__post_init__``
+    for values that never build an Options of their own: bare keywords on
+    ``Infomap()`` / ``Infomap.run()`` / ``Network.run()`` / ``infomap.run()``
+    and on the in-package adapters (``find_communities`` and friends), which
+    are merged into an existing carrier under ``_internal_construction()``.
+    Measured against the context default, so ``run(silent=True)`` on an
+    instance -- a real choice in the run context, where the no-op default
+    is False -- is announced and ``run(silent=False)`` is not.
+    """
+    for name, spec in _REMOVED_FIELDS.items():
+        if name in overrides and overrides[name] != _context_default(name, context):
+            warnings.warn(
+                _removed_field_message(name, spec),
+                LEGACY_SURFACE_WARNING,
+                stacklevel=_external_stacklevel(),
+            )
+
+
 # The starting point when no options= carrier is supplied: the dataclass
 # defaults, with the run context's no-op flag defaults applied on top (see
 # _RUN_DEFAULT_OVERRIDES).
@@ -1003,18 +1213,33 @@ def _merge_options(base, keyword_overrides, context):
     sentinel.
     """
     if base is None:
-        base = Options(**_CONTEXT_BASE_OVERRIDES.get(context, {}))
+        # The run-context base sets silent=False as a rendering device (a
+        # rendered flag can only switch on); that is the package's own
+        # construction, not a caller typing the removed field.
+        with _internal_construction():
+            base = Options(**_CONTEXT_BASE_OVERRIDES.get(context, {}))
     elif isinstance(base, Mapping):
+        # A caller's mapping: a removed field in it is theirs to hear about,
+        # attributed to their Infomap()/run() line.
         base = Options(**base)
     elif not isinstance(base, Options):
         raise TypeError(
             "options must be an Options instance, a mapping, or None"
         )
-    return replace(base, **keyword_overrides)
+    # The keyword overrides are the caller's typing whichever frame reached
+    # the constructor -- a direct call, or an in-package adapter such as
+    # find_communities() forwarding its caller's kwargs -- so their removed
+    # fields are announced here, once. Merging them is then plumbing.
+    _warn_removed_overrides(keyword_overrides, context)
+    with _internal_construction():
+        return replace(base, **keyword_overrides)
 
 
 def _construct_args(args=None, **options):
     # Internal rendered-args funnel behind Infomap()/run()/Network.run().
     # Unknown option names raise through the Options constructor, with
-    # the same 'did you mean' guidance as direct construction.
-    return Options(**options).to_args(base_args=args)
+    # the same 'did you mean' guidance as direct construction. The kwargs
+    # come from an Options the caller already built (plus the routed-log
+    # override), so this re-construction is the package's own.
+    with _internal_construction():
+        return Options(**options).to_args(base_args=args)

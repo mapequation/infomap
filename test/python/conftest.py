@@ -8,6 +8,25 @@ from pathlib import Path
 
 import pytest
 from infomap import Infomap
+from infomap._options import LEGACY_SURFACE_WARNING
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--run-slow",
+        action="store_true",
+        help="Also run the tests marked slow (left out of the default run).",
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    # A marker expression that names slow (-m slow) also selects them.
+    if config.getoption("--run-slow") or "slow" in (config.option.markexpr or ""):
+        return
+    skip = pytest.mark.skip(reason="slow; run with --run-slow")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip)
 
 
 @dataclass(frozen=True)
@@ -187,10 +206,10 @@ def make_infomap():
     ) -> Infomap:
         # This helper deliberately builds the supported stateful Infomap compat
         # surface for feature tests, so advanced-tier kwargs are exercised on
-        # purpose. The pending-deprecation those emit is asserted in
+        # purpose. The legacy-tier deprecation those emit is asserted in
         # test_deprecations.py; here it is only noise, so silence it.
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", PendingDeprecationWarning)
+            warnings.simplefilter("ignore", LEGACY_SURFACE_WARNING)
             return Infomap(seed=seed, num_trials=num_trials, silent=silent, **kwargs)
 
     return _make_infomap

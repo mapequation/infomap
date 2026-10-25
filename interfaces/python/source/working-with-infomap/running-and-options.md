@@ -189,26 +189,26 @@ G_hier = hierarchical_graph()
 for two_level in [False, True]:
     result = infomap.run(G_hier, two_level=two_level, seed=123, num_trials=10)
 
-    m_top = result.modules(depth=1)    # top-level groups
-    m_leaf = result.modules(depth=-1)  # finest-level assignments
+    m_top = result.modules(level=1)    # top-level groups
+    m_leaf = result.modules(level=-1)  # finest-level assignments
 
     print(f"two_level={two_level}:")
     print(f"  levels={result.num_levels}, top modules={result.num_top_modules}")
-    print(f"  distinct groups at depth 1:      {len(set(m_top.values()))}")
+    print(f"  distinct groups at level 1:      {len(set(m_top.values()))}")
     print(f"  distinct groups at finest level: {len(set(m_leaf.values()))}")
     print(f"  L={result.codelength:.4f}")
 ```
 
 With `two_level=False`, the multilevel solution recovers the built-in nesting:
 the two main branches at the top and the eight cliques at the finest level. You
-reach that level with `result.modules(depth=-1)`; the cell above prints the
+reach that level with `result.modules(level=-1)`; the cell above prints the
 exact counts.
 The codelength is lower because the deeper code captures the real hierarchy. With
 `two_level=True`, the eight cliques become the top-level modules and the nested
 structure is invisible.
 
-Use `result.modules(depth=k)` to access any level of the hierarchy. The default
-`result.modules()` returns level 1, the coarsest (top modules); pass `depth=-1`
+Use `result.modules(level=k)` to access any level of the hierarchy. The default
+`result.modules()` returns level 1, the coarsest (top modules); pass `level=-1`
 for the finest (leaf) level.
 
 ### `directed` and the flow model
@@ -399,7 +399,7 @@ for name, graph in [("ring of cliques", G_ring), ("karate club", G_karate)]:
 {class}`~infomap.Options` is the canonical option carrier: {func}`infomap.run`
 and {meth}`infomap.Network.run` both take `options=`. On the stateful
 {class}`infomap.Infomap` the advanced keywords stay accepted but are
-pending-deprecated and leave the signature in 3.0 ({doc}`/api/deprecations`).
+deprecated and leave the signature in 3.0 ({doc}`/api/deprecations`).
 After a run, metrics and partition accessors live on the returned
 {class}`~infomap.Result` ({doc}`results-and-iteration`).
 
@@ -452,7 +452,7 @@ logging.getLogger("infomap").setLevel(logging.INFO)
 ```
 
 {func}`~infomap.enable_log` (above) is the supported way to see the engine log;
-the `silent=` and `verbosity_level=` keywords are pending-deprecated and leave
+the `silent=` and `verbosity_level=` keywords are deprecated and leave
 the API in 3.0. One timing nuance if you route through logging: a stateful
 {class}`~infomap.Infomap` bakes its silence in at construction, so configure
 logging *before* you build one (its runs warn otherwise). By contrast, the
