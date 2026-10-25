@@ -20,12 +20,14 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123`. Codelength in bits. **`
 >
 > What the snapshot shows:
 > - **Only runs that record teleportation change.** 33 of those 121 configurations change and 88 are bit-identical. The 211 configurations without teleportation are all bit-identical, with instructions at a median of −0.02%. Seconds summed over the set: −0.41%.
-> - **Normal networks.** wikispeedia gets shorter in all 8 configurations that change:
->   - `-d --regularized -N1`: −0.254% in bits, at +0.45% in instructions;
->   - `--regularized -N10`: −0.046% in bits, at +3.0% in instructions, or +8.35% with `-d`;
->   - `--recorded-teleportation`: −0.002% to −0.004% in bits, with instructions within ±0.2%.
+> - **Normal networks, meaning every benchmark network but the om family: 122 configurations.** 10 change, all on wikispeedia and web-NotreDame, and 8 of the 10 get shorter. The other 112 are bit-identical, among them every configuration of air30k, jazz, lazega, malaria, netscience, ninetriangles, polblogs, powergrid, word_assoc and the multilayer example. Summed over all 122, instructions go −0.28% and seconds −1.8% (one sweep run each). Per network [below](#the-normal-networks-every-benchmark-network-but-the-om-family).
+>   - **wikispeedia** gets shorter in all 8 configurations that change:
+>     - `-d --regularized -N1`: −0.254% in bits, at +0.45% in instructions;
+>     - `--regularized -N10`: −0.046% in bits, at +3.0% in instructions, or +8.35% with `-d`;
+>     - `--recorded-teleportation`: −0.002% to −0.004% in bits, with instructions within ±0.2%.
 >
->   Re-timed as the minimum of 5, its seconds move by −3.8% to +5.5%. web-NotreDame `-d --recorded-teleportation` gets longer: +0.045% in bits, at −3.3% (`-N10`) and −6.6% (`-N1`) in instructions, and −3.6% and −3.9% in seconds.
+>     Re-timed as the minimum of 5, its seconds move by −3.8% to +5.5%. The outlier re-time, also the minimum of 5, covered 6 of the 8 and read −3.4% to +11.8%: `-2d --regularized -N10` is −3.8% in one re-time and +11.8% in the other. All 6 agree within 0.1 point in instructions, so on these sub-second runs the instructions carry the comparison.
+>   - **web-NotreDame** `-d --recorded-teleportation` gets longer: +0.045% in bits, at −3.3% (`-N10`) and −6.6% (`-N1`) in instructions, and −3.6% and −3.9% in seconds.
 > - **Where the normal-network changes come from.** Three changes come from `refineLayerWithinGrandparent`, and `refineBottomWithinParents` moves none of the configurations it was checked on:
 >   - web-NotreDame's +0.045% in bits;
 >   - wikispeedia `-N1`'s −0.254% in bits;
@@ -47,7 +49,7 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123`. Codelength in bits. **`
 
 ### What the change moves
 
-Every configuration whose codelength changes, from the sweep. The om family is in the first table. The normal networks are in REG: wikispeedia and web-NotreDame, below. Every changed configuration is re-timed as the minimum of 5 [further down](#every-changed-configuration-re-timed).
+Every configuration whose codelength changes, from the sweep. The om family is in the first table. The normal networks, every benchmark network but the om family, follow it: per network first, then the 10 configurations that change, all on wikispeedia and web-NotreDame. Every changed configuration is re-timed as the minimum of 5 [further down](#every-changed-configuration-re-timed).
 
 | network | table | old bits | new bits | Δbits | old instr | new instr | Δinstr | old time | new time | Δtime |
 |---|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
@@ -75,7 +77,29 @@ Every configuration whose codelength changes, from the sweep. The om family is i
 | om3_N256_E50k `-2d --regularized -N10` | family | 7.91934781 | **7.917872981** | **-0.0186%** | 23.2G | 23.2G | +0.13% | 3.21s | 3.16s | -1.3% |
 | om2_N256_E50k `-d --regularized -N10` | family | 7.563584264 | **7.563587703** | **+0.0000%** | 35.2G | 37.1G | +5.60% | 3.84s | 4.15s | +8.1% |
 
-#### The normal networks: wikispeedia and web-NotreDame (REG)
+#### The normal networks (every benchmark network but the om family)
+
+Per network, from the sweep: one run per configuration and arm, summed over the network's configurations.
+
+| network | configurations | codelength changes | old instr | new instr | old time | new time |
+|---|--:|--:|--:|--:|--:|--:|
+| air30k | 21 | 0 | 972.4G | 972.4G (-0.00%) | 113.25s | 111.88s (-1.2%) |
+| jazz | 8 | 0 | 1.0G | 1.0G (-0.85%) | 0.044s | 0.044s (+1.3%) |
+| lazega | 8 | 0 | 0.7G | 0.7G (-1.25%) | 0.024s | 0.024s (+0.6%) |
+| malaria | 5 | 0 | 135.4G | 135.4G (+0.01%) | 12.84s | 13.47s (+4.9%) |
+| multilayer (ex.) | 5 | 0 | 0.3G | 0.3G (-2.09%) | 0.004s | 0.003s (-29.5%) |
+| netscience | 8 | 0 | 3.1G | 3.1G (-0.23%) | 0.249s | 0.336s (+34.9%) |
+| ninetriangles | 8 | 0 | 0.5G | 0.5G (-1.22%) | 0.007s | 0.006s (-8.3%) |
+| polblogs | 10 | 0 | 6.5G | 6.5G (-0.32%) | 0.554s | 0.556s (+0.5%) |
+| powergrid | 8 | 0 | 12.1G | 12.1G (-0.11%) | 1.17s | 1.17s (-0.7%) |
+| web-NotreDame | 10 | 2 (0 shorter, 2 longer) | 1027.5G | 1018.9G (-0.84%) | 171.20s | 165.00s (-3.6%) |
+| wikispeedia | 16 | 8 (8 shorter, 0 longer) | 81.1G | 82.3G (+1.55%) | 9.48s | 10.11s (+6.6%) |
+| word_assoc | 15 | 0 | 459.8G | 459.6G (-0.04%) | 52.03s | 51.69s (-0.7%) |
+| **all normal networks** | 122 | 10 (8 shorter, 2 longer) | 2700.4G | 2692.8G (-0.28%) | 360.86s | 354.29s (-1.8%) |
+
+Four networks read more than 1% slower in summed seconds. wikispeedia's +6.6% is its changed configurations, re-timed [further down](#every-changed-configuration-re-timed). malaria's +4.9%, netscience's +34.9% and jazz's +1.3% are single runs of bit-identical configurations, at +0.01%, −0.23% and −0.85% in instructions. Those of their configurations that were more than 10% slower in the sweep are re-timed [further down](#the-slow-cells-are-noise): malaria `--non-redundant -N10` −0.3%, netscience `-N10` +0.1% and netscience `--regularized -N10` −3.6% in seconds.
+
+The 10 configurations that change, all in REG:
 
 | network | table | old bits | new bits | Δbits | old instr | new instr | Δinstr | old time | new time | Δtime |
 |---|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
