@@ -933,9 +933,22 @@ class Result(_ResultWritersMixin):
 
     def multilevel_modules(self, *, states: bool = False) -> dict[int, tuple[int, ...]]:
         """Map ``node_id`` (or ``state_id`` when ``states``) to a tuple of
-        ``module_id``, one per level from the top down.
+        ``module_id``, one per module level from the top down.
 
         Equivalent to the legacy ``Infomap.get_multilevel_modules(states)``.
+
+        Entry ``i`` is the node's module in the flat partition at level
+        ``i + 1``, the same id :meth:`modules` gives for that level. Module ids
+        are numbered across the whole level, not within the parent module.
+
+        Every tuple has one entry per module level of the deepest branch, so
+        the tuples are not tree paths when leaf modules sit at different
+        depths. A branch that ends above the deepest level repeats its leaf
+        module at each deeper level, under that level's id. For example, in a
+        three-level tree, a leaf module that sits directly under the root
+        appears as ``(4, 8)``: it is module 4 at the top level and module 8 at
+        the level below. For the tree itself, read ``node.path`` from
+        :meth:`nodes`.
 
         Parameters
         ----------
@@ -946,11 +959,13 @@ class Result(_ResultWritersMixin):
         Returns
         -------
         dict of int to tuple of int
-            ``{node_or_state_id: (top_module_id, ..., leaf_module_id)}``.
+            ``{node_or_state_id: (level_1_module_id, ..., level_n_module_id)}``,
+            all of the same length.
 
         See Also
         --------
         modules : Module ids for a single level.
+        nodes : Leaf nodes with their tree ``path``.
         """
         self._check_generation()
         with _translate_engine_errors():

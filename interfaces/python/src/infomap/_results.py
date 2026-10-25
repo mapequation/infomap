@@ -442,8 +442,16 @@ class _InfomapResultsMixin:
 
     def get_multilevel_modules(self, states=False):
         """Get a dict with node ids as keys and a tuple of module ids as values.
-        Each position in the tuple corresponds to a depth in the hierarchical tree,
-        with the first level being the top level.
+        Each position in the tuple is a module level, with the first level being
+        the top level: entry ``i`` is the node's module in the flat partition at
+        level ``i + 1``, as ``get_modules(i + 1)`` gives it.
+
+        Every tuple has the same length, so the tuples are not tree paths when
+        leaf modules sit at different depths: a branch that ends above the
+        deepest level repeats its leaf module at each deeper level, under that
+        level's id. In the first example below, ``(3, 7)``, ``(4, 8)`` and
+        ``(5, 9)`` are three leaf modules directly under the root. For the tree
+        itself, read ``node.path`` from ``Result.nodes()``.
 
         See Also
         --------
