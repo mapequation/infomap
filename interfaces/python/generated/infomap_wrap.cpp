@@ -10002,6 +10002,168 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_Config_multilayerSkipAbsentNodes_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  bool arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "Config_multilayerSkipAbsentNodes_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_multilayerSkipAbsentNodes_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  ecode2 = SWIG_AsVal_bool(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_multilayerSkipAbsentNodes_set" "', argument " "2"" of type '" "bool""'");
+  } 
+  arg2 = static_cast< bool >(val2);
+  if (arg1) (arg1)->multilayerSkipAbsentNodes = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_multilayerSkipAbsentNodes_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_multilayerSkipAbsentNodes_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  result = (bool) ((arg1)->multilayerSkipAbsentNodes);
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_intraRegularizationStrength_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  double arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  double val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "Config_intraRegularizationStrength_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_intraRegularizationStrength_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  ecode2 = SWIG_AsVal_double(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_intraRegularizationStrength_set" "', argument " "2"" of type '" "double""'");
+  } 
+  arg2 = static_cast< double >(val2);
+  if (arg1) (arg1)->intraRegularizationStrength = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_intraRegularizationStrength_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  double result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_intraRegularizationStrength_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  result = (double) ((arg1)->intraRegularizationStrength);
+  resultobj = SWIG_From_double(static_cast< double >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_interRegularizationStrength_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  double arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  double val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "Config_interRegularizationStrength_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_interRegularizationStrength_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  ecode2 = SWIG_AsVal_double(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_interRegularizationStrength_set" "', argument " "2"" of type '" "double""'");
+  } 
+  arg2 = static_cast< double >(val2);
+  if (arg1) (arg1)->interRegularizationStrength = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_interRegularizationStrength_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  double result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_interRegularizationStrength_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  result = (double) ((arg1)->interRegularizationStrength);
+  resultobj = SWIG_From_double(static_cast< double >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_Config_teleportationProbability_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::Config *arg1 = 0 ;
@@ -60232,6 +60394,12 @@ static PyMethodDef SwigMethods[] = {
 	 { "Config_regularized_get", _wrap_Config_regularized_get, METH_O, NULL},
 	 { "Config_regularizationStrength_set", _wrap_Config_regularizationStrength_set, METH_VARARGS, NULL},
 	 { "Config_regularizationStrength_get", _wrap_Config_regularizationStrength_get, METH_O, NULL},
+	 { "Config_multilayerSkipAbsentNodes_set", _wrap_Config_multilayerSkipAbsentNodes_set, METH_VARARGS, NULL},
+	 { "Config_multilayerSkipAbsentNodes_get", _wrap_Config_multilayerSkipAbsentNodes_get, METH_O, NULL},
+	 { "Config_intraRegularizationStrength_set", _wrap_Config_intraRegularizationStrength_set, METH_VARARGS, NULL},
+	 { "Config_intraRegularizationStrength_get", _wrap_Config_intraRegularizationStrength_get, METH_O, NULL},
+	 { "Config_interRegularizationStrength_set", _wrap_Config_interRegularizationStrength_set, METH_VARARGS, NULL},
+	 { "Config_interRegularizationStrength_get", _wrap_Config_interRegularizationStrength_get, METH_O, NULL},
 	 { "Config_teleportationProbability_set", _wrap_Config_teleportationProbability_set, METH_VARARGS, NULL},
 	 { "Config_teleportationProbability_get", _wrap_Config_teleportationProbability_get, METH_O, NULL},
 	 { "Config_preferredNumberOfModules_set", _wrap_Config_preferredNumberOfModules_set, METH_VARARGS, NULL},

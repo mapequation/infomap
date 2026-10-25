@@ -7,7 +7,7 @@ name: Bindings sanitizers
 # so this is the only run that sees the SWIG layers and how the bindings hold
 # on to core objects (#954, #1099). A separate workflow so it never gates PRs
 # while it settles in, but it goes RED on a report. Same pattern as fuzz.yml
-# and tsan.yml -- do NOT add continue-on-error, that would mask the alert.
+# -- do NOT add continue-on-error, that would mask the alert.
 #
 # PRs run it when they touch the bindings or this setup, where lifetime bugs
 # come from. src/ changes are left to the weekly run: the blocking C++
@@ -58,19 +58,19 @@ jobs:
         shell: bash
 
       - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
 
       - name: Install test dependencies
         # The [test] extra's runtime libraries, without the lint and type-check
         # tools. The package itself is not installed: the tests import the
         # instrumented build.
         run: |
-          uv pip install --system setuptools pytest numpy scipy pandas networkx igraph \
+          uv pip install --system setuptools pytest hypothesis numpy scipy pandas networkx igraph \
             anndata pyarrow "jsonschema>=4.18" referencing pyyaml threadpoolctl
         shell: bash
 
@@ -105,7 +105,7 @@ jobs:
           use-public-rspm: true
 
       - name: Set up Python (for the staging script)
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
 
