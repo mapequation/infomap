@@ -1440,6 +1440,51 @@ TEST_CASE("undirdir on multilayer input with intra-layer links warns that it has
   CHECK(run("undirdir", readFile("examples/networks/multilayer.net")).first.find(warning) == std::string::npos);
 }
 
+// Undirected flow walks every state link in both directions, which a memory network's states
+// cannot take: a backward step lands in a state with the wrong memory. State input that is not
+// multilayer warns under the two models with undirected flow, and keeps running them (#1384).
+TEST_CASE("undirected flow on state input that is not multilayer warns about memory networks (#1384) [fast][core][flow]")
+{
+  const std::string warning = "flow model walks every state link in both directions";
+  const auto warns = [&warning](const std::string& model, const std::function<void(InfomapWrapper&)>& addInput) {
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      // Not defaultFlags: it carries --silent, which mutes the warning under test.
+      InfomapWrapper im("--seed 1 --num-trials 1 --no-file-output --flow-model " + model);
+      addInput(im);
+      im.run();
+      CHECK(std::string(flowModelToString(im.flowModel)) == model);
+    }
+    return captured.str().find(warning) != std::string::npos;
+  };
+  const auto readFile = [](const std::string& path) {
+    return [path](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath(path)); };
+  };
+  // The second-order path 1 -> 2 -> 3 and back, with each state named by its memory.
+  const auto memoryStates = [](InfomapWrapper& im) {
+    im.addStateNode(12, 2);
+    im.addStateNode(23, 3);
+    im.addStateNode(32, 2);
+    im.addStateNode(21, 1);
+    im.addLink(12, 23);
+    im.addLink(23, 32);
+    im.addLink(32, 21);
+  };
+
+  for (const char* model : { "undirected", "undirdir" }) {
+    CAPTURE(model);
+    CHECK(warns(model, readFile("examples/networks/states.net")));
+    CHECK(warns(model, memoryStates));
+    CHECK_FALSE(warns(model, readFile("examples/networks/multilayer.net")));
+    CHECK_FALSE(warns(model, readFile("examples/networks/twotriangles.net")));
+  }
+  for (const char* model : { "directed", "outdirdir", "rawdir" }) {
+    CAPTURE(model);
+    CHECK_FALSE(warns(model, readFile("examples/networks/states.net")));
+  }
+}
+
 // The canonical bipartite shape: every link runs primary -> feature, as in
 // examples/networks/bipartite.net. Several directed flow models degenerate on
 // it (all-zero or non-finite node flow); the map equation is undefined there, so
