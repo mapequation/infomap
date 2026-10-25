@@ -349,8 +349,10 @@ class Result(_ResultWritersMixin):
         # directedness off the snapshot, not the live engine. Derived from the
         # effective flow model, not the --directed CLI bool, so
         # ``flow_model="directed"`` (and the datasets loaders that bake it)
-        # export directed graphs just like ``directed=True`` does.
-        object.__setattr__(self, "_directed", not core.isUndirectedFlow())
+        # export directed graphs just like ``directed=True`` does. It follows
+        # the clustering, like the .ftree and JSON headers: ``undirdir`` has
+        # undirected flow but is clustered as directed, so it exports directed.
+        object.__setattr__(self, "_directed", not core.isUndirectedClustering())
         # Eager scalar metrics (O(1), no tree traversal).
         object.__setattr__(self, "_codelength", core.codelength())
         object.__setattr__(self, "_num_top_modules", core.numTopModules())
@@ -930,10 +932,36 @@ class Result(_ResultWritersMixin):
         )
 
     def multilevel_modules(self, *, states: bool = False) -> dict[int, tuple[int, ...]]:
-        """Map ``node_id`` (or ``state_id`` when ``states``) to a tuple of
-        ``module_id``, one per level from the top down.
+        """Map each node to its module on every level, from the top down.
+
+        Read the tuples column by column: the first entries give the partition
+        at the top level, the second entries the partition one level down, and
+        so on. Module ids are numbered per level, so the same id can mean
+        different modules on different levels.
+
+        For example, this tree has a top module 2 with no submodules::
+
+            root
+            ├── 1
+            │   ├── 1:1   nodes a, b
+            │   └── 1:2   nodes c, d
+            └── 2         nodes e, f
+
+        and gives::
+
+            {a: (1, 1), b: (1, 1), c: (1, 2), d: (1, 2), e: (2, 3), f: (2, 3)}
+
+        The top level is {a, b, c, d} and {e, f}; the level below is {a, b},
+        {c, d} and {e, f}.
 
         Equivalent to the legacy ``Infomap.get_multilevel_modules(states)``.
+
+        Notes
+        -----
+        The tuples are not tree paths. All tuples have the same length, so a
+        module without submodules appears again on each lower level, under
+        that level's id: ``e`` gets ``(2, 3)`` although its tree path is
+        ``(2,)``. For tree paths, read ``node.path`` from :meth:`nodes`.
 
         Parameters
         ----------
@@ -944,11 +972,13 @@ class Result(_ResultWritersMixin):
         Returns
         -------
         dict of int to tuple of int
-            ``{node_or_state_id: (top_module_id, ..., leaf_module_id)}``.
+            One tuple per node, all of the same length: one module id per
+            level, top level first.
 
         See Also
         --------
-        modules : Module ids for a single level.
+        modules : The partition at a single level.
+        nodes : Leaf nodes with their tree ``path``.
         """
         self._check_generation()
         with _translate_engine_errors():

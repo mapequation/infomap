@@ -297,6 +297,16 @@ namespace {
 #endif
   }
 
+  // Flow-weighted effective number of top modules: the perplexity 2^H of the
+  // top modules' flow distribution, as in the Python effective_num_top_modules.
+  double effectiveNumTopModules(const InfoNode& root)
+  {
+    double entropy = 0.0;
+    for (const auto& module : root)
+      entropy -= infomath::plogp(module.data.flow);
+    return std::exp2(entropy);
+  }
+
 } // namespace
 
 class InfomapBase::RunSession {
@@ -381,7 +391,8 @@ public:
     }
     m_reportNetwork.nodes = m_network.numNodes();
     m_reportNetwork.links = m_network.numLinks();
-    m_reportNetwork.directed = !m_infomap.isUndirectedFlow();
+    // The links as the run treats them: undirdir keeps every link directed as given.
+    m_reportNetwork.directed = !m_infomap.isUndirectedClustering();
     m_runParallelTrials = selectParallelTrialMode();
     m_trialWorkers = m_runParallelTrials ? parallelTrialWorkers() : 1;
     releaseInputLinksIfCli();
@@ -449,7 +460,7 @@ public:
     console.metric("Nodes", fmt::to_string(m_infomap.numLeafNodes()));
     console.metric("Links", fmt::to_string(m_network.numLinks()));
     console.metric("Average degree", io::toPrecision(m_network.numLinks() * 2.0 / m_infomap.numLeafNodes(), 1, true));
-    console.metric("Top modules", fmt::format(FMT_STRING("{} ({} non-trivial)"), m_infomap.numTopModules(), m_infomap.numNonTrivialTopModules()));
+    console.metric("Top modules", fmt::format(FMT_STRING("{} ({} non-trivial, {} effective)"), m_infomap.numTopModules(), m_infomap.numNonTrivialTopModules(), io::toPrecision(effectiveNumTopModules(m_infomap.root()), 1, true)));
     console.metric("Levels", fmt::to_string(result.bestNumLevels));
     console.metric("One-level codelength", io::toPrecision(m_infomap.getReferenceOneLevelCodelength()));
     console.metric("Best codelength", io::toPrecision(result.bestHierarchicalCodelength));
@@ -912,6 +923,15 @@ private:
       Console::note(1, "Directed input found, changing flow model from '{}' to '{}'.", m_infomap.flowModel, FlowModel(FlowModel::directed));
       m_infomap.flowModel = FlowModel::directed;
     }
+
+    // Undirected flow walks every state link in both directions. That fits states that say only
+    // where the walker is, as in a multilayer network, but not a memory network, where a state also
+    // says where the walker came from: walked backwards, the link for the path 0 -> 2 -> 3 leaves
+    // the walker at 2 in the state that came from 0. Warn rather than switch to directed, which
+    // would make every link one-way and change what the input means. Multilayer input is left out:
+    // its states are layers, and *Intra/*Inter input was made directed above (#1384).
+    if (m_network.haveMemoryInput() && !m_network.isMultilayerNetwork() && m_infomap.isUndirectedFlow())
+      Console::warn(0, "The {} flow model walks every state link in both directions. That suits states that say only where the walker is, but not a memory network, where a state also says where the walker came from and a backward step lands in a state with the wrong memory. Use --directed for a memory network.", m_infomap.flowModel);
     m_network.setConfig(m_infomap);
   }
 
@@ -2348,6 +2368,23 @@ void InfomapBase::generateSubNetwork(Network& network)
   double sumTeleFlow = 0.0;
   std::unordered_map<unsigned int, unsigned int> nodeIndexMap;
   nodeIndexMap.reserve(numNodes);
+
+  // Every per-layer teleport term the objective adds is a teleport flow times a teleport
+  // weight, or a difference of two such flows, so a network where nothing teleports
+  // contributes nothing at all. Skipping the data there costs one scan and saves an
+  // InfoNodeExtras per leaf node plus a per-module map lookup on every move. It is all
+  // or nothing: a node that does not teleport still pays the flow its module teleports
+  // away, so its own zero is not enough to leave it out.
+  bool haveLayerTeleportFlow = false;
+  if (isRegularizedMultilayerFlow()) {
+    for (auto& nodeIt : network.nodes()) {
+      if (nodeIt.second.intraLayerTeleFlow > 0) {
+        haveLayerTeleportFlow = true;
+        break;
+      }
+    }
+  }
+
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
     auto* node = &allocNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
@@ -2363,7 +2400,7 @@ void InfomapBase::generateSubNetwork(Network& network)
     // Only regularized-multilayer flow consumes layerTeleFlowData; populating it
     // unconditionally would allocate an InfoNodeExtras for every node and defeat
     // the out-of-line shrink (extras must stay null in the common case).
-    if (isRegularizedMultilayerFlow())
+    if (haveLayerTeleportFlow)
       node->ensureExtras().layerTeleFlowData.emplace_back(networkNode.layerId, networkNode.intraLayerTeleFlow, networkNode.intraLayerTeleWeight);
     // Log(1) << "Node " << node->stateId << " (" << node->layerId << "," << node->physicalId << ") data: " << node->data << ", tele-flow: " << networkNode.teleFlow << ", intra-tele: " << networkNode.intraLayerTeleFlow << "\n";
     if (haveMetaData()) {
@@ -2382,12 +2419,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
   m_root.data.flow = sumNodeFlow;
   m_root.data.teleportFlow = sumTeleFlow;
-  // Regularized multilayer flow keeps the flow calculator's enter and exit flow, which carry
-  // the per-layer teleportation terms. Every other model adds them up from the links in
-  // initEnterExitFlow().
-  if (!isRegularizedMultilayerFlow()) {
-    m_calculateEnterExitFlow = true;
-  }
+  m_calculateEnterExitFlow = true;
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Console::warn(1, "Total flow on nodes differs from 1.0 by {:g}.", sumNodeFlow - 1.0);
 
@@ -2466,6 +2498,11 @@ void InfomapBase::generateSubNetwork(Network& network)
     if (damping < 0) {
       maxScale = infomath::linlog(pow(2.0, maxEntropy), -damping);
     }
+    // Each link divides by a local scale floored at minLocalScale, so floor the largest one
+    // there too. Otherwise, when the largest effective degree is below 2 (the default
+    // minLocalScale, log2(2)), every link was scaled by less than 1, and by 0 at degree 1: two
+    // disjoint links reported 0 bits, and node weights as flow left a walk without steps.
+    maxScale = std::max(minLocalScale, maxScale);
     for (unsigned i = 0; i < numNodes; ++i) {
       InfoNode& node = *m_leafNodes[i];
       double localScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[i]), -damping) : infomath::linlog(std::max(minLocalScale, node.data.flow * totDegree), damping);
@@ -2837,18 +2874,6 @@ void InfomapBase::partition()
 #endif
   const bool regularizedPriorOnly = usesRegularizedFlow() && network().numLinks() == 0;
   double oneModuleCodelength = getOneLevelCodelength();
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-  // The regularized multilayer objective prices one module holding every node with
-  // exit flow, while the one-level codelength prices the root with none. Compare
-  // with, and report, the codelength the one-module tree has (#1285).
-  const bool regularizedMultilayerRoot = isMainInfomap() && !haveMetaData() && haveMemory() && isRegularizedMultilayerFlow();
-  double oneModuleExitFlow = 0.0;
-  if (regularizedMultilayerRoot) {
-    oneModuleExitFlow = calcRegularizedMultilayerOneModuleExitFlow();
-    const double flow = m_root.data.flow;
-    oneModuleCodelength += infomath::plogp(flow + oneModuleExitFlow) - infomath::plogp(flow) - infomath::plogp(oneModuleExitFlow);
-  }
-#endif
   // Modules of single nodes score 0 on the meta-data term, so a meta-data run can end
   // with only those, above the one-level codelength (#1320). On the map term they often
   // tie with one module up to rounding, so only a margin beyond that counts.
@@ -2864,12 +2889,6 @@ void InfomapBase::partition()
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
     module.lossyEntropy = m_root.lossyEntropy;
     module.lossyFlowLogFlow = m_root.lossyFlowLogFlow;
-#endif
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-    if (regularizedMultilayerRoot) {
-      module.data.enterFlow = oneModuleExitFlow;
-      module.data.exitFlow = oneModuleExitFlow;
-    }
 #endif
     module.index = 0;
     for (auto& node : module) {
@@ -2962,6 +2981,13 @@ void InfomapBase::initEnterExitFlow()
   if (usesRegularizedFlow()) {
     const double sumTeleportFlow = m_root.data.teleportFlow;
     const bool undirectedLinks = isUndirectedClustering();
+    // Regularized multilayer flow teleports within a layer, so a node's teleportation
+    // enter flow comes from the other nodes in its layer (#1287).
+    std::map<unsigned int, double> layerTeleportFlow;
+    for (const auto* n : m_leafNodes) {
+      for (const auto& layerData : n->layerTeleFlowData())
+        layerTeleportFlow[layerData.layerId] += layerData.teleportFlow;
+    }
     for (auto* n : m_leafNodes) {
       auto& node = *n;
       for (InfoEdge* e : node.outEdges()) {
@@ -2979,6 +3005,10 @@ void InfomapBase::initEnterExitFlow()
       }
       node.data.exitFlow += node.data.teleportFlow * (1.0 - node.data.teleportWeight);
       node.data.enterFlow += (sumTeleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
+      for (const auto& layerData : node.layerTeleFlowData()) {
+        node.data.exitFlow += layerData.teleportFlow * (1.0 - layerData.teleportWeight);
+        node.data.enterFlow += (layerTeleportFlow[layerData.layerId] - layerData.teleportFlow) * layerData.teleportWeight;
+      }
     }
     return;
   }
@@ -3030,31 +3060,6 @@ void InfomapBase::initEnterExitFlow()
     }
   }
 }
-
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-double InfomapBase::calcRegularizedMultilayerOneModuleExitFlow() const
-{
-  // The leaf exit flow less what RegularizedMultilayerMapEquation cancels when all
-  // leaf nodes share one module: the link flow between them and, per layer, the
-  // teleportation T_i (W - w_i) to the other nodes in the layer. What remains is
-  // flow the leaf exit flow carries that no link or teleportation term inside the
-  // module accounts for.
-  std::map<unsigned int, double> layerTeleportWeight;
-  for (const auto* node : m_leafNodes) {
-    for (const auto& layerData : node->layerTeleFlowData())
-      layerTeleportWeight[layerData.layerId] += layerData.teleportWeight;
-  }
-  double exitFlow = 0.0;
-  for (auto* node : m_leafNodes) {
-    exitFlow += node->data.exitFlow;
-    for (const InfoEdge* edge : node->outEdges())
-      exitFlow -= edge->data.flow;
-    for (const auto& layerData : node->layerTeleFlowData())
-      exitFlow -= layerData.teleportFlow * (layerTeleportWeight[layerData.layerId] - layerData.teleportWeight);
-  }
-  return std::max(exitFlow, 0.0);
-}
-#endif
 
 // Aggregate node and enter/exit flow to all tree nodes
 void InfomapBase::aggregateFlowValuesFromLeafToRoot()
@@ -3152,6 +3157,38 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
       }
     }
   }
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+  // Regularized multilayer flow teleports within each layer, and the leaf nodes carry that
+  // teleportation per layer, not in teleportFlow. A module M sends T_{M,l} (W_l - W_{M,l}) out
+  // of layer l and receives (T_l - T_{M,l}) W_{M,l} there, as the optimizer prices it. Without
+  // these terms, a tree deeper than two levels read back below the codelength the search
+  // reported for it (#1022). The module keeps its per-layer sums, as consolidateModules leaves
+  // them, for an optimizer that continues from this tree.
+  std::unordered_map<InfoNode*, std::map<unsigned int, LayerTeleFlowData>> moduleLayerTeleFlow;
+  std::map<unsigned int, LayerTeleFlowData> layerTeleFlow;
+  for (const auto* leafNode : m_leafNodes) {
+    for (const auto& layerData : leafNode->layerTeleFlowData()) {
+      layerTeleFlow[layerData.layerId] += layerData;
+      for (auto* module = leafNode->parent; module != nullptr && !module->isRoot(); module = module->parent) {
+        auto& moduleLayerData = moduleLayerTeleFlow[module][layerData.layerId];
+        moduleLayerData.layerId = layerData.layerId;
+        moduleLayerData += layerData;
+      }
+    }
+  }
+  for (auto& moduleIt : moduleLayerTeleFlow) {
+    auto& module = *moduleIt.first;
+    auto& moduleLayerTele = module.ensureExtras().layerTeleFlowData;
+    moduleLayerTele.clear();
+    for (const auto& layerIt : moduleIt.second) {
+      const auto& moduleLayerData = layerIt.second;
+      const auto& layerData = layerTeleFlow[layerIt.first];
+      module.data.exitFlow += moduleLayerData.teleportFlow * (layerData.teleportWeight - moduleLayerData.teleportWeight);
+      module.data.enterFlow += (layerData.teleportFlow - moduleLayerData.teleportFlow) * moduleLayerData.teleportWeight;
+      moduleLayerTele.push_back(moduleLayerData);
+    }
+  }
+#endif
 }
 
 #if INFOMAP_CHECK_INVARIANTS
@@ -4071,6 +4108,8 @@ unsigned int InfomapBase::dissolveUnprofitableModules()
 
   if (numDissolved > 0) {
     m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+    // A dissolved top module lifts its children to the top level (#1361).
+    m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
     Console::detail(1, "prune: dissolved {} modules, codelength {} {} {}", numDissolved, io::toPrecision(codelengthBefore), Console::arrow(), io::toPrecision(m_hierarchicalCodelength));
   }
   return numDissolved;

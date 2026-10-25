@@ -794,6 +794,25 @@ TEST_CASE("Fast hierarchical search reports the codelength of the tree it return
   std::remove(resultPath.c_str());
 }
 
+TEST_CASE("The non-trivial top-module count describes the tree after the prune (#1361) [fast][core][partition][tree]")
+{
+  // The prune dissolves one of ninetriangles' three super modules into its three
+  // triangles, leaving five top modules of three children each. The count was last
+  // taken before the prune and the summary reported 3 non-trivial modules.
+  InfomapWrapper im("--seed 1 --silent --no-file-output");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+
+  REQUIRE(im.numTopModules() == 5);
+  unsigned int numNonTrivial = 0;
+  for (const auto& module : im.root()) {
+    if (module.childDegree() > 1)
+      ++numNonTrivial;
+  }
+  CHECK(numNonTrivial == 5);
+  CHECK(im.numNonTrivialTopModules() == numNonTrivial);
+}
+
 TEST_CASE("Fast hierarchical search on a state network reports the codelength of the tree it returns (#1262) [fast][core][partition][tree]")
 {
   // -F made the fine-tuned sub modules with the flow data only, not the physical nodes the
@@ -877,14 +896,17 @@ TEST_CASE("Regularized multilayer one-module fallback reports the codelength of 
   // while the one-level codelength prices the root with none. The fallback compared the
   // search with the one-level codelength and reported it: 2.284 bits for a one-module
   // tree that reads back as 2.699, and the search had found 2.667 with two modules.
+  // Since #1101 gave each layer its own node count, both searches end at one module
+  // themselves, and since the leaf flow leaves out the inter-layer self-links (#1287), that
+  // module has no exit flow and costs the one-level codelength. What is left is the round trip.
   struct Case {
     std::string flags;
     unsigned int numTopModules;
     double codelength;
   };
   const std::vector<Case> cases = {
-    { "--regularized", 2, 2.667330579 }, // was 2.284010969 with 1 module
-    { "--regularized --directed", 1, 2.851861954 }, // the search itself ends at one module
+    { "--regularized", 1, 2.296430569 }, // 2.671639472 before #1287
+    { "--regularized --directed", 1, 2.297836545 }, // 2.851861954 before #1287
   };
   const std::string resultPath = "regularized_multilayer_one_module_result.tree";
   for (const auto& c : cases) {
@@ -906,6 +928,77 @@ TEST_CASE("Regularized multilayer one-module fallback reports the codelength of 
     infomap::test::checkApproxCodelength(codelength, c.codelength, 1e-9);
   }
   std::remove(resultPath.c_str());
+}
+#endif
+
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+TEST_CASE("Regularized multilayer: a module holding every node has no exit flow (#1287) [fast][core][partition][regularized]")
+{
+  // The flow calculator's leaf enter and exit flow counted the inter-layer self-links,
+  // which the tree drops, so a module holding every node kept their flow as exit flow:
+  // 0.0810 on multilayer_intra.net, which priced one module at 2.699 bits against the
+  // one-level 2.284. At Markov time 2 the leaf flow was the walk's at t = 1 while the
+  // links were scaled, and the module got enter flow -0.733, refused by the guard.
+  for (const std::string flags : { "--regularized", "--regularized --directed", "--regularized --markov-time 2", "--regularized --directed --markov-time 2" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(infomap::test::defaultFlags(flags + " --no-infomap"));
+    im.readInputData(infomap::test::repoPath("examples/networks/multilayer_intra.net"));
+    infomap::InfomapBase::InitialPartition partition;
+    for (unsigned int stateId = 0; stateId < 10; ++stateId)
+      partition[stateId] = 1;
+    im.setInitialPartition(partition);
+    im.run();
+    REQUIRE(im.numTopModules() == 1);
+    const auto& module = *im.root().firstChild;
+    CHECK(module.childDegree() == 10);
+    CHECK(std::abs(module.data.exitFlow) < 1e-12);
+    CHECK(std::abs(module.data.enterFlow) < 1e-12);
+    infomap::test::checkApproxCodelength(im.codelength(), im.getOneLevelCodelength(), 1e-9);
+  }
+}
+
+TEST_CASE("Regularized multilayer: a tree deeper than two levels keeps its modules' per-layer teleportation (#1022) [fast][core][partition][tree][regularized]")
+{
+  // A tree deeper than two levels is read by adding up module flow from the leaves, and that
+  // left out the teleportation within each layer, which the optimizer prices. Wrapping the
+  // modules of a two-level tree in one super module adds a level that costs nothing: the
+  // root's codebook is empty, and the super module's codebook is the old index codebook. On
+  // multilayer_intra.net the wrapped tree read back at 2.128 bits against 2.929 (2.384
+  // against 3.143 with --directed), and a restored winner deeper than two levels wrote a
+  // codelength below the one the search reported for it.
+  const std::vector<std::vector<unsigned int>> modules = { { 0, 1, 2 }, { 3, 5, 7 }, { 4, 6, 8, 9 } };
+  // State id -> (physical id, layer id) as the parser numbers them
+  const std::map<unsigned int, std::pair<unsigned int, unsigned int>> nodeOfState = {
+    { 0, { 1, 1 } }, { 1, { 4, 1 } }, { 2, { 5, 1 } }, { 3, { 1, 2 } }, { 4, { 2, 1 } },
+    { 5, { 2, 2 } }, { 6, { 3, 1 } }, { 7, { 3, 2 } }, { 8, { 4, 2 } }, { 9, { 5, 2 } }
+  };
+  const std::string twoLevelTree = "regularized_multilayer_two_level.tree";
+  const std::string wrappedTree = "regularized_multilayer_wrapped.tree";
+  for (const auto& [path, prefix] : { std::pair { twoLevelTree, "" }, std::pair { wrappedTree, "1:" } }) {
+    std::ofstream out(path);
+    out << "# state level\n";
+    for (unsigned int module = 0; module < modules.size(); ++module) {
+      for (unsigned int child = 0; child < modules[module].size(); ++child) {
+        const unsigned int stateId = modules[module][child];
+        const auto& [physicalId, layerId] = nodeOfState.at(stateId);
+        out << prefix << module + 1 << ":" << child + 1 << " 0 \"" << stateId << "\" " << stateId << " " << physicalId << " " << layerId << "\n";
+      }
+    }
+  }
+
+  for (const std::string flags : { "--regularized", "--regularized --directed" }) {
+    CAPTURE(flags);
+    const auto codelengthOf = [&flags](const std::string& tree, unsigned int numLevels) {
+      InfomapWrapper im(infomap::test::defaultFlags(flags + " --no-infomap --cluster-data " + tree));
+      im.readInputData(infomap::test::repoPath("examples/networks/multilayer_intra.net"));
+      im.run();
+      CHECK(im.maxTreeDepth() == numLevels);
+      return im.codelength();
+    };
+    infomap::test::checkApproxCodelength(codelengthOf(wrappedTree, 3), codelengthOf(twoLevelTree, 2), 1e-12);
+  }
+  std::remove(twoLevelTree.c_str());
+  std::remove(wrappedTree.c_str());
 }
 #endif
 
@@ -1841,6 +1934,28 @@ TEST_CASE("Tree with rows that mix physical and state id columns fails determini
       im.initPartition(infomap::test::clusterFixturePath("mixed_id_columns.tree"), false, &im.network()),
       "Mixed state and physical tree ids are not supported in line '1:2 0.5 \"2\" 2'.",
       std::runtime_error);
+}
+
+TEST_CASE("Tree with a repeated state id is refused, not linked into two modules [fast][core][partition][parser]")
+{
+  // The repeated state put one leaf into two modules, and a multi-level tree then
+  // crashed in initTree (#1335).
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+
+  try {
+    im.initPartition(infomap::test::clusterFixturePath("repeated_state_id.tree"), false, &im.network());
+    FAIL("expected the cluster data to be rejected");
+  } catch (const infomap::InfomapError& e) {
+    CHECK(e.code() == infomap::ExitCode::InputError);
+    CHECK(std::string(e.what()) == "State id 3 appears more than once in the tree, again on line 8 ('2:4 0.1 \"C\" 3 3'). A tree with state ids has one row per state node.");
+  }
+
+  // The run path reads the file once before the trials.
+  InfomapWrapper run(infomap::test::defaultFlags("--no-infomap --cluster-data " + infomap::test::clusterFixturePath("repeated_state_id.tree")));
+  run.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  CHECK_THROWS_AS(run.run(), infomap::InfomapError);
 }
 
 TEST_CASE("Tree round-trip reproduces codelength on a regular network [fast][core][partition][parser][lifecycle]")

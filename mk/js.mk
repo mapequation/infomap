@@ -52,7 +52,7 @@ $(JS_WORKER_TARGET): $(SOURCES) $(HEADERS) $(PRE_WORKER_MODULES) $(MK_FILES) Mak
 	@mkdir -p $(dir $@)
 	$(EMXX) -std=$(BUILD_CONFIG_CXX_STANDARD) -O3 $(INFOMAP_VENDOR_CPPFLAGS) -s SINGLE_FILE=1 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker $(foreach file,$(PRE_WORKER_MODULES),--pre-js $(file)) -o $@ $(SOURCES)
 
-test-js: build-js
+test-js: build-js build-native
 	$(RM) -r $(NPM_UNPACK_DIR) $(NPM_STAGE_DIR)/*.tgz $(NPM_PACK_JSON)
 	@mkdir -p dist/npm
 	$(NPM) run lint

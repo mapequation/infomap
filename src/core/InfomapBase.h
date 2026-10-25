@@ -598,11 +598,6 @@ private:
 
   void aggregateFlowValuesFromLeafToRoot();
 
-#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
-  // Exit flow of one module holding every leaf node, as the regularized multilayer objective prices it (#1285)
-  double calcRegularizedMultilayerOneModuleExitFlow() const;
-#endif
-
   // Init terms that is constant for the whole network
   void initTree() { return m_optimizer->initTree(); }
 
