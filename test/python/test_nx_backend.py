@@ -120,7 +120,7 @@ def test_networkx_arguments_are_forwarded_to_the_run(monkeypatch):
 
     monkeypatch.setattr(backend, "Network", FakeNetwork)
 
-    G = nx.karate_club_graph()
+    G = nx.karate_club_graph().to_directed()
     backend.BackendInterface.infomap_communities(
         G, seed=99, num_trials=5, teleportation_probability=0.2
     )
@@ -129,6 +129,14 @@ def test_networkx_arguments_are_forwarded_to_the_run(monkeypatch):
     assert captured["num_trials"] == 5
     assert captured["teleportation_probability"] == 0.2
     assert captured["two_level"] is True
+
+    # Only a directed flow model reads teleportation_probability, so an
+    # undirected graph leaves it out of the run, as the native functions ignore it.
+    captured.clear()
+    backend.BackendInterface.infomap_communities(
+        nx.karate_club_graph(), teleportation_probability=0.2
+    )
+    assert "teleportation_probability" not in captured
 
 
 @pytest.mark.parametrize(
@@ -232,12 +240,24 @@ def test_backend_map_equation_non_default_teleportation_matches_native():
     assert backend != pytest.approx(default, abs=1e-6)
 
 
-def test_backend_map_equation_rejects_non_partition():
-    """Communities that do not partition G raise NetworkXError, the native
-    contract, rather than yielding a meaningless codelength."""
-    G = nx.karate_club_graph()
-    with pytest.raises(nx.NetworkXError, match="not a partition"):
-        nx.community.map_equation(G, [{0, 1}, {1, 2}], backend="infomap")
+@pytest.mark.parametrize(
+    "communities",
+    [
+        [{0, 1, 2}, {3, 4}],  # node 5 is missing
+        [{0, 1, 2, 3}, {3, 4, 5}],  # node 3 is in two communities
+        [[0, 0, 1, 2], [3, 4, 5]],  # node 0 is listed twice in one community
+    ],
+    ids=["missing", "overlapping", "duplicated"],
+)
+def test_backend_map_equation_rejects_non_partition(communities):
+    """Communities that do not partition G raise the native NotAPartition,
+    rather than yielding a meaningless codelength. They are checked as given, so
+    a node listed twice is caught although a set would hide it."""
+    from networkx.algorithms.community.quality import NotAPartition
+
+    G = nx.barbell_graph(3, 0)
+    with pytest.raises(NotAPartition, match="not a valid partition"):
+        nx.community.map_equation(G, communities, backend="infomap")
 
 
 def test_backend_invalid_num_trials():
@@ -257,3 +277,117 @@ def test_backend_rejects_negative_weight():
     G.add_edge(1, 2, weight=2.0)
     with pytest.raises(ValueError):
         nx.community.infomap_communities(G, backend="infomap")
+
+
+_ENTRY_POINTS = {
+    "map_equation": lambda G, **kw: nx.community.map_equation(
+        G, [{u} for u in G], backend="infomap", **kw
+    ),
+    "infomap_communities": lambda G, **kw: nx.community.infomap_communities(
+        G, backend="infomap", **kw
+    ),
+    "infomap_partitions": lambda G, **kw: nx.community.infomap_partitions(
+        G, backend="infomap", **kw
+    ),
+}
+
+
+@pytest.mark.parametrize("entry_point", list(_ENTRY_POINTS))
+@pytest.mark.parametrize("graph_type", [nx.Graph, nx.DiGraph])
+@pytest.mark.parametrize(
+    ("weights", "match"),
+    [
+        ([-1.0, 2.0], "weight"),
+        ([float("nan"), 2.0], "weight"),
+        ([float("inf"), 2.0], "weight"),
+        ([1e308, 1e308], "too large"),  # each finite, the total is not
+    ],
+)
+def test_backend_rejects_invalid_weights(entry_point, graph_type, weights, match):
+    """Every entry point raises ValueError for a weight the native functions
+    reject, including finite weights whose total overflows, which the engine
+    would otherwise report as degenerate flow. infomap_partitions raises on the
+    call, not once the result is iterated."""
+    G = graph_type()
+    G.add_edge(0, 1, weight=weights[0])
+    G.add_edge(1, 2, weight=weights[1])
+    with pytest.raises(ValueError, match=match):
+        _ENTRY_POINTS[entry_point](G)
+
+
+@pytest.mark.parametrize("entry_point", list(_ENTRY_POINTS))
+@pytest.mark.parametrize("bad", [-0.1, 1.1, float("nan"), float("inf")])
+def test_backend_rejects_invalid_teleportation_probability(entry_point, bad):
+    """On a directed graph a teleportation_probability outside [0, 1] raises
+    ValueError on the call, as native, rather than the engine's parse error."""
+    G = nx.DiGraph([(0, 1), (1, 2), (2, 0)])
+    with pytest.raises(ValueError, match="teleportation_probability"):
+        _ENTRY_POINTS[entry_point](G, teleportation_probability=bad)
+
+
+def test_backend_undirected_ignores_teleportation_probability():
+    """Undirected flow does not teleport, so like the native functions an
+    undirected graph accepts any value, even a nan the engine would reject."""
+    G = nx.ring_of_cliques(3, 4)
+    nan = float("nan")
+    communities = nx.community.infomap_communities(
+        G, backend="infomap", seed=1, teleportation_probability=nan
+    )
+    assert communities == nx.community.infomap_communities(G, backend="infomap", seed=1)
+    assert list(
+        nx.community.infomap_partitions(
+            G, backend="infomap", seed=1, teleportation_probability=nan
+        )
+    ) == list(nx.community.infomap_partitions(G, backend="infomap", seed=1))
+    assert nx.community.map_equation(
+        G, communities, backend="infomap", teleportation_probability=nan
+    ) == nx.community.map_equation(G, communities, backend="infomap")
+
+
+def test_backend_infomap_partitions_validates_eagerly():
+    """infomap_partitions checks its arguments on the call, as native does, not
+    once the returned iterator is first advanced."""
+    G = nx.karate_club_graph()
+    for bad in (0, 1.5):
+        with pytest.raises(ValueError, match="num_trials"):
+            nx.community.infomap_partitions(G, backend="infomap", num_trials=bad)
+
+
+@pytest.mark.parametrize(
+    "G",
+    [
+        nx.Graph(),
+        nx.DiGraph(),
+        nx.empty_graph(3),
+        nx.empty_graph(3, create_using=nx.DiGraph),
+    ],
+    ids=["empty", "empty-directed", "edgeless", "edgeless-directed"],
+)
+def test_backend_graphs_without_edges_match_native(G):
+    """With no edges there is no flow: the backend returns what native does
+    (singletons, one level of them, and a codelength of 0) instead of the
+    engine's empty-network error."""
+    singletons = [{u} for u in G]
+    for func, args in [
+        (nx.community.infomap_communities, ()),
+        (nx.community.infomap_partitions, ()),
+        (nx.community.map_equation, (singletons,)),
+    ]:
+        native = func(G, *args, backend="networkx")
+        backend = func(G, *args, backend="infomap")
+        if func is nx.community.infomap_partitions:
+            native, backend = list(native), list(backend)
+        assert backend == native
+
+
+def test_backend_emits_no_deprecation_warnings():
+    """A plain call uses only the current Network API, so it warns about
+    nothing that leaves in 3.0."""
+    import warnings
+
+    G = nx.karate_club_graph()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        communities = nx.community.infomap_communities(G, backend="infomap", seed=1)
+        list(nx.community.infomap_partitions(G, backend="infomap", seed=1))
+        nx.community.map_equation(G, communities, backend="infomap")
