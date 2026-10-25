@@ -1,0 +1,179 @@
+OO10	ninetriangles	old	1	-N10	3.371875026	0.005226333	119214474	5	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	ninetriangles	new	1	-N10	3.371875026	0.005226333	119214474	5	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	jazz	old	1	-N10	6.862755928	0.026461458	308559754	6	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	jazz	new	1	-N10	6.862755928	0.026461458	308559754	6	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	polblogs	old	1	-2 -N10 -d	7.59324763	0.132788292	1335491031	86	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	polblogs	new	1	-2 -N10 -d	7.59324763	0.132788292	1335491031	86	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	wikispeedia `-d`	old	1	-d -N10	5.912456819	1.481763292	13250775633	150	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	wikispeedia `-d`	new	1	-d -N10	5.912456819	1.481763292	13250775633	150	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	air30k (reg.)	old	1	-2 -N10 -d --regularized	5.578186839	4.843938958	36855209454	296	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	air30k (reg.)	new	1	-2 -N10 -d --regularized	5.578186839	4.843938958	36855209454	296	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	powergrid	old	1	-N10	4.733820783	2.315178834	19876973796	15	6	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	powergrid	new	1	-N10	4.733820783	2.315178834	19876973796	15	6	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	lazega	old	1	-2 -N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.006796709	124044624	7	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	lazega	new	1	-2 -N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.006796709	124044624	7	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	multilayer (ex.)	old	1	-2 -N10	2.011405238	0.002747334	66330032	2	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	multilayer (ex.)	new	1	-2 -N10	2.011405238	0.002747334	66330032	2	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	air30k	old	1	-2 -N10	5.408312428	4.403808375	30071546400	321	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	air30k	new	1	-2 -N10	5.408312428	4.403808375	30071546400	321	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	web-NotreDame	old	1	-N10 -d	6.179626719	216.067372459	1261673263835	514	7	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	web-NotreDame	new	1	-N10 -d	6.179626719	216.067372459	1261673263835	514	7	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	netscience	old	1	-2 -N10	3.527414842	0.092000667	1026107898	311	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	netscience	new	1	-2 -N10	3.527414842	0.092000667	1026107898	311	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	malaria	old	1	-N10	7.519366404	9.375176292	65135851503	137	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	malaria	new	1	-N10	7.519366404	9.375176292	65135851503	137	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	air30k	old	1	-N10	5.39579473	12.144712375	109049654763	249	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	air30k	new	1	-N10	5.39579473	12.144712375	109049654763	249	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	powergrid	old	1	-2 -N10	5.600242125	0.633426083	5774802290	424	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	powergrid	new	1	-2 -N10	5.600242125	0.633426083	5774802290	424	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	lazega	old	1	-N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.01176375	171730441	7	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	lazega	new	1	-N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.01176375	171730441	7	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	polblogs	old	1	-N10 -d	7.593226496	0.272111667	2657920991	86	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	polblogs	new	1	-N10 -d	7.593226496	0.272111667	2657920991	86	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	web-NotreDame	old	1	-2 -N10 -d	6.866765321	49.537081834	243066268189	10147	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	web-NotreDame	new	1	-2 -N10 -d	6.866765321	49.537081834	243066268189	10147	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	word_assoc (pref.)	old	1	-N10 -d --preferred-number-of-modules 25	11.6630685	7.06603825	54728630679	25	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	word_assoc (pref.)	new	1	-N10 -d --preferred-number-of-modules 25	11.6630685	7.06603825	54728630679	25	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	wikispeedia `-2d`	old	1	-2d -N10	5.912491513	0.986486666	8884886107	150	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	wikispeedia `-2d`	new	1	-2d -N10	5.912491513	0.986486666	8884886107	150	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	word_assoc	old	1	-N10 -d	11.4248698	7.580897667	55305985193	617	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	word_assoc	new	1	-N10 -d	11.4248698	7.580897667	55305985193	617	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	ninetriangles	old	1	-2 -N10	3.517754809	0.001535	74933350	9	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	ninetriangles	new	1	-2 -N10	3.517754809	0.001535	74933350	9	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	air30k (reg.)	old	1	-N10 -d --regularized	5.577396623	5.6144445	56038626350	296	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	air30k (reg.)	new	1	-N10 -d --regularized	5.577396623	5.6144445	56038626350	296	3	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	malaria	old	1	-2 -N10	7.524106567	6.059377125	41476115527	134	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	malaria	new	1	-2 -N10	7.524106567	6.059377125	41476115527	134	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	word_assoc (pref.)	old	1	-2 -N10 -d --preferred-number-of-modules 25	11.6630685	5.215679709	40741323325	25	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	word_assoc (pref.)	new	1	-2 -N10 -d --preferred-number-of-modules 25	11.6630685	5.215679709	40741323325	25	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	jazz	old	1	-2 -N10	6.862755928	0.036338459	183530425	6	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	jazz	new	1	-2 -N10	6.862755928	0.036338459	183530425	6	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	word_assoc	old	1	-2 -N10 -d	11.42488467	5.97832225	42053182630	617	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO2_10	word_assoc	new	1	-2 -N10 -d	11.42488467	5.97832225	42053182630	617	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	multilayer (ex.)	old	1	-N10	2.011405238	0.001340875	69269809	2	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	multilayer (ex.)	new	1	-N10	2.011405238	0.001340875	69269809	2	2	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	netscience	old	1	-N10	3.364514863	0.216246625	1967278668	281	5	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+OO10	netscience	new	1	-N10	3.364514863	0.216246625	1967278668	281	5	bench-sync new md5 3069d054 (carried from session 1) (carried) (carried) (carried) (carried)	
+FAM	om2_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.563584264	1.902284291	13985945719	105	2	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.563584264	1.917386375	13993811184	105	2	bench-sync new md5 4f63ea27	
+FAM	om2_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.563584264	2.24180275	15297527639	105	2	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.563584264	1.5810235	15262461599	105	2	bench-sync new md5 4f63ea27	
+FAM	om2_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.485225266	0.66677125	5213459812	606	3	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.485124727	0.600219292	5214683764	594	3	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.91934781	0.880340458	5086014709	97	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.91934781	0.649187834	5076596950	97	2	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.91934781	0.697073416	6332002635	97	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.91934781	0.9076435	6337676219	97	2	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.263336431	1.907532541	12512546295	39	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.263336431	1.438907583	12488076321	39	2	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.263336431	2.085949292	16026768645	39	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.263336431	1.90272175	16103357415	39	2	bench-sync new md5 4f63ea27	
+FAM	om4_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.535466123	1.999085958	13963501573	100	2	bench-sync old md5 77eec5e8	
+FAM	om4_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.535466123	1.647044417	13967940650	100	2	bench-sync new md5 4f63ea27	
+FAM	om4_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.535466123	1.712105625	16565033088	100	2	bench-sync old md5 77eec5e8	
+FAM	om4_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.535466123	2.118810708	16601280597	100	2	bench-sync new md5 4f63ea27	
+FAM	om5_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.825368717	2.439805875	16180253465	147	2	bench-sync old md5 77eec5e8	
+FAM	om5_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.825368717	2.720425333	16203654528	147	2	bench-sync new md5 4f63ea27	
+FAM	om5_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.825368717	2.755804125	18757029476	147	2	bench-sync old md5 77eec5e8	
+FAM	om5_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.825368717	2.224655166	18729948365	147	2	bench-sync new md5 4f63ea27	
+REG	web-NotreDame `-d --recorded-teleportation -N1`	old	1	-C -d --recorded-teleportation -N1	9.44801753	3.615572166	28330676706	19737	3	bench-sync old md5 77eec5e8	
+REG	web-NotreDame `-d --recorded-teleportation -N1`	new	1	-C -d --recorded-teleportation -N1	9.452246659	3.173529333	26424209634	17588	3	bench-sync new md5 4f63ea27	
+REG	wikispeedia `-2d --recorded-teleportation -N1`	old	1	-C -2d --recorded-teleportation -N1	6.645161374	0.231409417	1989792689	1075	2	bench-sync old md5 77eec5e8	
+REG	wikispeedia `-2d --recorded-teleportation -N1`	new	1	-C -2d --recorded-teleportation -N1	6.645161374	0.185117625	1986798337	1075	2	bench-sync new md5 4f63ea27	
+REG	wikispeedia `-d --regularized -N1`	old	1	-C -d --regularized -N1	4.419120601	0.079370583	871076641	126	3	bench-sync old md5 77eec5e8	
+REG	wikispeedia `-d --regularized -N1`	new	1	-C -d --regularized -N1	4.4079153	0.0794025	874789873	152	3	bench-sync new md5 4f63ea27	
+FAM	om4_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.538801081	10.693033667	80464102441	99	2	bench-sync old md5 77eec5e8	
+FAM	om4_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.538801081	8.83005125	80339703197	99	2	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.263006685	7.753237292	70105723448	38	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.263006685	7.500330208	70061580560	38	2	bench-sync new md5 4f63ea27	
+FAM	om2_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	6.950794743	4.847427334	41236173684	9	2	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	6.950794743	4.633115042	41215702969	9	2	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.91934781	2.873120125	23076903492	97	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.91934781	3.014121417	23101508580	97	2	bench-sync new md5 4f63ea27	
+REG	web-NotreDame `-d --recorded-teleportation -N10`	old	1	-C -d --recorded-teleportation -N10	9.44801753	28.003086417	187096198802	19737	3	bench-sync old md5 77eec5e8	
+REG	web-NotreDame `-d --recorded-teleportation -N10`	new	1	-C -d --recorded-teleportation -N10	9.452246659	27.950171417	181197902499	17588	3	bench-sync new md5 4f63ea27	
+FAM	om5_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.784883609	8.189716584	76125791702	154	2	bench-sync old md5 77eec5e8	
+FAM	om5_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.784883609	8.401096292	76132418925	154	2	bench-sync new md5 4f63ea27	
+REG	wikispeedia `-d --recorded-teleportation -N10`	old	1	-C -d --recorded-teleportation -N10	6.624543363	0.782720792	8055176383	1066	2	bench-sync old md5 77eec5e8	
+REG	wikispeedia `-d --recorded-teleportation -N10`	new	1	-C -d --recorded-teleportation -N10	6.624543363	0.869275625	8061863980	1066	2	bench-sync new md5 4f63ea27	
+FAM	om2_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.563584264	1.371290125	13941343028	105	2	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.563584264	1.370133042	13937225370	105	2	bench-sync new md5 4f63ea27	
+FAM	om2_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.563584264	1.461914417	15253574816	105	2	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.563584264	1.488634167	15251145164	105	2	bench-sync new md5 4f63ea27	
+FAM	om2_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.485225266	0.54087175	5212021539	606	3	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.485124727	0.579006958	5205411185	594	3	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.91934781	0.58005075	5065593164	97	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.91934781	0.651083875	5065381282	97	2	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.91934781	0.716800708	6325199442	97	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.91934781	0.701145084	6322458338	97	2	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.263336431	1.195777958	12457387347	39	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.263336431	1.178441833	12456548227	39	2	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.263336431	1.450204875	15987867523	39	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.263336431	1.5421425	16069136203	39	2	bench-sync new md5 4f63ea27	
+FAM	om4_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.535466123	1.6757595	13965072326	100	2	bench-sync old md5 77eec5e8	
+FAM	om4_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.535466123	1.4177145	13943588318	100	2	bench-sync new md5 4f63ea27	
+FAM	om4_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.535466123	2.466443875	16614236464	100	2	bench-sync old md5 77eec5e8	
+FAM	om4_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.535466123	1.880552334	16576550367	100	2	bench-sync new md5 4f63ea27	
+FAM	om5_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.825368717	1.930503083	16149941790	147	2	bench-sync old md5 77eec5e8	
+FAM	om5_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.825368717	1.827747458	16150079079	147	2	bench-sync new md5 4f63ea27	
+FAM	om5_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.825368717	2.107406208	18720325595	147	2	bench-sync old md5 77eec5e8	
+FAM	om5_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.825368717	2.121786084	18746882035	147	2	bench-sync new md5 4f63ea27	
+REG	web-NotreDame `-d --recorded-teleportation -N1`	old	2	-C -d --recorded-teleportation -N1	9.44801753	3.432340917	28336734655	19737	3	bench-sync old md5 77eec5e8	
+REG	web-NotreDame `-d --recorded-teleportation -N1`	new	2	-C -d --recorded-teleportation -N1	9.452246659	3.1926685	26484972018	17588	3	bench-sync new md5 4f63ea27	
+REG	wikispeedia `-2d --recorded-teleportation -N1`	old	2	-C -2d --recorded-teleportation -N1	6.645161374	0.177590166	1985050122	1075	2	bench-sync old md5 77eec5e8	
+REG	wikispeedia `-2d --recorded-teleportation -N1`	new	2	-C -2d --recorded-teleportation -N1	6.645161374	0.180924958	1985597282	1075	2	bench-sync new md5 4f63ea27	
+REG	wikispeedia `-d --regularized -N1`	old	2	-C -d --regularized -N1	4.419120601	0.154328708	875591407	126	3	bench-sync old md5 77eec5e8	
+REG	wikispeedia `-d --regularized -N1`	new	2	-C -d --regularized -N1	4.4079153	0.51438125	880226988	152	3	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.263006685	6.423797917	55742619872	38	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.263006685	5.979996375	55741083174	38	2	bench-sync new md5 4f63ea27	
+FAM	om2_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	6.950794743	4.273374458	36190981942	9	2	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	6.950794743	5.469286417	36413625057	9	2	bench-sync new md5 4f63ea27	
+REG	wikispeedia `-2d --recorded-teleportation -N10`	old	1	-C -2d --recorded-teleportation -N10	6.624543363	1.210336125	10722561659	1066	2	bench-sync old md5 77eec5e8	
+REG	wikispeedia `-2d --recorded-teleportation -N10`	new	1	-C -2d --recorded-teleportation -N10	6.624543363	1.346728083	10729308554	1066	2	bench-sync new md5 4f63ea27	
+FAM	om5_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.825368717	7.582503666	65666232155	147	2	bench-sync old md5 77eec5e8	
+FAM	om5_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.825368717	7.408133208	65653016820	147	2	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.91934781	2.722287916	23154967426	97	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.91934781	2.626352833	23142364503	97	2	bench-sync new md5 4f63ea27	
+FAM	om4_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.538801081	6.636231208	60991833301	99	2	bench-sync old md5 77eec5e8	
+FAM	om4_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.538801081	7.082922666	61002155047	99	2	bench-sync new md5 4f63ea27	
+FAM	om2_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.563584264	1.415732709	13942966661	105	2	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.563584264	1.311301709	13937856734	105	2	bench-sync new md5 4f63ea27	
+FAM	om2_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.563584264	1.631790917	15269396355	105	2	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.563584264	1.489817667	15262287551	105	2	bench-sync new md5 4f63ea27	
+FAM	om2_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.485225266	0.525686917	5208560714	606	3	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.485124727	0.509899458	5201835366	594	3	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.91934781	0.629002583	5069366872	97	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.91934781	0.586162	5067453768	97	2	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.91934781	0.708927083	6330541050	97	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.91934781	0.740538458	6325773157	97	2	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.263336431	1.203983333	12460658393	39	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.263336431	1.3594745	12461344050	39	2	bench-sync new md5 4f63ea27	
+FAM	om3_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.263336431	1.552462375	15993589351	39	2	bench-sync old md5 77eec5e8	
+FAM	om3_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.263336431	1.522485042	16068114074	39	2	bench-sync new md5 4f63ea27	
+FAM	om4_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.535466123	1.389105125	13942190632	100	2	bench-sync old md5 77eec5e8	
+FAM	om4_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.535466123	1.456165	13947553387	100	2	bench-sync new md5 4f63ea27	
+FAM	om4_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.535466123	1.672063417	16565264515	100	2	bench-sync old md5 77eec5e8	
+FAM	om4_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.535466123	1.678901334	16567565777	100	2	bench-sync new md5 4f63ea27	
+FAM	om5_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.825368717	1.759115625	16136545584	147	2	bench-sync old md5 77eec5e8	
+FAM	om5_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.825368717	2.019046041	16150350230	147	2	bench-sync new md5 4f63ea27	
+FAM	om5_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.825368717	1.891247125	18702622557	147	2	bench-sync old md5 77eec5e8	
+FAM	om5_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.825368717	1.898594209	18713001373	147	2	bench-sync new md5 4f63ea27	
+REG	web-NotreDame `-d --recorded-teleportation -N1`	old	3	-C -d --recorded-teleportation -N1	9.44801753	3.229325541	28306014008	19737	3	bench-sync old md5 77eec5e8	
+REG	web-NotreDame `-d --recorded-teleportation -N1`	new	3	-C -d --recorded-teleportation -N1	9.452246659	3.230144042	26441918650	17588	3	bench-sync new md5 4f63ea27	
+REG	wikispeedia `-2d --recorded-teleportation -N1`	old	3	-C -2d --recorded-teleportation -N1	6.645161374	0.180481458	1983463031	1075	2	bench-sync old md5 77eec5e8	
+REG	wikispeedia `-2d --recorded-teleportation -N1`	new	3	-C -2d --recorded-teleportation -N1	6.645161374	0.191317917	1985106937	1075	2	bench-sync new md5 4f63ea27	
+REG	wikispeedia `-d --regularized -N1`	old	3	-C -d --regularized -N1	4.419120601	0.08004325	870796327	126	3	bench-sync old md5 77eec5e8	
+REG	wikispeedia `-d --regularized -N1`	new	3	-C -d --regularized -N1	4.4079153	0.080514584	875775482	152	3	bench-sync new md5 4f63ea27	
+REG	wikispeedia `-2 -d --regularized -N10`	old	1	-C -2 -d --regularized -N10	4.309453443	0.689346417	6896912116	148	2	bench-sync old md5 77eec5e8	
+REG	wikispeedia `-2 -d --regularized -N10`	new	1	-C -2 -d --regularized -N10	4.309453443	0.703100875	6898770979	148	2	bench-sync new md5 4f63ea27	
+REG	wikispeedia `-d --regularized -N10`	old	1	-C -d --regularized -N10	4.309453443	0.754220917	7212743576	148	2	bench-sync old md5 77eec5e8	
+REG	wikispeedia `-d --regularized -N10`	new	1	-C -d --regularized -N10	4.309453443	0.847916625	7724167530	148	2	bench-sync new md5 4f63ea27	
+REG	wikispeedia `-2 -2d --regularized -N10`	old	1	-C -2 -2d --regularized -N10	4.309453443	0.906905125	6899963823	148	2	bench-sync old md5 77eec5e8	
+REG	wikispeedia `-2 -2d --regularized -N10`	new	1	-C -2 -2d --regularized -N10	4.309453443	0.693533209	6897179823	148	2	bench-sync new md5 4f63ea27	
+REG	wikispeedia `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	4.309453443	0.6921805	6897683605	148	2	bench-sync old md5 77eec5e8	
+REG	wikispeedia `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	4.309453443	0.731873625	6899440368	148	2	bench-sync new md5 4f63ea27	
+FAM	om2_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.563584264	3.632113833	35152097500	105	2	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.563584264	3.742572	35151522233	105	2	bench-sync new md5 4f63ea27	
+FAM	om2_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.564137109	3.991388958	38862405394	93	2	bench-sync old md5 77eec5e8	
+FAM	om2_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.564137109	4.210656291	38872239190	93	2	bench-sync new md5 4f63ea27	
+BENCH-DONE

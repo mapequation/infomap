@@ -6027,3 +6027,50 @@ the tip before #828 reached it at `k=1` with 2 pieces and a parent id of 2.
   percentile −0.70% to +0.21%), and seconds summed are −0.57%. The 16 rows more than 10% slower in the sweep
   re-time as noise: instructions −0.18% to +0.04% as the minimum of 5. The two worst, at +4.66% and +3.92% in
   seconds, read −0.01% and +1.89% as the minimum of 10.
+
+### F76 — Sub-searches get the parent's total exit; the five sites are two different things (#1372) (2026-10-23)
+
+Under recorded teleportation, five sub-searches that re-cluster inside a parent module were handed the
+parent's exit minus its teleport exit (F73, `ColumnarBoundaryFlow::linkExit`). They now get the stored
+total, and `linkExit` is gone. #1372 asked for the fix to come with a deep-repair stopping rule under which
+the extra re-clustering pays for itself. The measurement says no stopping rule can do that, and that
+"the sub-search's exit" means two different things across the five sites.
+
+- **Two kinds of site.**
+  - **Nested-level sites:** `refineLayerWithinGrandparent` (gated on the true codelength) and
+    `refineBottomWithinParents` (not gated). The sub-search result becomes a real level, and the hierarchical
+    codelength codes the parent's codebook with its total exit, so the total is simply the right value.
+  - **Proposal sites:** `splitTopModules` and `splitLevelModules` (two sites). The sub-search only proposes
+    pieces, which a recombination keeps only if the true codelength improves. Neither exit value is the
+    objective the pieces are judged by, so the exit there is a heuristic: it sets the granularity of the
+    proposals through the sub-index codebook, `plogp(exit + Σq)`.
+- **Attribution** (a build per kind of site, on the 33 configurations the full fix changes):
+  - **Proposal sites:** 29 of the 33, including wikispeedia `--regularized -N10` −0.046%, om3 −0.019%, the
+    om2 E50k cost and om2 E50k `-2d -N10` +0.095%.
+  - **Nested-level sites:** 4, all from `refineLayerWithinGrandparent` (single-site builds):
+    - wikispeedia `-d --regularized -N1` −0.254% in bits;
+    - web-NotreDame `-d --recorded-teleportation` +0.045% in bits, at −3% to −7% in instructions;
+    - om2 E100k `-N1` −0.001% in bits;
+    - +7% in instructions on wikispeedia `-d --regularized -N10` for no change in bits, spent in deep repair
+      on gated sub-searches whose results are rejected.
+
+    `refineBottomWithinParents` moves none of these four configurations.
+- **Why no stopping rule pays for om2 E50k.** On `--regularized -N1`, `-d` and `-2d` alike, the two-level
+  deep repair starts from the same codelength in both arms and ends in the same basin (7.563584 old,
+  7.563588 new). The old arm takes 6 fresh derivations (156,576 units re-clustered), the new one 9 (188,000):
+  - The new arm's first derivation buys 4.3e-3 bits against 7.6e-3, so it needs more rounds.
+  - Its rounds 6–8 each clear the yield bar (`kFreshYieldPerNetwork` × L × share re-clustered) 1.5 to 2.6
+    times over, so by the rule's own measure they pay.
+  - A bar high enough to cut them, 3e-4, stops the new arm after round 5 and leaves about 0.044% in bits
+    behind.
+
+  The cost is in proposal quality per round, not in when to stop. Daniel accepted it for this issue: the
+  trade-offs that matter are on the normal networks, and there wikispeedia gains everywhere.
+- **Snapshot.**
+  - **Teleportation runs:** 33 of 121 change and 88 are bit-identical.
+  - **The 211 configurations without teleportation:** all bit-identical, with instructions at a median of
+    −0.02%.
+  - **Seconds** summed over the set: −0.41%.
+  - **Bit-identical but more work:** om8 E50k `--regularized -N1` takes +3.6% to +4.1% in instructions.
+  - **Regularized multilayer (feature build):** 5 of 27 change. aucs `-N1` −0.132%, malaria −0.060% and
+    −0.009%, Jelena 50% `-N1` +0.016%.
