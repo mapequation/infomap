@@ -16,6 +16,7 @@
 
 #include <limits>
 #include <map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -315,7 +316,7 @@ public:
 
   // Hierarchical codelength (base map equation + active corrections) of the
   // stack the search holds — the seeded or optimized partition.
-  double hierarchicalCodelengthFromStack() const { return scoreStack(m_stack); }
+  double hierarchicalCodelengthFromStack() const { return m_scoreCache ? scoredStack().total : scoreStack(m_stack); }
 
   // The same codelength, plus its per-node decomposition under the SAME
   // objective. Reporting only (the search never asks for the breakdown, so it
@@ -440,7 +441,12 @@ public:
   // grandparent (the grandparent's exit is the sub-network exitNetworkFlow).
   // Rebuilds assign(k), assign(k+1) and level k+1 of the stack; layers k+2
   // and above are untouched. Requires k in [0, top-2]. refineBottomWithinParents
-  // is the k == 0 special case. Returns false if no grandparent layer exists.
+  // is the k == 0 special case. Each grandparent's new partition is kept or
+  // undone on its own (#1387): a grandparent's enter and exit do not change with
+  // its insides, so the layer's codelength change is the sum of per-grandparent
+  // changes, and only the grandparents whose change lowers the codelength take
+  // their new modules. Returns false if no grandparent layer exists or none
+  // improves.
   // sweep: which up/down sweep of refineHierarchy asks (0 = the first, which
   // re-derives every layer from singletons; partial seeding can be restricted to
   // the later sweeps, where the layer already holds a re-derived partition worth
@@ -482,6 +488,39 @@ public:
   bool mergeLeafModulesWithinParents(bool externalSeed = false);
 
 private:
+  // The current stack scored with its breakdown, once per stack version (see
+  // ColumnarStack::version), while m_scoreCache is on: refineHierarchy's sweeps,
+  // where the per-grandparent refine reads the breakdown before and after its
+  // layer and the gate reads the total after it. Two slots, so the stack before
+  // a step survives scoring the stack after it.
+  struct ScoredStack {
+    std::uint64_t version = 0;
+    double total = 0.0;
+    columnar::StackBreakdown breakdown;
+  };
+  const ScoredStack& scoredStack() const;
+  mutable ScoredStack m_scored[2];
+  mutable int m_scoredLast = 0;
+  bool m_scoreCache = false;
+  // While m_scoreCache is on, each correction that reads only the leaf partition
+  // (ColumnarCorrection::readsLeafPartitionOnly) is scored once per leaf partition
+  // version: a refine above the leaf layer leaves it as it was.
+  struct CorrectionScore {
+    const ColumnarCorrection* correction = nullptr;
+    std::uint64_t leafVersion = 0;
+    double value = 0.0;
+    bool charged = false; // level1/root hold its breakdown charges
+    std::vector<double> level1;
+    double root = 0.0;
+  };
+  mutable std::vector<CorrectionScore> m_correctionScores;
+  // Per layer k: the content of every grandparent as the last re-sweep of layer k
+  // left it, for the next re-sweep to skip the grandparents nothing has touched
+  // since (see refineLayerWithinGrandparent). Cleared when refineHierarchy starts.
+  std::vector<std::unordered_set<std::uint64_t>> m_resweptContent;
+  // Per layer-k unit, a hash of its leaf set.
+  std::vector<std::uint64_t> unitHashes(int k) const;
+
   const Level& leaf0() const { return m_search.leafLevel(); }
   int nLeaves() const { return m_search.numLeaves(); }
   std::vector<std::unique_ptr<ColumnarCorrection>>& corrections() { return m_search.corrections(); }

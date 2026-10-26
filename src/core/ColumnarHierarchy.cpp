@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <ctime>
 #include <limits>
@@ -30,6 +31,17 @@
 #include "ColumnarTuning.h"
 
 namespace infomap {
+
+namespace {
+  // splitmix64's finalizer: spreads a sum of hashes before it is summed again.
+  inline std::uint64_t mixHash(std::uint64_t x)
+  {
+    x += 0x9e3779b97f4a7c15ull;
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ull;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111ebull;
+    return x ^ (x >> 31);
+  }
+} // namespace
 
 using namespace columnar;
 
@@ -1096,6 +1108,37 @@ double ColumnarHierarchy::optimizeFlexible(unsigned int bottomBlockLimit, unsign
   return L;
 }
 
+const ColumnarHierarchy::ScoredStack& ColumnarHierarchy::scoredStack() const
+{
+  const std::uint64_t version = m_stack.version();
+  for (int s : { m_scoredLast, 1 - m_scoredLast })
+    if (m_scored[s].version == version) {
+      m_scoredLast = s;
+      return m_scored[s];
+    }
+  m_scoredLast = 1 - m_scoredLast; // replace the slot read longest ago
+  ScoredStack& slot = m_scored[m_scoredLast];
+  slot.total = scoreStack(m_stack, &slot.breakdown);
+  slot.version = version;
+  return slot;
+}
+
+std::vector<std::uint64_t> ColumnarHierarchy::unitHashes(int k) const
+{
+  std::vector<std::uint64_t> hash(static_cast<std::size_t>(nLeaves()));
+  for (int i = 0; i < nLeaves(); ++i)
+    hash[i] = mixHash(static_cast<std::uint64_t>(i) + 1);
+  for (int level = 0; level < k; ++level) {
+    std::vector<std::uint64_t> up(static_cast<std::size_t>(m_stack.size(level + 1)), 0);
+    for (int u = 0; u < m_stack.size(level); ++u)
+      up[m_stack.parent(level, u)] += hash[u];
+    for (auto& h : up)
+      h = mixHash(h);
+    hash = std::move(up);
+  }
+  return hash;
+}
+
 bool ColumnarHierarchy::refineLayerWithinGrandparent(int k, int sweep)
 {
   const int top = m_stack.topLevel();
@@ -1126,11 +1169,51 @@ bool ColumnarHierarchy::refineLayerWithinGrandparent(int k, int sweep)
   // instead of over-merging on total flow.
   const bool interior = (k > 0);
 
+  // A re-sweep skips the grandparents that the previous re-sweep of this layer
+  // already re-partitioned and that nothing has touched since (#1387): their
+  // content (the units' leaf sets and the partition inside) is what that refine
+  // left. Only a re-sweep's own output counts as tried: the first sweep
+  // re-derives every grandparent from singletons and a re-sweep from a partial
+  // seed (buildPartialSeed), so the first re-sweep of a grandparent can still
+  // find what the first sweep missed.
+  const bool resweep = sweep > 0;
+  std::vector<std::uint64_t> unitHash;
+  auto contentHashes = [&](const std::vector<int>& assignK, int numModules, const std::vector<int>& parentOf) {
+    std::vector<std::uint64_t> moduleSum(static_cast<std::size_t>(numModules), 0), content(numGP, 0);
+    for (int u = 0; u < nU; ++u)
+      moduleSum[assignK[u]] += unitHash[u];
+    for (int m = 0; m < numModules; ++m)
+      content[parentOf[m]] += mixHash(moduleSum[m]);
+    for (int G = 0; G < numGP; ++G)
+      content[G] = mixHash(content[G] + static_cast<std::uint64_t>(k));
+    return content;
+  };
+  std::vector<std::uint64_t> inContent;
+  if (static_cast<int>(m_resweptContent.size()) <= k)
+    m_resweptContent.resize(k + 1);
+  if (resweep) {
+    unitHash = unitHashes(k);
+    inContent = contentHashes(aC, m_stack.size(k + 1), aP);
+  }
+
   for (int G = 0; G < numGP; ++G) {
     const std::vector<int>& S = unitsPer[G];
     const int nP = static_cast<int>(S.size());
     if (nP == 0)
       continue;
+    if (resweep && m_resweptContent[k].count(inContent[G]) != 0) {
+      // Untouched since this layer's last refine: keep its partition.
+      std::unordered_map<int, int> local;
+      for (int u : S) {
+        auto it = local.find(aC[u]);
+        if (it == local.end()) {
+          it = local.emplace(aC[u], nextMod++).first;
+          newAP.push_back(G);
+        }
+        newAC[u] = it->second;
+      }
+      continue;
+    }
     // Build G's internal sub-network over layer-k units (flow/enter/exit carried
     // from the units; only edges internal to G are kept).
     Level sub = m_search.flow().slice(base, S, loc, interior);
@@ -1163,7 +1246,76 @@ bool ColumnarHierarchy::refineLayerWithinGrandparent(int k, int sweep)
     nextMod += Ksub;
   }
 
-  m_stack.setModules(k, std::move(newAC), nextMod, std::move(newAP));
+  // Keep or undo each grandparent on its own (#1387). Re-partitioning G's insides
+  // changes only G's own codebook term and its child modules' terms (G's enter and
+  // exit, and so every term above it, stay), so the per-module breakdowns of the
+  // stack before and after the whole new layer give each grandparent's change.
+  // Global terms (the preferred-modules penalty) are not split by grandparent;
+  // the caller's gate prices the result as a whole.
+  const std::vector<int> oldAC = aC; // copies: setModules replaces both
+  const std::vector<int> oldAP = aP;
+  const int oldK = m_stack.size(k + 1);
+  columnar::StackBreakdown before, after;
+  if (m_scoreCache)
+    before = scoredStack().breakdown;
+  else
+    scoreStack(m_stack, &before);
+  m_stack.setModules(k, newAC, nextMod, newAP);
+  if (m_scoreCache)
+    after = scoredStack().breakdown;
+  else
+    scoreStack(m_stack, &after);
+
+  std::vector<double> delta(numGP, 0.0);
+  for (int G = 0; G < numGP; ++G)
+    delta[G] = after.moduleTerm[k + 2][G] - before.moduleTerm[k + 2][G];
+  for (int m = 0; m < nextMod; ++m)
+    delta[newAP[m]] += after.moduleTerm[k + 1][m];
+  for (int m = 0; m < oldK; ++m)
+    delta[oldAP[m]] -= before.moduleTerm[k + 1][m];
+
+  // Undo only the grandparents that got worse; an unchanged one (delta ~ 0) keeps
+  // the new layer's copy of its old partition, as before.
+  std::vector<char> keep(numGP, 1);
+  bool anyBetter = false;
+  int numWorse = 0;
+  for (int G = 0; G < numGP; ++G) {
+    if (delta[G] < -columnar::kMinImprovement)
+      anyBetter = true;
+    else if (delta[G] > columnar::kMinImprovement) {
+      keep[G] = 0;
+      ++numWorse;
+    }
+  }
+  // Record what a re-sweep leaves in each grandparent (see resweep above).
+  std::unordered_set<std::uint64_t>& tried = m_resweptContent[k];
+  tried.clear();
+  if (resweep) {
+    const std::vector<std::uint64_t> newContent = contentHashes(newAC, nextMod, newAP);
+    for (int G = 0; G < numGP; ++G)
+      tried.insert(anyBetter && keep[G] ? newContent[G] : inContent[G]);
+  }
+  if (!anyBetter)
+    return false; // nothing improves: the caller's gate restores the stack
+  if (numWorse == 0)
+    return true; // keep the whole new layer
+
+  // Mixed: the improved grandparents take their new modules, the worse ones keep
+  // their old ones.
+  std::vector<int> mixedAC(nU);
+  std::vector<int> mixedAP;
+  std::vector<int> oldId(oldK, -1), newId(nextMod, -1);
+  int K = 0;
+  for (int u = 0; u < nU; ++u) {
+    const int G = oldAP[oldAC[u]];
+    int& id = keep[G] ? newId[newAC[u]] : oldId[oldAC[u]];
+    if (id < 0) {
+      id = K++;
+      mixedAP.push_back(G);
+    }
+    mixedAC[u] = id;
+  }
+  m_stack.setModules(k, std::move(mixedAC), K, std::move(mixedAP));
   return true;
 }
 
@@ -1465,37 +1617,50 @@ double ColumnarHierarchy::refineHierarchy(double startL, unsigned int sweepLimit
   // same pass, so COL_PARTSEED_FLAT keeps the layer dirty and lets it run.
   if (m_bottomConverged && numInterior > 0 && !(partSeedFlatBottom() && partSeedActive(0)))
     dirty[0] = 0;
-  for (int sweep = 0; sweep < refineSweeps; ++sweep) {
-    pollInterrupt();
-    const double beforeSweep = L;
-    bool improved = false;
-    const int top = m_stack.topLevel();
-    std::vector<char> nextDirty(dirty.size(), 0);
-    for (int k = 0; k + 2 <= top; ++k) {
-      if (!dirty[k])
-        continue;
-#ifdef COLUMNAR_DEBUG
-      const double beforeRefine = L;
-#endif
-      if (gatedStep(L, [&] { return refineLayerWithinGrandparent(k, sweep); })) {
-#ifdef COLUMNAR_DEBUG
-        std::fprintf(stderr, "[refine] REFINE %.9f -> %.9f (levels %d, top %d)\n", beforeRefine, L, m_stack.numLevels(), m_stack.numTopModules());
-#endif
-        improved = true;
-        if (k - 1 >= 0)
-          nextDirty[k - 1] = 1;
-        if (k + 1 + 2 <= top) // k+1 is a valid interior layer
-          nextDirty[k + 1] = 1;
+  {
+    // Score each stack version once while the sweeps run (see scoredStack).
+    struct ScoreCacheScope {
+      ColumnarHierarchy& h;
+      explicit ScoreCacheScope(ColumnarHierarchy& hier) : h(hier)
+      {
+        h.m_scored[0].version = h.m_scored[1].version = 0;
+        h.m_scoreCache = true;
+        h.m_resweptContent.clear();
       }
+      ~ScoreCacheScope() { h.m_scoreCache = false; }
+    } scoreCacheScope(*this);
+    for (int sweep = 0; sweep < refineSweeps; ++sweep) {
+      pollInterrupt();
+      const double beforeSweep = L;
+      bool improved = false;
+      const int top = m_stack.topLevel();
+      std::vector<char> nextDirty(dirty.size(), 0);
+      for (int k = 0; k + 2 <= top; ++k) {
+        if (!dirty[k])
+          continue;
+#ifdef COLUMNAR_DEBUG
+        const double beforeRefine = L;
+#endif
+        if (gatedStep(L, [&] { return refineLayerWithinGrandparent(k, sweep); })) {
+#ifdef COLUMNAR_DEBUG
+          std::fprintf(stderr, "[refine] REFINE %.9f -> %.9f (levels %d, top %d)\n", beforeRefine, L, m_stack.numLevels(), m_stack.numTopModules());
+#endif
+          improved = true;
+          if (k - 1 >= 0)
+            nextDirty[k - 1] = 1;
+          if (k + 1 + 2 <= top) // k+1 is a valid interior layer
+            nextDirty[k + 1] = 1;
+        }
+      }
+      if (!improved)
+        break;
+      // Diminishing-returns knee: stop once a whole sweep's gain drops below the
+      // relative threshold (avoids grinding the last fraction of a percent, and the
+      // extra no-improvement sweep that only detects full convergence).
+      if (relStop > 0.0 && (beforeSweep - L) < relStop)
+        break;
+      dirty = std::move(nextDirty);
     }
-    if (!improved)
-      break;
-    // Diminishing-returns knee: stop once a whole sweep's gain drops below the
-    // relative threshold (avoids grinding the last fraction of a percent, and the
-    // extra no-improvement sweep that only detects full convergence).
-    if (relStop > 0.0 && (beforeSweep - L) < relStop)
-      break;
-    dirty = std::move(nextDirty);
   }
   if (L > abandonAboveL)
     return L;

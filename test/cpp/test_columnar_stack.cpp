@@ -1,6 +1,7 @@
 #include "TestUtils.h"
 #include "core/ColumnarStack.h"
 
+#include <cstdint>
 #include <tuple>
 #include <vector>
 
@@ -240,6 +241,44 @@ TEST_CASE("ColumnarStack copies are independent values with closed checkpoints")
   CHECK(copy.parent(1, 1) == 1);
   CHECK(stack.parent(1, 1) == 0);
   CHECK(&copy.level(0) == &leaf);
+}
+
+TEST_CASE("ColumnarStack versions name its content: equal ids mean equal stacks")
+{
+  const ColumnarLevel leaf = twoGroupLeaves();
+  const ColumnarBoundaryFlow flow = ColumnarBoundaryFlow::forLeaves(leaf, false, false);
+  ColumnarStack stack = threeLevelStack(leaf, flow);
+  const std::uint64_t built = stack.version();
+
+  // An edit takes a fresh id; a rollback restores the id its checkpoint saw.
+  const ColumnarStack::Checkpoint outer = stack.checkpoint();
+  stack.setModules(1, { 0, 1, 1, 1 }, 2);
+  const std::uint64_t edited = stack.version();
+  CHECK(edited != built);
+  const ColumnarStack::Checkpoint inner = stack.checkpoint();
+  stack.pushLevel({ 0, 0 }, 1);
+  CHECK(stack.version() != edited);
+  stack.rollback(inner);
+  CHECK(stack.version() == edited);
+  stack.rollback(outer);
+  CHECK(stack.version() == built);
+
+  // A copy keeps the id; an edit of either one never reuses an id the other has
+  // had, so two stacks with different content never share one.
+  ColumnarStack copy = stack;
+  CHECK(copy.version() == built);
+  stack.setModules(1, { 0, 1, 1, 1 }, 2);
+  copy.setModules(1, { 0, 0, 0, 1 }, 2);
+  CHECK(stack.version() != copy.version());
+  CHECK(stack.version() != edited);
+  CHECK(copy.version() != edited);
+
+  // A commit keeps the edit's id.
+  const ColumnarStack::Checkpoint kept = stack.checkpoint();
+  stack.setParents(1, { 0, 0 });
+  const std::uint64_t parentsSet = stack.version();
+  stack.commit(kept);
+  CHECK(stack.version() == parentsSet);
 }
 
 } // namespace test
