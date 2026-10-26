@@ -197,6 +197,10 @@ namespace {
     unsigned int iterations;
     double error;
     bool converged;
+    // The plain iteration's change shrank by this factor per step: an estimate of the
+    // walk's second-largest eigenvalue, so how slowly it mixes. NaN if never measured.
+    double rate;
+    bool accelerated;
   };
 
   // Iterate a flow step to its stationary flow. `step(iteration)` reads `flow`, writes
@@ -224,6 +228,7 @@ namespace {
     std::vector<double> before;
     std::vector<double> errors;
     bool accelerate = false;
+    double rate = std::numeric_limits<double>::quiet_NaN();
     unsigned int iterations = 0;
     double err = 0.0;
     double halvedTo = std::numeric_limits<double>::infinity();
@@ -239,6 +244,15 @@ namespace {
       err = step(iterations);
       errors.push_back(err);
       ++iterations;
+      // Measured on plain steps only, over the last kRateWindow of them (fewer at the
+      // start), and above the floor, where rounding has not yet flattened the decay.
+      if (!accelerate && err > 1e3 * floor && errors.size() >= 2) {
+        const std::size_t window = std::min<std::size_t>(kRateWindow, errors.size() - 1);
+        const double earlier = errors[errors.size() - 1 - window];
+        if (earlier > 0.0) {
+          rate = std::pow(err / earlier, 1.0 / static_cast<double>(window));
+        }
+      }
       if (err < 0.5 * halvedTo) {
         halvedTo = err;
         halvedAt = iterations;
@@ -260,7 +274,7 @@ namespace {
       if (accelerate) {
         acceleration.mix(before, flow);
       } else if (iterations >= config.minFlowIterations && iterations > kRateWindow && err > 1e3 * floor) {
-        accelerate = std::pow(err / errors[iterations - 1 - kRateWindow], 1.0 / kRateWindow) > kSlowRate;
+        accelerate = rate > kSlowRate;
       }
     }
 
@@ -273,7 +287,7 @@ namespace {
         Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
       }
     }
-    return { iterations, err, converged };
+    return { iterations, err, converged, rate, accelerate };
   }
 
 } // namespace
@@ -517,12 +531,14 @@ void FlowCalculator::addFlowNote(const std::string& note)
   m_flowNotes.push_back(note);
 }
 
-void FlowCalculator::recordPageRank(unsigned int iterations, double error, bool converged) noexcept
+void FlowCalculator::recordPageRank(unsigned int iterations, double error, bool converged, double rate, bool accelerated) noexcept
 {
   m_havePageRank = true;
   m_pageRankIterations = iterations;
   m_pageRankError = error;
   m_pageRankConverged = converged;
+  m_pageRankRate = rate;
+  m_pageRankAccelerated = accelerated;
 }
 
 void FlowCalculator::calcUndirectedFlow() noexcept
@@ -625,6 +641,8 @@ struct IterationResult {
   unsigned int iterations;
   double error;
   bool converged;
+  double rate;
+  bool accelerated;
 };
 
 template <typename Iteration>
@@ -648,7 +666,7 @@ IterationResult powerIterate(const Config& config, std::vector<double>& flow, co
 
   // The perturbation only steers the iteration. Return the configured rate, which
   // scales the recorded link flow.
-  return { teleportationProbability, 1.0 - teleportationProbability, result.iterations, result.error, result.converged };
+  return { teleportationProbability, 1.0 - teleportationProbability, result.iterations, result.error, result.converged, result.rate, result.accelerated };
 }
 
 double FlowCalculator::accumulateDanglingRank() const noexcept
@@ -740,7 +758,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
   };
 
   const auto result = powerIterate(config, nodeFlow, config.teleportationProbability, iteration);
-  recordPageRank(result.iterations, result.error, result.converged);
+  recordPageRank(result.iterations, result.error, result.converged, result.rate, result.accelerated);
 
   double sumNodeRank = 1.0;
   double beta = result.beta;
@@ -895,7 +913,7 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
   };
 
   const auto result = powerIterate(config, nodeFlow, config.teleportationProbability, iteration);
-  recordPageRank(result.iterations, result.error, result.converged);
+  recordPageRank(result.iterations, result.error, result.converged, result.rate, result.accelerated);
 
   double sumNodeRank = 1.0;
   double beta = result.beta;
@@ -1051,7 +1069,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   };
 
   const auto result = iterateToStationaryFlow(config, nodeFlow, iteration);
-  recordPageRank(result.iterations, result.error, result.converged);
+  recordPageRank(result.iterations, result.error, result.converged, result.rate, result.accelerated);
 
   double sumNodeRank = 1.0;
   for (auto& link : flowLinks) {
@@ -1409,7 +1427,7 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   // model: this loop warned but reported nothing, leaving the run report without a flow
   // object at all for regularized multilayer input.
   const auto result = iterateToStationaryFlow(config, nodeFlow, iteration);
-  recordPageRank(result.iterations, result.error, result.converged);
+  recordPageRank(result.iterations, result.error, result.converged, result.rate, result.accelerated);
 
   for (unsigned int i = 0; i < layerTeleFlow.size(); ++i) {
     sumTeleFlow += layerTeleFlow[i];
@@ -1679,7 +1697,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
   };
 
   const auto result = powerIterate(config, nodeFlow, config.teleportationProbability, iteration);
-  recordPageRank(result.iterations, result.error, result.converged);
+  recordPageRank(result.iterations, result.error, result.converged, result.rate, result.accelerated);
 
   double sumNodeRank = 1.0;
   const double beta = config.recordedTeleportation ? result.beta : 1.0;
@@ -1720,6 +1738,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   network.m_flowConverged = m_pageRankConverged;
   network.m_flowIterations = m_pageRankIterations;
   network.m_flowError = m_pageRankError;
+  network.m_flowRate = m_pageRankRate;
+  network.m_flowAccelerated = m_pageRankAccelerated;
 
   // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
   if (network.isBipartite()) {

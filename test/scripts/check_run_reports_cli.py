@@ -77,6 +77,40 @@ def test_summary_and_timing_reports(infomap_bin: str, work: Path) -> None:
     assert len(timing["trials"]) == 2
 
 
+def test_summary_flow_record(infomap_bin: str, work: Path) -> None:
+    # Directed flow runs a power iteration, so the summary carries its outcome: the
+    # undirected run above computes flow in closed form and has no "flow" object. The
+    # network is asymmetric, so the uniform start is not already stationary and the
+    # iteration's decay rate is measured.
+    work.mkdir(parents=True, exist_ok=True)
+    (work / "arcs.net").write_text(
+        "*Vertices 4\n*Arcs\n1 2 1\n2 3 1\n3 1 1\n3 4 1\n4 1 1\n",
+        encoding="utf-8",
+    )
+
+    result = run(
+        infomap_bin,
+        "arcs.net",
+        "out",
+        "--silent",
+        "--directed",
+        "--seed",
+        "7",
+        "--summary-json",
+        "summary.json",
+        cwd=work,
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary = load_json(work / "summary.json")
+    validate_json_schema(summary, "summary-report.schema.json")
+
+    flow = summary["flow"]
+    assert flow["converged"] is True
+    assert flow["accelerated"] is False
+    assert 0 < flow["rate"] < 1
+
+
 def test_timing_memory_report(infomap_bin: str, work: Path) -> None:
     make_workdir(work)
 
@@ -103,6 +137,7 @@ def main(argv: list[str]) -> int:
     infomap_bin = argv[1]
     tests = [
         test_summary_and_timing_reports,
+        test_summary_flow_record,
         test_timing_memory_report,
     ]
 

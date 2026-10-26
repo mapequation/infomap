@@ -1925,6 +1925,10 @@ TEST_CASE("Regularized flow iterates to convergence with no default iteration ca
   REQUIRE(im.network().haveFlowConvergence());
   CHECK(im.network().flowConverged());
   CHECK(im.network().flowError() <= 1e-15);
+  // The plain iteration's measured contraction, which made it slow enough to accelerate.
+  CHECK(im.network().flowAccelerated());
+  CHECK(im.network().flowRate() > 0.95);
+  CHECK(im.network().flowRate() < 1.0);
 }
 
 TEST_CASE("Flow stops at its rounding floor when the tolerance is out of reach (#1353) [fast][core][flow]")
@@ -1941,6 +1945,9 @@ TEST_CASE("Flow stops at its rounding floor when the tolerance is out of reach (
   CHECK(im.network().flowConverged());
   CHECK(im.network().flowError() <= 1e3 * std::numeric_limits<double>::epsilon());
   CHECK(im.network().flowIterations() < 1000);
+  // Teleporting at 0.15 bounds the contraction by 0.85, too fast to accelerate.
+  CHECK_FALSE(im.network().flowAccelerated());
+  CHECK(im.network().flowRate() <= 0.85 + 1e-6);
 }
 
 } // namespace
