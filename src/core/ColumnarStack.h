@@ -60,7 +60,16 @@ public:
   {
     m_leaf = &leaf;
     m_flow = &flow;
+    m_version = m_leafVersion = nextVersion();
   }
+
+  // Names the stack's content: every edit takes a fresh id, a rollback restores
+  // the id its checkpoint saw, and a copy keeps its source's. Ids are unique
+  // across stacks, so equal ids mean equal content and a scorer can cache by it.
+  std::uint64_t version() const { return m_version; }
+  // The same for the leaf partition alone (the leaf -> level-1 assignment, and so
+  // level 1): it changes only with assign(0) or the stack's shape.
+  std::uint64_t leafPartitionVersion() const { return m_leafVersion; }
 
   // --- Shape ---------------------------------------------------------------
   // Levels including the leaves; 0 until a partition is built.
@@ -121,6 +130,8 @@ public:
     friend class ColumnarStack;
     std::size_t m_mark = 0;
     std::size_t m_depth = 0;
+    std::uint64_t m_version = 0;
+    std::uint64_t m_leafVersion = 0;
   };
   // Open a checkpoint. Close it with commit or rollback, innermost first.
   Checkpoint checkpoint();
@@ -161,6 +172,7 @@ private:
   // Before an edit that changes the number of levels.
   void saveWhole();
   void resetSavedFlags();
+  static std::uint64_t nextVersion();
 
   const Level* m_leaf = nullptr;
   const ColumnarBoundaryFlow* m_flow = nullptr;
@@ -168,6 +180,8 @@ private:
   std::vector<Level> m_levels;
   std::vector<std::vector<int>> m_assign;
   Journal m_journal;
+  std::uint64_t m_version = 0;
+  std::uint64_t m_leafVersion = 0;
 };
 
 } // namespace infomap

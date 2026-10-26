@@ -9,14 +9,21 @@
 
 #include "ColumnarStack.h"
 
+#include <atomic>
 #include <cassert>
 #include <unordered_map>
 #include <utility>
 
 namespace infomap {
 
+std::uint64_t ColumnarStack::nextVersion()
+{
+  static std::atomic<std::uint64_t> next { 0 };
+  return ++next;
+}
+
 ColumnarStack::ColumnarStack(const ColumnarStack& other)
-    : m_leaf(other.m_leaf), m_flow(other.m_flow), m_levels(other.m_levels), m_assign(other.m_assign) {}
+    : m_leaf(other.m_leaf), m_flow(other.m_flow), m_levels(other.m_levels), m_assign(other.m_assign), m_version(other.m_version), m_leafVersion(other.m_leafVersion) {}
 
 ColumnarStack& ColumnarStack::operator=(const ColumnarStack& other)
 {
@@ -27,11 +34,13 @@ ColumnarStack& ColumnarStack::operator=(const ColumnarStack& other)
   m_flow = other.m_flow;
   m_levels = other.m_levels;
   m_assign = other.m_assign;
+  m_version = other.m_version;
+  m_leafVersion = other.m_leafVersion;
   return *this;
 }
 
 ColumnarStack::ColumnarStack(ColumnarStack&& other) noexcept
-    : m_leaf(other.m_leaf), m_flow(other.m_flow), m_levels(std::move(other.m_levels)), m_assign(std::move(other.m_assign)) {}
+    : m_leaf(other.m_leaf), m_flow(other.m_flow), m_levels(std::move(other.m_levels)), m_assign(std::move(other.m_assign)), m_version(other.m_version), m_leafVersion(other.m_leafVersion) {}
 
 ColumnarStack& ColumnarStack::operator=(ColumnarStack&& other) noexcept
 {
@@ -40,6 +49,8 @@ ColumnarStack& ColumnarStack::operator=(ColumnarStack&& other) noexcept
   m_flow = other.m_flow;
   m_levels = std::move(other.m_levels);
   m_assign = std::move(other.m_assign);
+  m_version = other.m_version;
+  m_leafVersion = other.m_leafVersion;
   return *this;
 }
 
@@ -222,6 +233,8 @@ ColumnarStack::Checkpoint ColumnarStack::checkpoint()
   Checkpoint checkpoint;
   checkpoint.m_mark = m_journal.marks.back();
   checkpoint.m_depth = m_journal.marks.size();
+  checkpoint.m_version = m_version;
+  checkpoint.m_leafVersion = m_leafVersion;
   return checkpoint;
 }
 
@@ -264,10 +277,15 @@ void ColumnarStack::rollback(const Checkpoint& checkpoint)
   // forget which slots were saved rather than tracking what survived.
   resetSavedFlags();
   m_journal.wholeSavedAt = 0;
+  m_version = checkpoint.m_version;
+  m_leafVersion = checkpoint.m_leafVersion;
 }
 
+// Every edit saves what it overwrites first, so the save helpers are where an
+// edit takes its fresh version.
 void ColumnarStack::saveLevel(int k)
 {
+  m_version = nextVersion();
   if (!saving() || savedSince(m_journal.wholeSavedAt))
     return;
   auto& savedAt = m_journal.levelSavedAt;
@@ -285,6 +303,9 @@ void ColumnarStack::saveLevel(int k)
 
 void ColumnarStack::saveAssign(int k)
 {
+  m_version = nextVersion();
+  if (k == 0)
+    m_leafVersion = m_version;
   if (!saving() || savedSince(m_journal.wholeSavedAt))
     return;
   auto& savedAt = m_journal.assignSavedAt;
@@ -302,6 +323,7 @@ void ColumnarStack::saveAssign(int k)
 
 void ColumnarStack::saveWhole()
 {
+  m_version = m_leafVersion = nextVersion();
   if (!saving() || savedSince(m_journal.wholeSavedAt))
     return;
   // A copy of the current state: slots saved earlier under this checkpoint keep
