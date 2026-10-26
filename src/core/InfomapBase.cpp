@@ -1430,6 +1430,8 @@ public:
       report.flowConverged = m_infomap.m_network.flowConverged();
       report.flowIterations = m_infomap.m_network.flowIterations();
       report.flowError = m_infomap.m_network.flowError();
+      report.flowRate = m_infomap.m_network.flowRate();
+      report.flowAccelerated = m_infomap.m_network.flowAccelerated();
       report.trialCodelengths = m_infomap.m_codelengths;
       report.trialTopModules = m_infomap.m_numTopModules;
       writeJsonReport(m_infomap.summaryJsonPath, runSummaryReportJson(report), m_infomap.overwriteOutput());
