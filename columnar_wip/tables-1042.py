@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hand-written tables of the #1042 snapshot, from bench-1042.py's results TSV.
+"""Hand-written tables of the snapshot, from bench-sync.py's results TSV.
 
 Usage: tables-1042.py <results.tsv> reg|attribution|assembly
 
@@ -48,7 +48,7 @@ def is_recorded(label):
 
 
 def redundant(label):
-    # bench-1042.py's REG rows add -2 to every network without it, which repeats
+    # The REG row set adds -2 to every network without it, which repeats
     # wikispeedia's own -2d row (as `-2 -2d` and `-2 -d`).
     return label.startswith("wikispeedia `-2 ")
 
@@ -116,7 +116,7 @@ def attribution_table(data, order):
 
 
 def assembly_tsv(path):
-    bench = module("bench", "bench-1042.py")
+    bench = module("labels", "benchmark-labels.py")
     with open(path) as fh:
         rows = [f for f in (ln.rstrip("\n").split("\t") for ln in fh) if len(f) >= 10]
     main_runs = {}  # (network, flags, arm, rep) -> measured fields of the -C/-C -2/-C -N1 row
