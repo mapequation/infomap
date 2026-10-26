@@ -192,6 +192,11 @@ public:
   //    codebook -- non-zero only for the entropy bias (one free parameter fewer).
   virtual bool blocksLevelDissolve() const { return false; }
   virtual double dissolveGainPerInternalNode() const { return 0.0; }
+  // True when hierarchicalCorrection reads only the leaf partition (the leaf ->
+  // level-1 assignment and level 1) and charges only level 1 and the root, so a
+  // scorer may reuse its value while that partition holds
+  // (ColumnarStack::leafPartitionVersion).
+  virtual bool readsLeafPartitionOnly() const { return false; }
   //  * dissolveNodeCharge(): this correction's share on a kept module-of-modules or
   //    the root with `numChildren` children, as the breakdown charges it -- the stamp
   //    the pass writes to the materialized tree without a re-score. `hasExitCodeword`
@@ -643,6 +648,7 @@ public:
   explicit PreferredModulesCorrection(unsigned int preferredNumModules)
       : m_preferredNumModules(static_cast<int>(preferredNumModules)) {}
   double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const override;
+  bool readsLeafPartitionOnly() const override { return true; }
 
   // The same penalty for a caller that has a leaf-module count but no stack to
   // attach a correction to: InfomapBase::evaluateColumnarPartition's fallback to
@@ -691,6 +697,7 @@ public:
   MetaCorrection(std::vector<int> leafCategory, std::vector<double> leafWeight, double metaDataRate)
       : m_leafCategory(std::move(leafCategory)), m_leafWeight(std::move(leafWeight)), m_metaDataRate(metaDataRate) {}
   double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const override;
+  bool readsLeafPartitionOnly() const override { return true; }
 
   bool participatesInMoveLoop() const override { return true; }
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
@@ -772,6 +779,7 @@ class MemCorrection final : public ColumnarCorrection {
 public:
   MemCorrection(std::vector<int> leafPhysical, std::vector<double> leafFlow);
   double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const override;
+  bool readsLeafPartitionOnly() const override { return true; }
 
   bool participatesInMoveLoop() const override { return true; }
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
@@ -849,6 +857,7 @@ public:
   // (f_i * h_i, matching InfoNode::lossyEntropy). lambda = distortion price.
   LossyCorrection(std::vector<double> leafFlow, std::vector<double> leafEntropy, double lambda);
   double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const override;
+  bool readsLeafPartitionOnly() const override { return true; }
 
   bool participatesInMoveLoop() const override { return true; }
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;

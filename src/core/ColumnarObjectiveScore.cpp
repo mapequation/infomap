@@ -523,8 +523,43 @@ double ColumnarHierarchy::objectiveCorrection(const ColumnarStack& stack, StackB
     return 0.0;
   const ColumnarStackView view = stackView(stack);
   double sum = 0.0;
-  for (const auto& correction : corrections())
-    sum += correction->hierarchicalCorrection(view, breakdown);
+  if (!m_scoreCache || stack.numLevels() < 2) {
+    for (const auto& correction : corrections())
+      sum += correction->hierarchicalCorrection(view, breakdown);
+    return sum;
+  }
+  // Inside refineHierarchy's sweeps: reuse what a leaf-partition-only correction
+  // scored for the same leaf partition (see m_correctionScores).
+  m_correctionScores.resize(corrections().size());
+  for (std::size_t i = 0; i < corrections().size(); ++i) {
+    const ColumnarCorrection& correction = *corrections()[i];
+    if (!correction.readsLeafPartitionOnly()) {
+      sum += correction.hierarchicalCorrection(view, breakdown);
+      continue;
+    }
+    CorrectionScore& score = m_correctionScores[i];
+    if (score.correction != &correction || score.leafVersion != stack.leafPartitionVersion() || (breakdown != nullptr && !score.charged)) {
+      score.correction = &correction;
+      score.leafVersion = stack.leafPartitionVersion();
+      score.charged = breakdown != nullptr;
+      if (score.charged) {
+        StackBreakdown own;
+        own.moduleTerm.resize(2);
+        own.moduleTerm[1].assign(static_cast<std::size_t>(stack.size(1)), 0.0);
+        score.value = correction.hierarchicalCorrection(view, &own);
+        score.level1 = std::move(own.moduleTerm[1]);
+        score.root = own.rootTerm;
+      } else {
+        score.value = correction.hierarchicalCorrection(view, nullptr);
+      }
+    }
+    sum += score.value;
+    if (breakdown != nullptr) {
+      for (std::size_t m = 0; m < score.level1.size(); ++m)
+        breakdown->moduleTerm[1][m] += score.level1[m];
+      breakdown->rootTerm += score.root;
+    }
+  }
   return sum;
 }
 
