@@ -941,6 +941,11 @@ private:
     // weights and writes computed flows directly into the CSR arrays, which
     // initNetwork and the output writers then consume.
     m_network.finalizeLinks();
+    // Sum each link a b and its opposite link b a for the undirected coding here, where the flow
+    // model is final, and not when the links are added: the bindings choose it per run (#1366). The
+    // multilayer expansion lists undirected links in both directions itself, so it reads its
+    // links as entered.
+    m_network.useUndirectedLinkView(m_infomap.flowModel == FlowModel::undirected && !m_infomap.isMultilayerNetwork());
 
     {
       auto timer = m_timing.scope("flow_calculation_s");
@@ -2483,13 +2488,8 @@ void InfomapBase::generateSubNetwork(Network& network)
   double minLocalScale = variableMarkovTimeMinLocalScale;
   double damping = variableMarkovTimeDamping;
 
-  // Count a pair listed as a b and b a once on undirected input, as --regularized and the
-  // entropy correction do (#1203, #1264). The multilayer expansion lists undirected links in
-  // both directions itself, so it keeps its count. The count scans every link, so only take it
-  // when it is used.
-  const bool undirectedLinks = flowModel == FlowModel::undirected && !isMultilayerNetwork();
-  double totDegree = !variableMarkovTime ? 0.0 : undirectedLinks ? network.sumUndirectedDegree()
-                                                                 : network.sumDegree();
+  // An undirected run reads a link a b and its opposite link b a as one link (#1264, #1366)
+  double totDegree = network.sumDegree();
 
   // No links means nothing to rescale, and maxFlow * totDegree = 0 would give linlog(0) = log2(0).
   if (variableMarkovTime && totDegree > 0) {

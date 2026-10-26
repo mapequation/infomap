@@ -47,7 +47,7 @@ void BiasedMapEquation::setNetworkProperties(const StateNetwork& network)
 {
   auto totalDegree = network.sumWeightedDegree();
   // Negative entropy bias is based on discrete counts, if average weight is below 1, use unweighted total degree
-  const auto sumDegree = m_undirectedLinks ? network.sumUndirectedDegree() : network.sumDegree();
+  const auto sumDegree = network.sumDegree();
   if (totalDegree < sumDegree) {
     totalDegree = sumDegree;
   }
@@ -108,9 +108,6 @@ void BiasedMapEquation::init(const Config& config)
   preferredNumModules = config.preferredNumberOfModules;
   useEntropyBiasCorrection = config.entropyBiasCorrection;
   entropyBiasCorrectionMultiplier = config.entropyBiasCorrectionMultiplier;
-  // Count a pair listed as a b and b a once on undirected input (#1203). The multilayer
-  // expansion lists undirected links in both directions itself, so it keeps its count.
-  m_undirectedLinks = config.flowModel == FlowModel::undirected && !config.isMultilayerNetwork();
 }
 
 void BiasedMapEquation::initNetwork(InfoNode& root)

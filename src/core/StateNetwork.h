@@ -11,6 +11,7 @@
 #define STATE_NETWORK_H_
 
 #include "../io/Config.h"
+#include <deque>
 #include <string>
 #include <limits>
 #include <map>
@@ -134,6 +135,20 @@ protected:
   unsigned int m_numLinksIgnoredByWeightThreshold = 0;
   double m_totalLinkWeightIgnored = 0.0;
   std::map<unsigned int, double> m_outWeights;
+  // While the CSR arrays hold the undirected view, which sums each link a b and its opposite
+  // link b a into one link at the lower source index (#1366), the dropped half of each such
+  // pair is set aside here: its source and target index and weight, and the weight as entered
+  // of the opposite link it is summed into. Empty without that view.
+  struct DroppedOppositeLink {
+    unsigned int source;
+    unsigned int target;
+    double weight;
+    double oppositeWeight;
+  };
+  bool m_haveUndirectedLinkView = false;
+  std::deque<DroppedOppositeLink> m_droppedOppositeLinks;
+  unsigned int m_enteredNumLinks = 0;
+  unsigned int m_enteredNumAggregatedLinks = 0;
   bool m_haveNodeWeights = false;
   bool m_haveStateNodeWeights = false;
   bool m_haveFileInput = false;
@@ -247,12 +262,11 @@ public:
       for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e)
         fn(s, m_linkTargets[e], m_linkWeights[e], m_linkFlows[e]);
   }
-  // Duplicate links are summed only when they have the same direction, so a pair listed
-  // as a b and b a stays two links here, though it is one link of an undirected network
-  // (#1203). Whether a link is the second listing of such a pair (counted at the lower
-  // source index), and the degree sum of an undirected network that counts it once.
-  bool isReverseOfLink(unsigned int sourceIndex, unsigned int targetIndex) const;
-  unsigned int sumUndirectedDegree() const;
+  // Duplicate links are summed on input only when they have the same direction, so a link
+  // a b and its opposite link b a are two links of the stored network. A run with the
+  // undirected coding calls this with true before its flow, to read them as one link; any
+  // other run calls it with false and reads the links as entered (#1366).
+  void useUndirectedLinkView(bool undirected);
 #endif
 
   // Mode A (first-order and the main multilayer network) defers dedup to
@@ -367,6 +381,8 @@ protected:
   // Move CSR rows back into the flat buffer so a finalized network can keep
   // building (mode A accumulate / addLink-after-run).
   void definalize();
+  // Put the CSR as entered back in place of the undirected view, if there is one.
+  void restoreEnteredLinks();
 };
 
 } // namespace infomap

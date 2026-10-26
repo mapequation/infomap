@@ -7,6 +7,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
@@ -20,6 +21,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -653,6 +655,123 @@ TEST_CASE("Directed regularization on both directions of a link with a self-link
     CHECK(directed.second.at(entry.first) == doctest::Approx(entry.second).epsilon(1e-12));
   }
   infomap::test::checkApproxCodelength(directed.first, undirected.first, 1e-12);
+}
+
+namespace {
+
+// Two triangles joined by the link 3 4. With split, the links 1 2 and 3 4 are each listed as
+// half the weight in both directions, the second one reverse first.
+void addPairTriangles(InfomapWrapper& im, bool split)
+{
+  for (const auto& [source, target] : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 3 }, { 2, 3 }, { 4, 5 }, { 4, 6 }, { 5, 6 } }) {
+    im.addLink(source, target, 1.0);
+  }
+  if (split) {
+    im.addLink(1, 2, 0.5);
+    im.addLink(2, 1, 0.5);
+    im.addLink(4, 3, 0.5);
+    im.addLink(3, 4, 0.5);
+  } else {
+    im.addLink(1, 2, 1.0);
+    im.addLink(3, 4, 1.0);
+  }
+}
+
+} // namespace
+
+TEST_CASE("A link a b and its opposite link b a are one link of an undirected run [fast][core][flow]")
+{
+  // Duplicate links are summed on input only when they have the same direction. An undirected
+  // run sums opposite links itself, so every degree it uses counts them once (#1366).
+  for (const std::string flags : { "", "--entropy-corrected", "--regularized", "--variable-markov-time" }) {
+    CAPTURE(flags);
+    InfomapWrapper single(infomap::test::defaultFlags(flags));
+    addPairTriangles(single, false);
+    single.run();
+    InfomapWrapper split(infomap::test::defaultFlags(flags));
+    addPairTriangles(split, true);
+    split.run();
+
+    CHECK(split.network().numLinks() == 7);
+    CHECK(split.network().numLinks() == single.network().numLinks());
+    CHECK(split.codelength() == single.codelength());
+    CHECK(split.getModules() == single.getModules());
+  }
+}
+
+TEST_CASE("Opposite links a b and b a stay two links for the directed codings [fast][core][flow]")
+{
+  for (const std::string flags : { "--directed", "--flow-model undirdir" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(infomap::test::defaultFlags(flags));
+    addPairTriangles(im, true);
+    im.run();
+    CHECK(im.network().numLinks() == 9);
+  }
+}
+
+TEST_CASE("A directed run after an undirected one reads the links as entered [fast][core][flow]")
+{
+  // The bindings choose the flow model per run, after the links are added, so the undirected
+  // run must not sum opposite links in the stored links (#1366).
+  InfomapWrapper fresh(infomap::test::defaultFlags("--directed"));
+  addPairTriangles(fresh, true);
+  fresh.run();
+
+  InfomapWrapper im(infomap::test::defaultFlags());
+  addPairTriangles(im, true);
+  im.run();
+  CHECK(im.network().numLinks() == 7);
+  im.run("--directed");
+  CHECK(im.network().numLinks() == 9);
+  CHECK(im.codelength() == fresh.codelength());
+  CHECK(im.getModules() == fresh.getModules());
+  im.run();
+  CHECK(im.network().numLinks() == 7);
+}
+
+TEST_CASE("A directed run after an undirected one gets uneven opposite weights back exactly [fast][core][flow]")
+{
+  // The undirected view sums 0.1 into 0.2, and 0.3000000000000000444 - 0.2 is not 0.1, so the
+  // links as entered must come back from what was set aside, not by subtracting (#1366). The
+  // dropped links 5 1, 6 3 and 7 4 sit at the start, middle and end of their rows.
+  const auto addLinks = [](InfomapWrapper& im) {
+    im.addLink(1, 5, 0.1);
+    im.addLink(5, 1, 0.2);
+    im.addLink(5, 6, 1.0);
+    im.addLink(3, 6, 0.1);
+    im.addLink(6, 2, 1.0);
+    im.addLink(6, 3, 0.2);
+    im.addLink(6, 7, 1.0);
+    im.addLink(4, 7, 0.1);
+    im.addLink(7, 2, 1.0);
+    im.addLink(7, 4, 0.7);
+  };
+  using Link = std::tuple<unsigned int, unsigned int, double>;
+  const auto linksOf = [](InfomapWrapper& im) {
+    std::vector<Link> links;
+    im.network().forEachLink([&](unsigned int s, unsigned int t, double weight, double&) { links.emplace_back(s, t, weight); });
+    return links;
+  };
+
+  InfomapWrapper fresh(infomap::test::defaultFlags("--directed"));
+  addLinks(fresh);
+  fresh.run();
+
+  InfomapWrapper im(infomap::test::defaultFlags());
+  addLinks(im);
+  im.run();
+  CHECK(im.network().numLinks() == 7);
+  // Node indices follow the sorted node ids, so index 0 is node 1 and index 4 is node 5
+  const auto view = linksOf(im);
+  CHECK(std::find(view.begin(), view.end(), Link { 0, 4, 0.1 + 0.2 }) != view.end());
+  CHECK(std::find(view.begin(), view.end(), Link { 3, 6, 0.1 + 0.7 }) != view.end());
+
+  im.run("--directed");
+  CHECK(im.network().numLinks() == 10);
+  CHECK(linksOf(im) == linksOf(fresh));
+  CHECK(im.codelength() == fresh.codelength());
+  CHECK(im.getModules() == fresh.getModules());
 }
 
 TEST_CASE("Regularization strength 0 matches its small-strength limit with dangling nodes [fast][core][flow]")
