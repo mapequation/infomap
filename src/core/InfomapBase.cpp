@@ -11,6 +11,7 @@
 #include "InfomapConfig.h"
 #include "InfoNode.h"
 #include "FlowData.h"
+#include "ColumnarHierarchy.h"
 #include "ColumnarMapEquation.h"
 #include "BiasedMapEquation.h"
 #include "MemMapEquation.h"
@@ -509,7 +510,7 @@ public:
     if (!m_infomap.twoLevel && m_infomap.clusterDataFile.empty() && m_infomap.m_columnarOneLevelCodelength >= 0.0
         && result.bestHierarchicalCodelength >= m_infomap.m_columnarOneLevelCodelength - 1e-10) {
       auto timer = m_timing.scope("flat_rescue_s");
-      ColumnarTwoLevel opt;
+      ColumnarHierarchy opt;
       // The first trial's engine seed, drawn exactly as columnarPartition draws it,
       // so the rescue returns what `-2` would have returned for the same --seed.
       Random rescueRand(trialSeed(0));
@@ -518,13 +519,13 @@ public:
       // same leaves); start from it rather than sweep again (#1120). adoptPass1State
       // checks the seed, so any other trial's stack is ignored.
       if (m_infomap.m_columnarTrialStack)
-        opt.adoptPass1State(*m_infomap.m_columnarTrialStack);
+        opt.search().adoptPass1State(m_infomap.m_columnarTrialStack->search());
       const double rescued = opt.optimizeTwoLevelStack();
       // The repair below gates its fresh split discovery on the escalation signal.
       // Raise it from this search whether or not it is kept: when it only ties the
       // collapse, the repair's extraction from the one-module fallback is what
       // `-2 -N1` runs on the same seed, and `-N1` must reach it too (#1122).
-      m_infomap.m_columnarRegroupEscalated = m_infomap.m_columnarRegroupEscalated || opt.regroupEscalated();
+      m_infomap.m_columnarRegroupEscalated = m_infomap.m_columnarRegroupEscalated || opt.search().regroupEscalated();
       if (rescued < result.bestHierarchicalCodelength - 1e-10) {
         announcePostProcessing();
         Console().status("Flat rescue", fmt::format(FMT_STRING("every trial collapsed to one module; two-level search {} -> {}"), io::toPrecision(result.bestHierarchicalCodelength), io::toPrecision(rescued)));
@@ -541,7 +542,7 @@ public:
     // Deep repair (gated): a deeper winner is only repairable with the hierarchical
     // split operator (COL_HSPLIT_WINNER); without it the hook stays two-level-only as
     // shipped. The dissolve pass below runs regardless of this gate.
-    if (!(deepWinner && !ColumnarTwoLevel::hierarchicalWinnerRepairEnabled())) {
+    if (!(deepWinner && !ColumnarHierarchy::hierarchicalWinnerRepairEnabled())) {
       auto timer = m_timing.scope("deep_repair_s");
       const bool freshDiscovery = m_numTrials > 1 || m_infomap.m_columnarRegroupEscalated;
       improved = m_infomap.deepRepairColumnarBest(result.bestTree, result.bestHierarchicalCodelength, freshDiscovery);
@@ -908,7 +909,7 @@ private:
           const bool trackRunnerUp = tracksRunnerUp();
           const double trialReach = trackRunnerUp ? trialDissolveReach(worker) : 0.0;
           const bool tracksDeepTrial = m_infomap.columnarSearch && !m_infomap.twoLevel && trialNumLevels >= 3
-              && ColumnarTwoLevel::hierarchicalWinnerRepairEnabled();
+              && ColumnarHierarchy::hierarchicalWinnerRepairEnabled();
           // The best only moves down, so a stale read is at or above the true best:
           // a trial that is neither better nor tied against it cannot win under the
           // lock either, and skipping its leaf walk loses nothing. Tied counts, to
@@ -1854,7 +1855,7 @@ private:
   {
     if (!m_infomap.columnarSearch || m_infomap.twoLevel || m_numTrials <= 1)
       return;
-    if (!ColumnarTwoLevel::hierarchicalWinnerRepairEnabled())
+    if (!ColumnarHierarchy::hierarchicalWinnerRepairEnabled())
       return;
     if (m_infomap.numLevels() < 3)
       return; // two-level-shaped: the flat repair path already covers it
@@ -2212,19 +2213,19 @@ void InfomapBase::run(Network& network)
     cw2.stop();
 
     Stopwatch cwH(true);
-    ColumnarTwoLevel optH;
+    ColumnarHierarchy optH;
     optH.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
     const double columnarHL = optH.optimizeHierarchical(levelAggregationLimit);
     cwH.stop();
 
     Stopwatch cwF(true);
-    ColumnarTwoLevel optF;
+    ColumnarHierarchy optF;
     optF.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
     const double columnarFL = optF.optimizeFlexible();
     cwF.stop();
 
     Stopwatch cwC(true);
-    ColumnarTwoLevel optC;
+    ColumnarHierarchy optC;
     optC.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seedToRandomNumberGenerator);
     const double columnarCL = optC.optimizeColumnar();
     cwC.stop();
@@ -3135,9 +3136,9 @@ std::vector<unsigned int> InfomapBase::noiseTopModules() const
 // Run: *
 // ===================================================
 
-void InfomapBase::setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long seed)
+void InfomapBase::setupColumnarOptimizer(ColumnarHierarchy& opt, unsigned long seed)
 {
-  opt.setInterruptCallback([this] { pollInterrupt(); });
+  opt.search().setInterruptCallback([this] { pollInterrupt(); });
   if (m_columnarNativeInput && !haveHardPartition()) {
     // Native leaf SoA built once from the network (see buildColumnarLeafInput),
     // bypassing the InfoNode leaf tree as the optimizer's input. Lent to the
@@ -3153,11 +3154,11 @@ void InfomapBase::setupColumnarOptimizer(ColumnarTwoLevel& opt, unsigned long se
   } else {
     opt.buildFromLeaves(m_leafNodes, isUndirectedClustering(), seed, recordsTeleportation());
   }
-  opt.setRecordedTeleportation(recordsTeleportation());
+  opt.search().setRecordedTeleportation(recordsTeleportation());
   opt.setNonRedundant(nonRedundant);
   opt.setNonRedundantExact(nonRedundantExact);
   // The columnar interior refinement stops at a diminishing-returns knee; its
-  // default (5e-3, set in ColumnarTwoLevel) drops the low-value tail sweeps
+  // default (5e-3, set in ColumnarHierarchy) drops the low-value tail sweeps
   // (measured: on web-scale directed nets the last sweep cost ~18% of the trial
   // for +0.06% codelength; shallow nets run a single sweep and are unaffected).
   // The shared OO --tune-iteration-relative-threshold default (1e-5) is too fine
@@ -3192,7 +3193,7 @@ bool InfomapBase::deepRepairColumnarBest(NodePaths& tree, double& codelength, bo
       break;
     }
 
-  ColumnarTwoLevel opt;
+  ColumnarHierarchy opt;
   // Golden-ratio offset: a repair seed decoupled from every per-trial seed.
   setupColumnarOptimizer(opt, seedToRandomNumberGenerator + 0x9e3779b9UL);
   // Base objective: the two-level split operator is a no-op, and the
@@ -3201,7 +3202,7 @@ bool InfomapBase::deepRepairColumnarBest(NodePaths& tree, double& codelength, bo
   // −0.0008% (science2001) while re-building a 325k-node optimizer, seeding a
   // 6-level stack and re-materializing the tree (+7.0% and +0.3% CPU). The
   // repairable hierarchical headroom lives on the memory/state objectives.
-  if (!opt.hasModuleMoveCorrections())
+  if (!opt.search().hasModuleMoveCorrections())
     return false;
   // Single-trial runs pay the expensive fresh split discovery only when the
   // trial's own regroup detector escalated (the pathology signal): on a
@@ -3261,12 +3262,12 @@ bool InfomapBase::dissolveColumnarBest(NodePaths& tree, double& codelength, bool
   // optimizer, no seed, no leaf-CSR aggregation. Otherwise (the best trial was not the
   // last, a parallel-trial run, or the deep repair changed the winner) seed one from
   // `tree`, which the search and the deep repair keep rectangular.
-  std::unique_ptr<ColumnarTwoLevel> seeded;
-  ColumnarTwoLevel* stack = nullptr;
+  std::unique_ptr<ColumnarHierarchy> seeded;
+  ColumnarHierarchy* stack = nullptr;
   if (treeIsMaterialized && m_columnarTrialStack && m_columnarTrialStackIsTree) {
     stack = m_columnarTrialStack.get();
   } else {
-    seeded = std::make_unique<ColumnarTwoLevel>();
+    seeded = std::make_unique<ColumnarHierarchy>();
     setupColumnarOptimizer(*seeded, seedToRandomNumberGenerator + 0x9e3779b9UL);
 
     std::unordered_map<unsigned int, std::size_t> leafOfState;
@@ -3364,7 +3365,7 @@ bool InfomapBase::dissolveColumnarBest(NodePaths& tree, double& codelength, bool
   return false;
 }
 
-bool InfomapBase::spliceDissolvedModules(const ColumnarTwoLevel& stack)
+bool InfomapBase::spliceDissolvedModules(const ColumnarHierarchy& stack)
 {
   // The tree in memory is the rectangular winner the stack holds, so every leaf's
   // ancestor chain is its module chain in the stack and the two can be walked side by
@@ -3433,9 +3434,9 @@ void InfomapBase::columnarPartition()
   // Owned by the instance, not the frame: kept past the trial so the terminal dissolve
   // pass can work on the winner's own stack (see dissolveColumnarBest). The previous
   // trial's is released here, so at most one is alive at a time.
-  m_columnarTrialStack = std::make_shared<ColumnarTwoLevel>();
+  m_columnarTrialStack = std::make_shared<ColumnarHierarchy>();
   m_columnarTrialStackIsTree = false;
-  ColumnarTwoLevel& opt = *m_columnarTrialStack;
+  ColumnarHierarchy& opt = *m_columnarTrialStack;
   setupColumnarOptimizer(opt, trialSeed);
 
   // Soft --cluster-data warm start (#824). Before this, the search always started
@@ -3519,7 +3520,7 @@ void InfomapBase::columnarPartition()
   // The run-level rescue repeats this trial's two-level search on its seed when the
   // trial collapses; keep its pass 1 so the rescue does not sweep the leaves again
   // (#1120). One trial only: the rescue draws trial 0's seed.
-  opt.setKeepPass1State(fallbackApplies && numTrials == 1);
+  opt.search().setKeepPass1State(fallbackApplies && numTrials == 1);
 
   // With -2 (--two-level): the two-level search only, no hierarchy build.
   // With -F (--fast-hierarchical-solution, reused here as the columnar fast
@@ -3545,7 +3546,7 @@ void InfomapBase::columnarPartition()
   // ragged input tree exactly as given, which the stack could not have represented.
   // Re-scoring it stamps this trial's InfoNode charges the same way a materialized
   // result gets them.
-  m_columnarRegroupEscalated = opt.regroupEscalated();
+  m_columnarRegroupEscalated = opt.search().regroupEscalated();
 
   const bool keepSeed = seeded && columnarL >= seedOwnL - 1e-10;
   if (keepSeed) {
@@ -3785,19 +3786,19 @@ void InfomapBase::borrowColumnarLeafInputFrom(const InfomapBase& owner)
   m_columnarNativeInput = true;
 }
 
-void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
+void InfomapBase::addColumnarCorrections(ColumnarHierarchy& opt) const
 {
   // Composable objective corrections (default none => base map equation).
   // Biased entropy-bias: same total-degree divisor as BiasedMapEquation.
   if (entropyBiasCorrection)
-    opt.addCorrection(std::make_unique<BiasedEntropyCorrection>(entropyBiasCorrectionMultiplier, m_entropyBiasTotalDegree));
+    opt.search().addCorrection(std::make_unique<BiasedEntropyCorrection>(entropyBiasCorrectionMultiplier, m_entropyBiasTotalDegree));
   // Preferred number of modules (#827): |K - K_pref| move-loop bias, the
   // columnar analogue of BiasedMapEquation. Objective-agnostic (composes with
   // any of the objectives below). Attached to the top-level optimizer only; its
   // sliceForLeaves is a no-op, so sub-network refines optimize without it —
   // matching OO, which does not propagate preferredNumberOfModules downward.
   if (preferredNumberOfModules != 0)
-    opt.addCorrection(std::make_unique<PreferredModulesCorrection>(preferredNumberOfModules));
+    opt.search().addCorrection(std::make_unique<PreferredModulesCorrection>(preferredNumberOfModules));
   // Metadata: one category per leaf (first dimension), flow-weighted by default
   // (unweighted uses a uniform 1/numNodes, matching MetaMapEquation).
   if (haveMetaData()) {
@@ -3810,7 +3811,7 @@ void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
       leafCategory[i] = md.empty() ? 0 : md[0];
       leafWeight[i] = weightByFlow ? m_leafNodes[i]->data.flow : unweightedFlow;
     }
-    opt.addCorrection(std::make_unique<MetaCorrection>(std::move(leafCategory), std::move(leafWeight), metaDataRate));
+    opt.search().addCorrection(std::make_unique<MetaCorrection>(std::move(leafCategory), std::move(leafWeight), metaDataRate));
   }
   // Memory (state / higher-order): physical-node leaf-module codebook. The
   // regularized-multilayer teleport prior is not a correction: it is the flow
@@ -3847,7 +3848,7 @@ void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
       leafPhysical[i] = static_cast<int>(m_leafNodes[i]->physicalId);
       leafFlow[i] = m_leafNodes[i]->data.flow;
     }
-    opt.addCorrection(std::make_unique<MemCorrection>(std::move(leafPhysical), std::move(leafFlow)));
+    opt.search().addCorrection(std::make_unique<MemCorrection>(std::move(leafPhysical), std::move(leafFlow)));
   }
 #if INFOMAP_FEATURE_LOSSY_MAP_EQUATION
   // Lossy (rate-distortion): additive noise-module correction. Being additive it
@@ -3861,7 +3862,7 @@ void InfomapBase::addColumnarCorrections(ColumnarTwoLevel& opt) const
       lossyLeafFlow[i] = m_leafNodes[i]->data.flow;
       lossyLeafEntropy[i] = m_leafNodes[i]->lossyEntropy;
     }
-    opt.addCorrection(std::make_unique<LossyCorrection>(std::move(lossyLeafFlow), std::move(lossyLeafEntropy), lossyLambda));
+    opt.search().addCorrection(std::make_unique<LossyCorrection>(std::move(lossyLeafFlow), std::move(lossyLeafEntropy), lossyLambda));
   }
 #endif
 }
@@ -4111,7 +4112,7 @@ double InfomapBase::objectOrientedTreeCodelength()
 double InfomapBase::evaluateColumnarPartition()
 {
   m_columnarIndexCodelength = -1.0;
-  ColumnarTwoLevel opt;
+  ColumnarHierarchy opt;
   // Through setupColumnarOptimizer, not a bare buildFromLeaves: it BORROWS the leaf
   // CSR the run already built where that is eligible, instead of walking the InfoNode
   // leaf tree again. Scoring does not care which, but restampColumnarCodelengths calls
@@ -4208,7 +4209,7 @@ void InfomapBase::restampColumnarCodelengths()
   evaluateColumnarPartition();
 }
 
-bool InfomapBase::stampColumnarCodelengths(const ColumnarTwoLevel& opt,
+bool InfomapBase::stampColumnarCodelengths(const ColumnarHierarchy& opt,
                                            const columnar::StackBreakdown& breakdown,
                                            const std::vector<int>& padDepth,
                                            double& padCharge)

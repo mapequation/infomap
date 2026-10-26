@@ -6159,3 +6159,64 @@ snapshot it, and keep state derived from it.
   public "move on this level" call, and a hierarchy class owns the stack, the operators, the drivers and the
   per-run caches, with the hidden member parameters (`m_externalSeed`, `m_forceHSplit`, `m_refineSweep`,
   `m_superAggLimit`) turned into arguments.
+
+### F78 — The columnar engine splits into a search and a hierarchy class; the move loop becomes a building block and the hidden parameters become arguments (#1371) (2026-10-26)
+
+Sub-PR 2 of the split by role Daniel picked for #1371 (F77), on top of the `ColumnarStack` value type (#1379).
+
+- **What moved.**
+  - `ColumnarTwoLevel` is the search: the problem (leaf network, flow model, objective corrections), the move loop
+    and the two-level search.
+  - `ColumnarHierarchy` (`src/core/ColumnarHierarchy.{h,cpp}`) owns a root `ColumnarTwoLevel` and the
+    `ColumnarStack`. It holds the operators, the drivers, the dissolve, the scoring and the per-run caches.
+  - InfomapBase drives the hierarchy and configures the search through `search()`.
+  - `ColumnarMapEquation.cpp` goes from 2,959 to 1,261 lines, and `ColumnarHierarchy.cpp` has 1,698. The move loop's
+    code did not move.
+- **Operation 9 as a building block.** `ColumnarTwoLevel::moveUnits(level, seed, leafToUnit)` and
+  `moveLeaves(seed)` run the move loop on any level, starting from any assignment.
+  - The corrections that can move modules see the units through the given leaf → unit map, or stay out of the
+    loop without one.
+  - The top split, the level split and the leaf retune used to set the four mode flags by hand before entering
+    `moveLoopWith` (F77). They now call these instead.
+- **Hidden parameters become arguments.** Four member variables carried one operator's mode into another:
+  - `m_externalSeed`, set by `optimizeFromSeed` and read by the top split and the merge;
+  - `m_forceHSplit`, set around one `coarsenModules` call and read by its split mode;
+  - `m_refineSweep`, set per sweep and read by the partial-seed builder;
+  - `m_superAggLimit`, set per up-merge strategy and read by the up-build.
+
+  Each is now an argument of the operator that reads it, with a default that keeps the other callers as they
+  were. An operator's result depends only on its arguments and the stack.
+- **What the split exposed.**
+  - `ColumnarHierarchy` deletes its copy operations: its stack points into its own search's leaf network, so a
+    copy would point into the original.
+  - The hierarchy wrote the search's two-level result (`m_leafTop`, `m_numTopModules`), and nothing read those
+    writes.
+  - Moved code with local variables named `seed` and `flow` shadowed the new accessors and failed to compile, so
+    it calls `m_search.seed()` and `m_search.flow()`.
+  - A scripted edit turned the `\n` escape in a `COLUMNAR_DEBUG` `fprintf` into a real newline. Compiling the
+    debug variant caught it.
+- **Bit-identity.** All 332 columnar configurations of the snapshot set, and the 33 feature-build
+  configurations, are identical after each commit (against `fd41270c`, before the rebase). They are also identical
+  at the head: the tip `45fe4995` (md5 `75854716`, the same bytes as #1379's new arm) against `eb634554` (md5
+  `66de890a`).
+- **Snapshot.** No codelength moves.
+  - Instructions: median −0.02%, 5th–95th percentile −0.74% to +0.06%. The 267 runs above 1G instructions range
+    from −0.22% to +0.18%.
+  - Seconds summed: −0.22%. Of the 167 rows above 1 s, the median reads −0.47% in seconds; 26 read more than 2%
+    slower and 36 more than 2% faster.
+  - The one row more than 10% slower, om5_N256_E50k `-d -N10` (+19.4% in seconds), re-times at −0.50% in seconds as
+    the minimum of 5. The four rows above 2 s that read more than 5% slower re-time at −1.87% to +0.16% in seconds as
+    the minimum of 10, with instructions within ±0.01%.
+  - The risk named before the sweep did not show at this resolution. F73 showed that code placement alone moves
+    single configurations' seconds by ±2–4%, and 1,700 lines left the move loop's file.
+- **Instrument note: the session moved, not the code.**
+  - The old arm is the same bytes as #1379's new arm. Here it ran median −7.4% in seconds (summed −10.7%) against
+    #1379's session, with instructions equal (median −0.04%).
+  - The OO seconds are carried, so every OO-vs-columnar gap in seconds widened by that much. The prose under the
+    OO tables had quoted older percentages than its own cells: word_assoc (pref.) "−17%" against a cell of −33.6%
+    in #1379's snapshot, and air30k `-2` "+9.1% in this sweep" against −9.4%. It now quotes the current cells.
+    air30k `-2` still costs more than OO: +43% in instructions, which do not depend on the session.
+  - A cold first run counts too: a binary's first run after its build read −76.63% in instructions on a
+    sub-millisecond example. Re-run alternating, the minimum of 6 reads −0.29%.
+- **Next.** #1381 (the `columnar_wip` cleanup), then #1387, per-grandparent acceptance in
+  `ColumnarHierarchy::refineLayerWithinGrandparent`, built on the stack's checkpoints.
