@@ -94,10 +94,9 @@ public:
   // with either objective unweighted and must not call this.
   //
   // Returns EMPTY when the rate is uniformly 1, which is the base map equation's
-  // whole leaf-module level — so the caller keeps its unweighted arithmetic
-  // verbatim rather than multiplying by a vector of ones (the summation order is
-  // part of the reported number). Non-empty only under L*, where the rate is
-  // nrLeafCodebookRate(flow, enter, exit) >= 1 and differs per module.
+  // whole leaf-module level, so the caller can skip the per-module rates (and
+  // the per-module state sums they weight). Non-empty only under L*, where the
+  // rate is nrLeafCodebookRate(flow, enter, exit) >= 1 and differs per module.
   std::vector<double> leafCodebookRates() const;
 
 private:
@@ -769,8 +768,8 @@ private:
  *    state duplication (#1009).
  *
  * hierarchicalCorrection therefore asks the core for leafCodebookRates(): empty
- * under the base objective, where it keeps the two-global-sums form verbatim, and
- * per-module under L*. Leaf-module level only (module-of-modules delegates to
+ * under the base objective, where it returns the two global sums, and per-module
+ * under L*. Leaf-module level only (module-of-modules delegates to
  * base; neither objective reads leaf flows above level 1). Same O(1) move-loop
  * hook as Meta with attribute = physical node id — the case the hook is designed
  * for; those deltas stay base-flavoured on purpose (see --non-redundant-exact).
@@ -801,6 +800,13 @@ private:
   std::vector<int> m_leafPhysical; // per leaf (state node): COMPACT physical id in [0, m_numPhys)
   std::vector<double> m_leafFlow; // per leaf: state flow
   double m_cState; // constant sum_leaf plogp(stateFlow)
+  // The leaves grouped by physical node (CSR over compact ids), so scoring a
+  // stack sums each physical node's flow per module in a dense per-module
+  // scratch instead of a hash map keyed by (module, physical) (#1388).
+  std::vector<int> m_physStart;
+  std::vector<int> m_physLeaves;
+  mutable std::vector<double> m_moduleScratch; // all zero between calls
+  mutable std::vector<int> m_touched;
 
   // Dense per-module physical-flow lookup (enabled in initMoveLoop when
   // numModules * numPhys is small): O(1) reads in the move loop's hot path.
