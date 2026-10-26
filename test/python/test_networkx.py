@@ -408,6 +408,49 @@ def test_add_networkx_graph_handles_mixed_int_string_labels():
     assert im.run().num_top_modules >= 1
 
 
+@pytest.mark.parametrize(
+    "labels", [[0, -1, 1], [0, 2**32, 1]], ids=["negative", "too-large"]
+)
+def test_label_to_internal_id_enumerates_ints_outside_the_id_range(labels):
+    from infomap.io.networkx import _label_to_internal_id
+
+    # The engine's node ids are unsigned 32-bit ints, so one int it cannot take
+    # makes the whole set enumerate, as a string would.
+    assert _label_to_internal_id(labels) == {
+        label: index for index, label in enumerate(labels)
+    }
+
+
+def test_label_to_internal_id_keeps_the_full_id_range():
+    from infomap.io.networkx import _label_to_internal_id
+
+    assert _label_to_internal_id([0, 2**32 - 1]) == {0: 0, 2**32 - 1: 2**32 - 1}
+
+
+@pytest.mark.parametrize("label", [-1, 2**32], ids=["negative", "too-large"])
+def test_add_networkx_graph_handles_ints_outside_the_id_range(label):
+    graph = nx.Graph([(label, 0), (0, 1)])
+    im = infomap.Infomap(silent=True, seed=1, num_trials=1)
+    mapping = im.add_networkx_graph(graph)
+    assert set(mapping.values()) == {label, 0, 1}
+    assert im.run().num_top_modules >= 1
+
+
+def test_add_networkx_state_graph_names_physical_nodes_by_internal_id():
+    # Negative physical ids are enumerated, so each physical node must be named
+    # through its internal id, not its label.
+    graph = nx.Graph()
+    graph.add_node("s1", node_id=-1)
+    graph.add_node("s2", node_id=-2)
+    graph.add_node("s3", node_id=-1)
+    graph.add_edge("s1", "s2")
+    graph.add_edge("s2", "s3")
+    net = infomap.Network.from_networkx(graph)
+    result = net.run(no_infomap=True, silent=True)
+    names = {node.node_id: node.name for node in result.nodes(states=True)}
+    assert names == {0: "-1", 1: "-2"}
+
+
 def test_find_communities_skips_unregistered_state_ids(monkeypatch):
     # community_node_data can surface extra leaf state ids (multilayer
     # relaxation) that are not registered vertices; the networkx helper must

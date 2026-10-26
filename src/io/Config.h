@@ -94,7 +94,7 @@ struct Config {
   bool multilayerRelaxByJensenShannonDivergence = false;
   int multilayerJSRelaxLimit = -1;
   bool multilayerRelaxToSelf = false; // Couple only physical nodes across layers instead of spreading to neighbours
-  unsigned int maxFlowIterations = 400;
+  unsigned int maxFlowIterations = 0; // 0: no cap, iterate until converged or no longer falling (#1353)
   unsigned int minFlowIterations = 50;
   double flowTolerance = 1.0e-15; // Convergence tolerance for flow calculation (PageRank)
 

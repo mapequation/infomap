@@ -40,8 +40,8 @@
       "r": "2L"
     },
     "--max-flow-iterations": {
-      "python": "400",
-      "r": "400L"
+      "python": "0",
+      "r": "0L"
     },
     "--meta-data-rate": {
       "python": "1.0",

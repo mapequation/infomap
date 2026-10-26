@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <random>
@@ -1559,6 +1560,51 @@ TEST_CASE("undirdir on multilayer input with intra-layer links warns that it has
   CHECK(run("undirdir", readFile("examples/networks/multilayer.net")).first.find(warning) == std::string::npos);
 }
 
+// Undirected flow walks every state link in both directions, which a memory network's states
+// cannot take: a backward step lands in a state with the wrong memory. State input that is not
+// multilayer warns under the two models with undirected flow, and keeps running them (#1384).
+TEST_CASE("undirected flow on state input that is not multilayer warns about memory networks (#1384) [fast][core][flow]")
+{
+  const std::string warning = "flow model walks every state link in both directions";
+  const auto warns = [&warning](const std::string& model, const std::function<void(InfomapWrapper&)>& addInput) {
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      // Not defaultFlags: it carries --silent, which mutes the warning under test.
+      InfomapWrapper im("--seed 1 --num-trials 1 --no-file-output --flow-model " + model);
+      addInput(im);
+      im.run();
+      CHECK(std::string(flowModelToString(im.flowModel)) == model);
+    }
+    return captured.str().find(warning) != std::string::npos;
+  };
+  const auto readFile = [](const std::string& path) {
+    return [path](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath(path)); };
+  };
+  // The second-order path 1 -> 2 -> 3 and back, with each state named by its memory.
+  const auto memoryStates = [](InfomapWrapper& im) {
+    im.addStateNode(12, 2);
+    im.addStateNode(23, 3);
+    im.addStateNode(32, 2);
+    im.addStateNode(21, 1);
+    im.addLink(12, 23);
+    im.addLink(23, 32);
+    im.addLink(32, 21);
+  };
+
+  for (const char* model : { "undirected", "undirdir" }) {
+    CAPTURE(model);
+    CHECK(warns(model, readFile("examples/networks/states.net")));
+    CHECK(warns(model, memoryStates));
+    CHECK_FALSE(warns(model, readFile("examples/networks/multilayer.net")));
+    CHECK_FALSE(warns(model, readFile("examples/networks/twotriangles.net")));
+  }
+  for (const char* model : { "directed", "outdirdir", "rawdir" }) {
+    CAPTURE(model);
+    CHECK_FALSE(warns(model, readFile("examples/networks/states.net")));
+  }
+}
+
 // The canonical bipartite shape: every link runs primary -> feature, as in
 // examples/networks/bipartite.net. Several directed flow models degenerate on
 // it (all-zero or non-finite node flow); the map equation is undefined there, so
@@ -1970,6 +2016,57 @@ TEST_CASE("Ordinary bipartite runs are unaffected by the flow post-condition [fa
   // omitted redistribution was a uniform scale the projection cancelled -- but the
   // link flows were uniformly too small, which is what the codelength reads.
   infomap::test::checkApproxCodelength(directed.codelength(), 1.2649313331);
+}
+
+// A directed cycle of 20 states over 10 physical nodes, link i -> i+1 of weight i. Under
+// --regularized, the prior on a state network teleports with probability ~0.044 here, so
+// the power iteration shrinks its error by only ~0.95 per step.
+void addSlowCycle(InfomapWrapper& im)
+{
+  for (unsigned int s = 1; s <= 20; ++s) {
+    im.addStateNode(s, (s - 1) % 10 + 1);
+  }
+  for (unsigned int s = 1; s <= 20; ++s) {
+    im.addLink(s, s % 20 + 1, static_cast<double>(s));
+  }
+}
+
+TEST_CASE("Regularized flow iterates to convergence with no default iteration cap (#1353) [fast][core][flow]")
+{
+  // The old default cap of 400 iterations stopped this flow at error 2.6e-9 and scored
+  // partitions on a flow that was not stationary. On wikispeedia's state network the
+  // same cap left an error of 1e-3, and a partition scored 4.408 bits instead of 3.207.
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --regularized"));
+  addSlowCycle(im);
+
+  im.run();
+
+  REQUIRE(im.network().haveFlowConvergence());
+  CHECK(im.network().flowConverged());
+  CHECK(im.network().flowError() <= 1e-15);
+  // The plain iteration's measured contraction, which made it slow enough to accelerate.
+  CHECK(im.network().flowAccelerated());
+  CHECK(im.network().flowRate() > 0.95);
+  CHECK(im.network().flowRate() < 1.0);
+}
+
+TEST_CASE("Flow stops at its rounding floor when the tolerance is out of reach (#1353) [fast][core][flow]")
+{
+  // With --flow-tolerance 0 the change per step never reaches tolerance; it stops falling
+  // at the rounding floor instead. That is a converged flow, and the iteration has to end
+  // there by itself now that no default cap ends it.
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --flow-tolerance 0"));
+  addSlowCycle(im);
+
+  im.run();
+
+  REQUIRE(im.network().haveFlowConvergence());
+  CHECK(im.network().flowConverged());
+  CHECK(im.network().flowError() <= 1e3 * std::numeric_limits<double>::epsilon());
+  CHECK(im.network().flowIterations() < 1000);
+  // Teleporting at 0.15 bounds the contraction by 0.85, too fast to accelerate.
+  CHECK_FALSE(im.network().flowAccelerated());
+  CHECK(im.network().flowRate() <= 0.85 + 1e-6);
 }
 
 } // namespace

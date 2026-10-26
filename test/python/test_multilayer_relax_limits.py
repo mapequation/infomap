@@ -125,25 +125,12 @@ LIMITS = {
 # Layer ids with gaps: layers 1 and 7 are six ids apart in a network of four
 # layers. Without a limit in a direction every layer in it is in reach.
 GAPS = (1, 3, 4, 7)
-GAP_XFAIL = pytest.mark.xfail(
-    strict=True,
-    reason="#1322: without a limit, relaxation still stops at as many layer ids "
-    "as there are layers",
-)
 CASES = [
     *(
         pytest.param((1, 2, 3, 4), limits, id=f"{limits}-contiguous")
         for limits in LIMITS
     ),
-    *(
-        pytest.param(
-            GAPS,
-            limits,
-            id=f"{limits}-gaps",
-            marks=[GAP_XFAIL] if limits in ("none", "up-0", "down-0") else [],
-        )
-        for limits in LIMITS
-    ),
+    *(pytest.param(GAPS, limits, id=f"{limits}-gaps") for limits in LIMITS),
 ]
 
 

@@ -15,6 +15,7 @@
 #include "../utils/infomath.h"
 #include "../core/StateNetwork.h"
 #include "../io/InfomapError.h"
+#include <array>
 #include <cmath>
 #include <numeric>
 #include <limits>
@@ -43,6 +44,250 @@ namespace {
   bool errorWithinFlowTolerance(const Config& config, double err) noexcept
   {
     return err <= config.flowTolerance;
+  }
+
+  // Anderson acceleration (type II) of the power iteration toward the stationary flow.
+  // A power iteration shrinks its error by the step's second-largest eigenvalue each
+  // time. Under --regularized on a state network that can be 0.998 or more: the prior
+  // on a higher-order network teleports with probability about 1.4e-3 over the out-
+  // degree on wikispeedia, so its walk almost only follows its links, and the plain
+  // iteration took 21,953 steps to converge (#1353). This
+  // replaces each step's result by the combination of the last few results whose
+  // changes cancel best, which removes the slowest modes: wikispeedia then converges
+  // in a few hundred steps. Each step costs a few vector passes on top of the walk.
+  class FlowAcceleration {
+  public:
+    // `x` is the flow a step read and `g` the flow it wrote; `g` becomes the mix.
+    void mix(const std::vector<double>& x, std::vector<double>& g)
+    {
+      const std::size_t n = g.size();
+      m_f.resize(n);
+      m_fPrev.resize(n);
+      double sumG = 0.0;
+      for (std::size_t i = 0; i < n; ++i) {
+        m_f[i] = g[i] - x[i];
+        sumG += g[i];
+      }
+      if (m_haveLast) {
+        const unsigned int slot = m_next;
+        m_next = (m_next + 1) % kMemory;
+        m_cols = std::min(m_cols + 1, kMemory);
+        auto& dF = m_dF[slot];
+        auto& dG = m_dG[slot];
+        dF.resize(n);
+        dG.resize(n);
+        for (std::size_t i = 0; i < n; ++i) {
+          dF[i] = m_f[i] - m_fPrev[i];
+          dG[i] = g[i] - m_gPrev[i];
+        }
+        for (unsigned int k = 0; k < m_cols; ++k) {
+          m_gram[slot][k] = m_gram[k][slot] = dot(dF, m_dF[k]);
+        }
+      }
+      std::swap(m_fPrev, m_f);
+      m_gPrev = g;
+      m_haveLast = true;
+      if (m_cols == 0) {
+        return;
+      }
+
+      // Least squares: the weights gamma minimizing |f - dF gamma|, from the Gram
+      // matrix with a little ridge so near-parallel columns stay solvable.
+      std::array<std::array<double, kMemory + 1>, kMemory> a {};
+      double trace = 0.0;
+      for (unsigned int r = 0; r < m_cols; ++r) {
+        trace += m_gram[r][r];
+      }
+      for (unsigned int r = 0; r < m_cols; ++r) {
+        for (unsigned int c = 0; c < m_cols; ++c) {
+          a[r][c] = m_gram[r][c];
+        }
+        a[r][r] += 1e-10 * trace / m_cols;
+        a[r][m_cols] = dot(m_dF[r], m_fPrev);
+      }
+      std::array<double, kMemory> gamma {};
+      if (!solve(a, gamma)) {
+        reset();
+        return;
+      }
+
+      // Keep the mix a flow: no negative entries, the step's own total.
+      double sum = 0.0;
+      for (std::size_t i = 0; i < n; ++i) {
+        double v = g[i];
+        for (unsigned int k = 0; k < m_cols; ++k) {
+          v -= gamma[k] * m_dG[k][i];
+        }
+        g[i] = std::max(0.0, v);
+        sum += g[i];
+      }
+      if (!(sum > 0.0)) {
+        g = m_gPrev;
+        reset();
+        return;
+      }
+      for (auto& v : g) {
+        v *= sumG / sum;
+      }
+    }
+
+    void reset() noexcept
+    {
+      m_cols = 0;
+      m_next = 0;
+      m_haveLast = false;
+    }
+
+  private:
+    static constexpr unsigned int kMemory = 8;
+
+    static double dot(const std::vector<double>& a, const std::vector<double>& b) noexcept
+    {
+      double sum = 0.0;
+      for (std::size_t i = 0; i < a.size(); ++i) {
+        sum += a[i] * b[i];
+      }
+      return sum;
+    }
+
+    // Gaussian elimination with partial pivoting on the m_cols x (m_cols + 1) system.
+    bool solve(std::array<std::array<double, kMemory + 1>, kMemory>& a, std::array<double, kMemory>& x) const noexcept
+    {
+      const unsigned int m = m_cols;
+      for (unsigned int c = 0; c < m; ++c) {
+        unsigned int pivot = c;
+        for (unsigned int r = c + 1; r < m; ++r) {
+          if (std::abs(a[r][c]) > std::abs(a[pivot][c])) {
+            pivot = r;
+          }
+        }
+        if (!(std::abs(a[pivot][c]) > 0.0)) {
+          return false;
+        }
+        std::swap(a[c], a[pivot]);
+        for (unsigned int r = c + 1; r < m; ++r) {
+          const double factor = a[r][c] / a[c][c];
+          for (unsigned int k = c; k <= m; ++k) {
+            a[r][k] -= factor * a[c][k];
+          }
+        }
+      }
+      for (unsigned int r = m; r-- > 0;) {
+        double v = a[r][m];
+        for (unsigned int k = r + 1; k < m; ++k) {
+          v -= a[r][k] * x[k];
+        }
+        x[r] = v / a[r][r];
+        if (!std::isfinite(x[r])) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    std::vector<double> m_f, m_fPrev, m_gPrev;
+    std::array<std::vector<double>, kMemory> m_dF, m_dG;
+    std::array<std::array<double, kMemory>, kMemory> m_gram {};
+    unsigned int m_cols = 0;
+    unsigned int m_next = 0;
+    bool m_haveLast = false;
+  };
+
+  struct FlowIteration {
+    unsigned int iterations;
+    double error;
+    bool converged;
+    // The plain iteration's change shrank by this factor per step: an estimate of the
+    // walk's second-largest eigenvalue, so how slowly it mixes. NaN if never measured.
+    double rate;
+    bool accelerated;
+  };
+
+  // Iterate a flow step to its stationary flow. `step(iteration)` reads `flow`, writes
+  // the next flow into it and returns the L1 change. The iteration stops when the
+  // change is within --flow-tolerance, or when rounding stops it from falling further:
+  // that floor lies between 1e-15 and 1e-13 on the benchmark networks, above the
+  // default tolerance on some of them (#1353). Only --max-flow-iterations, when set,
+  // caps the count. The last step is never mixed, so `flow` is what the step itself
+  // wrote, as before.
+  template <typename Step>
+  FlowIteration iterateToStationaryFlow(const Config& config, std::vector<double>& flow, Step&& step)
+  {
+    // At or below the rounding floor, a change that has not halved in kFloorWindow steps
+    // has converged. Anywhere, one that has not fallen 1% in kStuckWindow steps is stuck.
+    const double floor = std::max(config.flowTolerance, 1e3 * std::numeric_limits<double>::epsilon());
+    constexpr unsigned int kFloorWindow = 50;
+    constexpr unsigned int kStuckWindow = 1000;
+
+    // Accelerate only a slow iteration, one whose change shrinks by less than 5% per step:
+    // a fast one converges in a few hundred plain steps, cheaper than mixing them.
+    constexpr double kSlowRate = 0.95;
+    constexpr unsigned int kRateWindow = 10;
+
+    FlowAcceleration acceleration;
+    std::vector<double> before;
+    std::vector<double> errors;
+    bool accelerate = false;
+    double rate = std::numeric_limits<double>::quiet_NaN();
+    unsigned int iterations = 0;
+    double err = 0.0;
+    double halvedTo = std::numeric_limits<double>::infinity();
+    double fellTo = std::numeric_limits<double>::infinity();
+    unsigned int halvedAt = 0;
+    unsigned int fellAt = 0;
+    bool atFloor = false;
+    bool stuck = false;
+    while (true) {
+      if (accelerate) {
+        before = flow;
+      }
+      err = step(iterations);
+      errors.push_back(err);
+      ++iterations;
+      // Measured on plain steps only, over the last kRateWindow of them (fewer at the
+      // start), and above the floor, where rounding has not yet flattened the decay.
+      if (!accelerate && err > 1e3 * floor && errors.size() >= 2) {
+        const std::size_t window = std::min<std::size_t>(kRateWindow, errors.size() - 1);
+        const double earlier = errors[errors.size() - 1 - window];
+        if (earlier > 0.0) {
+          rate = std::pow(err / earlier, 1.0 / static_cast<double>(window));
+        }
+      }
+      if (err < 0.5 * halvedTo) {
+        halvedTo = err;
+        halvedAt = iterations;
+      }
+      if (err < 0.99 * fellTo) {
+        fellTo = err;
+        fellAt = iterations;
+      }
+      if (iterations >= config.minFlowIterations) {
+        atFloor = err <= floor && iterations - halvedAt >= kFloorWindow;
+        stuck = iterations - fellAt >= kStuckWindow;
+        if (errorWithinFlowTolerance(config, err) || atFloor || stuck) {
+          break;
+        }
+      }
+      if (config.maxFlowIterations > 0 && iterations >= config.maxFlowIterations) {
+        break;
+      }
+      if (accelerate) {
+        acceleration.mix(before, flow);
+      } else if (iterations >= config.minFlowIterations && iterations > kRateWindow && err > 1e3 * floor) {
+        accelerate = rate > kSlowRate;
+      }
+    }
+
+    const bool converged = errorWithinFlowTolerance(config, err) || atFloor;
+    if (!converged) {
+      Log() << "\n";
+      if (stuck) {
+        Console::warn(0, "PageRank calculation did not converge: the error stopped falling at {:g} after {} iterations.", err, iterations);
+      } else {
+        Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
+      }
+    }
+    return { iterations, err, converged, rate, accelerate };
   }
 
 } // namespace
@@ -286,12 +531,14 @@ void FlowCalculator::addFlowNote(const std::string& note)
   m_flowNotes.push_back(note);
 }
 
-void FlowCalculator::recordPageRank(unsigned int iterations, double error, bool converged) noexcept
+void FlowCalculator::recordPageRank(unsigned int iterations, double error, bool converged, double rate, bool accelerated) noexcept
 {
   m_havePageRank = true;
   m_pageRankIterations = iterations;
   m_pageRankError = error;
   m_pageRankConverged = converged;
+  m_pageRankRate = rate;
+  m_pageRankAccelerated = accelerated;
 }
 
 void FlowCalculator::calcUndirectedFlow() noexcept
@@ -394,18 +641,19 @@ struct IterationResult {
   unsigned int iterations;
   double error;
   bool converged;
+  double rate;
+  bool accelerated;
 };
 
 template <typename Iteration>
-IterationResult powerIterate(const Config& config, const double teleportationProbability, Iteration&& iter)
+IterationResult powerIterate(const Config& config, std::vector<double>& flow, const double teleportationProbability, Iteration&& iter)
 {
-  unsigned int iterations = 0;
   double alpha = teleportationProbability;
   double beta = 1.0 - alpha;
   double err = 0.0;
 
-  do {
-    double oldErr = err;
+  const auto result = iterateToStationaryFlow(config, flow, [&](unsigned int iterations) {
+    const double oldErr = err;
     err = iter(iterations, alpha, beta);
 
     // Perturb the system if equilibrium, but keep alpha a probability
@@ -413,19 +661,12 @@ IterationResult powerIterate(const Config& config, const double teleportationPro
       alpha = std::min(alpha + 1.0e-12, 1.0);
       beta = 1.0 - alpha;
     }
-
-    ++iterations;
-  } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
-
-  const bool converged = errorWithinFlowTolerance(config, err);
-  if (!converged) {
-    Log() << "\n";
-    Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
-  }
+    return err;
+  });
 
   // The perturbation only steers the iteration. Return the configured rate, which
   // scales the recorded link flow.
-  return { teleportationProbability, 1.0 - teleportationProbability, iterations, err, converged };
+  return { teleportationProbability, 1.0 - teleportationProbability, result.iterations, result.error, result.converged, result.rate, result.accelerated };
 }
 
 double FlowCalculator::accumulateDanglingRank() const noexcept
@@ -516,8 +757,8 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
     return error;
   };
 
-  const auto result = powerIterate(config, config.teleportationProbability, iteration);
-  recordPageRank(result.iterations, result.error, result.converged);
+  const auto result = powerIterate(config, nodeFlow, config.teleportationProbability, iteration);
+  recordPageRank(result.iterations, result.error, result.converged, result.rate, result.accelerated);
 
   double sumNodeRank = 1.0;
   double beta = result.beta;
@@ -671,8 +912,8 @@ void FlowCalculator::calcDirectedRelaxToSelfFlow(const StateNetwork& network, co
     return error;
   };
 
-  const auto result = powerIterate(config, config.teleportationProbability, iteration);
-  recordPageRank(result.iterations, result.error, result.converged);
+  const auto result = powerIterate(config, nodeFlow, config.teleportationProbability, iteration);
+  recordPageRank(result.iterations, result.error, result.converged, result.rate, result.accelerated);
 
   double sumNodeRank = 1.0;
   double beta = result.beta;
@@ -827,21 +1068,8 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     return error;
   };
 
-  unsigned int iterations = 0;
-  double err = 0.0;
-
-  do {
-    err = iteration(iterations);
-
-    ++iterations;
-  } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
-
-  const bool converged = errorWithinFlowTolerance(config, err);
-  recordPageRank(iterations, err, converged);
-  if (!converged) {
-    Log() << "\n";
-    Console::warn(0, "PageRank calculation did not converge after {} iterations with error {:g}.", iterations, err);
-  }
+  const auto result = iterateToStationaryFlow(config, nodeFlow, iteration);
+  recordPageRank(result.iterations, result.error, result.converged, result.rate, result.accelerated);
 
   double sumNodeRank = 1.0;
   for (auto& link : flowLinks) {
@@ -1195,22 +1423,11 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     return error;
   };
 
-  unsigned int iterations = 0;
-  double err = 0.0;
-
-  do {
-    err = iteration(iterations);
-
-    ++iterations;
-  } while (iterations < config.maxFlowIterations && (err > config.flowTolerance || iterations < config.minFlowIterations));
-
   // Recorded here too, so the exported outcome means the same thing for every flow
   // model: this loop warned but reported nothing, leaving the run report without a flow
   // object at all for regularized multilayer input.
-  recordPageRank(iterations, err, errorWithinFlowTolerance(config, err));
-  if (!errorWithinFlowTolerance(config, err)) {
-    Console::warn(0, "PageRank calculation stopped after the maximum of {} iterations with diff {:g}.", iterations, err);
-  }
+  const auto result = iterateToStationaryFlow(config, nodeFlow, iteration);
+  recordPageRank(result.iterations, result.error, result.converged, result.rate, result.accelerated);
 
   for (unsigned int i = 0; i < layerTeleFlow.size(); ++i) {
     sumTeleFlow += layerTeleFlow[i];
@@ -1478,8 +1695,8 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
     return error;
   };
 
-  const auto result = powerIterate(config, config.teleportationProbability, iteration);
-  recordPageRank(result.iterations, result.error, result.converged);
+  const auto result = powerIterate(config, nodeFlow, config.teleportationProbability, iteration);
+  recordPageRank(result.iterations, result.error, result.converged, result.rate, result.accelerated);
 
   double sumNodeRank = 1.0;
   const double beta = config.recordedTeleportation ? result.beta : 1.0;
@@ -1520,6 +1737,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   network.m_flowConverged = m_pageRankConverged;
   network.m_flowIterations = m_pageRankIterations;
   network.m_flowError = m_pageRankError;
+  network.m_flowRate = m_pageRankRate;
+  network.m_flowAccelerated = m_pageRankAccelerated;
 
   // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
   if (network.isBipartite()) {

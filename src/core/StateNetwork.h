@@ -13,6 +13,7 @@
 #include "../io/Config.h"
 #include <deque>
 #include <string>
+#include <limits>
 #include <map>
 #include <utility>
 #include <vector>
@@ -167,6 +168,8 @@ protected:
   bool m_flowConverged = true;
   unsigned int m_flowIterations = 0;
   double m_flowError = 0.0;
+  double m_flowRate = std::numeric_limits<double>::quiet_NaN();
+  bool m_flowAccelerated = false;
 
   // Bipartite
   unsigned int m_bipartiteStartId = 0;
@@ -320,6 +323,12 @@ public:
   bool flowConverged() const { return m_flowConverged; }
   unsigned int flowIterations() const { return m_flowIterations; }
   double flowError() const { return m_flowError; }
+  //! The plain power iteration's change shrank by this factor per step, before any
+  //! acceleration: an estimate of the walk's second-largest eigenvalue, so how slowly it
+  //! mixes. NaN if no step was measured.
+  double flowRate() const { return m_flowRate; }
+  //! Whether the iteration was slow enough to be accelerated (#1353).
+  bool flowAccelerated() const { return m_flowAccelerated; }
 
   bool haveNodeWeights() const { return m_haveNodeWeights; }
   bool haveStateNodeWeights() const { return m_haveStateNodeWeights; }
