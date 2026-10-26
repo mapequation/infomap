@@ -216,7 +216,7 @@ _OPTION_TABLE = {
     "use_node_weights_as_flow": _OptionSpec("--use-node-weights-as-flow", "flag", False),
     "to_nodes": _OptionSpec("--to-nodes", "flag", False),
     "teleportation_probability": _OptionSpec("--teleportation-probability", "value", 0.15, domain=(0.0, 1.0)),
-    "max_flow_iterations": _OptionSpec("--max-flow-iterations", "value", 400, domain=(1, None)),
+    "max_flow_iterations": _OptionSpec("--max-flow-iterations", "value", 0, domain=(0, None)),
     "min_flow_iterations": _OptionSpec("--min-flow-iterations", "value", 50, domain=(0, None)),
     "flow_tolerance": _OptionSpec("--flow-tolerance", "value", 1e-15, domain=(0.0, None)),
     "regularized": _OptionSpec("--regularized", "flag", False),
@@ -734,15 +734,17 @@ class Options(metaclass=_OptionsMeta):
         Set the probability of teleporting to a random node or link when calculating
         flow. Valid range: between 0.0 and 1.0 (inclusive).
     max_flow_iterations : int, optional
-        Limit the power iteration used to calculate flow (directed and regularized flow
-        models) to this many iterations. Valid range: >= 1.
+        Cap the power iteration used to calculate flow (directed and regularized flow
+        models) at this many iterations. 0 sets no cap: the iteration runs until
+        --flow-tolerance is met or the change in flow stops falling. Valid range: >= 0.
     min_flow_iterations : int, optional
         Require at least this many power iterations before the flow calculation can
         converge, even if --flow-tolerance is already met. Valid range: >= 0.
     flow_tolerance : float, optional
         Convergence tolerance for the power iteration used to calculate flow. Iteration
         stops once the per-iteration change in flow drops to or below this value, after
-        --min-flow-iterations have run. Valid range: >= 0.0.
+        --min-flow-iterations have run, or once that change has stopped falling. Valid
+        range: >= 0.0.
     regularized : bool, optional
         Add a fully connected Bayesian prior network to reduce overfitting to missing
         links. Activates --recorded-teleportation.
@@ -917,7 +919,7 @@ class Options(metaclass=_OptionsMeta):
     use_node_weights_as_flow: bool = False
     to_nodes: bool = False
     teleportation_probability: float = 0.15
-    max_flow_iterations: int = 400
+    max_flow_iterations: int = 0
     min_flow_iterations: int = 50
     flow_tolerance: float = 1e-15
     regularized: bool = False

@@ -416,15 +416,15 @@
   {
     "long": "--max-flow-iterations",
     "short": "",
-    "description": "Limit the power iteration used to calculate flow (directed and regularized flow models) to this many iterations.",
+    "description": "Cap the power iteration used to calculate flow (directed and regularized flow models) at this many iterations. 0 sets no cap: the iteration runs until --flow-tolerance is met or the change in flow stops falling.",
     "group": "Algorithm",
     "required": true,
     "advanced": true,
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "400",
-    "min": "1"
+    "default": "0",
+    "min": "0"
   },
   {
     "long": "--min-flow-iterations",
@@ -442,7 +442,7 @@
   {
     "long": "--flow-tolerance",
     "short": "",
-    "description": "Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run.",
+    "description": "Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run, or once that change has stopped falling.",
     "group": "Algorithm",
     "required": true,
     "advanced": true,

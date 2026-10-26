@@ -48,7 +48,7 @@ ALGORITHM_OPTIONS <- list(
   list(type = "flag", name = "use_node_weights_as_flow", flag = "--use-node-weights-as-flow", default = FALSE),
   list(type = "flag", name = "to_nodes", flag = "--to-nodes", default = FALSE),
   list(type = "value", name = "teleportation_probability", flag = "--teleportation-probability", default = 0.15, include = .skip_when_not_equal(0.15)),
-  list(type = "value", name = "max_flow_iterations", flag = "--max-flow-iterations", default = 400L, include = .skip_when_not_equal(400L)),
+  list(type = "value", name = "max_flow_iterations", flag = "--max-flow-iterations", default = 0L, include = .skip_when_not_equal(0L)),
   list(type = "value", name = "min_flow_iterations", flag = "--min-flow-iterations", default = 50L, include = .skip_when_not_equal(50L)),
   list(type = "value", name = "flow_tolerance", flag = "--flow-tolerance", default = 1e-15, include = .skip_when_not_equal(1e-15)),
   list(type = "flag", name = "regularized", flag = "--regularized", default = FALSE),
@@ -155,7 +155,7 @@ OPTION_DEFAULTS <- list(
   use_node_weights_as_flow = FALSE,
   to_nodes = FALSE,
   teleportation_probability = 0.15,
-  max_flow_iterations = 400L,
+  max_flow_iterations = 0L,
   min_flow_iterations = 50L,
   flow_tolerance = 1e-15,
   regularized = FALSE,
@@ -269,9 +269,9 @@ REMOVED_OPTIONS <- list(
 #'   \item{`use_node_weights_as_flow`}{Use node weights from the API or Pajek node records as normalized node flow.}
 #'   \item{`to_nodes`}{Teleport to nodes instead of links. Uses uniform node weights unless node weights are provided.}
 #'   \item{`teleportation_probability`}{Set the probability of teleporting to a random node or link when calculating flow.}
-#'   \item{`max_flow_iterations`}{Limit the power iteration used to calculate flow (directed and regularized flow models) to this many iterations.}
+#'   \item{`max_flow_iterations`}{Cap the power iteration used to calculate flow (directed and regularized flow models) at this many iterations. 0 sets no cap: the iteration runs until --flow-tolerance is met or the change in flow stops falling.}
 #'   \item{`min_flow_iterations`}{Require at least this many power iterations before the flow calculation can converge, even if --flow-tolerance is already met.}
-#'   \item{`flow_tolerance`}{Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run.}
+#'   \item{`flow_tolerance`}{Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run, or once that change has stopped falling.}
 #'   \item{`regularized`}{Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.}
 #'   \item{`regularization_strength`}{Scale the relative strength of the Bayesian prior network used by --regularized.}
 #'   \item{`intra_regularization_strength`}{Scale the intra-layer part of the multilayer prior used by --regularized, relative to --regularization-strength. Set to 0 to regularize only between layers.}

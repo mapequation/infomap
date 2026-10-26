@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <random>
@@ -1896,6 +1897,50 @@ TEST_CASE("Ordinary bipartite runs are unaffected by the flow post-condition [fa
   // omitted redistribution was a uniform scale the projection cancelled -- but the
   // link flows were uniformly too small, which is what the codelength reads.
   infomap::test::checkApproxCodelength(directed.codelength(), 1.2649313331);
+}
+
+// A directed cycle of 20 states over 10 physical nodes, link i -> i+1 of weight i. Under
+// --regularized, the prior on a state network teleports with probability ~0.044 here, so
+// the power iteration shrinks its error by only ~0.95 per step.
+void addSlowCycle(InfomapWrapper& im)
+{
+  for (unsigned int s = 1; s <= 20; ++s) {
+    im.addStateNode(s, (s - 1) % 10 + 1);
+  }
+  for (unsigned int s = 1; s <= 20; ++s) {
+    im.addLink(s, s % 20 + 1, static_cast<double>(s));
+  }
+}
+
+TEST_CASE("Regularized flow iterates to convergence with no default iteration cap (#1353) [fast][core][flow]")
+{
+  // The old default cap of 400 iterations stopped this flow at error 2.6e-9 and scored
+  // partitions on a flow that was not stationary. On wikispeedia's state network the
+  // same cap left an error of 1e-3, and a partition scored 4.408 bits instead of 3.207.
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --regularized"));
+  addSlowCycle(im);
+
+  im.run();
+
+  REQUIRE(im.network().haveFlowConvergence());
+  CHECK(im.network().flowConverged());
+  CHECK(im.network().flowError() <= 1e-15);
+}
+
+TEST_CASE("Flow stops at its rounding floor when the tolerance is out of reach (#1353) [fast][core][flow]")
+{
+  // With --flow-tolerance 0 the change per step never reaches tolerance; it stops falling
+  // at the rounding floor instead. That is a converged flow, and the iteration has to end
+  // there by itself now that no default cap ends it.
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --flow-tolerance 0"));
+  addSlowCycle(im);
+
+  im.run();
+
+  REQUIRE(im.network().haveFlowConvergence());
+  CHECK(im.network().flowConverged());
+  CHECK(im.network().flowError() <= 1e3 * std::numeric_limits<double>::epsilon());
+  CHECK(im.network().flowIterations() < 1000);
 }
 
 } // namespace
