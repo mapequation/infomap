@@ -182,8 +182,8 @@ bool StateNetwork::addLinkToMap(unsigned int sourceId, unsigned int targetId, do
 
   bool addedNewLink = true;
 
-  // Aggregate link weights if they are defined more than once. A pair listed as a b and
-  // b a stays two links: an undirected run sums it in its view (useUndirectedLinkView).
+  // Aggregate link weights if they are defined more than once. A link a b and its opposite
+  // link b a stay two links: an undirected run sums them in its view (useUndirectedLinkView).
   auto& outLinks = m_nodeLinkMap[sourceId];
   if (outLinks.empty()) {
     outLinks[targetId] = weight;
@@ -309,9 +309,7 @@ void StateNetwork::clearLinks()
   std::vector<double>().swap(m_linkWeights);
   std::vector<double>().swap(m_linkFlows);
   std::map<unsigned int, double>().swap(m_outWeights);
-  std::vector<unsigned int>().swap(m_enteredLinkOffsets);
-  std::vector<unsigned int>().swap(m_enteredLinkTargets);
-  std::vector<double>().swap(m_enteredLinkWeights);
+  std::deque<DroppedOppositeLink>().swap(m_droppedOppositeLinks);
   m_haveUndirectedLinkView = false;
   // Mark finalized (CSR is "built" -- it's just empty) and zero the raw count so a
   // lazy finalize triggered after clearLinks() can't rebuild a bogus CSR or compute
@@ -338,9 +336,7 @@ void StateNetwork::clear()
   std::vector<unsigned int>().swap(m_linkTargets);
   std::vector<double>().swap(m_linkWeights);
   std::vector<double>().swap(m_linkFlows);
-  std::vector<unsigned int>().swap(m_enteredLinkOffsets);
-  std::vector<unsigned int>().swap(m_enteredLinkTargets);
-  std::vector<double>().swap(m_enteredLinkWeights);
+  std::deque<DroppedOppositeLink>().swap(m_droppedOppositeLinks);
   m_haveUndirectedLinkView = false;
   m_physNodes.clear();
   m_outWeights.clear();
@@ -484,11 +480,11 @@ unsigned int StateNetwork::indexOfId(unsigned int id) const
 
 void StateNetwork::useUndirectedLinkView(bool undirected)
 {
-  // The undirected coding steps along a link in either direction, so a pair listed as a b and
-  // b a is one link there, summed at the lower source index. The flow model is chosen per run,
-  // after the links are added, so the pair is summed in this view of the CSR rather than on
-  // input. The links as entered are kept aside: a later run of the same network with a
-  // directed coding reads both directions again.
+  // The undirected coding steps along a link in either direction, so a link a b and its
+  // opposite link b a are one link there, summed at the lower source index. The flow model is
+  // chosen per run, after the links are added, so the opposite links are summed in this view
+  // of the CSR rather than on input. Only the dropped half of each pair is set aside: a later
+  // run of the same network with a directed coding rebuilds the links as entered from it.
   if (!undirected) {
     restoreEnteredLinks();
     return;
@@ -498,59 +494,50 @@ void StateNetwork::useUndirectedLinkView(bool undirected)
     return;
   }
 
-  // Both CSR builds keep each row sorted on target index
-  const auto reverseLink = [](const std::vector<unsigned int>& offsets, const std::vector<unsigned int>& targets, unsigned int sourceIndex, unsigned int targetIndex) {
-    const auto first = targets.begin() + offsets[targetIndex];
-    const auto last = targets.begin() + offsets[targetIndex + 1];
-    const auto it = std::lower_bound(first, last, sourceIndex);
-    return it != last && *it == sourceIndex ? static_cast<std::size_t>(it - targets.begin()) : targets.size();
-  };
-
-  unsigned int numPairs = 0;
-  for (unsigned int s = 0; s < m_nodeIds.size(); ++s) {
-    for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e) {
+  // In place, in one pass over the rows in order. A link s t with t < s is dropped when its
+  // opposite link t s exists, and its weight is added to t s. Row t is compacted already, as
+  // t < s, and still holds t s, which is not dropped since s > t. Both CSR builds keep each
+  // row sorted on target index, and compacting keeps that order.
+  const unsigned int numNodes = static_cast<unsigned int>(m_nodeIds.size());
+  unsigned int numKept = 0;
+  unsigned int rowBegin = 0;
+  for (unsigned int s = 0; s < numNodes; ++s) {
+    const unsigned int rowEnd = m_linkOffsets[s + 1];
+    m_linkOffsets[s] = numKept;
+    for (unsigned int e = rowBegin; e < rowEnd; ++e) {
       const auto t = m_linkTargets[e];
-      if (t < s && reverseLink(m_linkOffsets, m_linkTargets, s, t) != m_linkTargets.size()) {
-        ++numPairs;
+      const auto weight = m_linkWeights[e];
+      if (t < s) {
+        const auto first = m_linkTargets.begin() + m_linkOffsets[t];
+        const auto last = m_linkTargets.begin() + m_linkOffsets[t + 1];
+        const auto opposite = std::lower_bound(first, last, s);
+        if (opposite != last && *opposite == s) {
+          auto& oppositeWeight = m_linkWeights[opposite - m_linkTargets.begin()];
+          m_droppedOppositeLinks.push_back({ s, t, weight, oppositeWeight });
+          oppositeWeight += weight;
+          continue;
+        }
       }
+      m_linkTargets[numKept] = t;
+      m_linkWeights[numKept] = weight;
+      ++numKept;
     }
+    rowBegin = rowEnd;
   }
-  if (numPairs == 0) {
-    return; // the view would be the links as entered
+  m_linkOffsets[numNodes] = numKept;
+  if (m_droppedOppositeLinks.empty()) {
+    return; // every link stayed in place: the view is the links as entered
   }
 
-  m_enteredLinkOffsets.swap(m_linkOffsets);
-  m_enteredLinkTargets.swap(m_linkTargets);
-  m_enteredLinkWeights.swap(m_linkWeights);
-  std::vector<double>().swap(m_linkFlows); // flow is per run; free it before sizing the view
+  // Shrinking keeps the allocation, so the view needs no memory of its own
+  m_linkTargets.resize(numKept);
+  m_linkWeights.resize(numKept);
+  std::vector<double>().swap(m_linkFlows); // flow is per run; free it before sizing it for the view
+  m_linkFlows.assign(numKept, 0.0);
   m_enteredNumLinks = m_numLinks;
   m_enteredNumAggregatedLinks = m_numAggregatedLinks;
-
-  const auto& offsets = m_enteredLinkOffsets;
-  const auto& targets = m_enteredLinkTargets;
-  const auto& weights = m_enteredLinkWeights;
-  const unsigned int numNodes = static_cast<unsigned int>(m_nodeIds.size());
-  m_linkOffsets.assign(numNodes + 1, 0);
-  m_linkTargets.reserve(m_numLinks - numPairs);
-  m_linkWeights.reserve(m_numLinks - numPairs);
-  for (unsigned int s = 0; s < numNodes; ++s) {
-    for (unsigned int e = offsets[s]; e < offsets[s + 1]; ++e) {
-      const auto t = targets[e];
-      const auto reverse = t == s ? targets.size() : reverseLink(offsets, targets, s, t);
-      if (reverse == targets.size()) {
-        m_linkTargets.push_back(t);
-        m_linkWeights.push_back(weights[e]);
-      } else if (s < t) {
-        m_linkTargets.push_back(t);
-        m_linkWeights.push_back(weights[e] + weights[reverse]);
-      } // else summed into the link t -> s
-    }
-    m_linkOffsets[s + 1] = static_cast<unsigned int>(m_linkTargets.size());
-  }
-  m_linkFlows.assign(m_linkTargets.size(), 0.0);
-
-  m_numLinks = static_cast<unsigned int>(m_linkTargets.size());
-  m_numAggregatedLinks += numPairs;
+  m_numLinks = numKept;
+  m_numAggregatedLinks += static_cast<unsigned int>(m_droppedOppositeLinks.size());
   if (!m_useMapBuild) {
     m_outWeights.clear(); // mode A derives it from the CSR on demand; mode B keeps the map's
   }
@@ -562,14 +549,50 @@ void StateNetwork::restoreEnteredLinks()
   if (!m_haveUndirectedLinkView) {
     return;
   }
-  m_linkOffsets.swap(m_enteredLinkOffsets);
-  m_linkTargets.swap(m_enteredLinkTargets);
-  m_linkWeights.swap(m_enteredLinkWeights);
-  std::vector<unsigned int>().swap(m_enteredLinkOffsets);
-  std::vector<unsigned int>().swap(m_enteredLinkTargets);
-  std::vector<double>().swap(m_enteredLinkWeights);
-  // The view's flows belong to its links; the next run computes the flow anew
-  m_linkFlows.assign(m_linkTargets.size(), 0.0);
+  // Give each summed link its weight as entered back. Subtracting the dropped weight would
+  // not, as floating-point addition rounds.
+  for (const auto& dropped : m_droppedOppositeLinks) {
+    const auto first = m_linkTargets.begin() + m_linkOffsets[dropped.target];
+    const auto last = m_linkTargets.begin() + m_linkOffsets[dropped.target + 1];
+    m_linkWeights[std::lower_bound(first, last, dropped.source) - m_linkTargets.begin()] = dropped.oppositeWeight;
+  }
+  std::vector<double>().swap(m_linkFlows); // the view's flows belong to its links
+
+  // Rebuild the rows with the dropped links merged back in target order. They were set aside
+  // in row order, and in target order within a row.
+  const unsigned int numNodes = static_cast<unsigned int>(m_nodeIds.size());
+  std::vector<unsigned int> offsets(numNodes + 1, 0);
+  std::vector<unsigned int> targets;
+  std::vector<double> weights;
+  targets.reserve(m_enteredNumLinks);
+  weights.reserve(m_enteredNumLinks);
+  auto dropped = m_droppedOppositeLinks.cbegin();
+  const auto droppedEnd = m_droppedOppositeLinks.cend();
+  for (unsigned int s = 0; s < numNodes; ++s) {
+    for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e) {
+      for (; dropped != droppedEnd && dropped->source == s && dropped->target < m_linkTargets[e]; ++dropped) {
+        targets.push_back(dropped->target);
+        weights.push_back(dropped->weight);
+      }
+      targets.push_back(m_linkTargets[e]);
+      weights.push_back(m_linkWeights[e]);
+    }
+    for (; dropped != droppedEnd && dropped->source == s; ++dropped) {
+      targets.push_back(dropped->target);
+      weights.push_back(dropped->weight);
+    }
+    offsets[s + 1] = static_cast<unsigned int>(targets.size());
+  }
+  m_linkOffsets.swap(offsets);
+  m_linkTargets.swap(targets);
+  m_linkWeights.swap(weights);
+  // Free the view before sizing the flow array
+  std::vector<unsigned int>().swap(offsets);
+  std::vector<unsigned int>().swap(targets);
+  std::vector<double>().swap(weights);
+  std::deque<DroppedOppositeLink>().swap(m_droppedOppositeLinks);
+
+  m_linkFlows.assign(m_linkTargets.size(), 0.0); // the next run computes the flow anew
   m_numLinks = m_enteredNumLinks;
   m_numAggregatedLinks = m_enteredNumAggregatedLinks;
   if (!m_useMapBuild) {

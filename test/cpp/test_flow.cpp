@@ -7,6 +7,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
@@ -19,6 +20,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -676,10 +678,10 @@ void addPairTriangles(InfomapWrapper& im, bool split)
 
 } // namespace
 
-TEST_CASE("An undirected pair listed as a b and b a is one link of the run [fast][core][flow]")
+TEST_CASE("A link a b and its opposite link b a are one link of an undirected run [fast][core][flow]")
 {
   // Duplicate links are summed on input only when they have the same direction. An undirected
-  // run sums the pair itself, so every degree it uses counts the pair once (#1366).
+  // run sums opposite links itself, so every degree it uses counts them once (#1366).
   for (const std::string flags : { "", "--entropy-corrected", "--regularized", "--variable-markov-time" }) {
     CAPTURE(flags);
     InfomapWrapper single(infomap::test::defaultFlags(flags));
@@ -696,7 +698,7 @@ TEST_CASE("An undirected pair listed as a b and b a is one link of the run [fast
   }
 }
 
-TEST_CASE("A pair listed as a b and b a stays two links for the directed codings [fast][core][flow]")
+TEST_CASE("Opposite links a b and b a stay two links for the directed codings [fast][core][flow]")
 {
   for (const std::string flags : { "--directed", "--flow-model undirdir" }) {
     CAPTURE(flags);
@@ -710,7 +712,7 @@ TEST_CASE("A pair listed as a b and b a stays two links for the directed codings
 TEST_CASE("A directed run after an undirected one reads the links as entered [fast][core][flow]")
 {
   // The bindings choose the flow model per run, after the links are added, so the undirected
-  // run must not sum the pair in the stored links (#1366).
+  // run must not sum opposite links in the stored links (#1366).
   InfomapWrapper fresh(infomap::test::defaultFlags("--directed"));
   addPairTriangles(fresh, true);
   fresh.run();
@@ -725,6 +727,50 @@ TEST_CASE("A directed run after an undirected one reads the links as entered [fa
   CHECK(im.getModules() == fresh.getModules());
   im.run();
   CHECK(im.network().numLinks() == 7);
+}
+
+TEST_CASE("A directed run after an undirected one gets uneven opposite weights back exactly [fast][core][flow]")
+{
+  // The undirected view sums 0.1 into 0.2, and 0.3000000000000000444 - 0.2 is not 0.1, so the
+  // links as entered must come back from what was set aside, not by subtracting (#1366). The
+  // dropped links 5 1, 6 3 and 7 4 sit at the start, middle and end of their rows.
+  const auto addLinks = [](InfomapWrapper& im) {
+    im.addLink(1, 5, 0.1);
+    im.addLink(5, 1, 0.2);
+    im.addLink(5, 6, 1.0);
+    im.addLink(3, 6, 0.1);
+    im.addLink(6, 2, 1.0);
+    im.addLink(6, 3, 0.2);
+    im.addLink(6, 7, 1.0);
+    im.addLink(4, 7, 0.1);
+    im.addLink(7, 2, 1.0);
+    im.addLink(7, 4, 0.7);
+  };
+  using Link = std::tuple<unsigned int, unsigned int, double>;
+  const auto linksOf = [](InfomapWrapper& im) {
+    std::vector<Link> links;
+    im.network().forEachLink([&](unsigned int s, unsigned int t, double weight, double&) { links.emplace_back(s, t, weight); });
+    return links;
+  };
+
+  InfomapWrapper fresh(infomap::test::defaultFlags("--directed"));
+  addLinks(fresh);
+  fresh.run();
+
+  InfomapWrapper im(infomap::test::defaultFlags());
+  addLinks(im);
+  im.run();
+  CHECK(im.network().numLinks() == 7);
+  // Node indices follow the sorted node ids, so index 0 is node 1 and index 4 is node 5
+  const auto view = linksOf(im);
+  CHECK(std::find(view.begin(), view.end(), Link { 0, 4, 0.1 + 0.2 }) != view.end());
+  CHECK(std::find(view.begin(), view.end(), Link { 3, 6, 0.1 + 0.7 }) != view.end());
+
+  im.run("--directed");
+  CHECK(im.network().numLinks() == 10);
+  CHECK(linksOf(im) == linksOf(fresh));
+  CHECK(im.codelength() == fresh.codelength());
+  CHECK(im.getModules() == fresh.getModules());
 }
 
 TEST_CASE("Regularization strength 0 matches its small-strength limit with dangling nodes [fast][core][flow]")

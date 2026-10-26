@@ -11,6 +11,7 @@
 #define STATE_NETWORK_H_
 
 #include "../io/Config.h"
+#include <deque>
 #include <string>
 #include <map>
 #include <utility>
@@ -133,12 +134,18 @@ protected:
   unsigned int m_numLinksIgnoredByWeightThreshold = 0;
   double m_totalLinkWeightIgnored = 0.0;
   std::map<unsigned int, double> m_outWeights;
-  // The CSR as entered, set aside while the CSR arrays hold the undirected view that sums a
-  // pair listed as a b and b a (#1366). Empty without that view.
+  // While the CSR arrays hold the undirected view, which sums each link a b and its opposite
+  // link b a into one link at the lower source index (#1366), the dropped half of each such
+  // pair is set aside here: its source and target index and weight, and the weight as entered
+  // of the opposite link it is summed into. Empty without that view.
+  struct DroppedOppositeLink {
+    unsigned int source;
+    unsigned int target;
+    double weight;
+    double oppositeWeight;
+  };
   bool m_haveUndirectedLinkView = false;
-  std::vector<unsigned int> m_enteredLinkOffsets;
-  std::vector<unsigned int> m_enteredLinkTargets;
-  std::vector<double> m_enteredLinkWeights;
+  std::deque<DroppedOppositeLink> m_droppedOppositeLinks;
   unsigned int m_enteredNumLinks = 0;
   unsigned int m_enteredNumAggregatedLinks = 0;
   bool m_haveNodeWeights = false;
@@ -252,10 +259,10 @@ public:
       for (unsigned int e = m_linkOffsets[s]; e < m_linkOffsets[s + 1]; ++e)
         fn(s, m_linkTargets[e], m_linkWeights[e], m_linkFlows[e]);
   }
-  // Duplicate links are summed on input only when they have the same direction, so a pair
-  // listed as a b and b a is two links of the stored network. A run with the undirected
-  // coding calls this with true before its flow, to read one link per pair; any other run
-  // calls it with false and reads the links as entered (#1366).
+  // Duplicate links are summed on input only when they have the same direction, so a link
+  // a b and its opposite link b a are two links of the stored network. A run with the
+  // undirected coding calls this with true before its flow, to read them as one link; any
+  // other run calls it with false and reads the links as entered (#1366).
   void useUndirectedLinkView(bool undirected);
 #endif
 

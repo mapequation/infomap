@@ -1290,7 +1290,7 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   std::vector<unsigned int> k(N, 0);
   std::vector<double> s(N, 0);
   double sum_s = sumWeightedDegree;
-  // An undirected run reads a pair listed as a b and b a as one link (#1203, #1366)
+  // An undirected run reads a link a b and its opposite link b a as one link (#1203, #1366)
   unsigned int sum_k = network.sumDegree();
   if (sum_k == 0) {
     const auto uniformFlow = 1.0 / N;
