@@ -6220,3 +6220,69 @@ Sub-PR 2 of the split by role Daniel picked for #1371 (F77), on top of the `Colu
     sub-millisecond example. Re-run alternating, the minimum of 6 reads −0.29%.
 - **Next.** #1381 (the `columnar_wip` cleanup), then #1387, per-grandparent acceptance in
   `ColumnarHierarchy::refineLayerWithinGrandparent`, built on the stack's checkpoints.
+
+### F79 — Per-grandparent acceptance in the within-grandparent refine: the issue's premise did not hold, the gain is on deep hierarchies, and the cost was scoring (#1387) (2026-10-26)
+
+#1387 proposed keeping or undoing each grandparent's new partition separately in `refineLayerWithinGrandparent`. Its
+grounds were two effects F76 traced to the function: wikispeedia `-d --regularized -N10` at +8.35% in instructions, and
+web-NotreDame `-d --recorded-teleportation` at +0.045% in bits. It asked for a probe first.
+
+- **The probe.** A throwaway build scored each changed grandparent's new partition alone (checkpoint, `setModules`,
+  `scoreStack`, rollback) and fingerprinted every sub-search's input.
+  - On the issue's two rows, every call is accepted (5 of 5 each), and no sub-search repeats an earlier input.
+  - On wikispeedia the function takes 0.09 s of a 0.74 s run, and every changed grandparent improves. So the +7%
+    instructions F76 attributes to this site is not the function's own rejected work. F76 places it downstream, in
+    deep repair.
+  - On web-NotreDame with recorded teleportation, every accepted call carries 39–59 grandparents that got worse,
+    +0.00007 to +0.0007 bits per call.
+- **Separability holds.** Over 209 calls on 30 configurations, the per-grandparent changes sum to the whole layer's
+  change within 4e-10 bits, under `--regularized`, metadata and recorded teleportation. Of the 209 calls, 28 are
+  rejected. Keeping the improved grandparents of rejected layers recovers at most 0.005 bits. Undoing the worse
+  grandparents of accepted layers recovers up to 0.13% of L per call (powergrid).
+- **What it buys** (final codelength, 44 configurations: the `-C -N10` and recorded-teleportation `-N10` rows).
+  - The overlapping family at 50k links: om8 −0.214%, om6 −0.149%, om7 −0.136%, om5 −0.124%, om3 −0.122%, om4
+    −0.041% in bits.
+  - powergrid −0.028%, and web-NotreDame with recorded teleportation −0.005%.
+  - The issue's own rows barely move: wikispeedia 0, web-NotreDame with recorded teleportation −0.005%.
+- **web-NotreDame `-C -N10` +0.115% in bits is the luck of one seed.** Over 5 seeds the finals are +0.115%, −0.029%,
+  −0.029%, +0.002% and −0.128% (mean −0.014%). At every seed, the mean over the 10 trials of the post-dissolve price
+  (`trialDissolveReach`) is lower with per-grandparent acceptance. The reported number is the best of the trials
+  after the dissolve, and at seed 123 the old arm's best trial dissolved 0.036 bits against the new arm's 0.028.
+- **Under L\* (`--non-redundant`) the best trial gets worse on web-NotreDame (#1392).**
+  - The final is worse at 4 of 6 seeds, mean +0.126% in bits.
+  - The trial mean improves at 3 of 3 seeds checked (6.2520 → 6.2445, 6.2397 → 6.2345, 6.2429 → 6.2361), but the
+    best of 10 is worse at all 3 (6.2079 → 6.2216, 6.2131 → 6.2203, 6.2083 → 6.2214).
+  - An unverified hypothesis: L\* is scored only at the gates, and the old whole-layer step accepted packages that
+    held grandparents better in L but worse in L\*.
+  - L\* elsewhere gains at every seed: powergrid −0.664% and netscience −0.308% (5 of 5). Daniel kept the change for
+    L\* too.
+- **The cost was scoring.** Per-grandparent acceptance alone took instructions summed over the 44 configurations to
+  +0.98%, om8 +16.7% and om7 +17.8%. The refine scored the stack before and after its layer, and the gate scored it
+  again. On memory networks, 79% of a scoring is `MemCorrection::hierarchicalCorrection`'s hash map (#1388).
+  - Scoring each stack version once (`ColumnarStack::version`) and reusing leaf-partition-only corrections while the
+    leaf partition holds: −1.37% summed, bit-identical.
+  - The remaining cost on om8 is search: accepted steps dirty their neighbours, so more sweeps run.
+- **The 8 s on web-NotreDame `-C -N10 -d`.**
+  - The function is 40.6% of the run's samples, and 87% of that is the per-grandparent sub-search: the inner two-level
+    search 54%, `fineTuneLeafTop` 27%, `consolidateToNextLevel` 5.6%.
+  - Of the re-sweeps' grandparent visits, many are "stale": the content is exactly what the previous refine of the
+    layer left. On om8 that is 318k of 541k visits, costing 1.84 of the function's 3.84 s; on web-NotreDame 1.30 of
+    7.44 s. 4% of stale visits change something.
+- **Cuts measured** (same 44 configurations; bits are the mean over the rows that change, instructions summed).
+  - Skip only grandparents a previous *re-sweep* left: om8 +0.024% and om7 +0.005% in bits, for om8 −14.3% and om7
+    −15.7% instructions, −1.17% summed. **Adopted.**
+  - Skip every stale grandparent: 9 rows worse, mean +0.046%, max +0.105% (powergrid), for −2.61% summed (netscience
+    −25%, om6 −16%, web-NotreDame −8%). Open in #1390.
+  - The same for the leaf layer only: 9 rows worse, mean +0.038%, max +0.071%, for −2.24% summed (web-NotreDame
+    −8.2%). Open in #1390.
+  - Partial seed on a layer's first refine: 11 rows worse, mean +0.148%, max +0.320%, for −0.78% summed. Rejected.
+  - No fine-tune in the sub-search: 10 rows worse, mean +0.264%, max +0.599% (malaria). Time not measured (#1391).
+- **Snapshot** (#1389; old = tip `125b9084`, new = `2f849feb`).
+  - Codelength changes on 47 of 332 rows: 33 lower (mean −0.144% in bits), 14 higher (mean +0.050%).
+  - Instructions: median 0.00%, 5th–95th percentile −1.79% to +2.66%, summed −0.29%. Seconds summed −0.32% in the
+    sweep, and −1.35% over the 47 changed configurations as the minimum of 5.
+  - Five more seeds hold every gain. Worse at seed 123 by more than 0.1%: L\* web-NotreDame (above), `-C`
+    web-NotreDame (the dissolve's pick, mean −0.014%), and air30k (meta) `-N1` +0.105% (mean +0.065% over 6 seeds,
+    worse at 2).
+  - Single trials cost more where the search finds more. At seed 123 om7_N256_E50k `-N1` reads +23% in instructions;
+    over 5 more seeds the mean is +2.7%, for −0.27% in bits.
