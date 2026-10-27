@@ -6405,3 +6405,70 @@ family `--regularized` rows that repeat no `-C` row. Instructions retired, summe
     family at 50k links +0.03% to +0.08% in bits. Whole-layer on the leaf layer only, or on the first sweep's leaf
     layer only, does not recover trial 3 (6.2109, 6.2084).
   - **Kept as it is (Daniel).** No rule tried keeps both the deep hierarchies' gains and web-NotreDame's best trial.
+
+### F82 — The two-level aggregation ignored the preferred-modules bias, and the gated merges paid for it (2026-10-27)
+
+F80's snapshot measured both engines in one session and turned word_assoc (pref.) `-2 -N10` around: columnar 17%
+slower than OO in seconds, 13% in instructions, and 0.62% above it in bits. All numbers below are instructions
+retired and best-of-trials bits at `--seed 123`. Another session's sweep held the load average at 50–95 throughout,
+so no seconds are quoted.
+
+- **Reproduced on a fresh build of tip `d225e812`** (md5 `4e84aca0…`, the snapshot's binary): columnar 11.73480892
+  bits at 46.1G, OO 11.66306850 at 40.9G. Without the flag, columnar takes 35.4G and OO 42.2G. So the flag costs
+  columnar **+30% in instructions** and OO −3%.
+- **Profile (`sample`):** a third of the columnar trial is `coarsenModules` → `mergeLeafModulesWithinParents` (~19%)
+  and `retuneLeavesWithinModules` (~12%). The unbiased run never enters them: its merge pass returns at once with no
+  participating correction. `PreferredModulesCorrection` joined the leaf move loop (`participatesInMoveLoop`) but not
+  the module passes (`participatesInModuleMoves` was false). So the aggregation optimized the base objective and
+  stopped at the natural ~760 modules. The merge ↔ retune interleave of `optimizeTwoLevelStack` then merged them
+  greedily, one bit per merge, down to 25. OO's `BiasedMapEquation` charges the bias in every aggregation pass. This
+  is #834's pathology for the memory objective, on the one move-loop correction #834 did not cover.
+- **Fix: the bias joins the module passes.** Its state is a member count per module, so K is counted the same
+  whether the movers are leaves or units, and `setUnits` has nothing to rebuild.
+- **Joining the module passes switches on everything that flag gated for Mem/Meta.** Each was measured with an
+  env-var knob in a throwaway build. The configurations: 11 pref runs (word_assoc K = 25, 100 and 3000, jazz 10 and
+  100, netscience 50, powergrid 30 and 1500, polblogs 5 and 400, air30k 20), each `-2` and standard, `-N5`
+  (word_assoc K = 25 at `-N10`).
+  - **The descending trajectory repair (#889) pays.** Without it, word_assoc K = 25 `-2` ends at 11.66589772 bits
+    instead of 11.64024275 (+0.22% in bits), saving only 1.5% in instructions. Over the 22 runs it costs 0–4.3% in
+    instructions for up to 0.55% in bits (powergrid K = 30). The regroup ladder reads the retained trajectory, so
+    turning the trajectory off turns the ladder off too; measured together they looked like −11%.
+  - **The regroup ladder never moves a bit:** bits are identical on all 22 runs, at a cost of 0–26% in instructions
+    (word_assoc K = 25 `-2` +11.3%, powergrid K = 30 `-2` +25.7%). Its own comment says why it exists: an attribute
+    codebook's reward is superadditive in module size. A module-count bias is not.
+  - **The winner's deep repair and the leaf-level split never move a bit either:** bits identical on all 22 runs,
+    up to +78% in instructions (word_assoc K = 3000 `-2`).
+  - So a new correction trait, `tracksUnitAttributes()` (Mem/Meta), gates the ladder, the deep repair and the
+    leaf-level split, and `hasModuleMoveCorrections` becomes `hasAttributeCorrections`. The trajectory repair stays
+    on `participatesInModuleMoves`.
+- **Result, the fix against the tip:**
+
+  | run | tip bits | fix bits | tip instr | fix instr |
+  |---|--:|--:|--:|--:|
+  | word_assoc K = 25 `-C -2 -N10` | 11.73480892 | 11.64024275 (−0.806%) | 46.15G | 34.85G (−24.5%) |
+  | word_assoc K = 25 `-C -N10` | 11.73480892 | 11.64534667 (−0.762%) | 49.86G | 43.38G (−13.0%) |
+
+  F80's snapshot put the +0.62% in bits down to #1068, but on a two-level partition the leaf and top counts are the
+  same number, so #1068 cannot move a `-2` row. The gap was the aggregation.
+  Against OO, `-2` goes from +0.62% to **−0.196% in bits** and from +13% to **−14.7% in instructions** (OO 40.88G,
+  same session). Standard goes to −0.152% in bits and −20.5% in instructions (OO 54.6G, carried from F80).
+- **Over all 22 pref runs the fix is never worse in bits.** It is better on 13: powergrid K = 30 by 16.9% (`-2`) and
+  18.5% (standard), air30k K = 20 by 2.7% (standard), word_assoc K = 100 by 0.34% (`-2`). Instructions fall on 16 runs.
+  They rise on four, three with a gain in bits:
+  - powergrid K = 1500 standard: +24.6% in instructions, at −3.4% in bits.
+  - air30k K = 20 standard: +14.0%, at −2.7% in bits.
+  - air30k K = 20 `-2`: +1.6%, at −0.55% in bits.
+  - jazz K = 100 standard: +0.5%, at no bits change.
+- **Every other objective is untouched.** Every trial of 12 runs without the flag is bit-identical to the tip, at
+  ±0.4% in instructions: word_assoc `-d` and `-2d`, air30k plain, `-2`, `-d --regularized` and `--meta-data`,
+  lazega meta, malaria, wikispeedia `-2d`, om5 E50000 `-d`, polblogs, powergrid.
+- **Above-natural K_pref did not move.** That is K_pref at or above the unbiased module count: jazz K = 100,
+  polblogs K = 400, word_assoc K = 3000. Every trial is bit-identical between the tip and the fix there; only the
+  work changes. Why the aggregation cannot move them was not traced.
+- **The standard search's hierarchical-first trials are untouched, and they lose.** These are the odd trials;
+  `m_columnarFlatFirstTrial` makes the even ones flat-first. On word_assoc K = 25 the odd trials end at 11.90–11.95
+  bits, and trial 3 returns three levels with 2 top modules. The even trials are the `-2` partitions. The odd trials
+  never pass through the biased two-level aggregation, and their stack prices K at the leaf level (#1068). So they
+  can settle on 25 leaf modules under two top ones, a partition OO would charge 23 bits. #1068 is decided, for the
+  top-module count (Daniel, 2026-09-05, on the issue), but not implemented. Until it is, the leaf reading costs the
+  standard search about half its trials on this row.

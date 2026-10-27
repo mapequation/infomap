@@ -1002,12 +1002,12 @@ void ColumnarHierarchy::coarsenModules(double& L, int maxSweeps, bool winnerSpli
       const int top = m_stack.topLevel();
       if (merged || regrouped)
         std::fill(splitDirty.begin(), splitDirty.end(), 1);
-      // auto/winner: the leaf level only where a module-move-capable correction
+      // auto/winner: the leaf level only where an attribute correction
       // makes it pay (measured — on base networks k = 0 accepts nothing and is
       // the most expensive level, because refineLayerWithinGrandparent(0) has
       // just re-derived that partition from singletons).
       const bool leafNeedsCorrection = splitMode == kHSplitAuto || splitMode == kHSplitWinner;
-      const bool leafAllowed = !leafNeedsCorrection || m_search.hasModuleMoveCorrections();
+      const bool leafAllowed = !leafNeedsCorrection || m_search.hasAttributeCorrections();
       for (int k = 0; k + 1 <= top; ++k) {
         if (!hSplitLevelEnabled(splitMode, k) || splitDirty[k] == 0)
           continue;

@@ -934,7 +934,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
 
     // Flow-community regroup probe (see columnar::regroupProbeEnabled): the
     // repair above can only regroup within the trajectory's own module ids,
-    // so it cannot cross the group hysteresis of a module-move correction —
+    // so it cannot cross the group hysteresis of an attribute correction —
     // the correction's reward is superadditive in module size, so the true
     // optimum can need ~100 building blocks merged into one module while
     // every pairwise step (and hence every greedy trajectory) is uphill.
@@ -964,10 +964,14 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     // sub-detectors cost malaria `-C -N10` +5.2% in time for exactly 0 change
     // in bits. The gate is scale-free: om5's 12224-of-50133-leaf super-group
     // (24% of the root) qualifies, malaria's ~55-leaf modules (<1%) never do.
+    // Attribute corrections only (hasAttributeCorrections): the hysteresis is
+    // theirs, and with the count-only |K - K_pref| bias as the module-move
+    // correction the ladder never moved a bit and cost up to 26% in
+    // instructions (F82).
     // The ladder's best non-collapsed candidate, kept for the collapsed-winner
     // comparison after the fine-tune (below).
     const bool trackRunnerUp = doFineTune;
-    if (regroupProbeEnabled() && maxAggPasses == 0 && m_nLeaves * 10 >= m_rootLeaves && !trajComp.empty()) {
+    if (regroupProbeEnabled() && maxAggPasses == 0 && m_nLeaves * 10 >= m_rootLeaves && !trajComp.empty() && hasAttributeCorrections()) {
       // The ladder is multi-scale on purpose: one probe pass finds the base
       // objective's OWN resolution on the base graph, which on a large sparse
       // one is an intermediate scale (om5: 11049 pass-1 blocks probe to 4412

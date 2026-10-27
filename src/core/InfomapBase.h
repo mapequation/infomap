@@ -625,7 +625,7 @@ private:
   // Deep repair of the winning -2 columnar trial (#889): seed a two-level
   // stack from `tree`, run the split-discovery interleave once, and rewrite
   // tree/codelength when it improves. Returns whether it improved. A no-op
-  // for the base objective (no module-move-capable correction).
+  // without an attribute correction (hasAttributeCorrections).
   bool deepRepairColumnarBest(NodePaths& tree, double& codelength, bool freshDiscovery);
 
   // Terminal ragged pass on the settled winner, once per run and after any deep
