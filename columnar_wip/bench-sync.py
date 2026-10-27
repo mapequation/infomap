@@ -7,7 +7,7 @@ can move the object-oriented numbers too, and the OO arms are measured rather th
                   [--carry-oo <results.tsv>] [--dry-run]
 
 --rows     the results TSV whose old/new rows define the row set (default: the current
-           snapshot's, columnar_wip/pg-accept-ab-results.tsv). Its flags are taken as run, already
+           snapshot's, columnar_wip/sync-2160-ab-results.tsv). Its flags are taken as run, already
            resolved to the fetched inputs and the planted .clu paths.
 --carry-oo do not run the object-oriented arms; copy them from a previous session's TSV. For a
            change that cannot move the OO engine (a columnar sub-PR): each OO row's "new" arm there
@@ -36,7 +36,7 @@ import sys
 import tempfile
 
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ROWS = f"{R}/columnar_wip/pg-accept-ab-results.tsv"
+ROWS = f"{R}/columnar_wip/sync-2160-ab-results.tsv"
 NB = "networks/columnar-benchmark"  # fetch-benchmark-networks.py output
 ARMS = ("old", "new")
 OO_KEYS = {"C10": "OO10", "C2_10": "OO2_10"}

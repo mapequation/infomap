@@ -6286,3 +6286,65 @@ web-NotreDame `-d --recorded-teleportation` at +0.045% in bits. It asked for a p
     worse at 2).
   - Single trials cost more where the search finds more. At seed 123 om7_N256_E50k `-N1` reads +23% in instructions;
     over 5 more seeds the mean is +2.7%, for −0.27% in bits.
+
+### F80 — Master sync through 2.16.0: the converged flow moves every directed `--regularized` row, and #1367's undirected link view replaces the branch's count-once copies (2026-10-27)
+
+Nine master commits (#1339, #1384, #667, #1386, #1395, #1367, two dependency bumps and the 2.16.0 release), merged
+as `15b573ff` on tip `3f6328c6`.
+
+- **`FlowCalculator.cpp` merges without a conflict, and the merge is also right in meaning.** Master's #1395 replaces
+  the three power-iteration loops with one driver, `iterateToStationaryFlow`. That includes the regularized multilayer
+  loop, which here runs #828's per-layer prior. The driver mixes `flow` between steps (Anderson acceleration), so a
+  step must derive everything from the flow it reads. The multilayer step does: it rebuilds `unrecordedInterFlow` and
+  `layerTeleFlow` from `nodeFlow` every time. The driver never mixes the last step. So the code after the loop reads
+  the last step's teleport flow next to that step's own output, as master's loop does, and the two differ by no more
+  than the stopping error.
+- **#1367 conflicts with the branch's own copies of #1203/#1264.** The branch had made the entropy correction's
+  divisor a static function both engines call (`BiasedMapEquation::entropyBiasTotalDegree(network,
+  undirectedLinks)`). It had also moved variable Markov time into `FlowCalculator::applyVariableMarkovTime`. Both
+  counted an opposite-link pair once through `isReverseOfLink` / `sumUndirectedDegree`. Master now builds the
+  undirected link view (`StateNetwork::useUndirectedLinkView`) before the flow. So both read `sumDegree()`, and the
+  helpers and `countsUndirectedLinks` are gone. The InfomapBase variable-Markov-time hunk resolves to the branch,
+  where that block is retired.
+  - **Probe:** ninetriangles with every link split in half and listed both ways, against the same links summed.
+    Scored with `--no-infomap -c` under plain, `--entropy-corrected`, `--variable-markov-time`, `--regularized` and
+    `--markov-time 2`. Both inputs give the same codelength in both engines, old and new, and equal master
+    `fad4a5e1`'s OO.
+- **The view must drop the coded link flow.** The branch keeps a Markov-scaled copy of the link flow
+  (`m_codedLinkFlows`, F72 addendum) sized to the CSR. Every other CSR rebuild clears it; the view's compaction and
+  `restoreEnteredLinks()` now do too. Python round trip, one network run undirected, then directed, then undirected,
+  under `--markov-time 2` and `--variable-markov-time`, both engines: each run equals a fresh run (8, 10, 8 links).
+- **#1374 closes.** Both engines score malaria's by-layer partition at 8.264076185620 bits, 6.9e-15 apart. The
+  converged flow takes 192 accelerated steps to an error of 6.6e-16. At the old 400-step cap the error was 5.4e-6, and
+  the engines were 1.1e-7 apart.
+- **Each changed row was reproduced from the old binary before attribution:**
+  - **#1395:** `--max-flow-iterations 200000` on the old binary gives the new codelength exactly.
+    - wikispeedia `-C -d --regularized -N1`: 3.204763817 bits, 21,953 plain steps against 444 accelerated.
+    - air30k `-C -d --regularized -N1`: 5.650152296, 5,735 steps against 429.
+    - om6_N256_E50k `-C -d --regularized -N1` comes to 1e-9 bits: plain to 1e-15, against the floor stop at 2e-14.
+    - om7_N256_E100k's plain iteration never reaches 1e-15: the old binary runs to the 200,000 cap. The new driver
+      stops at the floor after 168 accelerated steps.
+  - **#1367:** the old binary on air30k with each opposite link pre-summed gives OO `-N10` 5.392254971 at 97.7G
+    instructions. That is the new binary's run on the original input, exactly. Columnar air30k does not move.
+  - **#1339:** EU airlines' layers are 1, 2, 4 and 21. Renumbered 1–4, the old binary gives the new 7.3355502981 in
+    both engines, with the same 191 flow steps.
+- **Cross-scoring the rows that got worse.**
+  - Feature-build malaria at `-N10` (+0.0002% in bits, both engines): the old partition scores exactly the new number
+    under the converged flow. Same partition, objective moved.
+  - OO malaria `-N1` (+0.0055%) and OO air30k `-d --regularized` (+0.0011%): the converged flow alone takes the old
+    partition −0.033% (air30k). OO's search then lands +0.034% above it. These are OO trajectories, under 0.1% in bits.
+- **The cost of a converged flow.** It is concentrated on single-trial `--regularized` runs: wikispeedia `-N1` +28% /
+  +37% in instructions (0.07–0.09 s runs, now 0.13–0.14 s), air30k `-d -N1` +7.3%. Those come with −27% and −0.022%
+  in bits. om6/om7 `-N1` pay +2.8% to +4% for ≤0.0003% in bits.
+  - The extra flow steps on air30k run at much lower IPC than the search: +7.3% in instructions read +29% in seconds.
+  - Floor-stopped flows got cheaper: planted `--regularized` controls −18% to −25%, malaria −10% to −24%.
+  - StarWars (feature build) is the one bit-identical network that costs more: +2.2% to +9.5% in instructions. Its
+    flow stopped at the cap at 9.5e-13 and now converges in 523 plain steps. It decays at 0.946 per step, just under
+    the 0.95 that switches acceleration on.
+- **OO cells are measured now, not carried, and two seconds cells turn around.** word_assoc (pref.) `-2`: columnar is
+  +17% in seconds against OO, +13% in instructions. Earlier snapshots read −24% against a carried 5.22 s; the same
+  OO measures 4.54 s now. air30k `-2`: +23% in seconds, against a carried −10.8%. The instructions were the same
+  before.
+- **Python suite: two SIGINT tests are load-sensitive.** `test_interrupt.py`'s two tests timed out (30 s) in two
+  full-suite runs, under machine load (the suite took 133 s). They passed in a third full run (55 s), alone, and in
+  every order bisection. #1395's session saw the same on master. Not introduced here, and not reproduced on demand.
