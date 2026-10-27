@@ -1235,6 +1235,11 @@ bool ColumnarHierarchy::refineLayerWithinGrandparent(int k, int sweep)
     subOpt.setRootLeaves(m_search.rootLeaves());
     if (k == 0)
       addSlicedLeafCorrections(subOpt, S);
+    // A re-sweep starts from a partial seed of a refined partition, so one
+    // fine-tune pass keeps nearly all of what tuning to convergence finds (#1391).
+    // The first sweep starts from singletons and keeps the full fine-tune.
+    if (resweep)
+      subOpt.setFineTunePassLimit(1);
     subOpt.optimizeTwoLevel(0, true, seedPtr);
     const std::vector<int>& subAssign = subOpt.leafTopModule();
     const int Ksub = static_cast<int>(subOpt.numTopModules());

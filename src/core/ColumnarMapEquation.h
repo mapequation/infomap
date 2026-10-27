@@ -362,9 +362,13 @@ public:
   // refinements' partial seeding (see buildPartialSeed).
   double optimizeTwoLevel(unsigned int maxAggPasses = 0, bool doFineTune = true, const std::vector<int>* pass1Seed = nullptr);
   // optimizeTwoLevel's fine-tune: re-optimize the leaves of m_leafTop to
-  // convergence, seeded at it; returns the tuned codelength (bestCodelength if
-  // no sweep improved on it).
+  // convergence (or for at most fineTunePassLimit() passes), seeded at it;
+  // returns the tuned codelength (bestCodelength if no sweep improved on it).
   double fineTuneLeafTop(double bestCodelength);
+  // Cap on the fine-tune's seeded passes; 0 (the default) runs to convergence.
+  // The within-grandparent refine's re-sweeps run one pass (#1391).
+  int fineTunePassLimit() const { return m_fineTunePassLimit; }
+  void setFineTunePassLimit(int passes) { m_fineTunePassLimit = passes; }
   // Share of the leaf flow in the largest module of a leaf -> module assignment.
   double largestModuleFlowShare(const std::vector<int>& leafModule, int numModules) const;
 
@@ -579,6 +583,7 @@ private:
     double codelength = 0.0;
   };
   bool m_keepPass1State = false;
+  int m_fineTunePassLimit = 0; // see setFineTunePassLimit
   std::unique_ptr<Pass1State> m_pass1State; // kept by this search, for a later one to adopt
   std::unique_ptr<Pass1State> m_adoptedPass1; // adopted from another search; consumed by optimizeTwoLevel
   double m_leafNodeFlow_log_nodeFlow = 0.0; // over leaves, constant

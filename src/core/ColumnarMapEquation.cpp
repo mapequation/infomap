@@ -1211,7 +1211,8 @@ double ColumnarTwoLevel::fineTuneLeafTop(double bestCodelength)
   // current top modules, seeded at the current assignment. Leaves may move
   // between modules and modules may merge/empty. Same primitive that will tune
   // interior levels; here it closes the gap the OO fine/coarse tune closes.
-  while (true) {
+  // A pass limit stops it early (see setFineTunePassLimit).
+  for (int pass = 0; m_fineTunePassLimit <= 0 || pass < m_fineTunePassLimit; ++pass) {
     pollInterrupt();
     activateLeafLevel();
     m_leafMoveLoop = true; // fine-tune re-optimizes leaves
