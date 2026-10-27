@@ -43,11 +43,11 @@ namespace {
 
 } // namespace
 
-double BiasedMapEquation::entropyBiasTotalDegree(const StateNetwork& network, bool undirectedLinks)
+double BiasedMapEquation::entropyBiasTotalDegree(const StateNetwork& network)
 {
   auto totalDegree = network.sumWeightedDegree();
   // Negative entropy bias is based on discrete counts, if average weight is below 1, use unweighted total degree
-  const auto sumDegree = undirectedLinks ? network.sumUndirectedDegree() : network.sumDegree();
+  const auto sumDegree = network.sumDegree();
   if (totalDegree < sumDegree) {
     totalDegree = sumDegree;
   }
@@ -56,7 +56,7 @@ double BiasedMapEquation::entropyBiasTotalDegree(const StateNetwork& network, bo
 
 void BiasedMapEquation::setNetworkProperties(const StateNetwork& network)
 {
-  m_totalDegree = entropyBiasTotalDegree(network, m_undirectedLinks);
+  m_totalDegree = entropyBiasTotalDegree(network);
   m_numNodes = network.numNodes();
 }
 
@@ -113,7 +113,6 @@ void BiasedMapEquation::init(const Config& config)
   preferredNumModules = config.preferredNumberOfModules;
   useEntropyBiasCorrection = config.entropyBiasCorrection;
   entropyBiasCorrectionMultiplier = config.entropyBiasCorrectionMultiplier;
-  m_undirectedLinks = countsUndirectedLinks(config);
 }
 
 void BiasedMapEquation::initNetwork(InfoNode& root)

@@ -22,6 +22,18 @@
     "trials": { "type": "integer", "minimum": 0 },
     "best_trial": { "type": "integer", "minimum": 0 },
     "auto_stopped": { "type": "boolean" },
+    "flow": {
+      "type": "object",
+      "required": ["converged", "iterations", "error", "rate", "accelerated"],
+      "additionalProperties": false,
+      "properties": {
+        "converged": { "type": "boolean" },
+        "iterations": { "type": "integer", "minimum": 0 },
+        "error": { "type": "number", "minimum": 0 },
+        "rate": { "type": ["number", "null"], "minimum": 0 },
+        "accelerated": { "type": "boolean" }
+      }
+    },
     "trial_codelengths": {
       "type": "array",
       "items": { "type": "number" }

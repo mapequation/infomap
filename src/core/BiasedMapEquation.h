@@ -186,7 +186,6 @@ private:
   double moduleEntropyBiasCorrection = 0;
   double m_totalDegree = 1;
   unsigned int m_numNodes = 0;
-  bool m_undirectedLinks = false;
 
 public:
   // The divisor of the entropy bias correction: the weighted total degree, floored at the
@@ -194,10 +193,7 @@ public:
   // average link weight is below 1 would otherwise be corrected too hard). Exposed because
   // the columnar engine builds the same correction outside this objective and the two
   // divisors have to be the one figure, not two copies of a rule that can drift.
-  static double entropyBiasTotalDegree(const StateNetwork& network, bool undirectedLinks);
-  // Count a pair listed as a b and b a once on undirected input (#1203). The multilayer
-  // expansion lists undirected links in both directions itself, so it keeps its count.
-  static bool countsUndirectedLinks(const Config& config) { return config.flowModel == FlowModel::undirected && !config.isMultilayerNetwork(); }
+  static double entropyBiasTotalDegree(const StateNetwork& network);
 
   void setNetworkProperties(const StateNetwork& network);
 

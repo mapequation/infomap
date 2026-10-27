@@ -477,6 +477,17 @@ std::map<std::pair<unsigned int, unsigned int>, unsigned int> linksPerLayerPair(
   return counts;
 }
 
+// The same three nodes in layer 1 and a layer whose id is further away.
+void addGappedLayers(Network& network, unsigned int topLayer = 7)
+{
+  for (unsigned int layer : { 1u, topLayer }) {
+    network.addMultilayerIntraLink(layer, 1, 2, 1.0);
+    network.addMultilayerIntraLink(layer, 2, 1, 1.0);
+    network.addMultilayerIntraLink(layer, 2, 3, 1.0);
+    network.addMultilayerIntraLink(layer, 3, layer == 1u ? 2u : 1u, 1.0);
+  }
+}
+
 // The same directed triangle in every layer, so every pair of layers is equally
 // similar and couples. A state links to its node's single out-neighbour in each
 // layer within reach, three links for each pair of layers.
@@ -508,6 +519,66 @@ std::map<std::pair<unsigned int, unsigned int>, unsigned int> expectedJsdLinks(c
 }
 
 } // namespace
+
+TEST_CASE("simulated relaxation without a limit couples layers with gapped ids [fast][core][multilayer]")
+{
+  // Layer ids 1 and 7 are further apart than the number of layers (#1322).
+  // Each state links to the out-neighbours of its node in both layers:
+  // node 1 has 1 + 1, node 2 has 2 + 2 and node 3 has 1 + 1 targets.
+  Network network(Config("--silent --directed", false));
+  addGappedLayers(network);
+  network.postProcessInputData();
+
+  using Counts = std::map<std::pair<unsigned int, unsigned int>, unsigned int>;
+  CHECK(linksPerLayerPair(network) == Counts { { { 1, 1 }, 4 }, { { 1, 7 }, 4 }, { { 7, 1 }, 4 }, { { 7, 7 }, 4 } });
+
+  // Further apart than the largest int
+  const unsigned int farLayer = 2147483649u;
+  Network farNetwork(Config("--silent --directed", false));
+  addGappedLayers(farNetwork, farLayer);
+  farNetwork.postProcessInputData();
+  CHECK(linksPerLayerPair(farNetwork) == Counts { { { 1, 1 }, 4 }, { { 1, farLayer }, 4 }, { { farLayer, 1 }, 4 }, { { farLayer, farLayer }, 4 } });
+}
+
+TEST_CASE("a one-sided relax limit leaves the other direction unlimited across gapped ids [fast][core][multilayer]")
+{
+  using Counts = std::map<std::pair<unsigned int, unsigned int>, unsigned int>;
+  SUBCASE("up 0")
+  {
+    Network network(Config("--silent --directed --multilayer-relax-limit-up 0", false));
+    addGappedLayers(network);
+    network.postProcessInputData();
+    CHECK(linksPerLayerPair(network) == Counts { { { 1, 1 }, 4 }, { { 7, 1 }, 4 }, { { 7, 7 }, 4 } });
+  }
+  SUBCASE("down 0")
+  {
+    Network network(Config("--silent --directed --multilayer-relax-limit-down 0", false));
+    addGappedLayers(network);
+    network.postProcessInputData();
+    CHECK(linksPerLayerPair(network) == Counts { { { 1, 1 }, 4 }, { { 1, 7 }, 4 }, { { 7, 7 }, 4 } });
+  }
+  SUBCASE("limit 5 is not enough")
+  {
+    Network network(Config("--silent --directed --multilayer-relax-limit 5", false));
+    addGappedLayers(network);
+    network.postProcessInputData();
+    CHECK(linksPerLayerPair(network) == Counts { { { 1, 1 }, 4 }, { { 7, 7 }, 4 } });
+  }
+}
+
+#if INFOMAP_FEATURE_REGULARIZED_MULTILAYER
+TEST_CASE("regularized relaxation couples layers with gapped ids [fast][core][multilayer]")
+{
+  // Every state links to its own node in every layer, its own layer included,
+  // besides its intra-layer out-links (#1322).
+  Network network(Config("--silent --directed --regularized", false));
+  addGappedLayers(network);
+  network.postProcessInputData();
+
+  using Counts = std::map<std::pair<unsigned int, unsigned int>, unsigned int>;
+  CHECK(linksPerLayerPair(network) == Counts { { { 1, 1 }, 4 + 3 }, { { 1, 7 }, 3 }, { { 7, 1 }, 3 }, { { 7, 7 }, 4 + 3 } });
+}
+#endif
 
 TEST_CASE("relax by JSD applies the relax limit in each direction [fast][core][multilayer]")
 {

@@ -992,7 +992,7 @@ TEST_CASE("Config parses --max-flow-iterations, --min-flow-iterations, and --flo
 TEST_CASE("Config defaults flow iteration limits and tolerance when flags are absent [fast][core][config][cli]")
 {
   const Config config("input.net --silent --no-file-output", true);
-  CHECK(config.maxFlowIterations == 400);
+  CHECK(config.maxFlowIterations == 0); // no cap (#1353)
   CHECK(config.minFlowIterations == 50);
   CHECK(config.flowTolerance == doctest::Approx(1e-15));
 }

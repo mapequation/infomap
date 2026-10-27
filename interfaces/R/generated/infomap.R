@@ -17617,6 +17617,32 @@ attr(`StateNetwork_flowError`, 'returnType') = 'numeric'
 attr(`StateNetwork_flowError`, "inputTypes") = c('_p_infomap__StateNetwork')
 class(`StateNetwork_flowError`) = c("SWIGFunction", class('StateNetwork_flowError'))
 
+# Start of StateNetwork_flowRate
+
+`StateNetwork_flowRate` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_StateNetwork_flowRate', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`StateNetwork_flowRate`, 'returnType') = 'numeric'
+attr(`StateNetwork_flowRate`, "inputTypes") = c('_p_infomap__StateNetwork')
+class(`StateNetwork_flowRate`) = c("SWIGFunction", class('StateNetwork_flowRate'))
+
+# Start of StateNetwork_flowAccelerated
+
+`StateNetwork_flowAccelerated` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_StateNetwork_flowAccelerated', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`StateNetwork_flowAccelerated`, 'returnType') = 'logical'
+attr(`StateNetwork_flowAccelerated`, "inputTypes") = c('_p_infomap__StateNetwork')
+class(`StateNetwork_flowAccelerated`) = c("SWIGFunction", class('StateNetwork_flowAccelerated'))
+
 # Start of StateNetwork_haveNodeWeights
 
 `StateNetwork_haveNodeWeights` = function(self, .copy = FALSE)
@@ -17826,7 +17852,7 @@ class(`StateNetwork_writePajekNetwork__SWIG_1`) = c("SWIGFunction", class('State
 setMethod('$', '_p_infomap__StateNetwork', function(x, name)
 
 {
-  accessorFuns = list('setConfig' = StateNetwork_setConfig, 'addStateNode' = StateNetwork_addStateNode, 'addNode' = StateNetwork_addNode, 'addPhysicalNode' = StateNetwork_addPhysicalNode, 'addName' = StateNetwork_addName, 'addLink' = StateNetwork_addLink, 'addLinks' = StateNetwork_addLinks, 'removeLink' = StateNetwork_removeLink, 'undirectedToDirected' = StateNetwork_undirectedToDirected, 'clear' = StateNetwork_clear, 'clearLinks' = StateNetwork_clearLinks, 'nodes' = StateNetwork_nodes, 'numNodes' = StateNetwork_numNodes, 'numPhysicalNodes' = StateNetwork_numPhysicalNodes, 'sumNodeWeight' = StateNetwork_sumNodeWeight, 'numAggregatedLinks' = StateNetwork_numAggregatedLinks, 'numLinks' = StateNetwork_numLinks, 'sumLinkWeight' = StateNetwork_sumLinkWeight, 'numSelfLinks' = StateNetwork_numSelfLinks, 'sumSelfLinkWeight' = StateNetwork_sumSelfLinkWeight, 'sumWeightedDegree' = StateNetwork_sumWeightedDegree, 'sumDegree' = StateNetwork_sumDegree, 'outWeights' = StateNetwork_outWeights, 'names' = StateNetwork_names, 'haveFlowConvergence' = StateNetwork_haveFlowConvergence, 'flowConverged' = StateNetwork_flowConverged, 'flowIterations' = StateNetwork_flowIterations, 'flowError' = StateNetwork_flowError, 'haveNodeWeights' = StateNetwork_haveNodeWeights, 'haveStateNodeWeights' = StateNetwork_haveStateNodeWeights, 'haveFileInput' = StateNetwork_haveFileInput, 'metaData' = StateNetwork_metaData, 'haveDirectedInput' = StateNetwork_haveDirectedInput, 'haveMemoryInput' = StateNetwork_haveMemoryInput, 'higherOrderInputMethodCalled' = StateNetwork_higherOrderInputMethodCalled, 'isBipartite' = StateNetwork_isBipartite, 'bipartiteStartId' = StateNetwork_bipartiteStartId, 'setBipartiteStartId' = StateNetwork_setBipartiteStartId, 'writeStateNetwork' = StateNetwork_writeStateNetwork, 'writePajekNetwork' = StateNetwork_writePajekNetwork);
+  accessorFuns = list('setConfig' = StateNetwork_setConfig, 'addStateNode' = StateNetwork_addStateNode, 'addNode' = StateNetwork_addNode, 'addPhysicalNode' = StateNetwork_addPhysicalNode, 'addName' = StateNetwork_addName, 'addLink' = StateNetwork_addLink, 'addLinks' = StateNetwork_addLinks, 'removeLink' = StateNetwork_removeLink, 'undirectedToDirected' = StateNetwork_undirectedToDirected, 'clear' = StateNetwork_clear, 'clearLinks' = StateNetwork_clearLinks, 'nodes' = StateNetwork_nodes, 'numNodes' = StateNetwork_numNodes, 'numPhysicalNodes' = StateNetwork_numPhysicalNodes, 'sumNodeWeight' = StateNetwork_sumNodeWeight, 'numAggregatedLinks' = StateNetwork_numAggregatedLinks, 'numLinks' = StateNetwork_numLinks, 'sumLinkWeight' = StateNetwork_sumLinkWeight, 'numSelfLinks' = StateNetwork_numSelfLinks, 'sumSelfLinkWeight' = StateNetwork_sumSelfLinkWeight, 'sumWeightedDegree' = StateNetwork_sumWeightedDegree, 'sumDegree' = StateNetwork_sumDegree, 'outWeights' = StateNetwork_outWeights, 'names' = StateNetwork_names, 'haveFlowConvergence' = StateNetwork_haveFlowConvergence, 'flowConverged' = StateNetwork_flowConverged, 'flowIterations' = StateNetwork_flowIterations, 'flowError' = StateNetwork_flowError, 'flowRate' = StateNetwork_flowRate, 'flowAccelerated' = StateNetwork_flowAccelerated, 'haveNodeWeights' = StateNetwork_haveNodeWeights, 'haveStateNodeWeights' = StateNetwork_haveStateNodeWeights, 'haveFileInput' = StateNetwork_haveFileInput, 'metaData' = StateNetwork_metaData, 'haveDirectedInput' = StateNetwork_haveDirectedInput, 'haveMemoryInput' = StateNetwork_haveMemoryInput, 'higherOrderInputMethodCalled' = StateNetwork_higherOrderInputMethodCalled, 'isBipartite' = StateNetwork_isBipartite, 'bipartiteStartId' = StateNetwork_bipartiteStartId, 'setBipartiteStartId' = StateNetwork_setBipartiteStartId, 'writeStateNetwork' = StateNetwork_writeStateNetwork, 'writePajekNetwork' = StateNetwork_writePajekNetwork);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));

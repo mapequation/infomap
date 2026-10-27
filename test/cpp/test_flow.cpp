@@ -7,11 +7,13 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <random>
@@ -19,6 +21,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -652,6 +655,123 @@ TEST_CASE("Directed regularization on both directions of a link with a self-link
     CHECK(directed.second.at(entry.first) == doctest::Approx(entry.second).epsilon(1e-12));
   }
   infomap::test::checkApproxCodelength(directed.first, undirected.first, 1e-12);
+}
+
+namespace {
+
+// Two triangles joined by the link 3 4. With split, the links 1 2 and 3 4 are each listed as
+// half the weight in both directions, the second one reverse first.
+void addPairTriangles(InfomapWrapper& im, bool split)
+{
+  for (const auto& [source, target] : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 3 }, { 2, 3 }, { 4, 5 }, { 4, 6 }, { 5, 6 } }) {
+    im.addLink(source, target, 1.0);
+  }
+  if (split) {
+    im.addLink(1, 2, 0.5);
+    im.addLink(2, 1, 0.5);
+    im.addLink(4, 3, 0.5);
+    im.addLink(3, 4, 0.5);
+  } else {
+    im.addLink(1, 2, 1.0);
+    im.addLink(3, 4, 1.0);
+  }
+}
+
+} // namespace
+
+TEST_CASE("A link a b and its opposite link b a are one link of an undirected run [fast][core][flow]")
+{
+  // Duplicate links are summed on input only when they have the same direction. An undirected
+  // run sums opposite links itself, so every degree it uses counts them once (#1366).
+  for (const std::string flags : { "", "--entropy-corrected", "--regularized", "--variable-markov-time" }) {
+    CAPTURE(flags);
+    InfomapWrapper single(infomap::test::defaultFlags(flags));
+    addPairTriangles(single, false);
+    single.run();
+    InfomapWrapper split(infomap::test::defaultFlags(flags));
+    addPairTriangles(split, true);
+    split.run();
+
+    CHECK(split.network().numLinks() == 7);
+    CHECK(split.network().numLinks() == single.network().numLinks());
+    CHECK(split.codelength() == single.codelength());
+    CHECK(split.getModules() == single.getModules());
+  }
+}
+
+TEST_CASE("Opposite links a b and b a stay two links for the directed codings [fast][core][flow]")
+{
+  for (const std::string flags : { "--directed", "--flow-model undirdir" }) {
+    CAPTURE(flags);
+    InfomapWrapper im(infomap::test::defaultFlags(flags));
+    addPairTriangles(im, true);
+    im.run();
+    CHECK(im.network().numLinks() == 9);
+  }
+}
+
+TEST_CASE("A directed run after an undirected one reads the links as entered [fast][core][flow]")
+{
+  // The bindings choose the flow model per run, after the links are added, so the undirected
+  // run must not sum opposite links in the stored links (#1366).
+  InfomapWrapper fresh(infomap::test::defaultFlags("--directed"));
+  addPairTriangles(fresh, true);
+  fresh.run();
+
+  InfomapWrapper im(infomap::test::defaultFlags());
+  addPairTriangles(im, true);
+  im.run();
+  CHECK(im.network().numLinks() == 7);
+  im.run("--directed");
+  CHECK(im.network().numLinks() == 9);
+  CHECK(im.codelength() == fresh.codelength());
+  CHECK(im.getModules() == fresh.getModules());
+  im.run();
+  CHECK(im.network().numLinks() == 7);
+}
+
+TEST_CASE("A directed run after an undirected one gets uneven opposite weights back exactly [fast][core][flow]")
+{
+  // The undirected view sums 0.1 into 0.2, and 0.3000000000000000444 - 0.2 is not 0.1, so the
+  // links as entered must come back from what was set aside, not by subtracting (#1366). The
+  // dropped links 5 1, 6 3 and 7 4 sit at the start, middle and end of their rows.
+  const auto addLinks = [](InfomapWrapper& im) {
+    im.addLink(1, 5, 0.1);
+    im.addLink(5, 1, 0.2);
+    im.addLink(5, 6, 1.0);
+    im.addLink(3, 6, 0.1);
+    im.addLink(6, 2, 1.0);
+    im.addLink(6, 3, 0.2);
+    im.addLink(6, 7, 1.0);
+    im.addLink(4, 7, 0.1);
+    im.addLink(7, 2, 1.0);
+    im.addLink(7, 4, 0.7);
+  };
+  using Link = std::tuple<unsigned int, unsigned int, double>;
+  const auto linksOf = [](InfomapWrapper& im) {
+    std::vector<Link> links;
+    im.network().forEachLink([&](unsigned int s, unsigned int t, double weight, double&) { links.emplace_back(s, t, weight); });
+    return links;
+  };
+
+  InfomapWrapper fresh(infomap::test::defaultFlags("--directed"));
+  addLinks(fresh);
+  fresh.run();
+
+  InfomapWrapper im(infomap::test::defaultFlags());
+  addLinks(im);
+  im.run();
+  CHECK(im.network().numLinks() == 7);
+  // Node indices follow the sorted node ids, so index 0 is node 1 and index 4 is node 5
+  const auto view = linksOf(im);
+  CHECK(std::find(view.begin(), view.end(), Link { 0, 4, 0.1 + 0.2 }) != view.end());
+  CHECK(std::find(view.begin(), view.end(), Link { 3, 6, 0.1 + 0.7 }) != view.end());
+
+  im.run("--directed");
+  CHECK(im.network().numLinks() == 10);
+  CHECK(linksOf(im) == linksOf(fresh));
+  CHECK(im.codelength() == fresh.codelength());
+  CHECK(im.getModules() == fresh.getModules());
 }
 
 TEST_CASE("Regularization strength 0 matches its small-strength limit with dangling nodes [fast][core][flow]")
@@ -1440,6 +1560,51 @@ TEST_CASE("undirdir on multilayer input with intra-layer links warns that it has
   CHECK(run("undirdir", readFile("examples/networks/multilayer.net")).first.find(warning) == std::string::npos);
 }
 
+// Undirected flow walks every state link in both directions, which a memory network's states
+// cannot take: a backward step lands in a state with the wrong memory. State input that is not
+// multilayer warns under the two models with undirected flow, and keeps running them (#1384).
+TEST_CASE("undirected flow on state input that is not multilayer warns about memory networks (#1384) [fast][core][flow]")
+{
+  const std::string warning = "flow model walks every state link in both directions";
+  const auto warns = [&warning](const std::string& model, const std::function<void(InfomapWrapper&)>& addInput) {
+    std::ostringstream captured;
+    {
+      infomap::test::ScopedLogCapture capture(captured);
+      // Not defaultFlags: it carries --silent, which mutes the warning under test.
+      InfomapWrapper im("--seed 1 --num-trials 1 --no-file-output --flow-model " + model);
+      addInput(im);
+      im.run();
+      CHECK(std::string(flowModelToString(im.flowModel)) == model);
+    }
+    return captured.str().find(warning) != std::string::npos;
+  };
+  const auto readFile = [](const std::string& path) {
+    return [path](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath(path)); };
+  };
+  // The second-order path 1 -> 2 -> 3 and back, with each state named by its memory.
+  const auto memoryStates = [](InfomapWrapper& im) {
+    im.addStateNode(12, 2);
+    im.addStateNode(23, 3);
+    im.addStateNode(32, 2);
+    im.addStateNode(21, 1);
+    im.addLink(12, 23);
+    im.addLink(23, 32);
+    im.addLink(32, 21);
+  };
+
+  for (const char* model : { "undirected", "undirdir" }) {
+    CAPTURE(model);
+    CHECK(warns(model, readFile("examples/networks/states.net")));
+    CHECK(warns(model, memoryStates));
+    CHECK_FALSE(warns(model, readFile("examples/networks/multilayer.net")));
+    CHECK_FALSE(warns(model, readFile("examples/networks/twotriangles.net")));
+  }
+  for (const char* model : { "directed", "outdirdir", "rawdir" }) {
+    CAPTURE(model);
+    CHECK_FALSE(warns(model, readFile("examples/networks/states.net")));
+  }
+}
+
 // The canonical bipartite shape: every link runs primary -> feature, as in
 // examples/networks/bipartite.net. Several directed flow models degenerate on
 // it (all-zero or non-finite node flow); the map equation is undefined there, so
@@ -1986,6 +2151,57 @@ TEST_CASE("Columnar: Markov time scales the coded link flow and leaves the repor
       CHECK(std::abs(leaf.outFlow[e] - 2 * reported.at({ source, target })) < 1e-12);
     }
   }
+}
+
+// A directed cycle of 20 states over 10 physical nodes, link i -> i+1 of weight i. Under
+// --regularized, the prior on a state network teleports with probability ~0.044 here, so
+// the power iteration shrinks its error by only ~0.95 per step.
+void addSlowCycle(InfomapWrapper& im)
+{
+  for (unsigned int s = 1; s <= 20; ++s) {
+    im.addStateNode(s, (s - 1) % 10 + 1);
+  }
+  for (unsigned int s = 1; s <= 20; ++s) {
+    im.addLink(s, s % 20 + 1, static_cast<double>(s));
+  }
+}
+
+TEST_CASE("Regularized flow iterates to convergence with no default iteration cap (#1353) [fast][core][flow]")
+{
+  // The old default cap of 400 iterations stopped this flow at error 2.6e-9 and scored
+  // partitions on a flow that was not stationary. On wikispeedia's state network the
+  // same cap left an error of 1e-3, and a partition scored 4.408 bits instead of 3.207.
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --regularized"));
+  addSlowCycle(im);
+
+  im.run();
+
+  REQUIRE(im.network().haveFlowConvergence());
+  CHECK(im.network().flowConverged());
+  CHECK(im.network().flowError() <= 1e-15);
+  // The plain iteration's measured contraction, which made it slow enough to accelerate.
+  CHECK(im.network().flowAccelerated());
+  CHECK(im.network().flowRate() > 0.95);
+  CHECK(im.network().flowRate() < 1.0);
+}
+
+TEST_CASE("Flow stops at its rounding floor when the tolerance is out of reach (#1353) [fast][core][flow]")
+{
+  // With --flow-tolerance 0 the change per step never reaches tolerance; it stops falling
+  // at the rounding floor instead. That is a converged flow, and the iteration has to end
+  // there by itself now that no default cap ends it.
+  InfomapWrapper im(infomap::test::defaultFlags("-N 1 --seed 7 --directed --flow-tolerance 0"));
+  addSlowCycle(im);
+
+  im.run();
+
+  REQUIRE(im.network().haveFlowConvergence());
+  CHECK(im.network().flowConverged());
+  CHECK(im.network().flowError() <= 1e3 * std::numeric_limits<double>::epsilon());
+  CHECK(im.network().flowIterations() < 1000);
+  // Teleporting at 0.15 bounds the contraction by 0.85, too fast to accelerate.
+  CHECK_FALSE(im.network().flowAccelerated());
+  CHECK(im.network().flowRate() <= 0.85 + 1e-6);
 }
 
 } // namespace

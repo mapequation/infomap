@@ -1261,6 +1261,15 @@ private:
       Console::note(1, "Directed input found, changing flow model from '{}' to '{}'.", m_infomap.flowModel, FlowModel(FlowModel::directed));
       m_infomap.flowModel = FlowModel::directed;
     }
+
+    // Undirected flow walks every state link in both directions. That fits states that say only
+    // where the walker is, as in a multilayer network, but not a memory network, where a state also
+    // says where the walker came from: walked backwards, the link for the path 0 -> 2 -> 3 leaves
+    // the walker at 2 in the state that came from 0. Warn rather than switch to directed, which
+    // would make every link one-way and change what the input means. Multilayer input is left out:
+    // its states are layers, and *Intra/*Inter input was made directed above (#1384).
+    if (m_network.haveMemoryInput() && !m_network.isMultilayerNetwork() && m_infomap.isUndirectedFlow())
+      Console::warn(0, "The {} flow model walks every state link in both directions. That suits states that say only where the walker is, but not a memory network, where a state also says where the walker came from and a backward step lands in a state with the wrong memory. Use --directed for a memory network.", m_infomap.flowModel);
     m_network.setConfig(m_infomap);
   }
 
@@ -1310,6 +1319,11 @@ private:
     // weights and writes computed flows directly into the CSR arrays, which
     // initNetwork and the output writers then consume.
     m_network.finalizeLinks();
+    // Sum each link a b and its opposite link b a for the undirected coding here, where the flow
+    // model is final, and not when the links are added: the bindings choose it per run (#1366). The
+    // multilayer expansion lists undirected links in both directions itself, so it reads its
+    // links as entered.
+    m_network.useUndirectedLinkView(m_infomap.flowModel == FlowModel::undirected && !m_infomap.isMultilayerNetwork());
 
     {
       auto timer = m_timing.scope("flow_calculation_s");
@@ -1904,6 +1918,8 @@ public:
       report.flowConverged = m_infomap.m_network.flowConverged();
       report.flowIterations = m_infomap.m_network.flowIterations();
       report.flowError = m_infomap.m_network.flowError();
+      report.flowRate = m_infomap.m_network.flowRate();
+      report.flowAccelerated = m_infomap.m_network.flowAccelerated();
       report.trialCodelengths = m_infomap.m_codelengths;
       report.trialTopModules = m_infomap.m_numTopModules;
       writeJsonReport(m_infomap.summaryJsonPath, runSummaryReportJson(report), m_infomap.overwriteOutput());
@@ -2274,7 +2290,7 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
   // worker, which is handed the run's network here and never owns one (#989).
   if (entropyBiasCorrection) {
     m_optimizer->setNetworkProperties(network);
-    m_entropyBiasTotalDegree = BiasedMapEquation::entropyBiasTotalDegree(network, BiasedMapEquation::countsUndirectedLinks(*this));
+    m_entropyBiasTotalDegree = BiasedMapEquation::entropyBiasTotalDegree(network);
   }
 
   init();

@@ -16,12 +16,23 @@ if TYPE_CHECKING:
 __all__ = ["find_communities"]
 
 
+# The engine's node ids are unsigned 32-bit ints.
+_MAX_NODE_ID = 2**32 - 1
+
+
 def _label_to_internal_id(labels):
     if not labels:
         return {}
-    # Identity map only when EVERY label is an int (bools excluded): a mix like
-    # [1, "a"] must enumerate, or "a" would map to itself and reach add_node.
-    if all(isinstance(label, int) and not isinstance(label, bool) for label in labels):
+    # Identity map only when EVERY label is an int (bools excluded) that the
+    # engine takes as a node id: a mix like [1, "a"] must enumerate, or "a"
+    # would map to itself and reach add_node, and so must a negative or too
+    # large int, such as networkx's own -1.
+    if all(
+        isinstance(label, int)
+        and not isinstance(label, bool)
+        and 0 <= label <= _MAX_NODE_ID
+        for label in labels
+    ):
         return {label: label for label in labels}
     return {label: index for index, label in enumerate(labels)}
 
@@ -361,12 +372,11 @@ def add_networkx_graph(
         phys_labels = [node_ids[node] for node in nodes]
         phys_map = _label_to_internal_id(_stable_unique_labels(phys_labels))
 
-        if not isinstance(phys_labels[0], int):
-            for label, _node_id in phys_map.items():
-                infomap.set_name(_node_id, str(label))
-        else:
-            for label in phys_map:
-                infomap.set_name(label, f"{label}")
+        # Name each physical node by its id in phys_map, not by its label: the
+        # two differ whenever the labels were enumerated, which an int first
+        # label does not rule out.
+        for label, _node_id in phys_map.items():
+            infomap.set_name(_node_id, str(label))
 
         if is_multilayer_network:
             # Same naming rule as the state-network branch below (#798).

@@ -74,9 +74,9 @@ Algorithm
 \item{\code{use_node_weights_as_flow}}{Use node weights from the API or Pajek node records as normalized node flow.}
 \item{\code{to_nodes}}{Teleport to nodes instead of links. Uses uniform node weights unless node weights are provided.}
 \item{\code{teleportation_probability}}{Set the probability of teleporting to a random node or link when calculating flow.}
-\item{\code{max_flow_iterations}}{Limit the power iteration used to calculate flow (directed and regularized flow models) to this many iterations.}
+\item{\code{max_flow_iterations}}{Cap the power iteration used to calculate flow (directed and regularized flow models) at this many iterations. 0 sets no cap: the iteration runs until --flow-tolerance is met or the change in flow stops falling.}
 \item{\code{min_flow_iterations}}{Require at least this many power iterations before the flow calculation can converge, even if --flow-tolerance is already met.}
-\item{\code{flow_tolerance}}{Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run.}
+\item{\code{flow_tolerance}}{Convergence tolerance for the power iteration used to calculate flow. Iteration stops once the per-iteration change in flow drops to or below this value, after --min-flow-iterations have run, or once that change has stopped falling.}
 \item{\code{regularized}}{Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.}
 \item{\code{regularization_strength}}{Scale the relative strength of the Bayesian prior network used by --regularized.}
 \item{\code{intra_regularization_strength}}{Scale the intra-layer part of the multilayer prior used by --regularized, relative to --regularization-strength. Set to 0 to regularize only between layers.}

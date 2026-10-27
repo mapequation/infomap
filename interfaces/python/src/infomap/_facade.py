@@ -269,7 +269,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         use_node_weights_as_flow: bool = False,
         to_nodes: bool = False,
         teleportation_probability: float = 0.15,
-        max_flow_iterations: int = 400,
+        max_flow_iterations: int = 0,
         min_flow_iterations: int = 50,
         flow_tolerance: float = 1e-15,
         regularized: bool = False,
@@ -628,8 +628,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
         max_flow_iterations : int, optional
-            Limit the power iteration used to calculate flow (directed and regularized
-            flow models) to this many iterations.
+            Cap the power iteration used to calculate flow (directed and regularized
+            flow models) at this many iterations. 0 sets no cap: the iteration runs
+            until --flow-tolerance is met or the change in flow stops falling.
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
@@ -642,7 +643,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         flow_tolerance : float, optional
             Convergence tolerance for the power iteration used to calculate flow.
             Iteration stops once the per-iteration change in flow drops to or below this
-            value, after --min-flow-iterations have run.
+            value, after --min-flow-iterations have run, or once that change has stopped
+            falling.
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
@@ -975,7 +977,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         use_node_weights_as_flow: bool = False,
         to_nodes: bool = False,
         teleportation_probability: float = 0.15,
-        max_flow_iterations: int = 400,
+        max_flow_iterations: int = 0,
         min_flow_iterations: int = 50,
         flow_tolerance: float = 1e-15,
         regularized: bool = False,

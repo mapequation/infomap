@@ -2188,6 +2188,12 @@ class StateNetwork(object):
     def flowError(self):
         return _infomap.StateNetwork_flowError(self)
 
+    def flowRate(self):
+        return _infomap.StateNetwork_flowRate(self)
+
+    def flowAccelerated(self):
+        return _infomap.StateNetwork_flowAccelerated(self)
+
     def haveNodeWeights(self):
         return _infomap.StateNetwork_haveNodeWeights(self)
 

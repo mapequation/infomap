@@ -441,9 +441,13 @@ class _InfomapResultsMixin:
         return self._get_modules_impl(depth_level, states)
 
     def get_multilevel_modules(self, states=False):
-        """Get a dict with node ids as keys and a tuple of module ids as values.
-        Each position in the tuple corresponds to a depth in the hierarchical tree,
-        with the first level being the top level.
+        """Get a dict with node ids as keys and a tuple of module ids as values,
+        one per level from the top down.
+
+        The tuples are not tree paths: a module without submodules appears
+        again on each lower level. In the first example below, ``(3, 7)``,
+        ``(4, 8)`` and ``(5, 9)`` are three such modules directly under the
+        root. See ``Result.multilevel_modules()`` for a worked example.
 
         See Also
         --------
