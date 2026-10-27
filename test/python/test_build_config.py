@@ -20,6 +20,29 @@ build_config = load_build_config()
 resolve_build_config = build_config.resolve_build_config
 
 
+def test_gnu_rejects_cxx17_syntax_only_where_gcc_has_the_flag(monkeypatch):
+    # -Wc++17-extensions exists from GCC 12; an older GCC rejects the -Werror= form.
+    for version_line, expected in (
+        ("g++ (Ubuntu 13.2.0-23ubuntu4) 13.2.0", True),
+        ("x86_64-w64-mingw32-g++.exe (Rev2, Built by MSYS2 project) 12.1.0", True),
+        ("g++ (GCC) 11.4.0", False),
+        ("", False),
+    ):
+        monkeypatch.setattr(
+            build_config,
+            "_compiler_version",
+            lambda compiler, line=version_line: line.lower(),
+        )
+        config = resolve_build_config(
+            platform_name="linux", compiler="g++", openmp=False
+        )
+
+        assert config["compiler_family"] == "gnu"
+        assert ("-Werror=c++17-extensions" in config["compile_flags"]) is expected, (
+            version_line
+        )
+
+
 def test_windows_cl_exe_uses_msvc_flags():
     config = resolve_build_config(platform_name="win32", compiler="cl.exe", openmp=True)
 

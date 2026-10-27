@@ -6,6 +6,13 @@ project(infomap LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+# Clang and GCC accept some C++17 syntax in C++14 mode with only a warning. infomap_core
+# gets the error from the build policy; this gives it to the CLI, tests and benchmark too.
+# GCC only has the flag from 12 on, and clang-cl takes MSVC-style options instead.
+if((CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+   OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12))
+    add_compile_options(-Werror=c++17-extensions)
+endif()
 
 option(INFOMAP_USE_OPENMP "Enable OpenMP support when available." ON)
 option(INFOMAP_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
