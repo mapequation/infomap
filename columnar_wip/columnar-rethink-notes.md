@@ -6349,3 +6349,59 @@ as `15b573ff` on tip `3f6328c6`.
   full-suite runs, under machine load (the suite took 133 s). They passed in a third full run (55 s), alone, and in
   every order bisection. #1395's session saw the same on master, and #1369's test plan records them failing "only in
   the local sandbox". Not introduced here, and not reproduced on demand.
+
+### F81 — The refine's follow-ups: memory scoring without a hash map, leaf-layer skips from the first sweep, one fine-tune pass on re-sweeps; and what per-grandparent acceptance costs web-NotreDame under L\* (#1388, #1390, #1391, #1392) (2026-10-27)
+
+Three changes, measured as experiment arms on top of the 2.16.0 sync (`d225e812`), seed 123: the 59 `-N10`
+configurations (29 `-C`, 15 `--regularized` and recorded-teleportation, 15 L\*), the 44 `-C -N1` ones, and the 28
+family `--regularized` rows that repeat no `-C` row. Instructions retired, summed; codelengths per row.
+
+- **#1388: the hash map was kept for its summation order.** `MemCorrection::hierarchicalCorrection` built an
+  `unordered_map` keyed by (module, physical node) on every scoring, and its comment kept that form "since the
+  summation order is part of the reported number". That is bit-identity used as a constraint, which has no value in
+  itself (CLAUDE.md now says so). The leaves are now grouped by physical node once, and each physical node's flow per
+  module is summed in a dense per-module scratch.
+  - Bit-identical at the printed 10 digits on all 131 configurations (and on the 59 `-N10` ones on the old base).
+  - Instructions summed −1.33%. The overlapping family at 50k links: −5.0% to −5.7% at `-N10`, −5.3% to −6.3% at
+    `-N1`. Every row above 0.3G instructions without a memory correction lies within +0.53%.
+- **#1390: which stale grandparents to skip.** Against #1388 alone:
+
+  | rule | `-N10` instr | `-N10` rows worse in bits | `-N1` instr | `-N1` rows worse in bits |
+  |---|--:|---|--:|---|
+  | A: every stale grandparent | −2.81% | 12, mean +0.043%, max +0.105% | −1.40% | 11, mean +0.049% (2 better) |
+  | B: A on the leaf layer only | −2.51% | 12, mean +0.035%, max +0.071% | −1.85% | 10, mean +0.038% (3 better) |
+  | N: only grandparents the first sweep left unchanged | −1.09% | 8, mean +0.032% | −0.27% | 9, mean +0.026% (3 better) |
+
+  B dominates A on single trials (more instructions saved for fewer bits) and is close to it at `-N10`. No row
+  under B is more than 0.1% worse in bits. **Adopted (Daniel).** The family `--regularized` rows do not move under any
+  rule.
+- **#1391: the sub-search's fine-tune.**
+  - Old base, 59 `-N10` configurations, against #1388 there: no fine-tune −5.69% summed, but 11 rows worse (mean
+    +0.149%, max +0.279% web-NotreDame). Fine-tuning only the leaf layer −0.60% (max +0.195%), only interior layers
+    −4.94% (max +0.229% malaria), only grandparents of at least 30 or 150 units −1.22% and −2.19% (max +0.202% and
+    +0.294%, om7_N256_E50k): all a worse ratio than one pass.
+  - One pass everywhere: −2.09% at `-N10` for a net +0.002% mean in bits. But om2_N256_E100k `-d -N1` is worse at 6
+    of 6 seeds: +2.98% at seed 123 (7.1447 → 7.3575 bits, 3 → 901 top modules), +0.006% to +0.1% at the others.
+  - It is the first sweep's pass. Capping only the winner's tune, leaving the collapsed-winner comparison's runner-up
+    at full, reproduces it exactly. Capping only re-sweeps leaves om2_N256_E100k identical at all 6 seeds.
+  - One pass on re-sweeps, against #1388: `-N10` −0.63%, 7 rows worse (mean +0.008%), 3 better (mean −0.016%);
+    `-N1` −0.65%, 4 worse (mean +0.010%), 7 better (mean −0.009%). On the 14 family `-d -N1` rows over 6 seeds,
+    −1.35%, 29 worse (mean +0.010%), 35 better (mean −0.013%). **Adopted.**
+  - B on top of it: `-N10` −2.15%, `-N1` −1.35%. Both together against #1388: `-N10` −2.77% for 12 rows worse (mean
+    +0.039%, max +0.076% powergrid); `-N1` −1.99% for 10 worse (mean +0.038%) and 3 better.
+- **#1392: per-grandparent acceptance removes partitions the next layer builds on; L vs L\* explains less than
+  half.** web-NotreDame `-C --non-redundant -N10 -d`, seed 123.
+  - Trials pair up across arms (trial i runs on seed 123 + i). With per-grandparent acceptance 8 of 10 trials
+    improve, but trial 3, the old arm's best, gets worse: 6.2079 → 6.2220 bits before the dissolve, 6.1886 → 6.2090
+    after. `--seed 125 -N1` reproduces it alone.
+  - The arms split at the first refine call: sweep 0, the leaf layer, 3143 grandparents, 1467 better and 584 worse
+    (+0.0044 bits). The whole-layer rule keeps the 584; the next layer's refine then gains 0.0184 bits against 0.0061,
+    and the trial's refine 0.164 bits against about 0.12.
+  - 255 of the 584 are better in plain L. Keeping a grandparent that is worse in L\* but better in L (when the layer
+    improves in L\*) ends the trial at 6.2091 bits, no better than per-grandparent acceptance.
+  - Whole-layer acceptance on the first sweep and per grandparent on re-sweeps ends trial 3 at 6.1836 bits, below
+    both arms. At 6 seeds it beats #1389 at 4 (mean −0.21% in bits) and the old rule at all 6. But over the 59
+    `-N10` configurations it gives back about half of #1389's gains: L\* powergrid +0.353%, netscience +0.266%, the
+    family at 50k links +0.03% to +0.08% in bits. Whole-layer on the leaf layer only, or on the first sweep's leaf
+    layer only, does not recover trial 3 (6.2109, 6.2084).
+  - **Kept as it is (Daniel).** No rule tried keeps both the deep hierarchies' gains and web-NotreDame's best trial.
