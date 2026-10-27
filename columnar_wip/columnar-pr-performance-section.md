@@ -41,6 +41,7 @@ Single-threaded (`MODE=release OPENMP=0`), `--seed 123`. Codelength in bits. **`
 > Both engines measured in one session, 2026-10-27, interleaved per row, with no other benchmark or test suite running. The machine carried other load (load average 15–45), so instructions carry the comparison where seconds move alone.
 > - **Old:** a fresh build of the branch tip `3f6328c6` (#1389), md5 `b675cde2772815d5e374e2f49fcfe358`, byte-identical to #1389's new arm. Feature build: md5 `b8ade12537af61d0a6655292b6f7e4a8`, also identical.
 > - **New:** the merge `15b573ff`, md5 `4e84aca0ad6e9450fea60d4d19560ae5`. Feature build: md5 `6d874d25067027759d39b6636bf4e57c`.
+> - **Master merged in again after the measurements,** as `11826209`, for #1400 (#1399). That fix loosens the Threads job's final-codelength tolerance for `--parallel-trials` against serial runs, which CI on this PR flagged. It touches only `test/python/test_thread_comparison.py`. Clean rebuilds of the merge reproduce both md5s above, so every number here stands.
 > - **OO arms** are measured on both binaries, since master changes what the OO engine computes. air30k (meta) is not run (#1134); its OO cells are carried as before.
 > - **Family rows** that repeat a `-C`, `-C -2` or `-C -N1` row take that row's run, so the two tables agree.
 
