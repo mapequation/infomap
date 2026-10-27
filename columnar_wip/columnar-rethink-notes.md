@@ -6347,4 +6347,5 @@ as `15b573ff` on tip `3f6328c6`.
   before.
 - **Python suite: two SIGINT tests are load-sensitive.** `test_interrupt.py`'s two tests timed out (30 s) in two
   full-suite runs, under machine load (the suite took 133 s). They passed in a third full run (55 s), alone, and in
-  every order bisection. #1395's session saw the same on master. Not introduced here, and not reproduced on demand.
+  every order bisection. #1395's session saw the same on master, and #1369's test plan records them failing "only in
+  the local sandbox". Not introduced here, and not reproduced on demand.
