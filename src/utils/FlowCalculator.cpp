@@ -1671,6 +1671,19 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
       nodeFlow[link->target] += beta * link->flow * nodeFlow[link->source];
     }
 
+    // The flow that reaches a feature without links back teleports, as from a dangling
+    // primary node. The dangling rank above misses it, as feature flow is 0 between
+    // iterations, so the flow was lost and the rest renormalized (#1311).
+    double danglingFeatureFlow = 0.0;
+    for (const auto i : danglingIndices) {
+      if (i >= bipartiteStartIndex) {
+        danglingFeatureFlow += nodeFlow[i];
+      }
+    }
+    for (unsigned int i = 0; i < bipartiteStartIndex; ++i) {
+      nodeFlowTmp[i] += danglingFeatureFlow * nodeTeleportWeights[i];
+    }
+
     // Second step back to primary nodes
     for (auto link = begin(flowLinks) + bipartiteLinkStartIndex; link != end(flowLinks); ++link) {
       nodeFlowTmp[link->target] += link->flow * nodeFlow[link->source];

@@ -270,11 +270,6 @@ def test_dangling_primary_link_flow_unrecorded(tmp_path, variant):
     _assert_link_flow(result, link)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#1311: flow into a feature without links back is "
-    "dropped and the rest renormalised instead of teleported",
-)
 @pytest.mark.parametrize("variant", VARIANTS)
 def test_dangling_feature_node_flow(tmp_path, variant):
     options = VARIANTS[variant]
