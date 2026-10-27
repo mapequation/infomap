@@ -724,7 +724,10 @@ private:
 
   void queueLeafModules(PartitionQueue& partitionQueue);
 
-  void partitionModuleRecursively(InfoNode& module, unsigned int level, detail::PartitionTaskRecord& record) const;
+  // The task body: partitionModule, with any exception kept on the record.
+  void partitionModuleRecursively(InfoNode& module, unsigned int level, detail::PartitionTaskRecord& record) const noexcept;
+
+  void partitionModule(InfoNode& module, unsigned int level, detail::PartitionTaskRecord& record) const;
 
 public:
   // ===================================================
