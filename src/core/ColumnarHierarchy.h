@@ -514,9 +514,10 @@ private:
     double root = 0.0;
   };
   mutable std::vector<CorrectionScore> m_correctionScores;
-  // Per layer k: the content of every grandparent as the last re-sweep of layer k
-  // left it, for the next re-sweep to skip the grandparents nothing has touched
-  // since (see refineLayerWithinGrandparent). Cleared when refineHierarchy starts.
+  // Per layer k: the content of every grandparent as the last recorded refine of
+  // layer k left it (every refine of the leaf layer, re-sweeps of interior layers),
+  // for the next re-sweep to skip the grandparents nothing has touched since (see
+  // refineLayerWithinGrandparent). Cleared when refineHierarchy starts.
   std::vector<std::unordered_set<std::uint64_t>> m_resweptContent;
   // Per layer-k unit, a hash of its leaf set.
   std::vector<std::uint64_t> unitHashes(int k) const;

@@ -377,6 +377,15 @@ MemCorrection::MemCorrection(std::vector<int> leafPhysical, std::vector<double> 
     p = r.first->second;
   }
   m_numPhys = static_cast<int>(compact.size());
+  m_physStart.assign(static_cast<std::size_t>(m_numPhys) + 1, 0);
+  for (int p : m_leafPhysical)
+    ++m_physStart[static_cast<std::size_t>(p) + 1];
+  for (int p = 0; p < m_numPhys; ++p)
+    m_physStart[p + 1] += m_physStart[p];
+  m_physLeaves.resize(m_leafPhysical.size());
+  std::vector<int> next(m_physStart.begin(), m_physStart.end() - 1);
+  for (std::size_t i = 0; i < m_leafPhysical.size(); ++i)
+    m_physLeaves[static_cast<std::size_t>(next[m_leafPhysical[i]]++)] = static_cast<int>(i);
 }
 
 double MemCorrection::physFlow(int module, int physical) const
@@ -393,49 +402,52 @@ double MemCorrection::hierarchicalCorrection(const ColumnarStackView& core, Stac
   using infomath::plogp;
   if (core.hierNumLevels() < 2)
     return 0.0;
-  const int nLeaves = core.numLeaves();
+  const int numModules = core.hierLevelSize(1);
   // Per level-1 module, the rate the active objective charges F_m at. Empty ==
   // uniformly 1 == the base map equation; see the class comment for why the two
   // objectives differ here and the header for why empty rather than a vector of ones.
   const std::vector<double> rates = core.leafCodebookRates();
-  const bool weighted = !rates.empty();
-  std::vector<double> fState;
-  if (weighted)
-    fState.assign(rates.size(), 0.0);
-  std::unordered_map<long long, double> physFlowMap; // key = (module<<32)|physical
-  for (int i = 0; i < nLeaves; ++i) {
-    const int m = core.hierLeafModule(i);
-    const long long key = (static_cast<long long>(m) << 32) | static_cast<unsigned int>(m_leafPhysical[i]);
-    physFlowMap[key] += m_leafFlow[i];
-    if (weighted)
-      fState[static_cast<std::size_t>(m)] += plogp(m_leafFlow[i]);
+  const bool perModule = !rates.empty() || breakdown != nullptr;
+  std::vector<double> fState, fPhys;
+  if (perModule) {
+    fState.assign(static_cast<std::size_t>(numModules), 0.0);
+    fPhys.assign(static_cast<std::size_t>(numModules), 0.0);
+    for (int i = 0; i < core.numLeaves(); ++i)
+      fState[static_cast<std::size_t>(core.hierLeafModule(i))] += plogp(m_leafFlow[i]);
   }
-  if (!weighted) {
-    // rate == 1 everywhere, so sum_m (F_m^state - F_m^phys) telescopes and the
-    // per-module split is pure noise — kept as the two global sums it has always
-    // been, since the summation order is part of the reported number.
-    double sum = 0.0;
-    for (const auto& kv : physFlowMap)
-      sum += plogp(kv.second);
-    // For reporting the split is not noise, it is the whole point: the physical
-    // codebook substitution happens per leaf module, so re-derive it that way
-    // rather than dropping the correction on the root. Same value up to summation
-    // order, which the returned total keeps.
-    if (breakdown != nullptr) {
-      const int numModules = core.hierLevelSize(1);
-      std::vector<double> fStateSplit(static_cast<std::size_t>(numModules), 0.0);
-      for (int i = 0; i < nLeaves; ++i)
-        fStateSplit[static_cast<std::size_t>(core.hierLeafModule(i))] += plogp(m_leafFlow[i]);
-      for (int m = 0; m < numModules; ++m)
-        breakdown->moduleTerm[1][static_cast<std::size_t>(m)] += fStateSplit[static_cast<std::size_t>(m)];
-      for (const auto& kv : physFlowMap)
-        breakdown->moduleTerm[1][static_cast<std::size_t>(kv.first >> 32)] -= plogp(kv.second);
+  // F^phys: per physical node, its flow in each module that holds one of its
+  // leaves, summed in a dense per-module scratch (zero between calls). A
+  // zero-flow leaf can list its module twice; the second visit adds plogp(0) = 0.
+  if (static_cast<int>(m_moduleScratch.size()) < numModules)
+    m_moduleScratch.resize(static_cast<std::size_t>(numModules), 0.0);
+  double physSum = 0.0;
+  for (int p = 0; p < m_numPhys; ++p) {
+    for (int j = m_physStart[p]; j < m_physStart[p + 1]; ++j) {
+      const int i = m_physLeaves[j];
+      double& f = m_moduleScratch[static_cast<std::size_t>(core.hierLeafModule(i))];
+      if (f == 0.0)
+        m_touched.push_back(core.hierLeafModule(i));
+      f += m_leafFlow[i];
     }
-    return m_cState - sum;
+    for (int m : m_touched) {
+      double& f = m_moduleScratch[static_cast<std::size_t>(m)];
+      const double term = plogp(f);
+      physSum += term;
+      if (perModule)
+        fPhys[static_cast<std::size_t>(m)] += term;
+      f = 0.0;
+    }
+    m_touched.clear();
   }
-  std::vector<double> fPhys(rates.size(), 0.0);
-  for (const auto& kv : physFlowMap)
-    fPhys[static_cast<std::size_t>(kv.first >> 32)] += plogp(kv.second);
+  if (rates.empty()) {
+    // rate == 1 everywhere, so sum_m (F_m^state - F_m^phys) telescopes into the
+    // two global sums. The split is still what a breakdown reports: the physical
+    // codebook substitution happens per leaf module.
+    if (breakdown != nullptr)
+      for (int m = 0; m < numModules; ++m)
+        breakdown->moduleTerm[1][static_cast<std::size_t>(m)] += fState[static_cast<std::size_t>(m)] - fPhys[static_cast<std::size_t>(m)];
+    return m_cState - physSum;
+  }
   double total = 0.0;
   for (std::size_t m = 0; m < rates.size(); ++m) {
     const double term = rates[m] * (fState[m] - fPhys[m]);

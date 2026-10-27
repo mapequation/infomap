@@ -1169,14 +1169,17 @@ bool ColumnarHierarchy::refineLayerWithinGrandparent(int k, int sweep)
   // instead of over-merging on total flow.
   const bool interior = (k > 0);
 
-  // A re-sweep skips the grandparents that the previous re-sweep of this layer
+  // A re-sweep skips the grandparents that the previous refine of this layer
   // already re-partitioned and that nothing has touched since (#1387): their
   // content (the units' leaf sets and the partition inside) is what that refine
-  // left. Only a re-sweep's own output counts as tried: the first sweep
-  // re-derives every grandparent from singletons and a re-sweep from a partial
-  // seed (buildPartialSeed), so the first re-sweep of a grandparent can still
-  // find what the first sweep missed.
+  // left. On interior layers only a re-sweep's own output counts as tried: the
+  // first sweep re-derives every grandparent from singletons and a re-sweep from
+  // a partial seed (buildPartialSeed), so the first re-sweep of a grandparent
+  // can still find what the first sweep missed. On the leaf layer the first
+  // sweep's output counts too, a speed-for-bits trade (#1390): few of those
+  // first re-sweeps change anything, and leaf-layer sub-searches cost the most.
   const bool resweep = sweep > 0;
+  const bool recordTried = resweep || k == 0;
   std::vector<std::uint64_t> unitHash;
   auto contentHashes = [&](const std::vector<int>& assignK, int numModules, const std::vector<int>& parentOf) {
     std::vector<std::uint64_t> moduleSum(static_cast<std::size_t>(numModules), 0), content(numGP, 0);
@@ -1191,7 +1194,7 @@ bool ColumnarHierarchy::refineLayerWithinGrandparent(int k, int sweep)
   std::vector<std::uint64_t> inContent;
   if (static_cast<int>(m_resweptContent.size()) <= k)
     m_resweptContent.resize(k + 1);
-  if (resweep) {
+  if (recordTried) {
     unitHash = unitHashes(k);
     inContent = contentHashes(aC, m_stack.size(k + 1), aP);
   }
@@ -1235,6 +1238,11 @@ bool ColumnarHierarchy::refineLayerWithinGrandparent(int k, int sweep)
     subOpt.setRootLeaves(m_search.rootLeaves());
     if (k == 0)
       addSlicedLeafCorrections(subOpt, S);
+    // A re-sweep starts from a partial seed of a refined partition, so one
+    // fine-tune pass keeps nearly all of what tuning to convergence finds (#1391).
+    // The first sweep starts from singletons and keeps the full fine-tune.
+    if (resweep)
+      subOpt.setFineTunePassLimit(1);
     subOpt.optimizeTwoLevel(0, true, seedPtr);
     const std::vector<int>& subAssign = subOpt.leafTopModule();
     const int Ksub = static_cast<int>(subOpt.numTopModules());
@@ -1287,10 +1295,10 @@ bool ColumnarHierarchy::refineLayerWithinGrandparent(int k, int sweep)
       ++numWorse;
     }
   }
-  // Record what a re-sweep leaves in each grandparent (see resweep above).
+  // Record what this refine leaves in each grandparent (see recordTried above).
   std::unordered_set<std::uint64_t>& tried = m_resweptContent[k];
   tried.clear();
-  if (resweep) {
+  if (recordTried) {
     const std::vector<std::uint64_t> newContent = contentHashes(newAC, nextMod, newAP);
     for (int G = 0; G < numGP; ++G)
       tried.insert(anyBetter && keep[G] ? newContent[G] : inContent[G]);

@@ -161,6 +161,17 @@ to keep the snapshot — say so in it rather than quietly reusing the numbers.
 - Run the feature build too (`FEATURES="lossy-map-equation regularized-multilayer"`), which CI does as
   a second job.
 
+### Bit-identical output is evidence, never a constraint
+- **Keeping results bit-identical has no value in itself.** The aim is continuous improvement, not
+  freezing the current numbers. Never keep a slower algorithm, data structure or summation order
+  because the faster one changes the last digits, and never gate a search change on the flag that
+  motivated it so that other configurations stay bit-identical. Apply it everywhere and measure it
+  everywhere. A change that moves the numbers costs a snapshot; that is its only cost.
+- A code comment that says an order or form is kept "since it is part of the reported number" is the
+  constraint this rule removes. Rewrite it when you touch the code (#1388 was held back by one).
+- Bit-identity stays useful as **evidence**: a refactor that should not change results, or a
+  regression with identical output that is therefore a localised cost (below).
+
 ### Measurement discipline
 - **Establish that a difference is real before explaining it.** If a number fails to reproduce,
   rebuild the *original* pair (old base + old tip) and measure both arms in one session first. That
