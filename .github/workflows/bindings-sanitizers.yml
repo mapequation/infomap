@@ -25,6 +25,7 @@ on:
       - "test/python-ubsan.supp"
       - "mk/test.mk"
       - ".github/workflows/bindings-sanitizers.yml"
+      - ".github/actions/use-fast-apt-mirror/action.yml"
   schedule:
     - cron: "0 5 * * 4" # Thursdays 05:00 UTC (clear of the Monday-Wednesday crons)
   workflow_dispatch:

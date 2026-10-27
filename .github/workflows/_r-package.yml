@@ -79,6 +79,9 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Use a fast apt mirror
+        # A republish of a release tag that predates the action checks out a
+        # tree without it.
+        if: hashFiles('.github/actions/use-fast-apt-mirror/action.yml') != ''
         uses: ./.github/actions/use-fast-apt-mirror
 
       - name: Set up R
@@ -186,6 +189,9 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Use a fast apt mirror
+        # A republish of a release tag that predates the action checks out a
+        # tree without it.
+        if: hashFiles('.github/actions/use-fast-apt-mirror/action.yml') != ''
         uses: ./.github/actions/use-fast-apt-mirror
 
       - name: Set up R
@@ -370,6 +376,9 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Use a fast apt mirror
+        # A republish of a release tag that predates the action checks out a
+        # tree without it.
+        if: hashFiles('.github/actions/use-fast-apt-mirror/action.yml') != ''
         uses: ./.github/actions/use-fast-apt-mirror
 
       - name: Set up R
