@@ -19,7 +19,11 @@ The recursive search
     result of a serial run (the HPC workflow docs). A worker rebuilds the
     network for each trial, so a sum can come out in the last bit (#1200).
     Asserted: the per-trial codelengths to 1e-14 and the same modules, for 1, 2
-    and 4 workers.
+    and 4 workers. The final codelength is asserted to 1e-13: a run that
+    restores the winning trial's tree rescores it, which parallel trials always
+    do and a serial run does only when the winner is not its last trial, and
+    under ``--markov-time`` the rescore lands 3e-14 above the trial's own
+    value (#1399).
 
 ``--inner-parallelization``
     Documented to "produce a different partition than serial optimization",
@@ -229,7 +233,8 @@ def test_thread_count_does_not_change_a_large_result(tmp_path, shape, kind, vari
         assert parallel.codelengths == pytest.approx(
             serial.codelengths, rel=1e-14, abs=0
         )
-        assert parallel.codelength == pytest.approx(serial.codelength, rel=1e-14, abs=0)
+        # Not 1e-14: one run can report a rescore, the other the trial's own value.
+        assert parallel.codelength == pytest.approx(serial.codelength, rel=1e-13, abs=0)
         assert _modules(parallel) == _modules(serial), threads
 
 
