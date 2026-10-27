@@ -176,6 +176,7 @@ r:
   - ".github/actions/setup-swig/action.yml"
   - ".github/actions/setup-ccache/action.yml"
   - ".github/actions/setup-python-build/action.yml"
+  - ".github/actions/use-fast-apt-mirror/action.yml"
   - ".github/workflows/ci.yml"
   - ".github/workflows/_r-package.yml"
   - ".github/filters.yml"

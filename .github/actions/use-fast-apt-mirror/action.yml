@@ -1,0 +1,24 @@
+name: Use a fast apt mirror
+description: >-
+  Put a CDN-backed Ubuntu mirror ahead of the runner image's default
+  azure.archive.ubuntu.com, which has served packages at ~50 kB/s for days at
+  a time (Oct 2026: 25 min to fetch R's system requirements). The image reads
+  its archive from mirror+file:/etc/apt/apt-mirrors.txt, where apt falls back
+  to the next line only when a mirror fails, not when it is slow, so the order
+  is what matters. Azure stays last as a fallback. No-op off Linux.
+runs:
+  using: composite
+  steps:
+    - name: Reorder apt mirrors
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        printf '%s\n' \
+          'https://mirrors.edge.kernel.org/ubuntu/	priority:1' \
+          'http://archive.ubuntu.com/ubuntu/	priority:2' \
+          'http://azure.archive.ubuntu.com/ubuntu/	priority:3' \
+          | sudo tee /etc/apt/apt-mirrors.txt
+        # An image that lists the archive directly instead of through the
+        # mirror list would bypass the file above.
+        sudo sed -i 's|http://azure\.archive\.ubuntu\.com/ubuntu|https://mirrors.edge.kernel.org/ubuntu|g' \
+          /etc/apt/sources.list.d/*.sources /etc/apt/sources.list 2>/dev/null || true

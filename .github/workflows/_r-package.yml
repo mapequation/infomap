@@ -78,6 +78,12 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.sha }}
 
+      - name: Use a fast apt mirror
+        # A republish of a release tag that predates the action checks out a
+        # tree without it.
+        if: hashFiles('.github/actions/use-fast-apt-mirror/action.yml') != ''
+        uses: ./.github/actions/use-fast-apt-mirror
+
       - name: Set up R
         uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
@@ -181,6 +187,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref || github.sha }}
+
+      - name: Use a fast apt mirror
+        # A republish of a release tag that predates the action checks out a
+        # tree without it.
+        if: hashFiles('.github/actions/use-fast-apt-mirror/action.yml') != ''
+        uses: ./.github/actions/use-fast-apt-mirror
 
       - name: Set up R
         uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
@@ -362,6 +374,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref || github.sha }}
+
+      - name: Use a fast apt mirror
+        # A republish of a release tag that predates the action checks out a
+        # tree without it.
+        if: hashFiles('.github/actions/use-fast-apt-mirror/action.yml') != ''
+        uses: ./.github/actions/use-fast-apt-mirror
 
       - name: Set up R
         uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
