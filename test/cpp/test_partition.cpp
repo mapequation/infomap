@@ -974,14 +974,16 @@ TEST_CASE("Regularized multilayer: a tree deeper than two levels keeps its modul
   };
   const std::string twoLevelTree = "regularized_multilayer_two_level.tree";
   const std::string wrappedTree = "regularized_multilayer_wrapped.tree";
-  for (const auto& [path, prefix] : { std::pair { twoLevelTree, "" }, std::pair { wrappedTree, "1:" } }) {
-    std::ofstream out(path);
+  const std::vector<std::pair<std::string, std::string>> treeFiles { { twoLevelTree, "" }, { wrappedTree, "1:" } };
+  for (const auto& treeFile : treeFiles) {
+    const std::string& prefix = treeFile.second;
+    std::ofstream out(treeFile.first);
     out << "# state level\n";
     for (unsigned int module = 0; module < modules.size(); ++module) {
       for (unsigned int child = 0; child < modules[module].size(); ++child) {
         const unsigned int stateId = modules[module][child];
-        const auto& [physicalId, layerId] = nodeOfState.at(stateId);
-        out << prefix << module + 1 << ":" << child + 1 << " 0 \"" << stateId << "\" " << stateId << " " << physicalId << " " << layerId << "\n";
+        const auto& ids = nodeOfState.at(stateId);
+        out << prefix << module + 1 << ":" << child + 1 << " 0 \"" << stateId << "\" " << stateId << " " << ids.first << " " << ids.second << "\n";
       }
     }
   }

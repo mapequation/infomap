@@ -268,6 +268,9 @@ R CMD INSTALL --with-keep.source build/R/infomap
 Rscript -e 'roxygen2::roxygenise("interfaces/R/infomap")'
 ```
 
+The core sources are C++14 (`CXX_STANDARD` in `scripts/build_config.py`),
+because igraph vendors `src/` and compiles it as C++14.
+
 The R skeleton declares C++17 (`SystemRequirements: C++17`,
 `CXX_STD = CXX17`). This lets R's build system provide the standard flag
 portably on r-universe, and it keeps non-portable `-std=...` flags out of

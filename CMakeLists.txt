@@ -1,6 +1,19 @@
 cmake_minimum_required(VERSION 3.21)
 project(infomap LANGUAGES CXX)
 
+# Every target builds as C++14, tests included (see CXX_STANDARD in scripts/build_config.py).
+# Without this, a target whose compiler defaults to a newer standard gets no -std flag.
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+# Clang and GCC accept some C++17 syntax in C++14 mode with only a warning. infomap_core
+# gets the error from the build policy; this gives it to the CLI, tests and benchmark too.
+# GCC only has the flag from 12 on, and clang-cl takes MSVC-style options instead.
+if((CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+   OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12))
+    add_compile_options(-Werror=c++17-extensions)
+endif()
+
 option(INFOMAP_USE_OPENMP "Enable OpenMP support when available." ON)
 option(INFOMAP_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
 option(INFOMAP_ENABLE_TSAN "Enable the thread sanitizer (Clang only; excludes INFOMAP_ENABLE_SANITIZERS)." OFF)
@@ -116,7 +129,7 @@ target_include_directories(infomap_core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/ven
 # fmt is included from headers under src/ (utils/format.h), so it must be PUBLIC
 # to propagate to the CLI, benchmark, and cpp-test targets that consume src/.
 target_include_directories(infomap_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/vendor/fmt/include")
-target_compile_features(infomap_core PUBLIC cxx_std_17)
+target_compile_features(infomap_core PUBLIC cxx_std_14)
 set_target_properties(infomap_core PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options(infomap_core PRIVATE ${INFOMAP_COMPILE_FLAGS})
 # OpenMP is PUBLIC while the rest of the policy stays PRIVATE, because it changes what

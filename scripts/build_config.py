@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -11,7 +12,9 @@ from pathlib import Path
 # Single source of truth for the C++ language standard across every build
 # surface: the native/Python flag lists below embed it, and the JS/Emscripten
 # build reads it back via the `field` / `make-export` interfaces. Bump here only.
-CXX_STANDARD = "c++17"
+# C++14 because igraph vendors src/ and compiles it as C++14. The R package keeps
+# CXX_STD = CXX17, which compiles the same sources.
+CXX_STANDARD = "c++14"
 
 
 FEATURE_REGISTRY = {
@@ -74,6 +77,16 @@ def _compiler_version(compiler):
     except OSError:
         return ""
     return (completed.stdout or completed.stderr or "").lower()
+
+
+def _gcc_major_version(compiler):
+    # Major version from the first line of `g++ --version`, e.g.
+    # "g++ (Ubuntu 13.2.0-23ubuntu4) 13.2.0" -> 13. None when it cannot be read.
+    first_line = _compiler_version(compiler).splitlines()[:1]
+    versions = (
+        re.findall(r"\b(\d+)\.\d+(?:\.\d+)?\b", first_line[0]) if first_line else []
+    )
+    return int(versions[-1]) if versions else None
 
 
 def _compiler_command_basename(compiler):
@@ -144,7 +157,7 @@ def shutil_which(name):
     return None
 
 
-def _base_compile_flags(compiler_family):
+def _base_compile_flags(compiler_family, gcc_major_version=None):
     if compiler_family == "msvc":
         # /utf-8 sets the source AND execution charset to UTF-8. Required by
         # vendored {fmt} >= 11 (a static_assert in fmt/base.h fails on MSVC
@@ -162,6 +175,9 @@ def _base_compile_flags(compiler_family):
     ]
     if compiler_family == "clang":
         flags.append("-Wshadow")
+        # Clang and GCC accept some C++17 syntax (structured bindings, if constexpr)
+        # in C++14 mode with only a warning; make it an error so it cannot slip in.
+        flags.append("-Werror=c++17-extensions")
     elif compiler_family == "gnu":
         # GCC's plain -Wshadow flags constructor/method parameters that shadow a
         # member (the pervasive `Foo(double flow) : flow(flow)` idiom), emitting
@@ -169,6 +185,9 @@ def _base_compile_flags(compiler_family):
         # matches clang: warn on a local shadowing another local/parameter, not on
         # field shadowing — keeping the useful detection without the noise.
         flags.append("-Wshadow=local")
+        # GCC only has -Wc++17-extensions from 12 on; an older one rejects the flag.
+        if gcc_major_version is not None and gcc_major_version >= 12:
+            flags.append("-Werror=c++17-extensions")
     return flags
 
 
@@ -288,7 +307,10 @@ def resolve_build_config(
     brew_prefix = _brew_prefix() if is_darwin else ""
     libomp_prefix = _brew_prefix("libomp") if is_darwin else ""
 
-    base_compile_flags = _base_compile_flags(compiler_family)
+    gcc_major_version = (
+        _gcc_major_version(compiler) if compiler_family == "gnu" else None
+    )
+    base_compile_flags = _base_compile_flags(compiler_family, gcc_major_version)
     mode_compile_flags = _mode_compile_flags(mode, compiler_family)
     native_compile_flags = (
         _native_arch_compile_flags(compiler_family)

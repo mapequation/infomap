@@ -4,7 +4,6 @@
 
 #include <cmath>
 #include <cstdio>
-#include <filesystem>
 #include <memory>
 #include <string>
 #include <utility>
@@ -181,7 +180,7 @@ TEST_CASE("A module preference reaches a deep tree from the recursive search [fa
 TEST_CASE("Sub-searches from a seed tree do not charge the module preference (#1292) [fast][core][mapeq][biased]")
 {
   const std::string network = networkFixturePath("unbalanced_hierarchy.net");
-  const std::string treePath = (std::filesystem::temp_directory_path() / "infomap_1292_seed.tree").string();
+  const std::string treePath = infomap::test::tempFilePath("infomap_1292_seed.tree");
   for (unsigned int seed = 1; seed <= 5; ++seed) {
     InfomapWrapper seedRun(defaultFlags("--seed " + std::to_string(seed)));
     seedRun.readInputData(network);

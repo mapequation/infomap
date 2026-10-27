@@ -20,11 +20,34 @@ build_config = load_build_config()
 resolve_build_config = build_config.resolve_build_config
 
 
+def test_gnu_rejects_cxx17_syntax_only_where_gcc_has_the_flag(monkeypatch):
+    # -Wc++17-extensions exists from GCC 12; an older GCC rejects the -Werror= form.
+    for version_line, expected in (
+        ("g++ (Ubuntu 13.2.0-23ubuntu4) 13.2.0", True),
+        ("x86_64-w64-mingw32-g++.exe (Rev2, Built by MSYS2 project) 12.1.0", True),
+        ("g++ (GCC) 11.4.0", False),
+        ("", False),
+    ):
+        monkeypatch.setattr(
+            build_config,
+            "_compiler_version",
+            lambda compiler, line=version_line: line.lower(),
+        )
+        config = resolve_build_config(
+            platform_name="linux", compiler="g++", openmp=False
+        )
+
+        assert config["compiler_family"] == "gnu"
+        assert ("-Werror=c++17-extensions" in config["compile_flags"]) is expected, (
+            version_line
+        )
+
+
 def test_windows_cl_exe_uses_msvc_flags():
     config = resolve_build_config(platform_name="win32", compiler="cl.exe", openmp=True)
 
     assert config["compiler_family"] == "msvc"
-    assert "/std:c++17" in config["compile_flags"]
+    assert "/std:c++14" in config["compile_flags"]
     # Required by vendored {fmt} >= 11 (static_assert in fmt/base.h on MSVC).
     assert "/utf-8" in config["compile_flags"]
     assert "-Wextra" not in config["compile_flags"]
@@ -39,7 +62,7 @@ def test_windows_quoted_cl_path_uses_msvc_flags():
     config = resolve_build_config(platform_name="win32", compiler=compiler, openmp=True)
 
     assert config["compiler_family"] == "msvc"
-    assert "/std:c++17" in config["compile_flags"]
+    assert "/std:c++14" in config["compile_flags"]
     assert "-Wextra" not in config["compile_flags"]
     assert "-fopenmp" not in config["compile_flags"]
 
@@ -48,7 +71,7 @@ def test_windows_unknown_compiler_defaults_to_msvc_flags():
     config = resolve_build_config(platform_name="win32", compiler="c++", openmp=True)
 
     assert config["compiler_family"] == "msvc"
-    assert "/std:c++17" in config["compile_flags"]
+    assert "/std:c++14" in config["compile_flags"]
     assert "-Wextra" not in config["compile_flags"]
     assert "-fopenmp" not in config["compile_flags"]
 
@@ -73,7 +96,7 @@ def test_clang_debug_and_release_share_warning_policy():
         "-Wshadow",
         "-pedantic",
         "-Wnon-virtual-dtor",
-        "-std=c++17",
+        "-std=c++14",
     ]:
         assert flag in debug_config["compile_flags"]
         assert flag in release_config["compile_flags"]

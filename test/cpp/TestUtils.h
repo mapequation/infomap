@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <cmath>
 #include <fstream>
 #include <map>
@@ -34,6 +35,25 @@ inline std::string repoPath(const std::string& relativePath)
 inline std::string fixturePath(const std::string& relativePath)
 {
   return repoPath("test/fixtures/" + relativePath);
+}
+
+// A file in the system temporary directory, without <filesystem>: the tests build as C++14.
+inline std::string tempFilePath(const std::string& filename)
+{
+#ifdef _WIN32
+  std::string directory = ".";
+#else
+  std::string directory = "/tmp";
+#endif
+  for (const auto* name : { "TMPDIR", "TEMP", "TMP" }) {
+    const auto* value = std::getenv(name);
+    if (value != nullptr && value[0] != '\0') {
+      directory = value;
+      break;
+    }
+  }
+  const char last = directory.back();
+  return last == '/' || last == '\\' ? directory + filename : directory + "/" + filename;
 }
 
 inline std::string networkFixturePath(const std::string& filename)
