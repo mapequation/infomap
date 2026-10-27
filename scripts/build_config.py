@@ -11,7 +11,9 @@ from pathlib import Path
 # Single source of truth for the C++ language standard across every build
 # surface: the native/Python flag lists below embed it, and the JS/Emscripten
 # build reads it back via the `field` / `make-export` interfaces. Bump here only.
-CXX_STANDARD = "c++17"
+# C++14 because igraph vendors src/ and compiles it as C++14. The R package keeps
+# CXX_STD = CXX17, which compiles the same sources.
+CXX_STANDARD = "c++14"
 
 
 FEATURE_REGISTRY = {
@@ -162,6 +164,9 @@ def _base_compile_flags(compiler_family):
     ]
     if compiler_family == "clang":
         flags.append("-Wshadow")
+        # Clang accepts some C++17 syntax (structured bindings, if constexpr) in
+        # C++14 mode with only a warning; make it an error so it cannot slip in.
+        flags.append("-Werror=c++17-extensions")
     elif compiler_family == "gnu":
         # GCC's plain -Wshadow flags constructor/method parameters that shadow a
         # member (the pervasive `Foo(double flow) : flow(flow)` idiom), emitting

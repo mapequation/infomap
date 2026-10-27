@@ -24,7 +24,7 @@ def test_windows_cl_exe_uses_msvc_flags():
     config = resolve_build_config(platform_name="win32", compiler="cl.exe", openmp=True)
 
     assert config["compiler_family"] == "msvc"
-    assert "/std:c++17" in config["compile_flags"]
+    assert "/std:c++14" in config["compile_flags"]
     # Required by vendored {fmt} >= 11 (static_assert in fmt/base.h on MSVC).
     assert "/utf-8" in config["compile_flags"]
     assert "-Wextra" not in config["compile_flags"]
@@ -39,7 +39,7 @@ def test_windows_quoted_cl_path_uses_msvc_flags():
     config = resolve_build_config(platform_name="win32", compiler=compiler, openmp=True)
 
     assert config["compiler_family"] == "msvc"
-    assert "/std:c++17" in config["compile_flags"]
+    assert "/std:c++14" in config["compile_flags"]
     assert "-Wextra" not in config["compile_flags"]
     assert "-fopenmp" not in config["compile_flags"]
 
@@ -48,7 +48,7 @@ def test_windows_unknown_compiler_defaults_to_msvc_flags():
     config = resolve_build_config(platform_name="win32", compiler="c++", openmp=True)
 
     assert config["compiler_family"] == "msvc"
-    assert "/std:c++17" in config["compile_flags"]
+    assert "/std:c++14" in config["compile_flags"]
     assert "-Wextra" not in config["compile_flags"]
     assert "-fopenmp" not in config["compile_flags"]
 
@@ -73,7 +73,7 @@ def test_clang_debug_and_release_share_warning_policy():
         "-Wshadow",
         "-pedantic",
         "-Wnon-virtual-dtor",
-        "-std=c++17",
+        "-std=c++14",
     ]:
         assert flag in debug_config["compile_flags"]
         assert flag in release_config["compile_flags"]

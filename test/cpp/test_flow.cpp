@@ -634,9 +634,9 @@ TEST_CASE("Directed regularization on both directions of a link with a self-link
   // link end, while its out- and in-weights count it as both an out-link and an in-link (#1204).
   const auto run = [](bool directed) {
     InfomapWrapper im(infomap::test::defaultFlags(std::string("--regularized --two-level -N 1 --seed 1") + (directed ? " --directed" : "")));
-    for (const auto& [source, target] : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 2 }, { 1, 3 }, { 2, 3 }, { 3, 4 }, { 4, 5 }, { 4, 6 }, { 5, 6 } }) {
-      im.addLink(source, target);
-      if (directed) im.addLink(target, source);
+    for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 2 }, { 1, 3 }, { 2, 3 }, { 3, 4 }, { 4, 5 }, { 4, 6 }, { 5, 6 } }) {
+      im.addLink(link.first, link.second);
+      if (directed) im.addLink(link.second, link.first);
     }
     im.addLink(5, 5, 2.0);
     im.run();
@@ -663,8 +663,8 @@ namespace {
 // half the weight in both directions, the second one reverse first.
 void addPairTriangles(InfomapWrapper& im, bool split)
 {
-  for (const auto& [source, target] : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 3 }, { 2, 3 }, { 4, 5 }, { 4, 6 }, { 5, 6 } }) {
-    im.addLink(source, target, 1.0);
+  for (const auto& link : std::vector<std::pair<unsigned int, unsigned int>> { { 1, 3 }, { 2, 3 }, { 4, 5 }, { 4, 6 }, { 5, 6 } }) {
+    im.addLink(link.first, link.second, 1.0);
   }
   if (split) {
     im.addLink(1, 2, 0.5);
@@ -801,12 +801,12 @@ TEST_CASE("Regularization strength 0 matches its small-strength limit with dangl
 
   for (const std::string flags : { "--directed", "--directed --no-self-links", "", "--no-self-links" }) {
     CAPTURE(flags);
-    const auto [codelengthAtZero, partitionAtZero] = run(flags, "0");
-    const auto [codelengthNearZero, partitionNearZero] = run(flags, "1e-12");
+    const auto atZero = run(flags, "0");
+    const auto nearZero = run(flags, "1e-12");
 
-    CHECK(std::isfinite(codelengthAtZero));
-    infomap::test::checkApproxCodelength(codelengthAtZero, codelengthNearZero, 1e-9);
-    CHECK(partitionAtZero == partitionNearZero);
+    CHECK(std::isfinite(atZero.first));
+    infomap::test::checkApproxCodelength(atZero.first, nearZero.first, 1e-9);
+    CHECK(atZero.second == nearZero.second);
   }
 }
 

@@ -15,7 +15,7 @@ Do not bundle unrelated cleanup into the same change.
 
 ## Repo Map
 
-- `src/`: C++ runtime behavior, algorithms, parsing, IO, and CLI semantics
+- `src/`: C++ runtime behavior, algorithms, parsing, IO, and CLI semantics. C++14: igraph vendors it and compiles it as C++14, so no C++17 features or semantics (structured bindings, `std::optional`, implicitly inline `static constexpr` members)
 - `interfaces/python/`: Python package sources, tracked SWIG outputs, and Sphinx source
 - `interfaces/R/`: R package skeleton (`infomap/`) and tracked SWIG-generated R outputs (`generated/`)
 - `interfaces/js/`: JavaScript package sources and TypeScript sources

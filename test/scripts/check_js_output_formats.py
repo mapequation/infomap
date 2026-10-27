@@ -32,7 +32,7 @@ def read_cpp_manifest(source: Path) -> dict[str, object]:
         subprocess.run(
             [
                 compiler,
-                "-std=c++17",
+                "-std=c++14",
                 "-I",
                 str(repo_root / "src"),
                 "-I",
