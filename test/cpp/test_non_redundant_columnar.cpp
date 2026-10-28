@@ -440,20 +440,20 @@ TEST_CASE("NonRedundant/columnar: an all-top-level tree never becomes ragged in 
 
 TEST_CASE("Columnar: the preferred-modules penalty survives the object-oriented fallback [fast][core][non-redundant]")
 {
-  // --preferred-number-of-modules is the only correction with no object-oriented
-  // counterpart, so a tree that falls back to calcCodelengthOnTree used to lose the
-  // whole |K - K_pref| penalty without a word. The base objective does not pad (padding
-  // is not free for it), so the ragged tree still takes the fallback -- the penalty has
-  // to be added there by hand.
+  // The base objective does not pad (padding is not free for it), so the ragged tree
+  // still takes the object-oriented fallback, which used to lose the whole |K - K_pref|
+  // penalty without a word. Both engines count K as the TOP modules (#1068), so the
+  // fallback must charge the ragged fixture's two top modules, not its three leaf ones.
   // --columnar explicitly: this is a columnar-engine contract, and the object-oriented
   // engine has no such penalty to check for.
   const double ragged = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--columnar");
-  // The ragged fixture has three leaf modules: 1, 2:1 and 2:2.
+  // The ragged fixture has two top modules, 1 and 2 (and three leaf modules: 1, 2:1
+  // and 2:2).
   for (unsigned int preferred = 1; preferred <= 6; ++preferred) {
     const double biased = scoreFixedPartition("twotriangles_flow.net",
                                               "twotriangles_ragged_branches.tree",
                                               "--columnar --preferred-number-of-modules " + std::to_string(preferred));
-    const double expectedPenalty = std::abs(3.0 - static_cast<double>(preferred));
+    const double expectedPenalty = std::abs(2.0 - static_cast<double>(preferred));
     CHECK(biased == doctest::Approx(ragged + expectedPenalty).epsilon(1e-9));
   }
 }

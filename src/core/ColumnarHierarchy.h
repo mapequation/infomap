@@ -550,6 +550,18 @@ private:
   // units are leaves (k == 0) — interior levels stay first-order (base).
   void addSlicedLeafCorrections(ColumnarTwoLevel& subOpt, const std::vector<int>& globalLeafIds) const;
 
+  // Corrections that charge only the top modules (#1068): the top-module count
+  // they steer to (0: none), and their copies onto a search whose partition
+  // becomes the top level (ColumnarCorrection::topLevelCopy).
+  int targetTopModules() const;
+  void addTopLevelCorrections(ColumnarTwoLevel& opt) const;
+  // The hierarchical search's bottom (leaf -> module, returns its module count):
+  // the two-level search without the top-level-only corrections, unless that bottom
+  // is already coarser than their target, when the top has to be found at the
+  // leaves -- the biased leaf search from the unbiased bottom and from singletons,
+  // the better of the two (#1068).
+  int buildBottom(unsigned int bottomBlockLimit, std::vector<int>& bottom);
+
   // Sum of the composable corrections' contributions to the codelength of
   // `stack` (0 for the base objective, i.e. no corrections). `breakdown`, when
   // non-null, also collects each correction's per-node split.
