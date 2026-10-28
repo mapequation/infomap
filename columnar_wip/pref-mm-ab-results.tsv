@@ -1,0 +1,1329 @@
+OO10	ninetriangles	old	1	-N10	3.371875026	0.00565775	118867567	5	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	ninetriangles	new	1	-N10	3.371875026	0.00565775	118867567	5	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	powergrid	old	1	-2 -N10	5.600242125	0.826878375	5790470531	424	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	powergrid	new	1	-2 -N10	5.600242125	0.826878375	5790470531	424	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	web-NotreDame	old	1	-N10 -d	6.179626719	204.726857292	1258683859036	514	7	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	web-NotreDame	new	1	-N10 -d	6.179626719	204.726857292	1258683859036	514	7	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	powergrid	old	1	-N10	4.733820783	1.92770475	19849021070	15	6	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	powergrid	new	1	-N10	4.733820783	1.92770475	19849021070	15	6	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	air30k	old	1	-N10	5.392254971	11.36521775	97052889526	247	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	air30k	new	1	-N10	5.392254971	11.36521775	97052889526	247	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	word_assoc (pref.)	old	1	-N10 -d --preferred-number-of-modules 25	11.6630685	6.596332084	54620193001	25	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	word_assoc (pref.)	new	1	-N10 -d --preferred-number-of-modules 25	11.6630685	6.596332084	54620193001	25	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	wikispeedia `-d`	old	1	-d -N10	5.912456819	1.340145458	13242691138	150	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	wikispeedia `-d`	new	1	-d -N10	5.912456819	1.340145458	13242691138	150	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	jazz	old	1	-N10	6.862755928	0.02343525	307294295	6	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	jazz	new	1	-N10	6.862755928	0.02343525	307294295	6	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	multilayer (ex.)	old	1	-N10	2.011405238	0.001011667	68272247	2	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	multilayer (ex.)	new	1	-N10	2.011405238	0.001011667	68272247	2	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	lazega	old	1	-2 -N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.006267166	117958936	7	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	lazega	new	1	-2 -N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.006267166	117958936	7	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	jazz	old	1	-2 -N10	6.862755928	0.011604667	182529703	6	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	jazz	new	1	-2 -N10	6.862755928	0.011604667	182529703	6	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	word_assoc (pref.)	old	1	-2 -N10 -d --preferred-number-of-modules 25	11.6630685	4.53882025	40707445435	25	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	word_assoc (pref.)	new	1	-2 -N10 -d --preferred-number-of-modules 25	11.6630685	4.53882025	40707445435	25	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	polblogs	old	1	-2 -N10 -d	7.59324763	0.13929475	1336689307	86	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	polblogs	new	1	-2 -N10 -d	7.59324763	0.13929475	1336689307	86	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	lazega	old	1	-N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.010721625	167325446	7	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	lazega	new	1	-N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.010721625	167325446	7	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	ninetriangles	old	1	-2 -N10	3.517754809	0.001484584	74961055	9	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	ninetriangles	new	1	-2 -N10	3.517754809	0.001484584	74961055	9	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	malaria	old	1	-2 -N10	7.524106567	4.87440325	41414003811	134	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	malaria	new	1	-2 -N10	7.524106567	4.87440325	41414003811	134	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	wikispeedia `-2d`	old	1	-2d -N10	5.912491513	0.860798291	8876747410	150	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	wikispeedia `-2d`	new	1	-2d -N10	5.912491513	0.860798291	8876747410	150	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	multilayer (ex.)	old	1	-2 -N10	2.011405238	0.00058975	64595506	2	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	multilayer (ex.)	new	1	-2 -N10	2.011405238	0.00058975	64595506	2	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	netscience	old	1	-2 -N10	3.527414842	0.088505667	1025972880	311	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	netscience	new	1	-2 -N10	3.527414842	0.088505667	1025972880	311	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	word_assoc	old	1	-2 -N10 -d	11.42488467	4.921136	41981336985	617	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	word_assoc	new	1	-2 -N10 -d	11.42488467	4.921136	41981336985	617	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	air30k (reg.)	old	1	-2 -N10 -d --regularized	5.57824602	3.671197458	37553247764	291	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	air30k (reg.)	new	1	-2 -N10 -d --regularized	5.57824602	3.671197458	37553247764	291	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	malaria	old	1	-N10	7.519366404	7.443375083	64997558944	137	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	malaria	new	1	-N10	7.519366404	7.443375083	64997558944	137	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	netscience	old	1	-N10	3.364514863	0.17823425	1962619844	281	5	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	netscience	new	1	-N10	3.364514863	0.17823425	1962619844	281	5	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	word_assoc	old	1	-N10 -d	11.4248698	6.314208959	55216191397	617	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	word_assoc	new	1	-N10 -d	11.4248698	6.314208959	55216191397	617	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	web-NotreDame	old	1	-2 -N10 -d	6.866765321	43.099324625	242574619792	10147	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	web-NotreDame	new	1	-2 -N10 -d	6.866765321	43.099324625	242574619792	10147	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	polblogs	old	1	-N10 -d	7.593226496	0.255160625	2656557419	86	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	polblogs	new	1	-N10 -d	7.593226496	0.255160625	2656557419	86	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	air30k	old	1	-2 -N10	5.408320067	3.076466833	29687042742	321	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO2_10	air30k	new	1	-2 -N10	5.408320067	3.076466833	29687042742	321	2	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	air30k (reg.)	old	1	-N10 -d --regularized	5.577456057	5.390893375	57039422344	291	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+OO10	air30k (reg.)	new	1	-N10 -d --regularized	5.577456057	5.390893375	57039422344	291	3	bench-sync new md5 4e84aca0 (carried) (carried)	
+C1	ninetriangles	old	1	-C -N1	3.371875026	0.000322959	60866444	5	3	bench-sync old md5 ef9e3ebc	
+C1	ninetriangles	new	1	-C -N1	3.371875026	0.000303459	60284414	5	3	bench-sync new md5 f325e10e	
+C1	lazega	old	1	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	6.041117399	0.0007415	66240947	6	2	bench-sync old md5 ef9e3ebc	
+C1	lazega	new	1	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	6.041117399	0.00082	65872716	6	2	bench-sync new md5 f325e10e	
+C1	multilayer (ex.)	old	1	-C -N1	2.011405238	0.000234833	59479202	2	2	bench-sync old md5 ef9e3ebc	
+C1	multilayer (ex.)	new	1	-C -N1	2.011405238	0.000256958	59367028	2	2	bench-sync new md5 f325e10e	
+C1	wikispeedia `-2d`	old	1	-C -2d -N1	5.91901362	0.097105917	990407635	184	2	bench-sync old md5 ef9e3ebc	
+C1	wikispeedia `-2d`	new	1	-C -2d -N1	5.91901362	0.095306416	989860608	184	2	bench-sync new md5 f325e10e	
+C1	wikispeedia `-d`	old	1	-C -d -N1	6.066305904	0.070743667	804621752	187	3	bench-sync old md5 ef9e3ebc	
+C1	wikispeedia `-d`	new	1	-C -d -N1	6.066305904	0.074055709	805303391	187	3	bench-sync new md5 f325e10e	
+C1	jazz	old	1	-C -N1	6.896294162	0.001032208	71960506	10	2	bench-sync old md5 ef9e3ebc	
+C1	jazz	new	1	-C -N1	6.896294162	0.001000959	72464150	10	2	bench-sync new md5 f325e10e	
+C1	powergrid	old	1	-C -N1	4.728634278	0.025490334	338547569	17	5	bench-sync old md5 ef9e3ebc	
+C1	powergrid	new	1	-C -N1	4.728634278	0.025423459	338858498	17	5	bench-sync new md5 f325e10e	
+C1	web-NotreDame	old	1	-C -N1 -d	6.218295286	2.533291542	23420345853	492	5	bench-sync old md5 ef9e3ebc	
+C1	web-NotreDame	new	1	-C -N1 -d	6.218295286	2.753856792	23416610943	492	5	bench-sync new md5 f325e10e	
+C1	malaria	old	1	-C -N1	7.492381296	0.4229605	5379175890	148	3	bench-sync old md5 ef9e3ebc	
+C1	malaria	new	1	-C -N1	7.492381296	0.402247875	5379700928	148	3	bench-sync new md5 f325e10e	
+C1	air30k	old	1	-C -N1	5.456991462	0.420145167	4736366012	203	3	bench-sync old md5 ef9e3ebc	
+C1	air30k	new	1	-C -N1	5.456991462	0.40920125	4734720046	203	3	bench-sync new md5 f325e10e	
+C1	air30k (reg.)	old	1	-C -N1 -d --regularized	5.650152296	0.602741833	6290297468	190	3	bench-sync old md5 ef9e3ebc	
+C1	air30k (reg.)	new	1	-C -N1 -d --regularized	5.650152296	0.602579791	6283897059	190	3	bench-sync new md5 f325e10e	
+C1	air30k (meta)	old	1	-C -N1 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.670498664	0.761109792	7323885748	1451	3	bench-sync old md5 ef9e3ebc	
+C1	air30k (meta)	new	1	-C -N1 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.670498664	0.771660375	7321610914	1451	3	bench-sync new md5 f325e10e	
+C1	overlapping om2_N256_E50k `-2d`	old	1	-C -2d -N1	6.744558723	1.293847584	12541498583	606	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om2_N256_E50k `-2d`	new	1	-C -2d -N1	6.744558723	1.280576	12537692015	606	2	bench-sync new md5 f325e10e	
+C1	overlapping om2_N256_E50k `-d`	old	1	-C -d -N1	7.298733312	0.399339791	3825649100	338	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om2_N256_E50k `-d`	new	1	-C -d -N1	7.298733312	0.406011625	3827263078	338	4	bench-sync new md5 f325e10e	
+C1	overlapping om2_N256_E50k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.734990605	0.577328833	6269503328	454	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om2_N256_E50k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.734990605	0.598101458	6269492421	454	2	bench-sync new md5 f325e10e	
+F1	overlapping om2_N256_E50k `-d`	old	1	-C -F -d -N1	7.317528373	0.263742917	2476961605	338	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om2_N256_E50k `-d`	new	1	-C -F -d -N1	7.317528373	0.270540042	2473973060	338	4	bench-sync new md5 f325e10e	
+C1	overlapping om3_N256_E100k `-2d`	old	1	-C -2d -N1	6.823562921	1.150647	12804734544	70	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om3_N256_E100k `-2d`	new	1	-C -2d -N1	6.823562921	1.163044625	12805356244	70	2	bench-sync new md5 f325e10e	
+C1	overlapping om3_N256_E100k `-d`	old	1	-C -d -N1	6.823562921	1.476893916	16761635736	70	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om3_N256_E100k `-d`	new	1	-C -d -N1	6.823562921	1.503874417	16768385933	70	2	bench-sync new md5 f325e10e	
+C1	overlapping om3_N256_E100k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.820929855	0.399435208	4142810141	50	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om3_N256_E100k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.820929855	0.410641292	4143178963	50	2	bench-sync new md5 f325e10e	
+F1	overlapping om3_N256_E100k `-d`	old	1	-C -F -d -N1	6.823562921	1.462726958	16271938424	70	2	bench-sync old md5 ef9e3ebc	
+F1	overlapping om3_N256_E100k `-d`	new	1	-C -F -d -N1	6.823562921	1.480820583	16273841877	70	2	bench-sync new md5 f325e10e	
+C1	overlapping om4_N256_E100k `-2d`	old	1	-C -2d -N1	6.858825005	1.375718417	12585483432	179	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om4_N256_E100k `-2d`	new	1	-C -2d -N1	6.858825005	1.334314541	12585166943	179	2	bench-sync new md5 f325e10e	
+C1	overlapping om4_N256_E100k `-d`	old	1	-C -d -N1	6.858825005	1.761617292	17495882471	179	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om4_N256_E100k `-d`	new	1	-C -d -N1	6.858825005	1.740326667	17494963009	179	2	bench-sync new md5 f325e10e	
+C1	overlapping om4_N256_E100k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.850471471	0.860585625	9163882894	126	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om4_N256_E100k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.850471471	0.854952958	9160589950	126	2	bench-sync new md5 f325e10e	
+F1	overlapping om4_N256_E100k `-d`	old	1	-C -F -d -N1	6.858825005	1.548660625	15377397050	179	2	bench-sync old md5 ef9e3ebc	
+F1	overlapping om4_N256_E100k `-d`	new	1	-C -F -d -N1	6.858825005	1.537753333	15373281094	179	2	bench-sync new md5 f325e10e	
+C1	overlapping om5_N256_E100k `-2d`	old	1	-C -2d -N1	6.948978287	1.53065075	15092845985	309	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om5_N256_E100k `-2d`	new	1	-C -2d -N1	6.948978287	1.534736167	15092633391	309	2	bench-sync new md5 f325e10e	
+C1	overlapping om5_N256_E100k `-d`	old	1	-C -d -N1	7.804137847	0.755155833	6844300845	77	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om5_N256_E100k `-d`	new	1	-C -d -N1	7.804137847	0.745628666	6855082636	77	4	bench-sync new md5 f325e10e	
+C1	overlapping om5_N256_E100k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.867718448	0.944380291	9547075420	290	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om5_N256_E100k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.867718448	0.937624917	9548290714	290	2	bench-sync new md5 f325e10e	
+F1	overlapping om5_N256_E100k `-d`	old	1	-C -F -d -N1	7.829247983	0.567901042	4794013845	93	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om5_N256_E100k `-d`	new	1	-C -F -d -N1	7.829247983	0.537709583	4794988955	93	4	bench-sync new md5 f325e10e	
+C1	overlapping om6_N256_E100k `-2d`	old	1	-C -2d -N1	6.894797134	1.544160667	14422939870	447	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om6_N256_E100k `-2d`	new	1	-C -2d -N1	6.894797134	1.518410792	14423164484	447	2	bench-sync new md5 f325e10e	
+C1	overlapping om6_N256_E100k `-d`	old	1	-C -d -N1	7.474267948	0.769410625	6919242158	110	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om6_N256_E100k `-d`	new	1	-C -d -N1	7.474267948	0.755322375	6925639233	110	4	bench-sync new md5 f325e10e	
+C1	overlapping om6_N256_E100k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.87656878	0.988071208	9579387623	430	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om6_N256_E100k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.87656878	0.96422225	9581917231	430	2	bench-sync new md5 f325e10e	
+F1	overlapping om6_N256_E100k `-d`	old	1	-C -F -d -N1	7.546115138	0.572413708	4710519819	103	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om6_N256_E100k `-d`	new	1	-C -F -d -N1	7.546115138	0.545185292	4706733559	103	4	bench-sync new md5 f325e10e	
+C1	overlapping om7_N256_E100k `-2d`	old	1	-C -2d -N1	6.889674586	1.769440083	16498122626	649	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om7_N256_E100k `-2d`	new	1	-C -2d -N1	6.889674586	1.758836167	16499564232	649	2	bench-sync new md5 f325e10e	
+C1	overlapping om7_N256_E100k `-d`	old	1	-C -d -N1	7.190120906	0.883823292	7769983923	150	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om7_N256_E100k `-d`	new	1	-C -d -N1	7.190120906	0.878171333	7768173441	150	4	bench-sync new md5 f325e10e	
+C1	overlapping om7_N256_E100k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.881554086	0.968028208	9426412536	624	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om7_N256_E100k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.881554086	0.969242584	9420697311	624	2	bench-sync new md5 f325e10e	
+F1	overlapping om7_N256_E100k `-d`	old	1	-C -F -d -N1	7.238675817	0.574568541	4940956380	145	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om7_N256_E100k `-d`	new	1	-C -F -d -N1	7.238675817	0.574353875	4943195104	145	4	bench-sync new md5 f325e10e	
+C1	overlapping om8_N256_E100k `-2d`	old	1	-C -2d -N1	6.876045079	1.9421175	17861859494	864	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om8_N256_E100k `-2d`	new	1	-C -2d -N1	6.876045079	1.9562465	17871077761	864	2	bench-sync new md5 f325e10e	
+C1	overlapping om8_N256_E100k `-d`	old	1	-C -d -N1	6.938890883	0.941863875	8253561635	187	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om8_N256_E100k `-d`	new	1	-C -d -N1	6.938890883	0.933474666	8247623166	187	4	bench-sync new md5 f325e10e	
+C1	overlapping om8_N256_E100k `-2d -c` planted	old	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.863878689	1.253433875	12061273735	829	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om8_N256_E100k `-2d -c` planted	new	1	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.863878689	1.264862333	12053056904	829	2	bench-sync new md5 f325e10e	
+F1	overlapping om8_N256_E100k `-d`	old	1	-C -F -d -N1	7.007657776	0.710974917	5848646754	179	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om8_N256_E100k `-d`	new	1	-C -F -d -N1	7.007657776	0.704674167	5852049045	179	4	bench-sync new md5 f325e10e	
+C1	overlapping om2_N256_E100k `-d`	old	1	-C -d -N1	7.144749725	0.4554005	4588979255	3	3	bench-sync old md5 ef9e3ebc	
+C1	overlapping om2_N256_E100k `-d`	new	1	-C -d -N1	7.144749725	0.443377375	4590466214	3	3	bench-sync new md5 f325e10e	
+C1	overlapping om3_N256_E50k `-d`	old	1	-C -d -N1	5.848415175	0.405481208	4041885129	531	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om3_N256_E50k `-d`	new	1	-C -d -N1	5.848415175	0.407977875	4047781101	531	4	bench-sync new md5 f325e10e	
+C1	overlapping om4_N256_E50k `-d`	old	1	-C -d -N1	4.899075548	0.429090917	3993321788	1884	3	bench-sync old md5 ef9e3ebc	
+C1	overlapping om4_N256_E50k `-d`	new	1	-C -d -N1	4.899075548	0.423728042	3994390511	1884	3	bench-sync new md5 f325e10e	
+C1	overlapping om5_N256_E50k `-d`	old	1	-C -d -N1	4.150151338	0.493465375	4443443508	2158	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om5_N256_E50k `-d`	new	1	-C -d -N1	4.150151338	0.494142959	4447253064	2158	4	bench-sync new md5 f325e10e	
+C1	overlapping om6_N256_E50k `-d`	old	1	-C -d -N1	3.615875911	0.534982958	4594383166	3022	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om6_N256_E50k `-d`	new	1	-C -d -N1	3.615875911	0.535269625	4592148680	3022	4	bench-sync new md5 f325e10e	
+C1	overlapping om7_N256_E50k `-d`	old	1	-C -d -N1	3.206629429	0.706449041	5957727339	3398	5	bench-sync old md5 ef9e3ebc	
+C1	overlapping om7_N256_E50k `-d`	new	1	-C -d -N1	3.206629429	0.7167385	5962418205	3398	5	bench-sync new md5 f325e10e	
+C1	overlapping om8_N256_E50k `-d`	old	1	-C -d -N1	2.883087834	0.643872125	5466192903	4351	5	bench-sync old md5 ef9e3ebc	
+C1	overlapping om8_N256_E50k `-d`	new	1	-C -d -N1	2.883087834	0.665930792	5454330141	4351	5	bench-sync new md5 f325e10e	
+C1	netscience	old	1	-C -N1	3.364903063	0.006491625	133092769	278	4	bench-sync old md5 ef9e3ebc	
+C1	netscience	new	1	-C -N1	3.364903063	0.00655175	132926019	278	4	bench-sync new md5 f325e10e	
+C1	polblogs	old	1	-C -N1 -d	7.593689164	0.015639667	260457144	3	3	bench-sync old md5 ef9e3ebc	
+C1	polblogs	new	1	-C -N1 -d	7.593689164	0.015538208	259338326	3	3	bench-sync new md5 f325e10e	
+C1	word_assoc	old	1	-C -N1 -d	11.70862241	0.292599875	3445508974	1817	2	bench-sync old md5 ef9e3ebc	
+C1	word_assoc	new	1	-C -N1 -d	11.70862241	0.284523792	3441522230	1817	2	bench-sync new md5 f325e10e	
+C1	word_assoc (pref.)	old	1	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.44003775	4477569713	25	2	bench-sync old md5 ef9e3ebc	
+C1	word_assoc (pref.)	new	1	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.446233333	4481777842	25	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.778901842	0.05610475	595825108	8	2	bench-sync old md5 ef9e3ebc	7.957873782
+FAM	om2_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.778901842	0.05354075	593965497	8	2	bench-sync new md5 f325e10e	7.957873782
+FAM	om2_N256_E50k `-2d -N1`	old	1	-C -2d -N1	6.744558723	1.195520458	12530019859	606	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-2d -N1`	new	1	-C -2d -N1	6.744558723	1.174658958	12528728953	606	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k `-d -N1`	old	1	-C -d -N1	7.298733312	0.390654542	3828618115	338	4	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-d -N1`	new	1	-C -d -N1	7.298733312	0.3845645	3825058341	338	4	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	7.569509705	0.066059917	689594989	8	2	bench-sync old md5 ef9e3ebc	7.958565403
+FAM	om2_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	7.569509705	0.067972375	687446031	8	2	bench-sync new md5 f325e10e	7.958565403
+FAM	om2_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.563587703	1.407012792	15633793132	96	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.563587703	1.379039083	15623980236	96	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.563587703	1.501950959	16931158517	96	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.563587703	1.600758584	16945007637	96	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.782220083	0.074508458	818089002	8	2	bench-sync old md5 ef9e3ebc	7.960871197
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.782220083	0.07122425	817252773	8	2	bench-sync new md5 f325e10e	7.960871197
+FAM	om2_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.774049681	0.613843125	6474062004	60	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.774049681	0.598840667	6476998557	60	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k `-d -N1`	old	1	-C -d -N1	7.144749725	0.435919333	4588127392	3	3	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-d -N1`	new	1	-C -d -N1	7.144749725	0.442926667	4588510182	3	3	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.964713526	0.143266042	1025982590	8	2	bench-sync old md5 ef9e3ebc	7.960610295
+FAM	om2_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.964713526	0.098893959	1024707653	8	2	bench-sync new md5 f325e10e	7.960610295
+FAM	om2_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	6.950574698	0.716683125	7448390879	10	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	6.950574698	0.700182125	7441647687	10	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.485124727	0.516783334	5169064287	594	3	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.485124727	0.494620917	5168595065	594	3	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	6.850734921	0.071331291	696157860	12	2	bench-sync old md5 ef9e3ebc	7.96795137
+FAM	om3_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	6.850734921	0.07040675	694344208	12	2	bench-sync new md5 f325e10e	7.96795137
+FAM	om3_N256_E50k `-2d -N1`	old	1	-C -2d -N1	6.269691984	0.510834125	4207680266	3218	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-2d -N1`	new	1	-C -2d -N1	6.269691984	0.538388291	4211317490	3218	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k `-d -N1`	old	1	-C -d -N1	5.848415175	0.514651334	4042854033	531	4	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-d -N1`	new	1	-C -d -N1	5.848415175	0.411262667	4037993756	531	4	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	8.141739503	0.080176625	792808070	12	2	bench-sync old md5 ef9e3ebc	7.969664223
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	8.141739503	0.08317875	792565645	12	2	bench-sync new md5 f325e10e	7.969664223
+FAM	om3_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.917872981	0.550085208	5043805335	106	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.917872981	0.599032333	5042390563	106	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.917872981	0.690081208	6277429108	106	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.917872981	0.68930175	6276810298	106	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.837980937	0.093542459	938947666	12	2	bench-sync old md5 ef9e3ebc	7.97489927
+FAM	om3_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.837980937	0.098741083	937816177	12	2	bench-sync new md5 f325e10e	7.97489927
+FAM	om3_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.823562921	1.125326083	12801482829	70	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.823562921	1.1340045	12803173939	70	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k `-d -N1`	old	1	-C -d -N1	6.823562921	1.452963834	16760451035	70	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-d -N1`	new	1	-C -d -N1	6.823562921	1.47495	16764461018	70	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	7.283809081	0.125306083	1153775171	12	2	bench-sync old md5 ef9e3ebc	7.97414175
+FAM	om3_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	7.283809081	0.133183959	1154955389	12	2	bench-sync new md5 f325e10e	7.97414175
+FAM	om3_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.263397657	1.11856775	12219911091	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.263397657	1.167718083	12224526407	39	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.263397657	1.3969715	15828852848	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.263397657	1.426118709	15829792933	39	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	6.913283001	0.089717375	784203128	16	2	bench-sync old md5 ef9e3ebc	7.975617984
+FAM	om4_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	6.913283001	0.0833685	781267537	16	2	bench-sync new md5 f325e10e	7.975617984
+FAM	om4_N256_E50k `-2d -N1`	old	1	-C -2d -N1	5.464632117	0.507958792	3787360101	4348	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-2d -N1`	new	1	-C -2d -N1	5.464632117	0.494779834	3786966320	4348	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k `-d -N1`	old	1	-C -d -N1	4.899075548	0.42316725	3993195283	1884	3	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-d -N1`	new	1	-C -d -N1	4.899075548	0.427090541	3993126078	1884	3	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	8.594489658	0.11127725	953762953	16	2	bench-sync old md5 ef9e3ebc	7.978790193
+FAM	om4_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	8.594489658	0.111472709	952536600	16	2	bench-sync new md5 f325e10e	7.978790193
+FAM	om4_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.9258537	0.741578167	5497827001	114	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.9258537	0.639710292	5486896202	114	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.9258537	0.787285208	6766202660	114	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.9258537	0.788406333	6758669168	114	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.873858104	0.107196792	1023941181	16	2	bench-sync old md5 ef9e3ebc	7.984181438
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.873858104	0.107742125	1022162149	16	2	bench-sync new md5 f325e10e	7.984181438
+FAM	om4_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.858825005	1.468995208	12582345886	179	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.858825005	1.340388458	12587889788	179	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k `-d -N1`	old	1	-C -d -N1	6.858825005	1.687549709	17496940348	179	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-d -N1`	new	1	-C -d -N1	6.858825005	1.718356916	17498350008	179	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	7.565393576	0.141276959	1225214475	16	2	bench-sync old md5 ef9e3ebc	7.984230648
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	7.565393576	0.173411792	1227401227	16	2	bench-sync new md5 f325e10e	7.984230648
+FAM	om4_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.536464491	1.274396791	13288104387	99	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.536464491	1.28726975	13290268137	99	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.536464491	1.506963292	15893372887	99	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.536464491	1.484020958	15897220754	99	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	6.936802565	0.091436625	822608209	20	2	bench-sync old md5 ef9e3ebc	7.985831683
+FAM	om5_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	6.936802565	0.093655417	822732008	20	2	bench-sync new md5 f325e10e	7.985831683
+FAM	om5_N256_E50k `-2d -N1`	old	1	-C -2d -N1	4.914591856	0.507225375	3744325815	5421	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-2d -N1`	new	1	-C -2d -N1	4.914591856	0.618338708	3750177504	5421	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k `-d -N1`	old	1	-C -d -N1	4.150151338	0.539935209	4445812729	2158	4	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-d -N1`	new	1	-C -d -N1	4.150151338	0.510888834	4443834789	2158	4	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	8.930493738	0.117978333	971861555	20	2	bench-sync old md5 ef9e3ebc	7.98862707
+FAM	om5_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	8.930493738	0.116153125	972058055	20	2	bench-sync new md5 f325e10e	7.98862707
+FAM	om5_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.950093392	0.694490167	5814955736	113	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.950093392	0.706696292	5806623783	113	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.950093392	0.826101708	7088121399	113	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.950093392	0.817212958	7092532645	113	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.911031376	0.127980583	1096960561	20	2	bench-sync old md5 ef9e3ebc	7.989304757
+FAM	om5_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.911031376	0.127393459	1095971897	20	2	bench-sync new md5 f325e10e	7.989304757
+FAM	om5_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.948978287	1.476587417	15095505548	309	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.948978287	1.519235667	15087164818	309	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k `-d -N1`	old	1	-C -d -N1	7.804137847	0.74014525	6853956254	77	4	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-d -N1`	new	1	-C -d -N1	7.804137847	0.736489708	6843584764	77	4	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	7.82562597	0.149391833	1308537661	20	2	bench-sync old md5 ef9e3ebc	7.98922672
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	7.82562597	0.151610667	1307163464	20	2	bench-sync new md5 f325e10e	7.98922672
+FAM	om5_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.825121965	1.51247825	15733617570	151	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.825121965	1.527015958	15734470563	151	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.825121965	1.768973083	18309717556	151	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.825121965	1.790335875	18304592185	151	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	6.979560518	0.108128208	917424122	24	2	bench-sync old md5 ef9e3ebc	7.985288435
+FAM	om6_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	6.979560518	0.106689583	915501853	24	2	bench-sync new md5 f325e10e	7.985288435
+FAM	om6_N256_E50k `-2d -N1`	old	1	-C -2d -N1	4.477224436	0.485864708	3748578010	6354	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-2d -N1`	new	1	-C -2d -N1	4.477224436	0.490922292	3748782491	6354	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k `-d -N1`	old	1	-C -d -N1	3.615875911	0.537051042	4598120781	3022	4	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-d -N1`	new	1	-C -d -N1	3.615875911	0.527086959	4601623340	3022	4	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	9.181799701	0.213194166	1488209321	24	2	bench-sync old md5 ef9e3ebc	7.989208717
+FAM	om6_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	9.181799701	0.216796666	1489213844	24	2	bench-sync new md5 f325e10e	7.989208717
+FAM	om6_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.935076736	0.903709209	6632120692	121	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.935076736	0.841475875	6626001801	121	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.935076736	0.894258042	6971944986	121	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.935076736	0.90531875	6976493551	121	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.936312189	0.131051958	1127253586	24	2	bench-sync old md5 ef9e3ebc	7.990780342
+FAM	om6_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.936312189	0.1335065	1127243359	24	2	bench-sync new md5 f325e10e	7.990780342
+FAM	om6_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.894797134	1.51625475	14418247897	447	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.894797134	1.51666225	14420459010	447	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k `-d -N1`	old	1	-C -d -N1	7.474267948	0.751073459	6923283216	110	4	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-d -N1`	new	1	-C -d -N1	7.474267948	0.763582625	6922244916	110	4	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	8.018519168	0.154259791	1297172617	24	2	bench-sync old md5 ef9e3ebc	7.991148021
+FAM	om6_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	8.018519168	0.153555958	1298231280	24	2	bench-sync new md5 f325e10e	7.991148021
+FAM	om6_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.979250374	1.165155167	9259705354	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.979250374	1.153027542	9260127577	39	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.979250374	1.3980535	11780577155	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.979250374	1.383970583	11782253148	39	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	7.022804611	0.125761083	864293778	28	2	bench-sync old md5 ef9e3ebc	7.989224103
+FAM	om7_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	7.022804611	0.104456625	861580302	28	2	bench-sync new md5 f325e10e	7.989224103
+FAM	om7_N256_E50k `-2d -N1`	old	1	-C -2d -N1	4.150222813	0.425146167	3138771724	7068	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-2d -N1`	new	1	-C -2d -N1	4.150222813	0.421039917	3137153725	7068	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k `-d -N1`	old	1	-C -d -N1	3.206629429	0.71853875	5961121843	3398	5	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-d -N1`	new	1	-C -d -N1	3.206629429	0.725195084	5952727803	3398	5	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	9.387158058	0.116024125	978877109	28	2	bench-sync old md5 ef9e3ebc	7.992344954
+FAM	om7_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	9.387158058	0.119671375	977837986	28	2	bench-sync new md5 f325e10e	7.992344954
+FAM	om7_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.948022767	0.830974959	6650497638	129	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.948022767	0.8364035	6650391673	129	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.948022767	0.878092791	6990402248	129	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.948022767	0.889024875	6994587987	129	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.957516072	0.152164333	1282188828	28	2	bench-sync old md5 ef9e3ebc	7.993763018
+FAM	om7_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.957516072	0.155423625	1281375158	28	2	bench-sync new md5 f325e10e	7.993763018
+FAM	om7_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.889674586	1.759244375	16496975453	649	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.889674586	1.7465365	16497583692	649	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k `-d -N1`	old	1	-C -d -N1	7.190120906	0.877930708	7769892203	150	4	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-d -N1`	new	1	-C -d -N1	7.190120906	0.884073958	7767396539	150	4	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	8.132947126	0.316594625	2106735874	28	2	bench-sync old md5 ef9e3ebc	7.992393933
+FAM	om7_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	8.132947126	0.306805333	2105442173	28	2	bench-sync new md5 f325e10e	7.992393933
+FAM	om7_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.977652364	1.232257708	9296704498	48	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.977652364	1.217561416	9291652902	48	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.977652364	1.469013542	11816897240	48	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.977652364	1.490296791	11825065344	48	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	7.034226119	0.108617958	890888030	32	2	bench-sync old md5 ef9e3ebc	7.991346102
+FAM	om8_N256_E50k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	7.034226119	0.103874875	887651402	32	2	bench-sync new md5 f325e10e	7.991346102
+FAM	om8_N256_E50k `-2d -N1`	old	1	-C -2d -N1	3.864684914	0.495197666	3489073692	7961	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-2d -N1`	new	1	-C -2d -N1	3.864684914	0.485243292	3488758412	7961	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k `-d -N1`	old	1	-C -d -N1	2.883087834	0.645666333	5463732076	4351	5	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-d -N1`	new	1	-C -d -N1	2.883087834	0.646402125	5467130650	4351	5	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	9.614433321	0.1189625	1000330765	32	2	bench-sync old md5 ef9e3ebc	7.994534803
+FAM	om8_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	9.614433321	0.120275333	1000683895	32	2	bench-sync new md5 f325e10e	7.994534803
+FAM	om8_N256_E50k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.976763058	0.6889985	5342125867	80	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.976763058	0.668749167	5341371829	80	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.976763058	0.727587125	5650505523	80	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.976763058	0.715940125	5643893166	80	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k planted, `-2d --no-infomap -c`	old	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.966510195	0.143385417	1202854260	32	2	bench-sync old md5 ef9e3ebc	7.994997224
+FAM	om8_N256_E100k planted, `-2d --no-infomap -c`	new	1	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.966510195	0.144679042	1200578969	32	2	bench-sync new md5 f325e10e	7.994997224
+FAM	om8_N256_E100k `-2d -N1`	old	1	-C -2d -N1	6.876045079	1.954091167	17866546019	864	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-2d -N1`	new	1	-C -2d -N1	6.876045079	1.972310083	17863901475	864	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k `-d -N1`	old	1	-C -d -N1	6.938890883	0.946351167	8234883770	187	4	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-d -N1`	new	1	-C -d -N1	6.938890883	0.925235292	8240842035	187	4	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	8.282251145	0.167258666	1403587517	32	2	bench-sync old md5 ef9e3ebc	7.99515376
+FAM	om8_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	1	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	8.282251145	0.168359042	1402540241	32	2	bench-sync new md5 f325e10e	7.99515376
+FAM	om8_N256_E100k `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	7.971714831	1.349870667	10307906571	73	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	7.971714831	1.348041542	10304773647	73	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k `-d --regularized -N1`	old	1	-C -d --regularized -N1	7.971714831	1.638684333	12892061100	73	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-d --regularized -N1`	new	1	-C -d --regularized -N1	7.971714831	1.614628292	12893234663	73	2	bench-sync new md5 f325e10e	
+REG	ninetriangles `--regularized -N1`	old	1	-C --regularized -N1	4.752719413	0.00026525	59581243	1	2	bench-sync old md5 ef9e3ebc	
+REG	ninetriangles `--regularized -N1`	new	1	-C --regularized -N1	4.752719413	0.000273083	59414891	1	2	bench-sync new md5 f325e10e	
+REG	jazz `--regularized -N1`	old	1	-C --regularized -N1	7.292191712	0.001060625	72136339	8	2	bench-sync old md5 ef9e3ebc	
+REG	jazz `--regularized -N1`	new	1	-C --regularized -N1	7.292191712	0.001180166	71854817	8	2	bench-sync new md5 f325e10e	
+REG	netscience `--regularized -N1`	old	1	-C --regularized -N1	9.818115812	0.002802917	91543768	380	2	bench-sync old md5 ef9e3ebc	
+REG	netscience `--regularized -N1`	new	1	-C --regularized -N1	9.818115812	0.002767042	91237287	380	2	bench-sync new md5 f325e10e	
+REG	powergrid `--regularized -N1`	old	1	-C --regularized -N1	12.25363627	0.024079708	259258611	1	2	bench-sync old md5 ef9e3ebc	
+REG	powergrid `--regularized -N1`	new	1	-C --regularized -N1	12.25363627	0.017728291	258713154	1	2	bench-sync new md5 f325e10e	
+REG	polblogs `-d --regularized -N1`	old	1	-C -d --regularized -N1	9.585412453	0.007587	165664782	1	2	bench-sync old md5 ef9e3ebc	
+REG	polblogs `-d --regularized -N1`	new	1	-C -d --regularized -N1	9.585412453	0.007934958	165495652	1	2	bench-sync new md5 f325e10e	
+REG	polblogs `-d --recorded-teleportation -N1`	old	1	-C -d --recorded-teleportation -N1	8.161364546	0.010711042	205383370	296	2	bench-sync old md5 ef9e3ebc	
+REG	polblogs `-d --recorded-teleportation -N1`	new	1	-C -d --recorded-teleportation -N1	8.161364546	0.010647625	205296317	296	2	bench-sync new md5 f325e10e	
+REG	word_assoc `-d --regularized -N1`	old	1	-C -d --regularized -N1	13.73576195	0.338024958	4001519858	1	2	bench-sync old md5 ef9e3ebc	
+REG	word_assoc `-d --regularized -N1`	new	1	-C -d --regularized -N1	13.73576195	0.338020209	4003352597	1	2	bench-sync new md5 f325e10e	
+REG	word_assoc `-d --recorded-teleportation -N1`	old	1	-C -d --recorded-teleportation -N1	12.00152258	0.468948417	5254711570	1050	2	bench-sync old md5 ef9e3ebc	
+REG	word_assoc `-d --recorded-teleportation -N1`	new	1	-C -d --recorded-teleportation -N1	12.00152258	0.498107	5258198064	1050	2	bench-sync new md5 f325e10e	
+REG	web-NotreDame `-d --regularized -N1`	old	1	-C -d --regularized -N1	17.84843419	2.00695375	16787836611	25954	2	bench-sync old md5 ef9e3ebc	
+REG	web-NotreDame `-d --regularized -N1`	new	1	-C -d --regularized -N1	17.84843419	1.982890458	16760533965	25954	2	bench-sync new md5 f325e10e	
+REG	web-NotreDame `-d --recorded-teleportation -N1`	old	1	-C -d --recorded-teleportation -N1	9.451758981	3.344523625	24815155586	16796	3	bench-sync old md5 ef9e3ebc	
+REG	web-NotreDame `-d --recorded-teleportation -N1`	new	1	-C -d --recorded-teleportation -N1	9.451758981	2.812384791	24792483789	16796	3	bench-sync new md5 f325e10e	
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N1`	old	1	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N1	6.464125618	0.000622	64865588	5	2	bench-sync old md5 ef9e3ebc	
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N1`	new	1	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N1	6.464125618	0.00055175	64050156	5	2	bench-sync new md5 f325e10e	
+REG	air30k `--regularized -N1`	old	1	-C --regularized -N1	5.459153242	0.418910333	4669832071	208	3	bench-sync old md5 ef9e3ebc	
+REG	air30k `--regularized -N1`	new	1	-C --regularized -N1	5.459153242	0.38851075	4665328294	208	3	bench-sync new md5 f325e10e	
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N1`	old	1	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N1	7.649185539	0.693385625	7164016141	1256	3	bench-sync old md5 ef9e3ebc	
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N1`	new	1	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N1	7.649185539	0.7231505	7162163429	1256	3	bench-sync new md5 f325e10e	
+REG	wikispeedia `-2d --regularized -N1`	old	1	-C -2d --regularized -N1	3.153525821	0.14519175	1304584051	139	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-2d --regularized -N1`	new	1	-C -2d --regularized -N1	3.153525821	0.163061041	1304943755	139	2	bench-sync new md5 f325e10e	
+REG	wikispeedia `-2d --recorded-teleportation -N1`	old	1	-C -2d --recorded-teleportation -N1	6.645009031	0.173460875	1956842398	1075	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-2d --recorded-teleportation -N1`	new	1	-C -2d --recorded-teleportation -N1	6.645009031	0.171721209	1956091692	1075	2	bench-sync new md5 f325e10e	
+REG	wikispeedia `-d --regularized -N1`	old	1	-C -d --regularized -N1	3.204763817	0.132233833	1180895274	152	3	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-d --regularized -N1`	new	1	-C -d --regularized -N1	3.204763817	0.131839834	1180866492	152	3	bench-sync new md5 f325e10e	
+REG	wikispeedia `-d --recorded-teleportation -N1`	old	1	-C -d --recorded-teleportation -N1	6.633810458	0.084597708	872535685	1070	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-d --recorded-teleportation -N1`	new	1	-C -d --recorded-teleportation -N1	6.633810458	0.085803875	873180845	1070	2	bench-sync new md5 f325e10e	
+C10	ninetriangles	old	1	-C -N10	3.371875026	0.001152792	70954274	5	3	bench-sync old md5 ef9e3ebc	
+C10	ninetriangles	new	1	-C -N10	3.371875026	0.001109917	70891054	5	3	bench-sync new md5 f325e10e	
+C2_10	word_assoc	old	1	-C -2 -N10 -d	11.42993396	3.101845958	35259025442	764	2	bench-sync old md5 ef9e3ebc	
+C2_10	word_assoc	new	1	-C -2 -N10 -d	11.42993396	3.107781	35259627816	764	2	bench-sync new md5 f325e10e	
+REG	wikispeedia `-2d --recorded-teleportation -N10`	old	1	-C -2d --recorded-teleportation -N10	6.624310588	0.946383209	10588026356	1067	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-2d --recorded-teleportation -N10`	new	1	-C -2d --recorded-teleportation -N10	6.624310588	0.930907917	10586013354	1067	2	bench-sync new md5 f325e10e	
+C10	netscience	old	1	-C -N10	3.364651184	0.055240625	674066533	278	4	bench-sync old md5 ef9e3ebc	
+C10	netscience	new	1	-C -N10	3.364651184	0.055331542	673150055	278	4	bench-sync new md5 f325e10e	
+REG	air30k (meta) `-2 --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	old	1	-C -2 --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	7.421136136	10.609326709	100678548061	2330	2	bench-sync old md5 ef9e3ebc	
+REG	air30k (meta) `-2 --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	new	1	-C -2 --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	7.421136136	10.562321375	100676476059	2330	2	bench-sync new md5 f325e10e	
+F10	polblogs	old	1	-C -F -N10 -d	7.592773105	0.078189292	924219090	91	2	bench-sync old md5 ef9e3ebc	
+F10	polblogs	new	1	-C -F -N10 -d	7.592773105	0.078548084	923243927	91	2	bench-sync new md5 f325e10e	
+REG	air30k `--regularized -N10`	old	1	-C --regularized -N10	5.393674436	3.6235995	39252603616	260	3	bench-sync old md5 ef9e3ebc	
+REG	air30k `--regularized -N10`	new	1	-C --regularized -N10	5.393674436	3.688497542	39258142230	260	3	bench-sync new md5 f325e10e	
+F10	word_assoc	old	1	-C -F -N10 -d	11.43278494	3.535534541	39085059450	762	2	bench-sync old md5 ef9e3ebc	
+F10	word_assoc	new	1	-C -F -N10 -d	11.43278494	3.528015458	39084864759	762	2	bench-sync new md5 f325e10e	
+REG	web-NotreDame `-d --recorded-teleportation -N10`	old	1	-C -d --recorded-teleportation -N10	9.451758981	23.001302917	165947842600	16796	3	bench-sync old md5 ef9e3ebc	
+REG	web-NotreDame `-d --recorded-teleportation -N10`	new	1	-C -d --recorded-teleportation -N10	9.451758981	22.705244584	165920618616	16796	3	bench-sync new md5 f325e10e	
+F10	overlapping om6_N256_E100k `-d`	old	1	-C -F -d -N10	6.892138569	6.978012166	60852033445	431	2	bench-sync old md5 ef9e3ebc	
+F10	overlapping om6_N256_E100k `-d`	new	1	-C -F -d -N10	6.892138569	6.959718666	60838491593	431	2	bench-sync new md5 f325e10e	
+REG	word_assoc `-d --recorded-teleportation -N10`	old	1	-C -d --recorded-teleportation -N10	11.99298114	3.058915292	31760731308	1021	2	bench-sync old md5 ef9e3ebc	
+REG	word_assoc `-d --recorded-teleportation -N10`	new	1	-C -d --recorded-teleportation -N10	11.99298114	3.051460208	31760657546	1021	2	bench-sync new md5 f325e10e	
+F10	air30k (meta)	old	1	-C -F -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.414540615	9.137401083	87687681522	2238	3	bench-sync old md5 ef9e3ebc	
+F10	air30k (meta)	new	1	-C -F -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.414540615	9.129407333	87686188399	2238	3	bench-sync new md5 f325e10e	
+REG	polblogs `-d --recorded-teleportation -N10`	old	1	-C -d --recorded-teleportation -N10	8.053157028	0.077140625	931817647	275	2	bench-sync old md5 ef9e3ebc	
+REG	polblogs `-d --recorded-teleportation -N10`	new	1	-C -d --recorded-teleportation -N10	8.053157028	0.076496125	930798433	275	2	bench-sync new md5 f325e10e	
+C2_10	overlapping om2_N256_E100k `-2d`	old	1	-C -2d -N10	6.773456578	3.778592416	37858079712	60	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om2_N256_E100k `-2d`	new	1	-C -2d -N10	6.773456578	3.58069425	37850284144	60	2	bench-sync new md5 f325e10e	
+REG	powergrid `-2 --regularized -N10`	old	1	-C -2 --regularized -N10	12.25363627	0.105179334	1187786940	1	2	bench-sync old md5 ef9e3ebc	
+REG	powergrid `-2 --regularized -N10`	new	1	-C -2 --regularized -N10	12.25363627	0.105073709	1187374086	1	2	bench-sync new md5 f325e10e	
+C2_10	overlapping om4_N256_E100k `-2d`	old	1	-C -2d -N10	6.859843831	6.802704541	63606128261	173	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om4_N256_E100k `-2d`	new	1	-C -2d -N10	6.859843831	6.7976825	63595775254	173	2	bench-sync new md5 f325e10e	
+REG	netscience `--regularized -N10`	old	1	-C --regularized -N10	9.707927584	0.022453958	308942510	315	2	bench-sync old md5 ef9e3ebc	
+REG	netscience `--regularized -N10`	new	1	-C --regularized -N10	9.707927584	0.022474791	308793592	315	2	bench-sync new md5 f325e10e	
+L10	jazz	old	1	-C --non-redundant -N10	6.858483287	0.006889667	135960687	6	2	bench-sync old md5 ef9e3ebc	
+L10	jazz	new	1	-C --non-redundant -N10	6.858483287	0.006794584	135622097	6	2	bench-sync new md5 f325e10e	
+REG	ninetriangles `-2 --regularized -N10`	old	1	-C -2 --regularized -N10	4.752719413	0.00063025	64260029	1	2	bench-sync old md5 ef9e3ebc	
+REG	ninetriangles `-2 --regularized -N10`	new	1	-C -2 --regularized -N10	4.752719413	0.000642167	64300324	1	2	bench-sync new md5 f325e10e	
+C10	overlapping om2_N256_E100k `-d`	old	1	-C -d -N10	6.773456578	3.132758792	33122867986	60	2	bench-sync old md5 ef9e3ebc	
+C10	overlapping om2_N256_E100k `-d`	new	1	-C -d -N10	6.773456578	3.205314292	33123891926	60	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.971714831	6.19238275	52171952817	73	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.971714831	6.19040575	52172927399	73	2	bench-sync new md5 f325e10e	
+C2_10	overlapping om2_N256_E50k `-2d`	old	1	-C -2d -N10	6.752836583	3.087131792	30747429074	536	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om2_N256_E50k `-2d`	new	1	-C -2d -N10	6.752836583	3.009202584	30745625695	536	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.976763058	3.026984583	22260663303	80	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.976763058	2.955160834	22253935943	80	2	bench-sync new md5 f325e10e	
+L10	powergrid	old	1	-C --non-redundant -N10	4.471279533	0.284106667	3364040175	4	7	bench-sync old md5 ef9e3ebc	
+L10	powergrid	new	1	-C --non-redundant -N10	4.471279533	0.2836275	3362691187	4	7	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k `-2d -N10`	old	1	-C -2d -N10	3.859069372	4.117890333	29100384940	7985	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-2d -N10`	new	1	-C -2d -N10	3.859069372	4.15968775	29096184687	7985	2	bench-sync new md5 f325e10e	
+C2_10	overlapping om6_N256_E100k `-2d`	old	1	-C -2d -N10	6.893434836	7.091918209	62198308742	440	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om6_N256_E100k `-2d`	new	1	-C -2d -N10	6.893434836	7.142423875	62197482417	440	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k `-d -N10`	old	1	-C -d -N10	6.88945591	8.5710615	77134396301	666	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-d -N10`	new	1	-C -d -N10	6.88945591	8.566974625	77152799554	666	2	bench-sync new md5 f325e10e	
+C2_10	jazz	old	1	-C -2 -N10	6.861229775	0.006633041	135553941	6	2	bench-sync old md5 ef9e3ebc	
+C2_10	jazz	new	1	-C -2 -N10	6.861229775	0.006531792	134833065	6	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.948022767	3.287627542	25959339618	129	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.948022767	3.282106584	25960306146	129	2	bench-sync new md5 f325e10e	
+C10	overlapping om3_N256_E100k `-d`	old	1	-C -d -N10	6.822832994	5.36990625	57192128283	69	2	bench-sync old md5 ef9e3ebc	
+C10	overlapping om3_N256_E100k `-d`	new	1	-C -d -N10	6.822832994	5.353381	57198234968	69	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.979250374	6.036134917	53520365972	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.979250374	6.00909075	53520320058	39	2	bench-sync new md5 f325e10e	
+C10	jazz	old	1	-C -N10	6.862755928	0.006663	136727310	6	2	bench-sync old md5 ef9e3ebc	
+C10	jazz	new	1	-C -N10	6.862755928	0.006485041	135300818	6	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.893434836	6.431539167	62204707124	440	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.893434836	7.090004084	62200365055	440	2	bench-sync new md5 f325e10e	
+C2_10	overlapping om5_N256_E100k `-2d`	old	1	-C -2d -N10	6.880795013	6.7514865	60724578740	283	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om5_N256_E100k `-2d`	new	1	-C -2d -N10	6.880795013	6.684540417	60726673565	283	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k `-d -N10`	old	1	-C -d -N10	3.61397354	5.808794708	46736828125	3020	4	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-d -N10`	new	1	-C -d -N10	3.61397354	5.850119584	46760821932	3020	4	bench-sync new md5 f325e10e	
+L10	web-NotreDame	old	1	-C --non-redundant -N10 -d	6.2104821	18.588628875	163028088213	510	6	bench-sync old md5 ef9e3ebc	
+L10	web-NotreDame	new	1	-C --non-redundant -N10 -d	6.2104821	18.673794334	163064505895	510	6	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.785498191	7.835689959	75983309750	153	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.785498191	7.901060167	75978626326	153	2	bench-sync new md5 f325e10e	
+C10	overlapping om4_N256_E50k `-d`	old	1	-C -d -N10	4.873442704	5.01384025	44480007216	1041	4	bench-sync old md5 ef9e3ebc	
+C10	overlapping om4_N256_E50k `-d`	new	1	-C -d -N10	4.873442704	4.976420417	44479195404	1041	4	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.950093392	2.951037208	23353501448	113	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.950093392	2.9476165	23358499026	113	2	bench-sync new md5 f325e10e	
+C10	air30k (reg.)	old	1	-C -N10 -d --regularized	5.56993805	3.732994959	38625262592	227	3	bench-sync old md5 ef9e3ebc	
+C10	air30k (reg.)	new	1	-C -N10 -d --regularized	5.56993805	3.710728959	38622617880	227	3	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k `-2d -N10`	old	1	-C -2d -N10	4.903270512	4.096216916	29995560028	5443	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-2d -N10`	new	1	-C -2d -N10	4.903270512	4.034325375	29994923629	5443	2	bench-sync new md5 f325e10e	
+C2_10	overlapping om5_N256_E50k `-2d`	old	1	-C -2d -N10	4.903270512	4.061779125	30000771010	5443	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om5_N256_E50k `-2d`	new	1	-C -2d -N10	4.903270512	4.095733166	30004338500	5443	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k `-d -N10`	old	1	-C -d -N10	6.860084625	5.894802	55994638150	176	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-d -N10`	new	1	-C -d -N10	6.860084625	5.897613666	55995735806	176	2	bench-sync new md5 f325e10e	
+L10	air30k	old	1	-C --non-redundant -N10	5.379735352	3.5354265	38725605859	260	3	bench-sync old md5 ef9e3ebc	
+L10	air30k	new	1	-C --non-redundant -N10	5.379735352	3.487262792	38724137803	260	3	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.9258537	2.674601833	22739890492	114	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.9258537	2.706183125	22745309308	114	2	bench-sync new md5 f325e10e	
+C10	overlapping om5_N256_E50k `-d`	old	1	-C -d -N10	4.147605907	5.468084166	45888247788	2135	4	bench-sync old md5 ef9e3ebc	
+C10	overlapping om5_N256_E50k `-d`	new	1	-C -d -N10	4.147605907	5.440439917	45899769357	2135	4	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.261663242	5.255202334	54689409163	38	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.261663242	5.301949709	54686814478	38	2	bench-sync new md5 f325e10e	
+C10	air30k (meta)	old	1	-C -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.414540615	9.12408725	89027430716	2238	3	bench-sync old md5 ef9e3ebc	
+C10	air30k (meta)	new	1	-C -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.414540615	9.21990975	89034531552	2238	3	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.822832994	6.763461542	74018485738	69	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.822832994	6.782059292	74021484413	69	2	bench-sync new md5 f325e10e	
+F10	jazz	old	1	-C -F -N10	6.862755928	0.026610875	133281581	6	2	bench-sync old md5 ef9e3ebc	
+F10	jazz	new	1	-C -F -N10	6.862755928	0.006700583	132238550	6	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k `-d -N10`	old	1	-C -d -N10	5.84696016	4.312592459	40861477100	618	4	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-d -N10`	new	1	-C -d -N10	5.84696016	4.340417792	40854683846	618	4	bench-sync new md5 f325e10e	
+L10	multilayer (ex.)	old	1	-C --non-redundant -N10	1.928856578	0.000550125	63758554	2	2	bench-sync old md5 ef9e3ebc	
+L10	multilayer (ex.)	new	1	-C --non-redundant -N10	1.928856578	0.000561958	63557525	2	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	6.950671574	3.75270575	41194094699	9	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	6.950671574	3.988951583	41198857073	9	2	bench-sync new md5 f325e10e	
+F10	ninetriangles	old	1	-C -F -N10	3.371875026	0.001029583	70233413	5	3	bench-sync old md5 ef9e3ebc	
+F10	ninetriangles	new	1	-C -F -N10	3.371875026	0.000992042	69407221	5	3	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.563587703	3.507138375	36506190872	96	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.563587703	3.54162375	36503518669	96	2	bench-sync new md5 f325e10e	
+L10	lazega	old	1	-C --non-redundant -N10 --meta-data networks/columnar-benchmark/lazega.meta	5.968624653	0.003427709	99835025	7	2	bench-sync old md5 ef9e3ebc	
+L10	lazega	new	1	-C --non-redundant -N10 --meta-data networks/columnar-benchmark/lazega.meta	5.968624653	0.003532792	98521326	7	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k `-2d -N10`	old	1	-C -2d -N10	6.752836583	3.108289417	30754591823	536	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-2d -N10`	new	1	-C -2d -N10	6.752836583	3.20903275	30761013181	536	2	bench-sync new md5 f325e10e	
+C2_10	wikispeedia `-2d`	old	1	-C -2d -N10	5.907904741	0.688513833	6719091638	199	2	bench-sync old md5 ef9e3ebc	
+C2_10	wikispeedia `-2d`	new	1	-C -2d -N10	5.907904741	0.657519792	6717906619	199	2	bench-sync new md5 f325e10e	
+L10	word_assoc (pref.)	old	1	-C --non-redundant -N10 -d --preferred-number-of-modules 25	12.7626516	4.815135416	50271136887	25	2	bench-sync old md5 ef9e3ebc	
+L10	word_assoc (pref.)	new	1	-C --non-redundant -N10 -d --preferred-number-of-modules 25	12.61703093	4.225107833	43415195927	25	2	bench-sync new md5 f325e10e	
+L10	ninetriangles	old	1	-C --non-redundant -N10	3.078067323	0.001128333	73444495	3	3	bench-sync old md5 ef9e3ebc	
+L10	ninetriangles	new	1	-C --non-redundant -N10	3.078067323	0.0012285	72139407	3	3	bench-sync new md5 f325e10e	
+C1	ninetriangles	old	2	-C -N1	3.371875026	0.000288375	60120760	5	3	bench-sync old md5 ef9e3ebc	
+C1	ninetriangles	new	2	-C -N1	3.371875026	0.000320541	60017256	5	3	bench-sync new md5 f325e10e	
+C1	lazega	old	2	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	6.041117399	0.000779708	66244490	6	2	bench-sync old md5 ef9e3ebc	
+C1	lazega	new	2	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	6.041117399	0.000726625	65695556	6	2	bench-sync new md5 f325e10e	
+C1	multilayer (ex.)	old	2	-C -N1	2.011405238	0.000259125	59341020	2	2	bench-sync old md5 ef9e3ebc	
+C1	multilayer (ex.)	new	2	-C -N1	2.011405238	0.000265125	59190411	2	2	bench-sync new md5 f325e10e	
+C1	wikispeedia `-2d`	old	2	-C -2d -N1	5.91901362	0.090920041	987774345	184	2	bench-sync old md5 ef9e3ebc	
+C1	wikispeedia `-2d`	new	2	-C -2d -N1	5.91901362	0.093457875	988657835	184	2	bench-sync new md5 f325e10e	
+C1	wikispeedia `-d`	old	2	-C -d -N1	6.066305904	0.072839292	803775622	187	3	bench-sync old md5 ef9e3ebc	
+C1	wikispeedia `-d`	new	2	-C -d -N1	6.066305904	0.071683375	804065820	187	3	bench-sync new md5 f325e10e	
+C1	jazz	old	2	-C -N1	6.896294162	0.001079958	71926650	10	2	bench-sync old md5 ef9e3ebc	
+C1	jazz	new	2	-C -N1	6.896294162	0.001086125	71681923	10	2	bench-sync new md5 f325e10e	
+C1	powergrid	old	2	-C -N1	4.728634278	0.024153459	337921508	17	5	bench-sync old md5 ef9e3ebc	
+C1	powergrid	new	2	-C -N1	4.728634278	0.024327125	337442862	17	5	bench-sync new md5 f325e10e	
+C1	web-NotreDame	old	2	-C -N1 -d	6.218295286	2.459622416	23397562791	492	5	bench-sync old md5 ef9e3ebc	
+C1	web-NotreDame	new	2	-C -N1 -d	6.218295286	2.453176667	23388677713	492	5	bench-sync new md5 f325e10e	
+C1	malaria	old	2	-C -N1	7.492381296	0.384345333	5374988211	148	3	bench-sync old md5 ef9e3ebc	
+C1	malaria	new	2	-C -N1	7.492381296	0.3832945	5372960607	148	3	bench-sync new md5 f325e10e	
+C1	air30k	old	2	-C -N1	5.456991462	0.393330292	4731430686	203	3	bench-sync old md5 ef9e3ebc	
+C1	air30k	new	2	-C -N1	5.456991462	0.448175083	4731556615	203	3	bench-sync new md5 f325e10e	
+C1	air30k (reg.)	old	2	-C -N1 -d --regularized	5.650152296	0.598417541	6286250898	190	3	bench-sync old md5 ef9e3ebc	
+C1	air30k (reg.)	new	2	-C -N1 -d --regularized	5.650152296	0.577351583	6283330744	190	3	bench-sync new md5 f325e10e	
+C1	air30k (meta)	old	2	-C -N1 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.670498664	0.73508675	7314818875	1451	3	bench-sync old md5 ef9e3ebc	
+C1	air30k (meta)	new	2	-C -N1 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.670498664	0.774279125	7318734148	1451	3	bench-sync new md5 f325e10e	
+C1	overlapping om2_N256_E50k `-2d`	old	2	-C -2d -N1	6.744558723	1.148579959	12514721916	606	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om2_N256_E50k `-2d`	new	2	-C -2d -N1	6.744558723	1.154912375	12513253431	606	2	bench-sync new md5 f325e10e	
+C1	overlapping om2_N256_E50k `-d`	old	2	-C -d -N1	7.298733312	0.39742475	3824579248	338	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om2_N256_E50k `-d`	new	2	-C -d -N1	7.298733312	0.391577958	3823560237	338	4	bench-sync new md5 f325e10e	
+C1	overlapping om2_N256_E50k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.734990605	0.570212708	6268487272	454	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om2_N256_E50k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.734990605	0.572673541	6270060014	454	2	bench-sync new md5 f325e10e	
+F1	overlapping om2_N256_E50k `-d`	old	2	-C -F -d -N1	7.317528373	0.259396458	2474425419	338	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om2_N256_E50k `-d`	new	2	-C -F -d -N1	7.317528373	0.295563958	2477454224	338	4	bench-sync new md5 f325e10e	
+C1	overlapping om3_N256_E100k `-2d`	old	2	-C -2d -N1	6.823562921	1.128712	12803308972	70	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om3_N256_E100k `-2d`	new	2	-C -2d -N1	6.823562921	1.162197792	12803515708	70	2	bench-sync new md5 f325e10e	
+C1	overlapping om3_N256_E100k `-d`	old	2	-C -d -N1	6.823562921	1.537487708	16767888973	70	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om3_N256_E100k `-d`	new	2	-C -d -N1	6.823562921	1.473575083	16763774769	70	2	bench-sync new md5 f325e10e	
+C1	overlapping om3_N256_E100k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.820929855	0.415457583	4146679637	50	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om3_N256_E100k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.820929855	0.389440125	4141430569	50	2	bench-sync new md5 f325e10e	
+F1	overlapping om3_N256_E100k `-d`	old	2	-C -F -d -N1	6.823562921	1.460155209	16265784328	70	2	bench-sync old md5 ef9e3ebc	
+F1	overlapping om3_N256_E100k `-d`	new	2	-C -F -d -N1	6.823562921	1.430311625	16263628600	70	2	bench-sync new md5 f325e10e	
+C1	overlapping om4_N256_E100k `-2d`	old	2	-C -2d -N1	6.858825005	1.288098583	12578966173	179	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om4_N256_E100k `-2d`	new	2	-C -2d -N1	6.858825005	1.274955875	12577007994	179	2	bench-sync new md5 f325e10e	
+C1	overlapping om4_N256_E100k `-d`	old	2	-C -d -N1	6.858825005	1.714475958	17494566230	179	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om4_N256_E100k `-d`	new	2	-C -d -N1	6.858825005	1.733836291	17492738956	179	2	bench-sync new md5 f325e10e	
+C1	overlapping om4_N256_E100k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.850471471	0.885116541	9163310886	126	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om4_N256_E100k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.850471471	0.8489785	9161651099	126	2	bench-sync new md5 f325e10e	
+F1	overlapping om4_N256_E100k `-d`	old	2	-C -F -d -N1	6.858825005	1.56863675	15375132032	179	2	bench-sync old md5 ef9e3ebc	
+F1	overlapping om4_N256_E100k `-d`	new	2	-C -F -d -N1	6.858825005	1.563214208	15378279581	179	2	bench-sync new md5 f325e10e	
+C1	overlapping om5_N256_E100k `-2d`	old	2	-C -2d -N1	6.948978287	1.575679	15098651243	309	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om5_N256_E100k `-2d`	new	2	-C -2d -N1	6.948978287	1.520520291	15085872397	309	2	bench-sync new md5 f325e10e	
+C1	overlapping om5_N256_E100k `-d`	old	2	-C -d -N1	7.804137847	0.739408208	6851716151	77	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om5_N256_E100k `-d`	new	2	-C -d -N1	7.804137847	0.742559875	6847209982	77	4	bench-sync new md5 f325e10e	
+C1	overlapping om5_N256_E100k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.867718448	0.96637325	9545447240	290	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om5_N256_E100k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.867718448	0.946446917	9543596184	290	2	bench-sync new md5 f325e10e	
+F1	overlapping om5_N256_E100k `-d`	old	2	-C -F -d -N1	7.829247983	0.562623792	4787684546	93	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om5_N256_E100k `-d`	new	2	-C -F -d -N1	7.829247983	0.548069292	4790747827	93	4	bench-sync new md5 f325e10e	
+C1	overlapping om6_N256_E100k `-2d`	old	2	-C -2d -N1	6.894797134	1.571319125	14426288812	447	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om6_N256_E100k `-2d`	new	2	-C -2d -N1	6.894797134	1.649981042	14433761357	447	2	bench-sync new md5 f325e10e	
+C1	overlapping om6_N256_E100k `-d`	old	2	-C -d -N1	7.474267948	0.772180334	6921444898	110	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om6_N256_E100k `-d`	new	2	-C -d -N1	7.474267948	0.764413291	6918665195	110	4	bench-sync new md5 f325e10e	
+C1	overlapping om6_N256_E100k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.87656878	1.01079	9579415548	430	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om6_N256_E100k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.87656878	0.966278958	9581202030	430	2	bench-sync new md5 f325e10e	
+F1	overlapping om6_N256_E100k `-d`	old	2	-C -F -d -N1	7.546115138	0.602456541	4708178285	103	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om6_N256_E100k `-d`	new	2	-C -F -d -N1	7.546115138	0.557029542	4704406469	103	4	bench-sync new md5 f325e10e	
+C1	overlapping om7_N256_E100k `-2d`	old	2	-C -2d -N1	6.889674586	1.78940625	16499677935	649	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om7_N256_E100k `-2d`	new	2	-C -2d -N1	6.889674586	1.821489958	16503022629	649	2	bench-sync new md5 f325e10e	
+C1	overlapping om7_N256_E100k `-d`	old	2	-C -d -N1	7.190120906	0.912831375	7770007284	150	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om7_N256_E100k `-d`	new	2	-C -d -N1	7.190120906	0.934691417	7766985792	150	4	bench-sync new md5 f325e10e	
+C1	overlapping om7_N256_E100k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.881554086	1.0059275	9425568003	624	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om7_N256_E100k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.881554086	1.013291625	9424204192	624	2	bench-sync new md5 f325e10e	
+F1	overlapping om7_N256_E100k `-d`	old	2	-C -F -d -N1	7.238675817	0.608881417	4945092530	145	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om7_N256_E100k `-d`	new	2	-C -F -d -N1	7.238675817	0.633978459	4946983225	145	4	bench-sync new md5 f325e10e	
+C1	overlapping om8_N256_E100k `-2d`	old	2	-C -2d -N1	6.876045079	1.98193375	17873256462	864	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om8_N256_E100k `-2d`	new	2	-C -2d -N1	6.876045079	1.986216833	17858307688	864	2	bench-sync new md5 f325e10e	
+C1	overlapping om8_N256_E100k `-d`	old	2	-C -d -N1	6.938890883	0.93379925	8255378823	187	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om8_N256_E100k `-d`	new	2	-C -d -N1	6.938890883	0.980247708	8233316488	187	4	bench-sync new md5 f325e10e	
+C1	overlapping om8_N256_E100k `-2d -c` planted	old	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.863878689	1.260221125	12060242574	829	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om8_N256_E100k `-2d -c` planted	new	2	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.863878689	1.322929375	12052557674	829	2	bench-sync new md5 f325e10e	
+F1	overlapping om8_N256_E100k `-d`	old	2	-C -F -d -N1	7.007657776	0.713738375	5851708842	179	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om8_N256_E100k `-d`	new	2	-C -F -d -N1	7.007657776	0.726815458	5848869550	179	4	bench-sync new md5 f325e10e	
+C1	overlapping om2_N256_E100k `-d`	old	2	-C -d -N1	7.144749725	0.446925834	4588107582	3	3	bench-sync old md5 ef9e3ebc	
+C1	overlapping om2_N256_E100k `-d`	new	2	-C -d -N1	7.144749725	0.43778775	4584665427	3	3	bench-sync new md5 f325e10e	
+C1	overlapping om3_N256_E50k `-d`	old	2	-C -d -N1	5.848415175	0.416075792	4033828555	531	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om3_N256_E50k `-d`	new	2	-C -d -N1	5.848415175	0.443799209	4039218656	531	4	bench-sync new md5 f325e10e	
+C1	overlapping om4_N256_E50k `-d`	old	2	-C -d -N1	4.899075548	0.448152584	3996507861	1884	3	bench-sync old md5 ef9e3ebc	
+C1	overlapping om4_N256_E50k `-d`	new	2	-C -d -N1	4.899075548	0.419018958	3989119065	1884	3	bench-sync new md5 f325e10e	
+C1	overlapping om5_N256_E50k `-d`	old	2	-C -d -N1	4.150151338	0.505701166	4444914744	2158	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om5_N256_E50k `-d`	new	2	-C -d -N1	4.150151338	0.539163916	4441238043	2158	4	bench-sync new md5 f325e10e	
+C1	overlapping om6_N256_E50k `-d`	old	2	-C -d -N1	3.615875911	0.536638292	4592408896	3022	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om6_N256_E50k `-d`	new	2	-C -d -N1	3.615875911	0.537903	4596501848	3022	4	bench-sync new md5 f325e10e	
+C1	overlapping om7_N256_E50k `-d`	old	2	-C -d -N1	3.206629429	0.723829833	5946575279	3398	5	bench-sync old md5 ef9e3ebc	
+C1	overlapping om7_N256_E50k `-d`	new	2	-C -d -N1	3.206629429	0.725581209	5950813790	3398	5	bench-sync new md5 f325e10e	
+C1	overlapping om8_N256_E50k `-d`	old	2	-C -d -N1	2.883087834	0.654857833	5467499145	4351	5	bench-sync old md5 ef9e3ebc	
+C1	overlapping om8_N256_E50k `-d`	new	2	-C -d -N1	2.883087834	0.677123	5468750335	4351	5	bench-sync new md5 f325e10e	
+C1	netscience	old	2	-C -N1	3.364903063	0.006413209	133165772	278	4	bench-sync old md5 ef9e3ebc	
+C1	netscience	new	2	-C -N1	3.364903063	0.006447708	132833599	278	4	bench-sync new md5 f325e10e	
+C1	polblogs	old	2	-C -N1 -d	7.593689164	0.01523475	259636634	3	3	bench-sync old md5 ef9e3ebc	
+C1	polblogs	new	2	-C -N1 -d	7.593689164	0.015273625	259253897	3	3	bench-sync new md5 f325e10e	
+C1	word_assoc	old	2	-C -N1 -d	11.70862241	0.2780085	3441591943	1817	2	bench-sync old md5 ef9e3ebc	
+C1	word_assoc	new	2	-C -N1 -d	11.70862241	0.288970334	3440945344	1817	2	bench-sync new md5 f325e10e	
+C1	word_assoc (pref.)	old	2	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.466866833	4476753666	25	2	bench-sync old md5 ef9e3ebc	
+C1	word_assoc (pref.)	new	2	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.445400667	4479826548	25	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.778901842	0.058392917	595534882	8	2	bench-sync old md5 ef9e3ebc	7.957873782
+FAM	om2_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.778901842	0.051133	593854584	8	2	bench-sync new md5 f325e10e	7.957873782
+FAM	om2_N256_E50k `-2d -N1`	old	2	-C -2d -N1	6.744558723	1.142397291	12512770150	606	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-2d -N1`	new	2	-C -2d -N1	6.744558723	1.566765833	12535437367	606	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k `-d -N1`	old	2	-C -d -N1	7.298733312	0.401793583	3828680295	338	4	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-d -N1`	new	2	-C -d -N1	7.298733312	0.433862541	3830978666	338	4	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	7.569509705	0.067165292	688974306	8	2	bench-sync old md5 ef9e3ebc	7.958565403
+FAM	om2_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	7.569509705	0.066021291	689067971	8	2	bench-sync new md5 f325e10e	7.958565403
+FAM	om2_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.563587703	1.37101725	15627748452	96	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.563587703	1.34798075	15621782040	96	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.563587703	1.5470605	16939753412	96	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.563587703	1.534332458	16941728381	96	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.782220083	0.072001042	818477605	8	2	bench-sync old md5 ef9e3ebc	7.960871197
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.782220083	0.075337375	814224119	8	2	bench-sync new md5 f325e10e	7.960871197
+FAM	om2_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.774049681	0.610968417	6474526182	60	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.774049681	0.60479275	6475779949	60	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k `-d -N1`	old	2	-C -d -N1	7.144749725	0.445956334	4586501428	3	3	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-d -N1`	new	2	-C -d -N1	7.144749725	0.441946958	4587011221	3	3	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.964713526	0.097918458	1023978931	8	2	bench-sync old md5 ef9e3ebc	7.960610295
+FAM	om2_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.964713526	0.095621917	1025449995	8	2	bench-sync new md5 f325e10e	7.960610295
+FAM	om2_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	6.950574698	0.721410792	7438307211	10	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	6.950574698	0.696622791	7440300080	10	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.485124727	0.503595792	5171240788	594	3	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.485124727	0.505765167	5168636739	594	3	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	6.850734921	0.076502583	697569336	12	2	bench-sync old md5 ef9e3ebc	7.96795137
+FAM	om3_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	6.850734921	0.07298175	695664113	12	2	bench-sync new md5 f325e10e	7.96795137
+FAM	om3_N256_E50k `-2d -N1`	old	2	-C -2d -N1	6.269691984	0.51036175	4204420232	3218	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-2d -N1`	new	2	-C -2d -N1	6.269691984	0.510164209	4209133705	3218	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k `-d -N1`	old	2	-C -d -N1	5.848415175	0.434599584	4041930626	531	4	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-d -N1`	new	2	-C -d -N1	5.848415175	0.442798208	4038153929	531	4	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	8.141739503	0.085141792	795193812	12	2	bench-sync old md5 ef9e3ebc	7.969664223
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	8.141739503	0.086176208	793078265	12	2	bench-sync new md5 f325e10e	7.969664223
+FAM	om3_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.917872981	0.574906458	5039715284	106	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.917872981	0.5693775	5039106917	106	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.917872981	0.732889875	6278256031	106	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.917872981	0.693026375	6279627362	106	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.837980937	0.097371167	937862379	12	2	bench-sync old md5 ef9e3ebc	7.97489927
+FAM	om3_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.837980937	0.098050584	936840250	12	2	bench-sync new md5 f325e10e	7.97489927
+FAM	om3_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.823562921	1.171494542	12802234392	70	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.823562921	1.134091792	12799940677	70	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k `-d -N1`	old	2	-C -d -N1	6.823562921	1.494196	16759485050	70	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-d -N1`	new	2	-C -d -N1	6.823562921	1.499499416	16761120972	70	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	7.283809081	0.1246295	1152457911	12	2	bench-sync old md5 ef9e3ebc	7.97414175
+FAM	om3_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	7.283809081	0.127073875	1152837751	12	2	bench-sync new md5 f325e10e	7.97414175
+FAM	om3_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.263397657	1.133625042	12216773205	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.263397657	1.1122265	12222414707	39	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.263397657	1.477995083	15831142404	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.263397657	1.419611208	15826691495	39	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	6.913283001	0.08998725	783322758	16	2	bench-sync old md5 ef9e3ebc	7.975617984
+FAM	om4_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	6.913283001	0.088544875	781073125	16	2	bench-sync new md5 f325e10e	7.975617984
+FAM	om4_N256_E50k `-2d -N1`	old	2	-C -2d -N1	5.464632117	0.497512083	3784778490	4348	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-2d -N1`	new	2	-C -2d -N1	5.464632117	0.489479334	3787381281	4348	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k `-d -N1`	old	2	-C -d -N1	4.899075548	0.455137875	3994453598	1884	3	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-d -N1`	new	2	-C -d -N1	4.899075548	0.437497958	3995329270	1884	3	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	8.594489658	0.112610333	955589309	16	2	bench-sync old md5 ef9e3ebc	7.978790193
+FAM	om4_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	8.594489658	0.117678333	951770102	16	2	bench-sync new md5 f325e10e	7.978790193
+FAM	om4_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.9258537	0.658621	5483165172	114	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.9258537	0.690149584	5490840570	114	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.9258537	0.800348125	6760023493	114	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.9258537	0.846975	6764580037	114	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.873858104	0.119634583	1024449065	16	2	bench-sync old md5 ef9e3ebc	7.984181438
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.873858104	0.114043542	1023571078	16	2	bench-sync new md5 f325e10e	7.984181438
+FAM	om4_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.858825005	1.306739709	12579746574	179	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.858825005	1.317056083	12580891871	179	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k `-d -N1`	old	2	-C -d -N1	6.858825005	1.747782625	17499075588	179	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-d -N1`	new	2	-C -d -N1	6.858825005	1.766626334	17497773921	179	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	7.565393576	0.143127584	1223242555	16	2	bench-sync old md5 ef9e3ebc	7.984230648
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	7.565393576	0.142607	1223633507	16	2	bench-sync new md5 f325e10e	7.984230648
+FAM	om4_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.536464491	1.349321333	13286036617	99	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.536464491	1.295977708	13287404091	99	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.536464491	1.557823291	15892356332	99	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.536464491	1.563283833	15894658925	99	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	6.936802565	0.098979459	822346462	20	2	bench-sync old md5 ef9e3ebc	7.985831683
+FAM	om5_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	6.936802565	0.101903333	821550802	20	2	bench-sync new md5 f325e10e	7.985831683
+FAM	om5_N256_E50k `-2d -N1`	old	2	-C -2d -N1	4.914591856	0.503797708	3740165069	5421	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-2d -N1`	new	2	-C -2d -N1	4.914591856	0.523274125	3740424834	5421	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k `-d -N1`	old	2	-C -d -N1	4.150151338	0.502287833	4443845971	2158	4	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-d -N1`	new	2	-C -d -N1	4.150151338	0.532043542	4444124403	2158	4	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	8.930493738	0.117474208	971745615	20	2	bench-sync old md5 ef9e3ebc	7.98862707
+FAM	om5_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	8.930493738	0.117087208	971347371	20	2	bench-sync new md5 f325e10e	7.98862707
+FAM	om5_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.950093392	0.732813542	5807414075	113	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.950093392	0.693858834	5805366854	113	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.950093392	0.890112417	7093164266	113	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.950093392	0.848787875	7090904789	113	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.911031376	0.1284955	1095426299	20	2	bench-sync old md5 ef9e3ebc	7.989304757
+FAM	om5_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.911031376	0.123261084	1095220130	20	2	bench-sync new md5 f325e10e	7.989304757
+FAM	om5_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.948978287	1.521725542	15085377727	309	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.948978287	1.566937333	15088946411	309	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k `-d -N1`	old	2	-C -d -N1	7.804137847	0.743072208	6840387578	77	4	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-d -N1`	new	2	-C -d -N1	7.804137847	0.77900725	6856349742	77	4	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	7.82562597	0.153384208	1306817665	20	2	bench-sync old md5 ef9e3ebc	7.98922672
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	7.82562597	0.153825125	1306813788	20	2	bench-sync new md5 f325e10e	7.98922672
+FAM	om5_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.825121965	1.554410875	15733929935	151	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.825121965	1.531946542	15734614517	151	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.825121965	1.782366167	18301265796	151	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.825121965	1.79866075	18296460318	151	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	6.979560518	0.108190875	916522324	24	2	bench-sync old md5 ef9e3ebc	7.985288435
+FAM	om6_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	6.979560518	0.111707375	915332932	24	2	bench-sync new md5 f325e10e	7.985288435
+FAM	om6_N256_E50k `-2d -N1`	old	2	-C -2d -N1	4.477224436	0.528046625	3748537041	6354	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-2d -N1`	new	2	-C -2d -N1	4.477224436	0.490935041	3745696648	6354	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k `-d -N1`	old	2	-C -d -N1	3.615875911	0.540116375	4597514210	3022	4	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-d -N1`	new	2	-C -d -N1	3.615875911	0.594040708	4591851848	3022	4	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	9.181799701	0.215141625	1486779137	24	2	bench-sync old md5 ef9e3ebc	7.989208717
+FAM	om6_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	9.181799701	0.220684875	1486896754	24	2	bench-sync new md5 f325e10e	7.989208717
+FAM	om6_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.935076736	0.85836125	6624179824	121	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.935076736	0.88618	6629331349	121	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.935076736	0.904133792	6976015672	121	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.935076736	0.920044958	6971283112	121	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.936312189	0.135257459	1127400437	24	2	bench-sync old md5 ef9e3ebc	7.990780342
+FAM	om6_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.936312189	0.1386455	1125932171	24	2	bench-sync new md5 f325e10e	7.990780342
+FAM	om6_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.894797134	1.56191975	14422219327	447	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.894797134	1.52696375	14425001889	447	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k `-d -N1`	old	2	-C -d -N1	7.474267948	0.852326084	6927399929	110	4	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-d -N1`	new	2	-C -d -N1	7.474267948	0.752650334	6923704534	110	4	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	8.018519168	0.158763542	1297947509	24	2	bench-sync old md5 ef9e3ebc	7.991148021
+FAM	om6_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	8.018519168	0.192839041	1300224589	24	2	bench-sync new md5 f325e10e	7.991148021
+FAM	om6_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.979250374	1.191908	9259424395	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.979250374	1.183998291	9256042891	39	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.979250374	1.415176625	11774241945	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.979250374	1.368855125	11778840198	39	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	7.022804611	0.098275917	860626102	28	2	bench-sync old md5 ef9e3ebc	7.989224103
+FAM	om7_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	7.022804611	0.107698458	859014585	28	2	bench-sync new md5 f325e10e	7.989224103
+FAM	om7_N256_E50k `-2d -N1`	old	2	-C -2d -N1	4.150222813	0.459377334	3134453754	7068	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-2d -N1`	new	2	-C -2d -N1	4.150222813	0.430628375	3135116949	7068	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k `-d -N1`	old	2	-C -d -N1	3.206629429	0.725176458	5952810536	3398	5	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-d -N1`	new	2	-C -d -N1	3.206629429	0.752816208	5942693617	3398	5	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	9.387158058	0.121108459	977738591	28	2	bench-sync old md5 ef9e3ebc	7.992344954
+FAM	om7_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	9.387158058	0.116944459	976564002	28	2	bench-sync new md5 f325e10e	7.992344954
+FAM	om7_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.948022767	0.842516709	6644460331	129	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.948022767	0.874661375	6646183435	129	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.948022767	0.884079583	6994832408	129	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.948022767	0.940158834	6995743153	129	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.957516072	0.161485625	1283040667	28	2	bench-sync old md5 ef9e3ebc	7.993763018
+FAM	om7_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.957516072	0.158197542	1282313103	28	2	bench-sync new md5 f325e10e	7.993763018
+FAM	om7_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.889674586	1.780664	16492440498	649	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.889674586	1.82779675	16500918131	649	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k `-d -N1`	old	2	-C -d -N1	7.190120906	0.874488875	7771639186	150	4	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-d -N1`	new	2	-C -d -N1	7.190120906	0.941266334	7769148234	150	4	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	8.132947126	0.317383042	2106742236	28	2	bench-sync old md5 ef9e3ebc	7.992393933
+FAM	om7_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	8.132947126	0.31801825	2106408553	28	2	bench-sync new md5 f325e10e	7.992393933
+FAM	om7_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.977652364	1.2750325	9294396419	48	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.977652364	1.26924525	9293002084	48	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.977652364	1.5210065	11823601384	48	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.977652364	1.543532333	11824686401	48	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	7.034226119	0.114641792	889834715	32	2	bench-sync old md5 ef9e3ebc	7.991346102
+FAM	om8_N256_E50k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	7.034226119	0.114161917	888557940	32	2	bench-sync new md5 f325e10e	7.991346102
+FAM	om8_N256_E50k `-2d -N1`	old	2	-C -2d -N1	3.864684914	0.489640959	3488110342	7961	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-2d -N1`	new	2	-C -2d -N1	3.864684914	0.531530875	3491345732	7961	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k `-d -N1`	old	2	-C -d -N1	2.883087834	0.652841375	5472876612	4351	5	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-d -N1`	new	2	-C -d -N1	2.883087834	0.679110125	5474668878	4351	5	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	9.614433321	0.124803417	1000817922	32	2	bench-sync old md5 ef9e3ebc	7.994534803
+FAM	om8_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	9.614433321	0.125232375	1001181687	32	2	bench-sync new md5 f325e10e	7.994534803
+FAM	om8_N256_E50k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.976763058	0.671990667	5341352184	80	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.976763058	0.671080084	5335697228	80	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.976763058	0.766489416	5642594307	80	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.976763058	0.741938958	5645194238	80	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k planted, `-2d --no-infomap -c`	old	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.966510195	0.148878458	1202486716	32	2	bench-sync old md5 ef9e3ebc	7.994997224
+FAM	om8_N256_E100k planted, `-2d --no-infomap -c`	new	2	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.966510195	0.142817791	1199624771	32	2	bench-sync new md5 f325e10e	7.994997224
+FAM	om8_N256_E100k `-2d -N1`	old	2	-C -2d -N1	6.876045079	1.975442292	17865071373	864	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-2d -N1`	new	2	-C -2d -N1	6.876045079	1.999973917	17866684358	864	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k `-d -N1`	old	2	-C -d -N1	6.938890883	0.975652958	8240130644	187	4	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-d -N1`	new	2	-C -d -N1	6.938890883	0.951122709	8239525974	187	4	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	8.282251145	0.172058166	1402792055	32	2	bench-sync old md5 ef9e3ebc	7.99515376
+FAM	om8_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	2	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	8.282251145	0.169905542	1402555842	32	2	bench-sync new md5 f325e10e	7.99515376
+FAM	om8_N256_E100k `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	7.971714831	1.366177833	10305158214	73	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	7.971714831	1.407354542	10311425703	73	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k `-d --regularized -N1`	old	2	-C -d --regularized -N1	7.971714831	1.65991825	12897075027	73	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-d --regularized -N1`	new	2	-C -d --regularized -N1	7.971714831	1.635773459	12887433627	73	2	bench-sync new md5 f325e10e	
+REG	ninetriangles `--regularized -N1`	old	2	-C --regularized -N1	4.752719413	0.000334542	60354270	1	2	bench-sync old md5 ef9e3ebc	
+REG	ninetriangles `--regularized -N1`	new	2	-C --regularized -N1	4.752719413	0.000248042	59668977	1	2	bench-sync new md5 f325e10e	
+REG	jazz `--regularized -N1`	old	2	-C --regularized -N1	7.292191712	0.0010985	72179586	8	2	bench-sync old md5 ef9e3ebc	
+REG	jazz `--regularized -N1`	new	2	-C --regularized -N1	7.292191712	0.001047292	71721958	8	2	bench-sync new md5 f325e10e	
+REG	netscience `--regularized -N1`	old	2	-C --regularized -N1	9.818115812	0.002775208	91793960	380	2	bench-sync old md5 ef9e3ebc	
+REG	netscience `--regularized -N1`	new	2	-C --regularized -N1	9.818115812	0.002793459	91350623	380	2	bench-sync new md5 f325e10e	
+REG	powergrid `--regularized -N1`	old	2	-C --regularized -N1	12.25363627	0.017582375	259173185	1	2	bench-sync old md5 ef9e3ebc	
+REG	powergrid `--regularized -N1`	new	2	-C --regularized -N1	12.25363627	0.017447709	258728955	1	2	bench-sync new md5 f325e10e	
+REG	polblogs `-d --regularized -N1`	old	2	-C -d --regularized -N1	9.585412453	0.007655166	166002172	1	2	bench-sync old md5 ef9e3ebc	
+REG	polblogs `-d --regularized -N1`	new	2	-C -d --regularized -N1	9.585412453	0.00767475	165570858	1	2	bench-sync new md5 f325e10e	
+REG	polblogs `-d --recorded-teleportation -N1`	old	2	-C -d --recorded-teleportation -N1	8.161364546	0.01073025	205479073	296	2	bench-sync old md5 ef9e3ebc	
+REG	polblogs `-d --recorded-teleportation -N1`	new	2	-C -d --recorded-teleportation -N1	8.161364546	0.010797125	205307065	296	2	bench-sync new md5 f325e10e	
+REG	word_assoc `-d --regularized -N1`	old	2	-C -d --regularized -N1	13.73576195	0.343686042	4002547818	1	2	bench-sync old md5 ef9e3ebc	
+REG	word_assoc `-d --regularized -N1`	new	2	-C -d --regularized -N1	13.73576195	0.340873458	4001667979	1	2	bench-sync new md5 f325e10e	
+REG	word_assoc `-d --recorded-teleportation -N1`	old	2	-C -d --recorded-teleportation -N1	12.00152258	0.470347583	5253859598	1050	2	bench-sync old md5 ef9e3ebc	
+REG	word_assoc `-d --recorded-teleportation -N1`	new	2	-C -d --recorded-teleportation -N1	12.00152258	0.467579584	5253476633	1050	2	bench-sync new md5 f325e10e	
+REG	web-NotreDame `-d --regularized -N1`	old	2	-C -d --regularized -N1	17.84843419	2.025872333	16783018101	25954	2	bench-sync old md5 ef9e3ebc	
+REG	web-NotreDame `-d --regularized -N1`	new	2	-C -d --regularized -N1	17.84843419	2.026044666	16760637072	25954	2	bench-sync new md5 f325e10e	
+REG	web-NotreDame `-d --recorded-teleportation -N1`	old	2	-C -d --recorded-teleportation -N1	9.451758981	2.873236875	24810584676	16796	3	bench-sync old md5 ef9e3ebc	
+REG	web-NotreDame `-d --recorded-teleportation -N1`	new	2	-C -d --recorded-teleportation -N1	9.451758981	2.858597458	24788879316	16796	3	bench-sync new md5 f325e10e	
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N1`	old	2	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N1	6.464125618	0.000584291	64794522	5	2	bench-sync old md5 ef9e3ebc	
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N1`	new	2	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N1	6.464125618	0.000594292	64287076	5	2	bench-sync new md5 f325e10e	
+REG	air30k `--regularized -N1`	old	2	-C --regularized -N1	5.459153242	0.416251792	4668640730	208	3	bench-sync old md5 ef9e3ebc	
+REG	air30k `--regularized -N1`	new	2	-C --regularized -N1	5.459153242	0.388292291	4667592232	208	3	bench-sync new md5 f325e10e	
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N1`	old	2	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N1	7.649185539	0.702474875	7163759074	1256	3	bench-sync old md5 ef9e3ebc	
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N1`	new	2	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N1	7.649185539	0.734342583	7164204300	1256	3	bench-sync new md5 f325e10e	
+REG	wikispeedia `-2d --regularized -N1`	old	2	-C -2d --regularized -N1	3.153525821	0.147235	1304274819	139	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-2d --regularized -N1`	new	2	-C -2d --regularized -N1	3.153525821	0.147212	1303938496	139	2	bench-sync new md5 f325e10e	
+REG	wikispeedia `-2d --recorded-teleportation -N1`	old	2	-C -2d --recorded-teleportation -N1	6.645009031	0.171502375	1955907937	1075	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-2d --recorded-teleportation -N1`	new	2	-C -2d --recorded-teleportation -N1	6.645009031	0.172021291	1956107524	1075	2	bench-sync new md5 f325e10e	
+REG	wikispeedia `-d --regularized -N1`	old	2	-C -d --regularized -N1	3.204763817	0.132892459	1181103395	152	3	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-d --regularized -N1`	new	2	-C -d --regularized -N1	3.204763817	0.133691541	1180835415	152	3	bench-sync new md5 f325e10e	
+REG	wikispeedia `-d --recorded-teleportation -N1`	old	2	-C -d --recorded-teleportation -N1	6.633810458	0.085805625	872420682	1070	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-d --recorded-teleportation -N1`	new	2	-C -d --recorded-teleportation -N1	6.633810458	0.08528575	873524002	1070	2	bench-sync new md5 f325e10e	
+F10	word_assoc (pref.)	old	1	-C -F -N10 -d --preferred-number-of-modules 25	11.73480892	4.31011175	44845089675	25	2	bench-sync old md5 ef9e3ebc	
+F10	word_assoc (pref.)	new	1	-C -F -N10 -d --preferred-number-of-modules 25	11.64534667	3.680910208	38318937777	25	2	bench-sync new md5 f325e10e	
+REG	wikispeedia `-d --regularized -N10`	old	1	-C -d --regularized -N10	3.144152555	0.820572167	7937911106	152	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-d --regularized -N10`	new	1	-C -d --regularized -N10	3.144152555	0.794907167	7937944172	152	2	bench-sync new md5 f325e10e	
+C2_10	polblogs	old	1	-C -2 -N10 -d	7.592588015	0.068588333	821799492	89	2	bench-sync old md5 ef9e3ebc	
+C2_10	polblogs	new	1	-C -2 -N10 -d	7.592588015	0.068089916	821655082	89	2	bench-sync new md5 f325e10e	
+REG	wikispeedia `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	3.141065687	0.73234875	7049699014	155	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	3.141065687	0.702344583	7047374352	155	2	bench-sync new md5 f325e10e	
+C10	polblogs	old	1	-C -N10 -d	7.592773105	0.080083375	951227045	91	2	bench-sync old md5 ef9e3ebc	
+C10	polblogs	new	1	-C -N10 -d	7.592773105	0.08104675	951431121	91	2	bench-sync new md5 f325e10e	
+REG	air30k `-2 --regularized -N10`	old	1	-C -2 --regularized -N10	5.39312712	4.041437291	43156072649	335	2	bench-sync old md5 ef9e3ebc	
+REG	air30k `-2 --regularized -N10`	new	1	-C -2 --regularized -N10	5.39312712	4.078572917	43162951364	335	2	bench-sync new md5 f325e10e	
+L10	word_assoc	old	1	-C --non-redundant -N10 -d	11.95700584	4.488997792	49545919261	1789	2	bench-sync old md5 ef9e3ebc	
+L10	word_assoc	new	1	-C --non-redundant -N10 -d	11.95700584	4.492527708	49542755882	1789	2	bench-sync new md5 f325e10e	
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	old	1	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	6.455952473	0.003063209	95755988	6	2	bench-sync old md5 ef9e3ebc	
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	new	1	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	6.455952473	0.003241125	94847590	6	2	bench-sync new md5 f325e10e	
+C2_10	overlapping om3_N256_E50k `-2d`	old	1	-C -2d -N10	6.258611497	4.407423541	34916816136	3236	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om3_N256_E50k `-2d`	new	1	-C -2d -N10	6.258611497	4.344493042	34906803394	3236	2	bench-sync new md5 f325e10e	
+REG	web-NotreDame `-d --regularized -N10`	old	1	-C -d --regularized -N10	17.26907872	15.3522795	88561028684	4597	2	bench-sync old md5 ef9e3ebc	
+REG	web-NotreDame `-d --regularized -N10`	new	1	-C -d --regularized -N10	17.26907872	15.12372	88569947519	4597	2	bench-sync new md5 f325e10e	
+C2_10	overlapping om3_N256_E100k `-2d`	old	1	-C -2d -N10	6.822832994	6.78921975	74011982480	69	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om3_N256_E100k `-2d`	new	1	-C -2d -N10	6.822832994	6.755709042	74006509996	69	2	bench-sync new md5 f325e10e	
+REG	word_assoc `-d --regularized -N10`	old	1	-C -d --regularized -N10	13.73576195	2.459419375	26569704479	1	2	bench-sync old md5 ef9e3ebc	
+REG	word_assoc `-d --regularized -N10`	new	1	-C -d --regularized -N10	13.73576195	2.461767083	26566227602	1	2	bench-sync new md5 f325e10e	
+F10	powergrid	old	1	-C -F -N10	4.752564739	0.182285042	1774602547	15	5	bench-sync old md5 ef9e3ebc	
+F10	powergrid	new	1	-C -F -N10	4.752564739	0.14956925	1772842309	15	5	bench-sync new md5 f325e10e	
+REG	polblogs `-d --regularized -N10`	old	1	-C -d --regularized -N10	9.585412453	0.05645075	644211974	1	2	bench-sync old md5 ef9e3ebc	
+REG	polblogs `-d --regularized -N10`	new	1	-C -d --regularized -N10	9.585412453	0.051690792	644232145	1	2	bench-sync new md5 f325e10e	
+C10	overlapping om6_N256_E100k `-d`	old	1	-C -d -N10	6.892138569	8.275729708	73725916443	431	2	bench-sync old md5 ef9e3ebc	
+C10	overlapping om6_N256_E100k `-d`	new	1	-C -d -N10	6.892138569	8.399256792	73719638745	431	2	bench-sync new md5 f325e10e	
+REG	netscience `-2 --regularized -N10`	old	1	-C -2 --regularized -N10	9.707657232	0.020930208	296277836	314	2	bench-sync old md5 ef9e3ebc	
+REG	netscience `-2 --regularized -N10`	new	1	-C -2 --regularized -N10	9.707657232	0.020392	295492048	314	2	bench-sync new md5 f325e10e	
+C10	air30k	old	1	-C -N10	5.39323549	3.640317584	38756477721	260	3	bench-sync old md5 ef9e3ebc	
+C10	air30k	new	1	-C -N10	5.39323549	3.644628417	38757190274	260	3	bench-sync new md5 f325e10e	
+REG	jazz `--regularized -N10`	old	1	-C --regularized -N10	7.250985752	0.006197083	132250742	8	2	bench-sync old md5 ef9e3ebc	
+REG	jazz `--regularized -N10`	new	1	-C --regularized -N10	7.250985752	0.006247542	131571377	8	2	bench-sync new md5 f325e10e	
+C2_10	overlapping om4_N256_E50k `-2d`	old	1	-C -2d -N10	5.454385527	4.277067792	31996705338	4381	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om4_N256_E50k `-2d`	new	1	-C -2d -N10	5.454385527	4.345490834	31995980856	4381	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.971714831	6.176297208	51133223071	73	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.971714831	6.337957625	51126877217	73	2	bench-sync new md5 f325e10e	
+C10	overlapping om4_N256_E100k `-d`	old	1	-C -d -N10	6.860084625	5.984249916	55997866167	176	2	bench-sync old md5 ef9e3ebc	
+C10	overlapping om4_N256_E100k `-d`	new	1	-C -d -N10	6.860084625	6.01154375	56004667909	176	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.873356654	8.120219459	67051025449	848	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.873356654	7.80871275	67072654960	848	2	bench-sync new md5 f325e10e	
+C10	malaria	old	1	-C -N10	7.392442593	2.721195583	31770400558	164	3	bench-sync old md5 ef9e3ebc	
+C10	malaria	new	1	-C -N10	7.392442593	2.728145166	31771305137	164	3	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k `-d -N10`	old	1	-C -d -N10	2.879746426	7.129475291	55720429185	4344	5	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-d -N10`	new	1	-C -d -N10	2.879746426	7.183713542	55739291397	4344	5	bench-sync new md5 f325e10e	
+C10	overlapping om8_N256_E100k `-d`	old	1	-C -d -N10	6.87278322	9.185815125	79963351744	868	2	bench-sync old md5 ef9e3ebc	
+C10	overlapping om8_N256_E100k `-d`	new	1	-C -d -N10	6.87278322	9.252246	79969612649	868	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.977652364	6.339154709	52614564813	48	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.977652364	6.297400667	52607202744	48	2	bench-sync new md5 f325e10e	
+F10	malaria	old	1	-C -F -N10	7.392442593	2.7043505	30859831302	164	3	bench-sync old md5 ef9e3ebc	
+F10	malaria	new	1	-C -F -N10	7.392442593	2.702035917	30865713217	164	3	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.948022767	3.204941208	23633161613	129	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.948022767	3.170805583	23632992555	129	2	bench-sync new md5 f325e10e	
+C2_10	overlapping om7_N256_E100k `-2d`	old	1	-C -2d -N10	6.88992089	7.637430542	63344594299	663	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om7_N256_E100k `-2d`	new	1	-C -2d -N10	6.88992089	7.629716333	63336551698	663	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k `-2d -N10`	old	1	-C -2d -N10	4.143277395	4.184672041	28944575287	7097	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-2d -N10`	new	1	-C -2d -N10	4.143277395	4.182246958	28950689822	7097	2	bench-sync new md5 f325e10e	
+C2_10	malaria	old	1	-C -2 -N10	7.400445378	2.889143375	32464755770	168	2	bench-sync old md5 ef9e3ebc	
+C2_10	malaria	new	1	-C -2 -N10	7.400445378	2.837785458	32461545749	168	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k `-d -N10`	old	1	-C -d -N10	6.892138569	8.245696	73707818813	431	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-d -N10`	new	1	-C -d -N10	6.892138569	8.956196583	73778433306	431	2	bench-sync new md5 f325e10e	
+C10	overlapping om7_N256_E100k `-d`	old	1	-C -d -N10	6.88945591	7.835732792	77117870166	666	2	bench-sync old md5 ef9e3ebc	
+C10	overlapping om7_N256_E100k `-d`	new	1	-C -d -N10	6.88945591	7.81810975	77099006913	666	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.935076736	3.1249285	26247014932	121	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.935076736	2.9103785	26250648562	121	2	bench-sync new md5 f325e10e	
+F10	air30k	old	1	-C -F -N10	5.39323549	2.901352292	36045092185	260	3	bench-sync old md5 ef9e3ebc	
+F10	air30k	new	1	-C -F -N10	5.39323549	2.931488792	36043429057	260	3	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.825121965	5.958246375	64588563337	151	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.825121965	5.925948666	64583357043	151	2	bench-sync new md5 f325e10e	
+C2_10	overlapping om6_N256_E50k `-2d`	old	1	-C -2d -N10	4.468778176	3.739116542	30579004312	6379	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om6_N256_E50k `-2d`	new	1	-C -2d -N10	4.468778176	3.739111333	30579270434	6379	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.880795013	5.946434416	60711602225	283	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.880795013	5.868062	60708141372	283	2	bench-sync new md5 f325e10e	
+C10	overlapping om2_N256_E50k `-d`	old	1	-C -d -N10	6.752836583	3.294074916	36322408211	536	2	bench-sync old md5 ef9e3ebc	
+C10	overlapping om2_N256_E50k `-d`	new	1	-C -d -N10	6.752836583	3.399892625	36328104940	536	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k `-d -N10`	old	1	-C -d -N10	4.147605907	4.927990208	45842231884	2135	4	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-d -N10`	new	1	-C -d -N10	4.147605907	5.003015625	45863400190	2135	4	bench-sync new md5 f325e10e	
+C2_10	overlapping om8_N256_E50k `-2d`	old	1	-C -2d -N10	3.859069372	3.791320541	29099731215	7985	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om8_N256_E50k `-2d`	new	1	-C -2d -N10	3.859069372	3.636677625	29095512093	7985	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.538118287	6.954869583	79549456797	97	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.538118287	6.950551375	79556181560	97	2	bench-sync new md5 f325e10e	
+F10	overlapping om4_N256_E100k `-d`	old	1	-C -F -d -N10	6.860084625	4.926856	51631224977	176	2	bench-sync old md5 ef9e3ebc	
+F10	overlapping om4_N256_E100k `-d`	new	1	-C -F -d -N10	6.860084625	4.945000667	51626718544	176	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.9258537	2.332906042	22071870916	114	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.9258537	2.366196459	22077297381	114	2	bench-sync new md5 f325e10e	
+C10	overlapping om8_N256_E50k `-d`	old	1	-C -d -N10	2.879746426	6.383133375	55711583715	4344	5	bench-sync old md5 ef9e3ebc	
+C10	overlapping om8_N256_E50k `-d`	new	1	-C -d -N10	2.879746426	6.445413542	55713486451	4344	5	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k `-2d -N10`	old	1	-C -2d -N10	5.454385527	3.665531625	31977916982	4381	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-2d -N10`	new	1	-C -2d -N10	5.454385527	3.701824584	31984677328	4381	2	bench-sync new md5 f325e10e	
+F10	overlapping om2_N256_E50k `-d`	old	1	-C -F -d -N10	6.752836583	2.947741125	30975348367	536	2	bench-sync old md5 ef9e3ebc	
+F10	overlapping om2_N256_E50k `-d`	new	1	-C -F -d -N10	6.752836583	3.042938416	30976414358	536	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k `-d -N10`	old	1	-C -d -N10	6.822832994	5.030022958	57179477261	69	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-d -N10`	new	1	-C -d -N10	6.822832994	5.231279125	57178393658	69	2	bench-sync new md5 f325e10e	
+C10	web-NotreDame	old	1	-C -N10 -d	6.182953945	18.655296625	160528785440	529	5	bench-sync old md5 ef9e3ebc	
+C10	web-NotreDame	new	1	-C -N10 -d	6.182953945	18.270360709	160545474129	529	5	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.917872981	2.234444792	23084902207	106	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.917872981	2.239518417	23081419278	106	2	bench-sync new md5 f325e10e	
+C10	wikispeedia `-d`	old	1	-C -d -N10	5.907904741	0.671973917	6945403568	199	2	bench-sync old md5 ef9e3ebc	
+C10	wikispeedia `-d`	new	1	-C -d -N10	5.907904741	0.661179334	6944457164	199	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	6.950671574	3.334350917	35813481222	9	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	6.950671574	3.3181325	35797073516	9	2	bench-sync new md5 f325e10e	
+C2_10	lazega	old	1	-C -2 -N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.003171125	97471822	7	2	bench-sync old md5 ef9e3ebc	
+C2_10	lazega	new	1	-C -2 -N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.003117042	96263036	7	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.773456578	3.440425375	37829099473	60	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.773456578	3.42257925	37831876287	60	2	bench-sync new md5 f325e10e	
+F10	multilayer (ex.)	old	1	-C -F -N10	2.011405238	0.000484792	63397773	2	2	bench-sync old md5 ef9e3ebc	
+F10	multilayer (ex.)	new	1	-C -F -N10	2.011405238	0.000517084	62970015	2	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k `-d -N10`	old	1	-C -d -N10	6.752836583	3.300661042	36314378554	536	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-d -N10`	new	1	-C -d -N10	6.752836583	3.368472209	36317097344	536	2	bench-sync new md5 f325e10e	
+C2_10	ninetriangles	old	1	-C -2 -N10	3.517754809	0.000537875	64686367	9	2	bench-sync old md5 ef9e3ebc	
+C2_10	ninetriangles	new	1	-C -2 -N10	3.517754809	0.000531459	63892306	9	2	bench-sync new md5 f325e10e	
+L10	netscience	old	1	-C --non-redundant -N10	3.304489767	0.057176584	724961538	272	4	bench-sync old md5 ef9e3ebc	
+L10	netscience	new	1	-C --non-redundant -N10	3.304489767	0.057425334	724871022	272	4	bench-sync new md5 f325e10e	
+F10	lazega	old	1	-C -F -N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.003202875	96638931	7	2	bench-sync old md5 ef9e3ebc	
+F10	lazega	new	1	-C -F -N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.003097416	96242949	7	2	bench-sync new md5 f325e10e	
+F10	netscience	old	1	-C -F -N10	3.364888761	0.036310042	491078732	283	4	bench-sync old md5 ef9e3ebc	
+F10	netscience	new	1	-C -F -N10	3.364888761	0.036573666	490970072	283	4	bench-sync new md5 f325e10e	
+C1	ninetriangles	old	3	-C -N1	3.371875026	0.000271333	59944567	5	3	bench-sync old md5 ef9e3ebc	
+C1	ninetriangles	new	3	-C -N1	3.371875026	0.000276833	59988620	5	3	bench-sync new md5 f325e10e	
+C1	lazega	old	3	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	6.041117399	0.000651958	65663981	6	2	bench-sync old md5 ef9e3ebc	
+C1	lazega	new	3	-C -N1 --meta-data networks/columnar-benchmark/lazega.meta	6.041117399	0.000669791	65613023	6	2	bench-sync new md5 f325e10e	
+C1	multilayer (ex.)	old	3	-C -N1	2.011405238	0.000205125	59073659	2	2	bench-sync old md5 ef9e3ebc	
+C1	multilayer (ex.)	new	3	-C -N1	2.011405238	0.000194416	59206160	2	2	bench-sync new md5 f325e10e	
+C1	wikispeedia `-2d`	old	3	-C -2d -N1	5.91901362	0.091366625	988975704	184	2	bench-sync old md5 ef9e3ebc	
+C1	wikispeedia `-2d`	new	3	-C -2d -N1	5.91901362	0.087065083	987110331	184	2	bench-sync new md5 f325e10e	
+C1	wikispeedia `-d`	old	3	-C -d -N1	6.066305904	0.066500083	803187402	187	3	bench-sync old md5 ef9e3ebc	
+C1	wikispeedia `-d`	new	3	-C -d -N1	6.066305904	0.066844875	803615012	187	3	bench-sync new md5 f325e10e	
+C1	jazz	old	3	-C -N1	6.896294162	0.001010834	72312493	10	2	bench-sync old md5 ef9e3ebc	
+C1	jazz	new	3	-C -N1	6.896294162	0.000966083	71512565	10	2	bench-sync new md5 f325e10e	
+C1	powergrid	old	3	-C -N1	4.728634278	0.023328958	338399378	17	5	bench-sync old md5 ef9e3ebc	
+C1	powergrid	new	3	-C -N1	4.728634278	0.023595791	337778885	17	5	bench-sync new md5 f325e10e	
+C1	web-NotreDame	old	3	-C -N1 -d	6.218295286	2.266019	23370779352	492	5	bench-sync old md5 ef9e3ebc	
+C1	web-NotreDame	new	3	-C -N1 -d	6.218295286	2.276311417	23359373246	492	5	bench-sync new md5 f325e10e	
+C1	malaria	old	3	-C -N1	7.492381296	0.351521917	5368078246	148	3	bench-sync old md5 ef9e3ebc	
+C1	malaria	new	3	-C -N1	7.492381296	0.364073	5366602188	148	3	bench-sync new md5 f325e10e	
+C1	air30k	old	3	-C -N1	5.456991462	0.351835167	4727923664	203	3	bench-sync old md5 ef9e3ebc	
+C1	air30k	new	3	-C -N1	5.456991462	0.34647225	4725301722	203	3	bench-sync new md5 f325e10e	
+C1	air30k (reg.)	old	3	-C -N1 -d --regularized	5.650152296	0.536679416	6277802100	190	3	bench-sync old md5 ef9e3ebc	
+C1	air30k (reg.)	new	3	-C -N1 -d --regularized	5.650152296	0.572641709	6278529475	190	3	bench-sync new md5 f325e10e	
+C1	air30k (meta)	old	3	-C -N1 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.670498664	0.612740542	7309247229	1451	3	bench-sync old md5 ef9e3ebc	
+C1	air30k (meta)	new	3	-C -N1 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.670498664	0.641562208	7309768787	1451	3	bench-sync new md5 f325e10e	
+C1	overlapping om2_N256_E50k `-2d`	old	3	-C -2d -N1	6.744558723	1.119508917	12515886896	606	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om2_N256_E50k `-2d`	new	3	-C -2d -N1	6.744558723	1.097207833	12512744858	606	2	bench-sync new md5 f325e10e	
+C1	overlapping om2_N256_E50k `-d`	old	3	-C -d -N1	7.298733312	0.366552917	3825927119	338	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om2_N256_E50k `-d`	new	3	-C -d -N1	7.298733312	0.365294208	3825649212	338	4	bench-sync new md5 f325e10e	
+C1	overlapping om2_N256_E50k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.734990605	0.543033625	6266621148	454	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om2_N256_E50k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.734990605	0.540313209	6265513989	454	2	bench-sync new md5 f325e10e	
+F1	overlapping om2_N256_E50k `-d`	old	3	-C -F -d -N1	7.317528373	0.260366166	2474250221	338	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om2_N256_E50k `-d`	new	3	-C -F -d -N1	7.317528373	0.234927084	2471876003	338	4	bench-sync new md5 f325e10e	
+C1	overlapping om3_N256_E100k `-2d`	old	3	-C -2d -N1	6.823562921	1.015931041	12801701708	70	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om3_N256_E100k `-2d`	new	3	-C -2d -N1	6.823562921	1.049315333	12798674986	70	2	bench-sync new md5 f325e10e	
+C1	overlapping om3_N256_E100k `-d`	old	3	-C -d -N1	6.823562921	1.340352291	16755634737	70	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om3_N256_E100k `-d`	new	3	-C -d -N1	6.823562921	1.367892958	16762109120	70	2	bench-sync new md5 f325e10e	
+C1	overlapping om3_N256_E100k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.820929855	0.369468417	4142629290	50	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om3_N256_E100k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.820929855	0.385916333	4141928245	50	2	bench-sync new md5 f325e10e	
+F1	overlapping om3_N256_E100k `-d`	old	3	-C -F -d -N1	6.823562921	1.303441	16260234749	70	2	bench-sync old md5 ef9e3ebc	
+F1	overlapping om3_N256_E100k `-d`	new	3	-C -F -d -N1	6.823562921	1.325603542	16260628184	70	2	bench-sync new md5 f325e10e	
+C1	overlapping om4_N256_E100k `-2d`	old	3	-C -2d -N1	6.858825005	1.171731667	12577342643	179	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om4_N256_E100k `-2d`	new	3	-C -2d -N1	6.858825005	1.128952625	12572217816	179	2	bench-sync new md5 f325e10e	
+C1	overlapping om4_N256_E100k `-d`	old	3	-C -d -N1	6.858825005	1.638598208	17491303034	179	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om4_N256_E100k `-d`	new	3	-C -d -N1	6.858825005	1.65154425	17488929080	179	2	bench-sync new md5 f325e10e	
+C1	overlapping om4_N256_E100k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.850471471	0.806868667	9153877856	126	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om4_N256_E100k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.850471471	0.799098875	9153382887	126	2	bench-sync new md5 f325e10e	
+F1	overlapping om4_N256_E100k `-d`	old	3	-C -F -d -N1	6.858825005	1.365654083	15360271935	179	2	bench-sync old md5 ef9e3ebc	
+F1	overlapping om4_N256_E100k `-d`	new	3	-C -F -d -N1	6.858825005	1.432679708	15359502231	179	2	bench-sync new md5 f325e10e	
+C1	overlapping om5_N256_E100k `-2d`	old	3	-C -2d -N1	6.948978287	1.426092625	15078287529	309	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om5_N256_E100k `-2d`	new	3	-C -2d -N1	6.948978287	1.406720583	15085272859	309	2	bench-sync new md5 f325e10e	
+C1	overlapping om5_N256_E100k `-d`	old	3	-C -d -N1	7.804137847	0.676266041	6839245955	77	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om5_N256_E100k `-d`	new	3	-C -d -N1	7.804137847	0.68816575	6850920428	77	4	bench-sync new md5 f325e10e	
+C1	overlapping om5_N256_E100k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.867718448	0.899288042	9544241828	290	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om5_N256_E100k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.867718448	0.871679542	9540309766	290	2	bench-sync new md5 f325e10e	
+F1	overlapping om5_N256_E100k `-d`	old	3	-C -F -d -N1	7.829247983	0.47746425	4790973026	93	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om5_N256_E100k `-d`	new	3	-C -F -d -N1	7.829247983	0.522680083	4793095382	93	4	bench-sync new md5 f325e10e	
+C1	overlapping om6_N256_E100k `-2d`	old	3	-C -2d -N1	6.894797134	1.485230458	14418453341	447	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om6_N256_E100k `-2d`	new	3	-C -2d -N1	6.894797134	1.359096875	14413401948	447	2	bench-sync new md5 f325e10e	
+C1	overlapping om6_N256_E100k `-d`	old	3	-C -d -N1	7.474267948	0.757425125	6916121699	110	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om6_N256_E100k `-d`	new	3	-C -d -N1	7.474267948	0.675730166	6914159409	110	4	bench-sync new md5 f325e10e	
+C1	overlapping om6_N256_E100k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.87656878	0.891935459	9573471609	430	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om6_N256_E100k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.87656878	0.884847667	9573742126	430	2	bench-sync new md5 f325e10e	
+F1	overlapping om6_N256_E100k `-d`	old	3	-C -F -d -N1	7.546115138	0.494774666	4705415485	103	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om6_N256_E100k `-d`	new	3	-C -F -d -N1	7.546115138	0.513268208	4703134707	103	4	bench-sync new md5 f325e10e	
+C1	overlapping om7_N256_E100k `-2d`	old	3	-C -2d -N1	6.889674586	1.611954375	16489914963	649	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om7_N256_E100k `-2d`	new	3	-C -2d -N1	6.889674586	1.639384	16487868334	649	2	bench-sync new md5 f325e10e	
+C1	overlapping om7_N256_E100k `-d`	old	3	-C -d -N1	7.190120906	0.818555375	7764920239	150	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om7_N256_E100k `-d`	new	3	-C -d -N1	7.190120906	0.780479333	7761415283	150	4	bench-sync new md5 f325e10e	
+C1	overlapping om7_N256_E100k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.881554086	0.928231709	9420707557	624	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om7_N256_E100k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.881554086	0.888084458	9420354972	624	2	bench-sync new md5 f325e10e	
+F1	overlapping om7_N256_E100k `-d`	old	3	-C -F -d -N1	7.238675817	0.54159625	4940125888	145	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om7_N256_E100k `-d`	new	3	-C -F -d -N1	7.238675817	0.536830417	4940882013	145	4	bench-sync new md5 f325e10e	
+C1	overlapping om8_N256_E100k `-2d`	old	3	-C -2d -N1	6.876045079	1.7357295	17858671839	864	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om8_N256_E100k `-2d`	new	3	-C -2d -N1	6.876045079	1.751213	17855977144	864	2	bench-sync new md5 f325e10e	
+C1	overlapping om8_N256_E100k `-d`	old	3	-C -d -N1	6.938890883	3.238492542	8356314103	187	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om8_N256_E100k `-d`	new	3	-C -d -N1	6.938890883	1.016894834	8258423487	187	4	bench-sync new md5 f325e10e	
+C1	overlapping om8_N256_E100k `-2d -c` planted	old	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.863878689	1.313720583	12061596665	829	2	bench-sync old md5 ef9e3ebc	
+C1	overlapping om8_N256_E100k `-2d -c` planted	new	3	-C -2d -N1 -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.863878689	1.25148175	12058803624	829	2	bench-sync new md5 f325e10e	
+F1	overlapping om8_N256_E100k `-d`	old	3	-C -F -d -N1	7.007657776	0.753536708	5853341699	179	4	bench-sync old md5 ef9e3ebc	
+F1	overlapping om8_N256_E100k `-d`	new	3	-C -F -d -N1	7.007657776	0.711934083	5856562744	179	4	bench-sync new md5 f325e10e	
+C1	overlapping om2_N256_E100k `-d`	old	3	-C -d -N1	7.144749725	0.447061917	4590628824	3	3	bench-sync old md5 ef9e3ebc	
+C1	overlapping om2_N256_E100k `-d`	new	3	-C -d -N1	7.144749725	0.448240584	4589403615	3	3	bench-sync new md5 f325e10e	
+C1	overlapping om3_N256_E50k `-d`	old	3	-C -d -N1	5.848415175	0.421779208	4041777360	531	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om3_N256_E50k `-d`	new	3	-C -d -N1	5.848415175	0.423103291	4040788403	531	4	bench-sync new md5 f325e10e	
+C1	overlapping om4_N256_E50k `-d`	old	3	-C -d -N1	4.899075548	0.434294167	3995863824	1884	3	bench-sync old md5 ef9e3ebc	
+C1	overlapping om4_N256_E50k `-d`	new	3	-C -d -N1	4.899075548	0.460226584	4010332648	1884	3	bench-sync new md5 f325e10e	
+C1	overlapping om5_N256_E50k `-d`	old	3	-C -d -N1	4.150151338	0.529456208	4451384946	2158	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om5_N256_E50k `-d`	new	3	-C -d -N1	4.150151338	0.504675125	4444970417	2158	4	bench-sync new md5 f325e10e	
+C1	overlapping om6_N256_E50k `-d`	old	3	-C -d -N1	3.615875911	0.57699775	4602062894	3022	4	bench-sync old md5 ef9e3ebc	
+C1	overlapping om6_N256_E50k `-d`	new	3	-C -d -N1	3.615875911	0.551597292	4598690822	3022	4	bench-sync new md5 f325e10e	
+C1	overlapping om7_N256_E50k `-d`	old	3	-C -d -N1	3.206629429	0.722306542	5959751392	3398	5	bench-sync old md5 ef9e3ebc	
+C1	overlapping om7_N256_E50k `-d`	new	3	-C -d -N1	3.206629429	0.748697541	5961516883	3398	5	bench-sync new md5 f325e10e	
+C1	overlapping om8_N256_E50k `-d`	old	3	-C -d -N1	2.883087834	0.647780917	5484842418	4351	5	bench-sync old md5 ef9e3ebc	
+C1	overlapping om8_N256_E50k `-d`	new	3	-C -d -N1	2.883087834	0.758668334	5475989829	4351	5	bench-sync new md5 f325e10e	
+C1	netscience	old	3	-C -N1	3.364903063	0.007169209	134873148	278	4	bench-sync old md5 ef9e3ebc	
+C1	netscience	new	3	-C -N1	3.364903063	0.007011958	133284778	278	4	bench-sync new md5 f325e10e	
+C1	polblogs	old	3	-C -N1 -d	7.593689164	0.016180875	260326106	3	3	bench-sync old md5 ef9e3ebc	
+C1	polblogs	new	3	-C -N1 -d	7.593689164	0.016579375	260091983	3	3	bench-sync new md5 f325e10e	
+C1	word_assoc	old	3	-C -N1 -d	11.70862241	0.340367292	3453237748	1817	2	bench-sync old md5 ef9e3ebc	
+C1	word_assoc	new	3	-C -N1 -d	11.70862241	0.325852208	3448041995	1817	2	bench-sync new md5 f325e10e	
+C1	word_assoc (pref.)	old	3	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.46481825	4481641964	25	2	bench-sync old md5 ef9e3ebc	
+C1	word_assoc (pref.)	new	3	-C -N1 -d --preferred-number-of-modules 25	11.94886955	0.443363334	4477628510	25	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.778901842	0.079441958	597799882	8	2	bench-sync old md5 ef9e3ebc	7.957873782
+FAM	om2_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	6.778901842	0.0540985	594118916	8	2	bench-sync new md5 f325e10e	7.957873782
+FAM	om2_N256_E50k `-2d -N1`	old	3	-C -2d -N1	6.744558723	1.243438042	12532024975	606	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-2d -N1`	new	3	-C -2d -N1	6.744558723	1.217728459	12539480677	606	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k `-d -N1`	old	3	-C -d -N1	7.298733312	0.400022709	3833481545	338	4	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-d -N1`	new	3	-C -d -N1	7.298733312	0.39550925	3828274175	338	4	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	7.569509705	0.071033084	688771897	8	2	bench-sync old md5 ef9e3ebc	7.958565403
+FAM	om2_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E50000-mu0.1-seed1.clu	7.569509705	0.07031075	688960980	8	2	bench-sync new md5 f325e10e	7.958565403
+FAM	om2_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.563587703	1.411221292	15636669839	96	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.563587703	1.491279833	15649690176	96	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.563587703	1.546165583	16947960392	96	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.563587703	1.547950875	16937825837	96	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.782220083	0.081893709	818917381	8	2	bench-sync old md5 ef9e3ebc	7.960871197
+FAM	om2_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.782220083	0.070158792	816419491	8	2	bench-sync new md5 f325e10e	7.960871197
+FAM	om2_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.774049681	0.624328375	6484311094	60	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.774049681	0.625560917	6480241556	60	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k `-d -N1`	old	3	-C -d -N1	7.144749725	0.439340042	4588364706	3	3	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-d -N1`	new	3	-C -d -N1	7.144749725	0.469742542	4592524214	3	3	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.964713526	0.09772125	1023760264	8	2	bench-sync old md5 ef9e3ebc	7.960610295
+FAM	om2_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om2-nc64-E100000-mu0.1-seed1.clu	6.964713526	0.096574167	1023393292	8	2	bench-sync new md5 f325e10e	7.960610295
+FAM	om2_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	6.950574698	0.684688333	7438361473	10	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	6.950574698	0.728630209	7440904330	10	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.485124727	0.507228583	5167732691	594	3	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.485124727	0.515452208	5169637851	594	3	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	6.850734921	0.073359125	695790156	12	2	bench-sync old md5 ef9e3ebc	7.96795137
+FAM	om3_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	6.850734921	0.072608709	694999638	12	2	bench-sync new md5 f325e10e	7.96795137
+FAM	om3_N256_E50k `-2d -N1`	old	3	-C -2d -N1	6.269691984	0.558040125	4212022625	3218	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-2d -N1`	new	3	-C -2d -N1	6.269691984	0.510924042	4211564183	3218	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k `-d -N1`	old	3	-C -d -N1	5.848415175	0.42185225	4040902967	531	4	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-d -N1`	new	3	-C -d -N1	5.848415175	0.420287792	4045052039	531	4	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	8.141739503	0.087810292	793449093	12	2	bench-sync old md5 ef9e3ebc	7.969664223
+FAM	om3_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E50000-mu0.1-seed1.clu	8.141739503	0.08296675	794138873	12	2	bench-sync new md5 f325e10e	7.969664223
+FAM	om3_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.917872981	0.61113225	5047780817	106	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.917872981	0.566220458	5044082687	106	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.917872981	0.702141208	6279165891	106	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.917872981	0.727316583	6281667499	106	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.837980937	0.0983455	938965953	12	2	bench-sync old md5 ef9e3ebc	7.97489927
+FAM	om3_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	6.837980937	0.099722208	938180637	12	2	bench-sync new md5 f325e10e	7.97489927
+FAM	om3_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.823562921	1.207583041	12810958658	70	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.823562921	1.138472917	12803666311	70	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k `-d -N1`	old	3	-C -d -N1	6.823562921	1.50135875	16759646413	70	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-d -N1`	new	3	-C -d -N1	6.823562921	1.485239916	16762164062	70	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	7.283809081	0.12707875	1154507109	12	2	bench-sync old md5 ef9e3ebc	7.97414175
+FAM	om3_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om3-nc64-E100000-mu0.1-seed1.clu	7.283809081	0.124249542	1153839995	12	2	bench-sync new md5 f325e10e	7.97414175
+FAM	om3_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.263397657	1.115727916	12217296286	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.263397657	1.122813125	12218192481	39	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.263397657	1.442335292	15826072582	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.263397657	1.415764542	15829241569	39	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	6.913283001	0.109396917	784229124	16	2	bench-sync old md5 ef9e3ebc	7.975617984
+FAM	om4_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	6.913283001	0.091274333	781899794	16	2	bench-sync new md5 f325e10e	7.975617984
+FAM	om4_N256_E50k `-2d -N1`	old	3	-C -2d -N1	5.464632117	0.498065542	3783764842	4348	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-2d -N1`	new	3	-C -2d -N1	5.464632117	0.50283975	3784147541	4348	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k `-d -N1`	old	3	-C -d -N1	4.899075548	0.433356333	3992222772	1884	3	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-d -N1`	new	3	-C -d -N1	4.899075548	0.44596025	3995009094	1884	3	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	8.594489658	0.113424958	951404145	16	2	bench-sync old md5 ef9e3ebc	7.978790193
+FAM	om4_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E50000-mu0.1-seed1.clu	8.594489658	0.115557125	951658082	16	2	bench-sync new md5 f325e10e	7.978790193
+FAM	om4_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.9258537	0.664736	5487706682	114	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.9258537	0.683500833	5493072248	114	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.9258537	0.811397083	6761596448	114	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.9258537	0.779637834	6758223186	114	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.873858104	0.115480583	1026597518	16	2	bench-sync old md5 ef9e3ebc	7.984181438
+FAM	om4_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	6.873858104	0.117087667	1024066387	16	2	bench-sync new md5 f325e10e	7.984181438
+FAM	om4_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.858825005	1.288678375	12587991815	179	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.858825005	1.315386458	12582123072	179	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k `-d -N1`	old	3	-C -d -N1	6.858825005	1.810715334	17505063043	179	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-d -N1`	new	3	-C -d -N1	6.858825005	1.740480375	17492593653	179	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	7.565393576	0.14448675	1224716873	16	2	bench-sync old md5 ef9e3ebc	7.984230648
+FAM	om4_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om4-nc64-E100000-mu0.1-seed1.clu	7.565393576	0.139687875	1223599946	16	2	bench-sync new md5 f325e10e	7.984230648
+FAM	om4_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.536464491	1.268728834	13282407724	99	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.536464491	1.288625125	13287871960	99	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.536464491	1.554386917	15890349159	99	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.536464491	1.5516955	15894548591	99	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	6.936802565	0.098120125	822435220	20	2	bench-sync old md5 ef9e3ebc	7.985831683
+FAM	om5_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	6.936802565	0.093708708	819904925	20	2	bench-sync new md5 f325e10e	7.985831683
+FAM	om5_N256_E50k `-2d -N1`	old	3	-C -2d -N1	4.914591856	0.511825292	3739801239	5421	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-2d -N1`	new	3	-C -2d -N1	4.914591856	0.506096083	3743524716	5421	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k `-d -N1`	old	3	-C -d -N1	4.150151338	0.52793125	4442429202	2158	4	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-d -N1`	new	3	-C -d -N1	4.150151338	0.540353708	4448105540	2158	4	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	8.930493738	0.118768792	970721930	20	2	bench-sync old md5 ef9e3ebc	7.98862707
+FAM	om5_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E50000-mu0.1-seed1.clu	8.930493738	0.116717875	971827113	20	2	bench-sync new md5 f325e10e	7.98862707
+FAM	om5_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.950093392	0.746006541	5809017525	113	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.950093392	0.706478166	5805167295	113	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.950093392	0.857357041	7084833747	113	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.950093392	0.877852083	7089037754	113	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.911031376	0.126119625	1095668872	20	2	bench-sync old md5 ef9e3ebc	7.989304757
+FAM	om5_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	6.911031376	0.12871675	1095202715	20	2	bench-sync new md5 f325e10e	7.989304757
+FAM	om5_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.948978287	1.559984083	15084405223	309	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.948978287	1.58784825	15091411682	309	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k `-d -N1`	old	3	-C -d -N1	7.804137847	0.731856917	6842380987	77	4	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-d -N1`	new	3	-C -d -N1	7.804137847	0.755731292	6856551980	77	4	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	7.82562597	0.186297625	1310819925	20	2	bench-sync old md5 ef9e3ebc	7.98922672
+FAM	om5_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om5-nc64-E100000-mu0.1-seed1.clu	7.82562597	0.155819125	1307269005	20	2	bench-sync new md5 f325e10e	7.98922672
+FAM	om5_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.825121965	1.5329095	15736254429	151	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.825121965	1.567493292	15735393982	151	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.825121965	1.800901875	18302404658	151	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.825121965	1.8129345	18302329140	151	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	6.979560518	0.133297875	919060772	24	2	bench-sync old md5 ef9e3ebc	7.985288435
+FAM	om6_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	6.979560518	0.108552625	916027372	24	2	bench-sync new md5 f325e10e	7.985288435
+FAM	om6_N256_E50k `-2d -N1`	old	3	-C -2d -N1	4.477224436	0.537364583	3750324984	6354	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-2d -N1`	new	3	-C -2d -N1	4.477224436	0.51208625	3750948024	6354	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k `-d -N1`	old	3	-C -d -N1	3.615875911	0.549666292	4588582769	3022	4	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-d -N1`	new	3	-C -d -N1	3.615875911	0.551024625	4589882123	3022	4	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	9.181799701	0.236972958	1492869361	24	2	bench-sync old md5 ef9e3ebc	7.989208717
+FAM	om6_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E50000-mu0.1-seed1.clu	9.181799701	0.221477542	1487292977	24	2	bench-sync new md5 f325e10e	7.989208717
+FAM	om6_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.935076736	0.861708291	6627620700	121	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.935076736	0.90653725	6633272248	121	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.935076736	0.912587167	6979895282	121	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.935076736	0.942888583	6974365562	121	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.936312189	0.135064917	1127470744	24	2	bench-sync old md5 ef9e3ebc	7.990780342
+FAM	om6_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	6.936312189	0.133122084	1125260836	24	2	bench-sync new md5 f325e10e	7.990780342
+FAM	om6_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.894797134	1.578471541	14420397067	447	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.894797134	1.657406708	14428818165	447	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k `-d -N1`	old	3	-C -d -N1	7.474267948	0.793622375	6927989840	110	4	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-d -N1`	new	3	-C -d -N1	7.474267948	0.787390833	6926568555	110	4	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	8.018519168	0.153118541	1300014101	24	2	bench-sync old md5 ef9e3ebc	7.991148021
+FAM	om6_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om6-nc64-E100000-mu0.1-seed1.clu	8.018519168	0.15255325	1299369887	24	2	bench-sync new md5 f325e10e	7.991148021
+FAM	om6_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.979250374	1.215024542	9261462379	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.979250374	1.240447709	9265904263	39	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.979250374	1.463644917	11781811265	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.979250374	1.434275583	11776878446	39	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	7.022804611	0.108026166	863383242	28	2	bench-sync old md5 ef9e3ebc	7.989224103
+FAM	om7_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	7.022804611	0.104655791	861685335	28	2	bench-sync new md5 f325e10e	7.989224103
+FAM	om7_N256_E50k `-2d -N1`	old	3	-C -2d -N1	4.150222813	0.459413125	3135771455	7068	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-2d -N1`	new	3	-C -2d -N1	4.150222813	0.451924792	3140060794	7068	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k `-d -N1`	old	3	-C -d -N1	3.206629429	0.738221917	5957727197	3398	5	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-d -N1`	new	3	-C -d -N1	3.206629429	0.752688375	5971929012	3398	5	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	9.387158058	0.116694791	978601851	28	2	bench-sync old md5 ef9e3ebc	7.992344954
+FAM	om7_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E50000-mu0.1-seed1.clu	9.387158058	0.118225916	980634265	28	2	bench-sync new md5 f325e10e	7.992344954
+FAM	om7_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.948022767	0.84090025	6656157991	129	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.948022767	0.85274475	6643167828	129	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.948022767	0.880695167	6992046642	129	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.948022767	0.909530542	6995844334	129	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.957516072	0.155821375	1282985383	28	2	bench-sync old md5 ef9e3ebc	7.993763018
+FAM	om7_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	6.957516072	0.154606166	1280883997	28	2	bench-sync new md5 f325e10e	7.993763018
+FAM	om7_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.889674586	1.778687792	16500191875	649	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.889674586	1.781558209	16493086964	649	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k `-d -N1`	old	3	-C -d -N1	7.190120906	0.883972792	7768684146	150	4	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-d -N1`	new	3	-C -d -N1	7.190120906	0.904715834	7765849161	150	4	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	8.132947126	0.310957583	2104555557	28	2	bench-sync old md5 ef9e3ebc	7.992393933
+FAM	om7_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om7-nc64-E100000-mu0.1-seed1.clu	8.132947126	0.315739417	2105727673	28	2	bench-sync new md5 f325e10e	7.992393933
+FAM	om7_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.977652364	1.269326292	9292303160	48	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.977652364	1.256878917	9294246433	48	2	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.977652364	1.524420834	11821512309	48	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.977652364	1.550366833	11819771191	48	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	7.034226119	0.113726458	889926765	32	2	bench-sync old md5 ef9e3ebc	7.991346102
+FAM	om8_N256_E50k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	7.034226119	0.110509084	888083705	32	2	bench-sync new md5 f325e10e	7.991346102
+FAM	om8_N256_E50k `-2d -N1`	old	3	-C -2d -N1	3.864684914	0.474440875	3487906500	7961	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-2d -N1`	new	3	-C -2d -N1	3.864684914	0.511314375	3489115628	7961	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k `-d -N1`	old	3	-C -d -N1	2.883087834	0.688870792	5492919807	4351	5	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-d -N1`	new	3	-C -d -N1	2.883087834	0.667480417	5453902666	4351	5	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	9.614433321	0.126771125	1001858861	32	2	bench-sync old md5 ef9e3ebc	7.994534803
+FAM	om8_N256_E50k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E50000-mu0.1-seed1.clu	9.614433321	0.145719417	1001476586	32	2	bench-sync new md5 f325e10e	7.994534803
+FAM	om8_N256_E50k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.976763058	0.666751042	5343874635	80	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.976763058	0.677741584	5339888979	80	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.976763058	0.766386	5641314774	80	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.976763058	0.718969083	5639621485	80	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k planted, `-2d --no-infomap -c`	old	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.966510195	0.147537584	1202618485	32	2	bench-sync old md5 ef9e3ebc	7.994997224
+FAM	om8_N256_E100k planted, `-2d --no-infomap -c`	new	3	-C -2d -N1 --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	6.966510195	0.142279625	1200241642	32	2	bench-sync new md5 f325e10e	7.994997224
+FAM	om8_N256_E100k `-2d -N1`	old	3	-C -2d -N1	6.876045079	2.003516083	17876113295	864	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-2d -N1`	new	3	-C -2d -N1	6.876045079	1.976592375	17859649463	864	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k `-d -N1`	old	3	-C -d -N1	6.938890883	0.972449291	8239897263	187	4	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-d -N1`	new	3	-C -d -N1	6.938890883	0.938672042	8251018243	187	4	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k planted, `-2d --regularized --no-infomap -c`	old	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	8.282251145	0.169928708	1403063796	32	2	bench-sync old md5 ef9e3ebc	7.99515376
+FAM	om8_N256_E100k planted, `-2d --regularized --no-infomap -c`	new	3	-C -2d -N1 --regularized --no-infomap -c networks/columnar-benchmark/om/overlapping-memory-n256-om8-nc64-E100000-mu0.1-seed1.clu	8.282251145	0.197954167	1402523189	32	2	bench-sync new md5 f325e10e	7.99515376
+FAM	om8_N256_E100k `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	7.971714831	1.394443833	10315918535	73	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	7.971714831	1.3953955	10321751058	73	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k `-d --regularized -N1`	old	3	-C -d --regularized -N1	7.971714831	1.7155605	12890612879	73	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-d --regularized -N1`	new	3	-C -d --regularized -N1	7.971714831	1.677188583	12896888837	73	2	bench-sync new md5 f325e10e	
+REG	ninetriangles `--regularized -N1`	old	3	-C --regularized -N1	4.752719413	0.000249959	59659226	1	2	bench-sync old md5 ef9e3ebc	
+REG	ninetriangles `--regularized -N1`	new	3	-C --regularized -N1	4.752719413	0.000279292	59484359	1	2	bench-sync new md5 f325e10e	
+REG	jazz `--regularized -N1`	old	3	-C --regularized -N1	7.292191712	0.001122958	72166430	8	2	bench-sync old md5 ef9e3ebc	
+REG	jazz `--regularized -N1`	new	3	-C --regularized -N1	7.292191712	0.001104958	72097065	8	2	bench-sync new md5 f325e10e	
+REG	netscience `--regularized -N1`	old	3	-C --regularized -N1	9.818115812	0.002831125	91834822	380	2	bench-sync old md5 ef9e3ebc	
+REG	netscience `--regularized -N1`	new	3	-C --regularized -N1	9.818115812	0.002843917	91466765	380	2	bench-sync new md5 f325e10e	
+REG	powergrid `--regularized -N1`	old	3	-C --regularized -N1	12.25363627	0.017450333	259168363	1	2	bench-sync old md5 ef9e3ebc	
+REG	powergrid `--regularized -N1`	new	3	-C --regularized -N1	12.25363627	0.01779675	258710543	1	2	bench-sync new md5 f325e10e	
+REG	polblogs `-d --regularized -N1`	old	3	-C -d --regularized -N1	9.585412453	0.007424833	166146842	1	2	bench-sync old md5 ef9e3ebc	
+REG	polblogs `-d --regularized -N1`	new	3	-C -d --regularized -N1	9.585412453	0.007686459	165472915	1	2	bench-sync new md5 f325e10e	
+REG	polblogs `-d --recorded-teleportation -N1`	old	3	-C -d --recorded-teleportation -N1	8.161364546	0.010631125	205573605	296	2	bench-sync old md5 ef9e3ebc	
+REG	polblogs `-d --recorded-teleportation -N1`	new	3	-C -d --recorded-teleportation -N1	8.161364546	0.010785	205607767	296	2	bench-sync new md5 f325e10e	
+REG	word_assoc `-d --regularized -N1`	old	3	-C -d --regularized -N1	13.73576195	0.3496615	4006251926	1	2	bench-sync old md5 ef9e3ebc	
+REG	word_assoc `-d --regularized -N1`	new	3	-C -d --regularized -N1	13.73576195	0.346280708	4003017463	1	2	bench-sync new md5 f325e10e	
+REG	word_assoc `-d --recorded-teleportation -N1`	old	3	-C -d --recorded-teleportation -N1	12.00152258	0.498395083	5256120461	1050	2	bench-sync old md5 ef9e3ebc	
+REG	word_assoc `-d --recorded-teleportation -N1`	new	3	-C -d --recorded-teleportation -N1	12.00152258	0.475139958	5256349877	1050	2	bench-sync new md5 f325e10e	
+REG	web-NotreDame `-d --regularized -N1`	old	3	-C -d --regularized -N1	17.84843419	2.024303375	16786693854	25954	2	bench-sync old md5 ef9e3ebc	
+REG	web-NotreDame `-d --regularized -N1`	new	3	-C -d --regularized -N1	17.84843419	2.018424917	16758040511	25954	2	bench-sync new md5 f325e10e	
+REG	web-NotreDame `-d --recorded-teleportation -N1`	old	3	-C -d --recorded-teleportation -N1	9.451758981	2.9172375	24812550574	16796	3	bench-sync old md5 ef9e3ebc	
+REG	web-NotreDame `-d --recorded-teleportation -N1`	new	3	-C -d --recorded-teleportation -N1	9.451758981	2.917961375	24802736925	16796	3	bench-sync new md5 f325e10e	
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N1`	old	3	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N1	6.464125618	0.00063675	66265563	5	2	bench-sync old md5 ef9e3ebc	
+REG	lazega `--meta-data networks/columnar-benchmark/lazega.meta --regularized -N1`	new	3	-C --meta-data networks/columnar-benchmark/lazega.meta --regularized -N1	6.464125618	0.000630708	64304278	5	2	bench-sync new md5 f325e10e	
+REG	air30k `--regularized -N1`	old	3	-C --regularized -N1	5.459153242	0.398161125	4670592783	208	3	bench-sync old md5 ef9e3ebc	
+REG	air30k `--regularized -N1`	new	3	-C --regularized -N1	5.459153242	0.4052555	4668703332	208	3	bench-sync new md5 f325e10e	
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N1`	old	3	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N1	7.649185539	0.719183708	7165770538	1256	3	bench-sync old md5 ef9e3ebc	
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N1`	new	3	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N1	7.649185539	0.745669375	7165381647	1256	3	bench-sync new md5 f325e10e	
+REG	wikispeedia `-2d --regularized -N1`	old	3	-C -2d --regularized -N1	3.153525821	0.147460625	1305368523	139	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-2d --regularized -N1`	new	3	-C -2d --regularized -N1	3.153525821	0.147832417	1304405902	139	2	bench-sync new md5 f325e10e	
+REG	wikispeedia `-2d --recorded-teleportation -N1`	old	3	-C -2d --recorded-teleportation -N1	6.645009031	0.177551792	1957701342	1075	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-2d --recorded-teleportation -N1`	new	3	-C -2d --recorded-teleportation -N1	6.645009031	0.175749083	1957356917	1075	2	bench-sync new md5 f325e10e	
+REG	wikispeedia `-d --regularized -N1`	old	3	-C -d --regularized -N1	3.204763817	0.135995375	1181177424	152	3	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-d --regularized -N1`	new	3	-C -d --regularized -N1	3.204763817	0.13551225	1181502149	152	3	bench-sync new md5 f325e10e	
+REG	wikispeedia `-d --recorded-teleportation -N1`	old	3	-C -d --recorded-teleportation -N1	6.633810458	0.088063041	872721287	1070	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-d --recorded-teleportation -N1`	new	3	-C -d --recorded-teleportation -N1	6.633810458	0.086084417	872634288	1070	2	bench-sync new md5 f325e10e	
+REG	wikispeedia `-2 -d --regularized -N10`	old	1	-C -2 -d --regularized -N10	3.141065687	0.737541375	7052342514	155	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-2 -d --regularized -N10`	new	1	-C -2 -d --regularized -N10	3.141065687	0.719829417	7050041466	155	2	bench-sync new md5 f325e10e	
+C2_10	word_assoc (pref.)	old	1	-C -2 -N10 -d --preferred-number-of-modules 25	11.73480892	4.16649975	46003877765	25	2	bench-sync old md5 ef9e3ebc	
+C2_10	word_assoc (pref.)	new	1	-C -2 -N10 -d --preferred-number-of-modules 25	11.64024275	3.099401084	34694299850	25	2	bench-sync new md5 f325e10e	
+REG	wikispeedia `-2 -2d --regularized -N10`	old	1	-C -2 -2d --regularized -N10	3.141065687	0.717023833	7050790745	155	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-2 -2d --regularized -N10`	new	1	-C -2 -2d --regularized -N10	3.141065687	0.730409375	7049827363	155	2	bench-sync new md5 f325e10e	
+C10	word_assoc (pref.)	old	1	-C -N10 -d --preferred-number-of-modules 25	11.73480892	4.872733709	49582843806	25	2	bench-sync old md5 ef9e3ebc	
+C10	word_assoc (pref.)	new	1	-C -N10 -d --preferred-number-of-modules 25	11.64534667	4.197722459	43034006635	25	2	bench-sync new md5 f325e10e	
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	old	1	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	7.419172605	9.491764625	89409902950	2245	3	bench-sync old md5 ef9e3ebc	
+REG	air30k (meta) `--meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10`	new	1	-C --meta-data networks/columnar-benchmark/air30k_usstate.meta --regularized -N10	7.419172605	9.448241959	89405297336	2245	3	bench-sync new md5 f325e10e	
+C2_10	netscience	old	1	-C -2 -N10	3.529536656	0.020394916	279593585	312	2	bench-sync old md5 ef9e3ebc	
+C2_10	netscience	new	1	-C -2 -N10	3.529536656	0.020394458	278883110	312	2	bench-sync new md5 f325e10e	
+REG	lazega `-2 --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	old	1	-C -2 --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	6.455952473	0.003102625	92953104	6	2	bench-sync old md5 ef9e3ebc	
+REG	lazega `-2 --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10`	new	1	-C -2 --meta-data networks/columnar-benchmark/lazega.meta --regularized -N10	6.455952473	0.003090917	92321102	6	2	bench-sync new md5 f325e10e	
+C2_10	powergrid	old	1	-C -2 -N10	5.634871397	0.102626208	1158071400	419	2	bench-sync old md5 ef9e3ebc	
+C2_10	powergrid	new	1	-C -2 -N10	5.634871397	0.102707791	1157746699	419	2	bench-sync new md5 f325e10e	
+REG	web-NotreDame `-2 -d --regularized -N10`	old	1	-C -2 -d --regularized -N10	17.25687888	16.877993	94444396490	4193	2	bench-sync old md5 ef9e3ebc	
+REG	web-NotreDame `-2 -d --regularized -N10`	new	1	-C -2 -d --regularized -N10	17.25687888	17.190962375	94480762272	4193	2	bench-sync new md5 f325e10e	
+C10	overlapping om5_N256_E100k `-d`	old	1	-C -d -N10	6.880795013	6.361639708	55049376578	283	2	bench-sync old md5 ef9e3ebc	
+C10	overlapping om5_N256_E100k `-d`	new	1	-C -d -N10	6.880795013	6.39638275	55040816805	283	2	bench-sync new md5 f325e10e	
+REG	word_assoc `-2 -d --regularized -N10`	old	1	-C -2 -d --regularized -N10	13.73576195	2.015808166	23372518425	1	2	bench-sync old md5 ef9e3ebc	
+REG	word_assoc `-2 -d --regularized -N10`	new	1	-C -2 -d --regularized -N10	13.73576195	2.0160135	23371638308	1	2	bench-sync new md5 f325e10e	
+C2_10	air30k	old	1	-C -2 -N10	5.39136505	4.125614833	42792948349	336	2	bench-sync old md5 ef9e3ebc	
+C2_10	air30k	new	1	-C -2 -N10	5.39136505	4.054213	42785374832	336	2	bench-sync new md5 f325e10e	
+REG	polblogs `-2 -d --regularized -N10`	old	1	-C -2 -d --regularized -N10	9.585412453	0.046722667	591395133	1	2	bench-sync old md5 ef9e3ebc	
+REG	polblogs `-2 -d --regularized -N10`	new	1	-C -2 -d --regularized -N10	9.585412453	0.046625625	590347607	1	2	bench-sync new md5 f325e10e	
+F10	overlapping om7_N256_E100k `-d`	old	1	-C -F -d -N10	6.88945591	8.162624458	65454401225	666	2	bench-sync old md5 ef9e3ebc	
+F10	overlapping om7_N256_E100k `-d`	new	1	-C -F -d -N10	6.88945591	8.063549459	65463798748	666	2	bench-sync new md5 f325e10e	
+REG	powergrid `--regularized -N10`	old	1	-C --regularized -N10	12.25363627	0.155757208	1494743563	1	2	bench-sync old md5 ef9e3ebc	
+REG	powergrid `--regularized -N10`	new	1	-C --regularized -N10	12.25363627	0.136169792	1493721035	1	2	bench-sync new md5 f325e10e	
+C2_10	air30k (meta)	old	1	-C -2 -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.416311014	10.742321167	99221003682	2331	2	bench-sync old md5 ef9e3ebc	
+C2_10	air30k (meta)	new	1	-C -2 -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.416311014	10.58526475	99218724573	2331	2	bench-sync new md5 f325e10e	
+REG	jazz `-2 --regularized -N10`	old	1	-C -2 --regularized -N10	7.250985752	0.006310708	131546122	8	2	bench-sync old md5 ef9e3ebc	
+REG	jazz `-2 --regularized -N10`	new	1	-C -2 --regularized -N10	7.250985752	0.006415	130553784	8	2	bench-sync new md5 f325e10e	
+C2_10	overlapping om7_N256_E50k `-2d`	old	1	-C -2d -N10	4.143277395	4.287431334	28960543032	7097	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om7_N256_E50k `-2d`	new	1	-C -2d -N10	4.143277395	4.286358	28951234363	7097	2	bench-sync new md5 f325e10e	
+REG	ninetriangles `--regularized -N10`	old	1	-C --regularized -N10	4.752719413	0.000812292	67237949	1	2	bench-sync old md5 ef9e3ebc	
+REG	ninetriangles `--regularized -N10`	new	1	-C --regularized -N10	4.752719413	0.000829708	66546899	1	2	bench-sync new md5 f325e10e	
+F10	overlapping om5_N256_E100k `-d`	old	1	-C -F -d -N10	6.880795013	5.743183916	50394603005	283	2	bench-sync old md5 ef9e3ebc	
+F10	overlapping om5_N256_E100k `-d`	new	1	-C -F -d -N10	6.880795013	5.7727005	50387198165	283	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E100k `-d -N10`	old	1	-C -d -N10	6.87278322	9.679244583	79988713815	868	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E100k `-d -N10`	new	1	-C -d -N10	6.87278322	9.688738417	80006140741	868	2	bench-sync new md5 f325e10e	
+C2_10	air30k (reg.)	old	1	-C -2 -N10 -d --regularized	5.567955371	3.933427917	40057425045	305	2	bench-sync old md5 ef9e3ebc	
+C2_10	air30k (reg.)	new	1	-C -2 -N10 -d --regularized	5.567955371	3.981070458	40049708524	305	2	bench-sync new md5 f325e10e	
+FAM	om8_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.976763058	3.29483675	24696194873	80	2	bench-sync old md5 ef9e3ebc	
+FAM	om8_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.976763058	3.284682417	24719803860	80	2	bench-sync new md5 f325e10e	
+C10	overlapping om7_N256_E50k `-d`	old	1	-C -d -N10	3.198611437	6.98894375	53963804558	3144	6	bench-sync old md5 ef9e3ebc	
+C10	overlapping om7_N256_E50k `-d`	new	1	-C -d -N10	3.198611437	6.981389875	53948292758	3144	6	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.977652364	6.585793625	51343693456	48	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.977652364	7.154101125	51352258698	48	2	bench-sync new md5 f325e10e	
+L10	air30k (reg.)	old	1	-C --non-redundant -N10 -d --regularized	5.561800331	3.955258458	38604873444	228	3	bench-sync old md5 ef9e3ebc	
+L10	air30k (reg.)	new	1	-C --non-redundant -N10 -d --regularized	5.561800331	4.117978	38601491378	228	3	bench-sync new md5 f325e10e	
+FAM	om7_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.88992089	8.259287333	63351426433	663	2	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.88992089	8.016075583	63362966201	663	2	bench-sync new md5 f325e10e	
+C10	overlapping om6_N256_E50k `-d`	old	1	-C -d -N10	3.61397354	5.876387292	46733954170	3020	4	bench-sync old md5 ef9e3ebc	
+C10	overlapping om6_N256_E50k `-d`	new	1	-C -d -N10	3.61397354	5.917245084	46768341674	3020	4	bench-sync new md5 f325e10e	
+FAM	om7_N256_E50k `-d -N10`	old	1	-C -d -N10	3.198611437	6.92796775	53958925258	3144	6	bench-sync old md5 ef9e3ebc	
+FAM	om7_N256_E50k `-d -N10`	new	1	-C -d -N10	3.198611437	6.917908667	53922306641	3144	6	bench-sync new md5 f325e10e	
+F10	air30k (reg.)	old	1	-C -F -N10 -d --regularized	5.56993805	3.295903625	33626731108	227	3	bench-sync old md5 ef9e3ebc	
+F10	air30k (reg.)	new	1	-C -F -N10 -d --regularized	5.56993805	3.340937	33635146107	227	3	bench-sync new md5 f325e10e	
+FAM	om6_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.979250374	7.069708166	59811465826	39	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.979250374	7.078658	59828106154	39	2	bench-sync new md5 f325e10e	
+F10	overlapping om8_N256_E100k `-d`	old	1	-C -F -d -N10	6.87278322	8.683573459	68342644563	868	2	bench-sync old md5 ef9e3ebc	
+F10	overlapping om8_N256_E100k `-d`	new	1	-C -F -d -N10	6.87278322	8.545872917	68329147899	868	2	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.935076736	3.350526375	23988589244	121	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.935076736	3.24528175	23979481170	121	2	bench-sync new md5 f325e10e	
+L10	air30k (meta)	old	1	-C --non-redundant -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.228774064	8.454785666	80165240926	2236	3	bench-sync old md5 ef9e3ebc	
+L10	air30k (meta)	new	1	-C --non-redundant -N10 --meta-data networks/columnar-benchmark/air30k_usstate.meta	7.228774064	8.507451542	80170210433	2236	3	bench-sync new md5 f325e10e	
+FAM	om6_N256_E50k `-2d -N10`	old	1	-C -2d -N10	4.468778176	4.513657375	30594392391	6379	2	bench-sync old md5 ef9e3ebc	
+FAM	om6_N256_E50k `-2d -N10`	new	1	-C -2d -N10	4.468778176	4.949067458	30602992454	6379	2	bench-sync new md5 f325e10e	
+C10	powergrid	old	1	-C -N10	4.715327643	0.224603917	2585357889	5	5	bench-sync old md5 ef9e3ebc	
+C10	powergrid	new	1	-C -N10	4.715327643	0.225187625	2584533784	5	5	bench-sync new md5 f325e10e	
+FAM	om5_N256_E100k `-d -N10`	old	1	-C -d -N10	6.880795013	6.0940765	55036555916	283	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E100k `-d -N10`	new	1	-C -d -N10	6.880795013	6.182632041	55040721667	283	2	bench-sync new md5 f325e10e	
+F10	overlapping om3_N256_E100k `-d`	old	1	-C -F -d -N10	6.822832994	5.238430791	52981725528	69	2	bench-sync old md5 ef9e3ebc	
+F10	overlapping om3_N256_E100k `-d`	new	1	-C -F -d -N10	6.822832994	5.611354375	52999539861	69	2	bench-sync new md5 f325e10e	
+FAM	om5_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.950093392	3.252199917	25877519122	113	2	bench-sync old md5 ef9e3ebc	
+FAM	om5_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.950093392	3.165709916	25866327166	113	2	bench-sync new md5 f325e10e	
+F10	web-NotreDame	old	1	-C -F -N10 -d	6.263424919	15.266456292	119415421334	661	4	bench-sync old md5 ef9e3ebc	
+F10	web-NotreDame	new	1	-C -F -N10 -d	6.263424919	15.253514541	119524376614	661	4	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.538118287	6.181739042	59804163382	97	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.538118287	6.372152458	59802821874	97	2	bench-sync new md5 f325e10e	
+C10	overlapping om3_N256_E50k `-d`	old	1	-C -d -N10	5.84696016	4.381430083	40862531034	618	4	bench-sync old md5 ef9e3ebc	
+C10	overlapping om3_N256_E50k `-d`	new	1	-C -d -N10	5.84696016	4.40713925	40852618874	618	4	bench-sync new md5 f325e10e	
+FAM	om4_N256_E100k `-2d -N10`	old	1	-C -2d -N10	6.859843831	6.930308334	63602248615	173	2	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E100k `-2d -N10`	new	1	-C -2d -N10	6.859843831	7.0283025	63608559760	173	2	bench-sync new md5 f325e10e	
+C2_10	web-NotreDame	old	1	-C -2 -N10 -d	6.889480271	17.015620375	94247053146	10362	2	bench-sync old md5 ef9e3ebc	
+C2_10	web-NotreDame	new	1	-C -2 -N10 -d	6.889480271	16.995971	94253606716	10362	2	bench-sync new md5 f325e10e	
+FAM	om4_N256_E50k `-d -N10`	old	1	-C -d -N10	4.873442704	5.114458708	44492925335	1041	4	bench-sync old md5 ef9e3ebc	
+FAM	om4_N256_E50k `-d -N10`	new	1	-C -d -N10	4.873442704	5.063185458	44484792042	1041	4	bench-sync new md5 f325e10e	
+C2_10	overlapping om8_N256_E100k `-2d`	old	1	-C -2d -N10	6.873356654	8.197302875	67058163282	848	2	bench-sync old md5 ef9e3ebc	
+C2_10	overlapping om8_N256_E100k `-2d`	new	1	-C -2d -N10	6.873356654	7.956076208	67080496521	848	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E100k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.261663242	6.682069459	69534722454	38	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E100k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.261663242	6.646665042	69533194245	38	2	bench-sync new md5 f325e10e	
+L10	malaria	old	1	-C --non-redundant -N10	7.438064454	2.987030625	34106467453	2	3	bench-sync old md5 ef9e3ebc	
+L10	malaria	new	1	-C --non-redundant -N10	7.438064454	2.952392209	34106371030	2	3	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k `-d --regularized -N10`	old	1	-C -d --regularized -N10	7.917872981	2.595662292	22578767313	106	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-d --regularized -N10`	new	1	-C -d --regularized -N10	7.917872981	2.591828792	22579891216	106	2	bench-sync new md5 f325e10e	
+L10	wikispeedia `-d`	old	1	-C --non-redundant -d -N10	5.903208727	0.664317916	6687597572	199	2	bench-sync old md5 ef9e3ebc	
+L10	wikispeedia `-d`	new	1	-C --non-redundant -d -N10	5.903208727	0.669182792	6687626687	199	2	bench-sync new md5 f325e10e	
+FAM	om3_N256_E50k `-2d -N10`	old	1	-C -2d -N10	6.258611497	4.375620583	34916751053	3236	2	bench-sync old md5 ef9e3ebc	
+FAM	om3_N256_E50k `-2d -N10`	new	1	-C -2d -N10	6.258611497	4.314252333	34915566796	3236	2	bench-sync new md5 f325e10e	
+C10	multilayer (ex.)	old	1	-C -N10	2.011405238	0.000554875	64472042	2	2	bench-sync old md5 ef9e3ebc	
+C10	multilayer (ex.)	new	1	-C -N10	2.011405238	0.000643167	63509016	2	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E100k `-d -N10`	old	1	-C -d -N10	6.773456578	3.197793458	33124272512	60	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E100k `-d -N10`	new	1	-C -d -N10	6.773456578	3.320758292	33123970015	60	2	bench-sync new md5 f325e10e	
+F10	wikispeedia `-d`	old	1	-C -F -d -N10	5.907904741	0.651350292	6685767977	199	2	bench-sync old md5 ef9e3ebc	
+F10	wikispeedia `-d`	new	1	-C -F -d -N10	5.907904741	0.69529125	6686083878	199	2	bench-sync new md5 f325e10e	
+FAM	om2_N256_E50k `-2d --regularized -N10`	old	1	-C -2d --regularized -N10	7.571301139	3.400416625	35748487552	85	2	bench-sync old md5 ef9e3ebc	
+FAM	om2_N256_E50k `-2d --regularized -N10`	new	1	-C -2d --regularized -N10	7.571301139	3.74546	35776558328	85	2	bench-sync new md5 f325e10e	
+C10	lazega	old	1	-C -N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.003297958	99645538	7	2	bench-sync old md5 ef9e3ebc	
+C10	lazega	new	1	-C -N10 --meta-data networks/columnar-benchmark/lazega.meta	6.017860269	0.003582541	98606628	7	2	bench-sync new md5 f325e10e	
+C10	word_assoc	old	1	-C -N10 -d	11.43278494	4.115471	44632592964	762	2	bench-sync old md5 ef9e3ebc	
+C10	word_assoc	new	1	-C -N10 -d	11.43278494	4.155776833	44636628889	762	2	bench-sync new md5 f325e10e	
+C2_10	multilayer (ex.)	old	1	-C -2 -N10	2.011405238	0.000548417	63390853	2	2	bench-sync old md5 ef9e3ebc	
+C2_10	multilayer (ex.)	new	1	-C -2 -N10	2.011405238	0.000487375	62533701	2	2	bench-sync new md5 f325e10e	
+L10	polblogs	old	1	-C --non-redundant -N10 -d	7.592668282	0.099809959	942311771	3	3	bench-sync old md5 ef9e3ebc	
+L10	polblogs	new	1	-C --non-redundant -N10 -d	7.592668282	0.080439459	942071935	3	3	bench-sync new md5 f325e10e	
+REG	wikispeedia `-d --recorded-teleportation -N10`	old	1	-C -d --recorded-teleportation -N10	6.624310588	0.744987667	7871734999	1067	2	bench-sync old md5 ef9e3ebc	
+REG	wikispeedia `-d --recorded-teleportation -N10`	new	1	-C -d --recorded-teleportation -N10	6.624310588	0.746862125	7871481475	1067	2	bench-sync new md5 f325e10e	
+BENCH-DONE

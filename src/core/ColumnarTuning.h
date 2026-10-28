@@ -52,7 +52,7 @@ namespace columnar {
   // aggregation level as its OWN first-order network (base objective, blind to
   // the corrections), then gate the found grouping as a seeded module-level
   // candidate under the true objective. This is the group-merge operator the
-  // module-move corrections need: their reward is strongly superadditive in
+  // attribute corrections need: their reward is strongly superadditive in
   // module size, so the augmented objective can hold a deep optimum (merge ~100
   // building blocks into one community) that no chain of pairwise-downhill
   // moves or merges reaches — greedy either stalls fully fragmented or
@@ -62,7 +62,7 @@ namespace columnar {
   // graph itself.
   //
   // ON BY DEFAULT: this is the shipped behaviour. Only reachable with a
-  // module-move-capable correction attached (Mem/Meta), so every base-objective
+  // attribute correction attached (Mem/Meta, hasAttributeCorrections), so every base-objective
   // network is bit-identical at zero cost. Set COL_REGROUP=off for the
   // pre-operator A/B baseline.
   inline bool regroupProbeEnabled()
@@ -179,11 +179,11 @@ namespace columnar {
   //               malaria in the two-level operator)
   //   auto      = the measured policy: interior levels always (that is where the
   //               enter-flow up-build over-merges, on base networks too), the
-  //               leaf level only when a module-move-capable correction is
+  //               leaf level only when an attribute correction is
   //               attached (where splitTopModules' gate does apply) and then
   //               only from the free piece sources
   //   winner    = the once-per-run policy: interior levels always, the leaf level
-  //               only with a module-move-capable correction attached (as `auto`),
+  //               only with an attribute correction attached (as `auto`),
   //               but WITH the expensive from-singletons piece source, which is
   //               the discovery the once-per-run pass exists to pay for
   // Default off keeps the engine bit-identical to the pre-operator baseline.
@@ -232,7 +232,7 @@ namespace columnar {
   // ON BY DEFAULT: this is the shipped behaviour (malaria -0.371% mean over
   // seeds 123/234/345 for +5..11% CPU on a ~3s run; air30k and regularized
   // microscopic gains at +1.5..3%; every base network bit-identical at zero
-  // cost, because the repair is gated on module-move corrections). Set
+  // cost, because the repair is gated on attribute corrections). Set
   // COL_HSPLIT_WINNER=off to disable it, or to any other mode name to override
   // the level policy.
   inline int hSplitWinnerMode()

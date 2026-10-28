@@ -3218,7 +3218,7 @@ bool InfomapBase::deepRepairColumnarBest(NodePaths& tree, double& codelength, bo
   // −0.0008% (science2001) while re-building a 325k-node optimizer, seeding a
   // 6-level stack and re-materializing the tree (+7.0% and +0.3% CPU). The
   // repairable hierarchical headroom lives on the memory/state objectives.
-  if (!opt.search().hasModuleMoveCorrections())
+  if (!opt.search().hasAttributeCorrections())
     return false;
   // Single-trial runs pay the expensive fresh split discovery only when the
   // trial's own regroup detector escalated (the pathology signal): on a

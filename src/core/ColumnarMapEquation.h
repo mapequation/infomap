@@ -174,6 +174,16 @@ public:
   virtual bool participatesInModuleMoves() const { return false; }
   virtual void setUnits(const std::vector<int>& /*leafToUnit*/, int /*numUnits*/) {}
   virtual void resetUnitsToLeaves() {}
+  // Whether the module-level gain depends on WHICH units share a module -- the
+  // per-unit attribute aggregates above (Mem: physical nodes, Meta: categories) --
+  // rather than only on how many modules there are. An attribute codebook's reward
+  // is superadditive in module size, which is what the regroup ladder, the
+  // leaf-level split and the winner's deep repair exist to exploit
+  // (hasAttributeCorrections). A correction that joins the module moves without
+  // attributes (the |K - K_pref| bias) keeps the aggregation and its descending
+  // trajectory repair, which pay for it. Of the three, only the deep repair gains
+  // bits there, at 60-80x as much in instructions; it stays off (F82 addendum).
+  virtual bool tracksUnitAttributes() const { return false; }
 
   // --- Level-dissolve hooks (terminal ragged pass, dissolveUnprofitableLevels) ---
   // The dissolve pass removes an intermediate module-of-modules whose index
@@ -431,13 +441,14 @@ public:
   // it to decide whether a single-trial run pays for fresh split discovery.
   bool regroupEscalated() const { return m_regroupEscalated; }
 
-  // Whether any attached correction can participate in module-level moves
-  // (Mem/Meta) — the gate for the aggregation trajectory repair and the
-  // split operator; false on base networks.
-  bool hasModuleMoveCorrections() const
+  // Whether any attached correction tracks per-unit attributes in the module
+  // moves (Mem/Meta, tracksUnitAttributes) — the gate for the regroup ladder,
+  // the leaf-level split and the winner's deep repair; false on base networks
+  // and under the count-only |K - K_pref| bias.
+  bool hasAttributeCorrections() const
   {
     for (const auto& c : m_corrections)
-      if (c->participatesInMoveLoop() && c->participatesInModuleMoves())
+      if (c->participatesInMoveLoop() && c->participatesInModuleMoves() && c->tracksUnitAttributes())
         return true;
     return false;
   }
@@ -638,8 +649,8 @@ private:
  * Preferred-number-of-modules bias (--preferred-number-of-modules): the same
  * |K - K_pref| penalty (1 bit per module away from the target) that
  * BiasedMapEquation applies on the OO path, wired into the columnar two-level
- * move loop and merge so the search — not only the reported codelength — is
- * steered toward K_pref modules. K is the current non-empty leaf-module count,
+ * move loop (leaf and module passes) and merge so the search — not only the
+ * reported codelength — is steered toward K_pref modules. K is the current non-empty leaf-module count,
  * tracked from the partition the move loop maintains (initMoveLoop seeds it,
  * applyMove/applyMerge keep it exact). Objective-agnostic: an additive
  * structural term that composes with base/meta/mem/lossy, like the entropy
@@ -669,6 +680,14 @@ public:
   bool blocksLevelDissolve() const override { return true; }
 
   bool participatesInMoveLoop() const override { return true; }
+  // The aggregation's module passes too (#834's reason): without them they optimize
+  // the base objective, stop at the natural module count, and leave the gated
+  // merges to drag K to K_pref one greedy merge at a time (word_assoc `-2`: ~760
+  // modules to 25, +30% in instructions over the unbiased run and 0.62% in bits
+  // above OO, F82). K counts non-empty modules whatever the movers are, so the
+  // per-module member counts serve units as they serve leaves and setUnits has
+  // nothing to rebuild. No unit attributes (tracksUnitAttributes).
+  bool participatesInModuleMoves() const override { return true; }
   double initMoveLoop(const std::vector<int>& leafModule, int numModules) override;
   double moveDelta(int leaf, int oldMod, int newMod) const override;
   void applyMove(int leaf, int oldMod, int newMod) override;
@@ -712,6 +731,7 @@ public:
   std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& globalLeafIds) const override;
 
   bool participatesInModuleMoves() const override { return true; }
+  bool tracksUnitAttributes() const override { return true; }
   void setUnits(const std::vector<int>& leafToUnit, int numUnits) override;
   void resetUnitsToLeaves() override;
 
@@ -796,6 +816,7 @@ public:
   std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>& globalLeafIds) const override;
 
   bool participatesInModuleMoves() const override { return true; }
+  bool tracksUnitAttributes() const override { return true; }
   void setUnits(const std::vector<int>& leafToUnit, int numUnits) override;
   void resetUnitsToLeaves() override;
 
