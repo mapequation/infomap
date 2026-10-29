@@ -181,8 +181,8 @@ public:
   // cannot hold a ragged tree, so the surviving partition is emitted as ragged
   // per-leaf paths (toNodePaths returns them, and hasDissolvedResult() flags that
   // the caller must score/stamp the materialized tree rather than the stack). No
-  // change to leaf modules, so mem/meta/lossy/regularized are untouched; disabled
-  // under the |K - K_pref| bias (see ColumnarCorrection::blocksLevelDissolve).
+  // change to leaf modules, so mem/meta/lossy/regularized are untouched; the top
+  // modules stay under the |K - K_pref| bias (see ColumnarCorrection::keepsTopModules).
   // Returns the (never-greater) codelength of the dissolved tree from the pass's own
   // accounting -- exact for every objective but L*, whose module-of-modules term this
   // pass does not price -- or the stack's own codelength when nothing dissolves.
