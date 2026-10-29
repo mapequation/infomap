@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -397,7 +398,6 @@ int ColumnarHierarchy::splitLevelModules(int k, double& L, bool allowSingletons)
     m_levelFreshProductive.resize(k + 1, 1);
   }
 
-  std::vector<int> seed; // pieceParent, compacted when it overruns the piece level
   // Recombination: a seeded move loop over the pieces of the level-k network,
   // seeded at the current level-(k+1) modules. Pieces may move to any module,
   // including an empty one — group split and cross-parent relocation in one
@@ -407,22 +407,11 @@ int ColumnarHierarchy::splitLevelModules(int k, double& L, bool allowSingletons)
     if (nPieces == K)
       return false; // every module is a single piece: nothing to split
     g_hSplitAttempts[std::min(k, kHSplitMaxLevels - 1)].fetch_add(1, std::memory_order_relaxed);
-    // The move level has one module slot per piece, but pieceParent holds
-    // level-(k+1) module ids, where a module emptied by an earlier split
-    // survives as an empty id: with enough of them a parent id reaches
-    // nPieces. Seed with compacted ids then; remap below compacts the result
-    // anyway, so only the grouping matters.
-    seed = pieceParent;
-    if (*std::max_element(seed.begin(), seed.end()) >= nPieces) {
-      g_hSplitSeedCompactions.fetch_add(1, std::memory_order_relaxed);
-      std::vector<int> id(K, -1);
-      int next = 0;
-      for (int& s : seed) {
-        if (id[s] == -1)
-          id[s] = next++;
-        s = id[s];
-      }
-    }
+    // The move level has one module slot per piece, seeded at level-(k+1) module
+    // ids. The stack drops a module a split empties (reaggregateFrom), so every
+    // module holds a piece and every id has a slot (#1375).
+    const std::vector<int>& seed = pieceParent;
+    assert(*std::max_element(seed.begin(), seed.end()) < nPieces);
     Level pieces;
     {
       PhaseTimer pt(1, phaseTiming);
@@ -484,10 +473,10 @@ int ColumnarHierarchy::splitLevelModules(int k, double& L, bool allowSingletons)
         }
         m_stack.setModules(k, std::move(newAK), nk, std::move(newAK1));
         // Re-aggregate every level above: a cross-grandparent relocation changes
-        // their aggregates. The unit counts stay put (a grandparent that lost all
-        // its children survives as an empty module, which costs nothing in the
-        // codelength and keeps the higher assignments valid).
-        m_stack.reaggregateFrom(k + 1);
+        // their aggregates, and can leave a grandparent without children, which the
+        // stack drops. An empty module costs nothing in the map equation, but a
+        // module count such as the preferred-modules penalty would still see it.
+        g_hSplitDroppedModules.fetch_add(m_stack.reaggregateFrom(k + 1), std::memory_order_relaxed);
       } else {
         m_stack.setModules(k, std::move(newAK), nk);
       }

@@ -21,7 +21,7 @@ namespace columnar {
   std::atomic<long long> g_hSplitAccepts[kHSplitMaxLevels];
   std::atomic<long long> g_hSplitClocks[kHSplitMaxLevels];
   std::atomic<long long> g_hSplitGainNano[kHSplitMaxLevels];
-  std::atomic<long long> g_hSplitSeedCompactions;
+  std::atomic<long long> g_hSplitDroppedModules;
   std::atomic<long long> g_hSplitPhase[kHSplitPhases];
 
   namespace {
@@ -49,9 +49,9 @@ namespace columnar {
           }
         }
         std::fprintf(stderr, "[hsplit] total: %lld accepted / %lld attempted, %.2fs, gain %.4f%%\n", tc, ta, tt, 100.0 * tg);
-        const long long sc = g_hSplitSeedCompactions.load(std::memory_order_relaxed);
+        const long long sc = g_hSplitDroppedModules.load(std::memory_order_relaxed);
         if (sc != 0)
-          std::fprintf(stderr, "[hsplit] seed compactions: %lld\n", sc);
+          std::fprintf(stderr, "[hsplit] emptied modules dropped: %lld\n", sc);
         if (hSplitPhaseTiming())
           for (int p = 0; p < kHSplitPhases; ++p) {
             const double secs = static_cast<double>(g_hSplitPhase[p].load(std::memory_order_relaxed)) / CLOCKS_PER_SEC;
