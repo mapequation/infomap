@@ -1,0 +1,192 @@
+ML10	multilayer_intra (ex.)	C	old	1	--regularized -N10	2.296430569	0.002598042	84852552	1	2	2bf005fb8c58
+ML10	multilayer_intra (ex.)	C	new	1	--regularized -N10	2.296430569	0.002876167	82832695	1	2	2bf005fb8c58
+ML10	multilayer_intra (ex.)	OO	old	1	--regularized -N10	2.296430569	0.001573208	74561679	1	2	8668f7a22288
+ML10	multilayer_intra (ex.)	OO	new	1	--regularized -N10	2.296430569	0.014938	74127237	1	2	8668f7a22288
+ML2_10	multilayer_intra (ex.)	C	old	1	--regularized -2 -N10	2.296430569	0.001566959	76076083	1	2	da14ff261e1c
+ML2_10	multilayer_intra (ex.)	C	new	1	--regularized -2 -N10	2.296430569	0.001878875	76196564	1	2	da14ff261e1c
+ML2_10	multilayer_intra (ex.)	OO	old	1	--regularized -2 -N10	2.296430569	0.001337417	74197087	1	2	8668f7a22288
+ML2_10	multilayer_intra (ex.)	OO	new	1	--regularized -2 -N10	2.296430569	0.001536833	74566769	1	2	8668f7a22288
+ML1	multilayer_intra (ex.)	C	old	1	--regularized -N1	2.296430569	0.000863833	67787015	1	2	2bf005fb8c58
+ML1	multilayer_intra (ex.)	C	new	1	--regularized -N1	2.296430569	0.000857708	68076796	1	2	2bf005fb8c58
+ML1	multilayer_intra (ex.)	OO	old	1	--regularized -N1	2.296430569	0.000675708	66961877	1	2	8668f7a22288
+ML1	multilayer_intra (ex.)	OO	new	1	--regularized -N1	2.296430569	0.000750167	67626410	1	2	8668f7a22288
+ML10	multilayer_intra_inter (ex.)	C	old	1	--regularized -N10	1.932188917	0.001818458	77955677	2	2	d59a2242da96
+ML10	multilayer_intra_inter (ex.)	C	new	1	--regularized -N10	1.932188917	0.001528125	77459362	2	2	d59a2242da96
+ML10	multilayer_intra_inter (ex.)	OO	old	1	--regularized -N10	1.932188917	0.0021245	82655273	2	2	d59a2242da96
+ML10	multilayer_intra_inter (ex.)	OO	new	1	--regularized -N10	1.932188917	0.002051708	83753949	2	2	d59a2242da96
+ML2_10	multilayer_intra_inter (ex.)	C	old	1	--regularized -2 -N10	1.932188917	0.001561166	75388513	2	2	d59a2242da96
+ML2_10	multilayer_intra_inter (ex.)	C	new	1	--regularized -2 -N10	1.932188917	0.001604167	76450372	2	2	d59a2242da96
+ML2_10	multilayer_intra_inter (ex.)	OO	old	1	--regularized -2 -N10	1.932188917	0.002078959	79133716	2	2	d59a2242da96
+ML2_10	multilayer_intra_inter (ex.)	OO	new	1	--regularized -2 -N10	1.932188917	0.001812	77930026	2	2	d59a2242da96
+ML1	multilayer_intra_inter (ex.)	C	old	1	--regularized -N1	1.932188917	0.000771209	67195079	2	2	d59a2242da96
+ML1	multilayer_intra_inter (ex.)	C	new	1	--regularized -N1	1.932188917	0.000687125	68588233	2	2	d59a2242da96
+ML1	multilayer_intra_inter (ex.)	OO	old	1	--regularized -N1	1.932188917	0.000786125	67979117	2	2	d59a2242da96
+ML1	multilayer_intra_inter (ex.)	OO	new	1	--regularized -N1	1.932188917	0.000853292	67829911	2	2	d59a2242da96
+ML10	malaria	C	old	1	--regularized -N10	8.033397742	0.588545417	6220058394	27	2	c3baa7b95a9f
+ML10	malaria	C	new	1	--regularized -N10	8.033397742	0.608692459	6215015143	27	2	c3baa7b95a9f
+ML10	malaria	OO	old	1	--regularized -N10	8.053074853	1.358522792	12150966322	10	2	59c6c447899d
+ML10	malaria	OO	new	1	--regularized -N10	8.053074853	1.389125458	12149817230	10	2	59c6c447899d
+ML2_10	malaria	C	old	1	--regularized -2 -N10	8.033397742	0.524497333	5711350839	27	2	c3baa7b95a9f
+ML2_10	malaria	C	new	1	--regularized -2 -N10	8.033397742	0.570433583	5714662791	27	2	c3baa7b95a9f
+ML2_10	malaria	OO	old	1	--regularized -2 -N10	8.053074853	0.704305625	6565548526	10	2	59c6c447899d
+ML2_10	malaria	OO	new	1	--regularized -2 -N10	8.053074853	0.685256833	6562815244	10	2	59c6c447899d
+ML1	malaria	C	old	1	--regularized -N1	8.030974149	0.29534425	3183840866	22	2	afa1988577a7
+ML1	malaria	C	new	1	--regularized -N1	8.030974149	0.255777542	3178284791	22	2	afa1988577a7
+ML1	malaria	OO	old	1	--regularized -N1	8.054124278	0.196130709	2289117060	9	2	624c8aea9839
+ML1	malaria	OO	new	1	--regularized -N1	8.054124278	0.193446917	2289326402	9	2	624c8aea9839
+ML10	EU airlines	C	old	1	--regularized -N10	7.335550298	0.035115375	468118714	1	2	c68829c8e317
+ML10	EU airlines	C	new	1	--regularized -N10	7.335550298	0.034736125	467288129	1	2	c68829c8e317
+ML10	EU airlines	OO	old	1	--regularized -N10	7.335550298	0.020403959	281334016	1	2	ac0798064375
+ML10	EU airlines	OO	new	1	--regularized -N10	7.335550298	0.02129125	281412670	1	2	ac0798064375
+ML2_10	EU airlines	C	old	1	--regularized -2 -N10	7.335550298	0.029480709	423500285	1	2	236f63f95166
+ML2_10	EU airlines	C	new	1	--regularized -2 -N10	7.335550298	0.029743875	423435651	1	2	236f63f95166
+ML2_10	EU airlines	OO	old	1	--regularized -2 -N10	7.335550298	0.019369959	280911210	1	2	ac0798064375
+ML2_10	EU airlines	OO	new	1	--regularized -2 -N10	7.335550298	0.020212	280783908	1	2	ac0798064375
+ML1	EU airlines	C	old	1	--regularized -N1	7.335550298	0.009596292	185268285	1	2	c68829c8e317
+ML1	EU airlines	C	new	1	--regularized -N1	7.335550298	0.009704042	185019032	1	2	c68829c8e317
+ML1	EU airlines	OO	old	1	--regularized -N1	7.335550298	0.006562042	147333853	1	2	ac0798064375
+ML1	EU airlines	OO	new	1	--regularized -N1	7.335550298	0.006438291	146932886	1	2	ac0798064375
+ML10	aucs	C	old	1	--regularized -N10	5.572056378	0.02231575	304979999	6	2	ede140cb464c
+ML10	aucs	C	new	1	--regularized -N10	5.572056378	0.020367541	304818376	6	2	ede140cb464c
+ML10	aucs	OO	old	1	--regularized -N10	5.567468621	0.043127667	512749313	6	2	322a8b3d7a5e
+ML10	aucs	OO	new	1	--regularized -N10	5.567468621	0.042790834	512545159	6	2	322a8b3d7a5e
+ML2_10	aucs	C	old	1	--regularized -2 -N10	5.565534759	0.0233395	318572791	6	2	70575b6b133a
+ML2_10	aucs	C	new	1	--regularized -2 -N10	5.565534759	0.021908542	318529269	6	2	70575b6b133a
+ML2_10	aucs	OO	old	1	--regularized -2 -N10	5.567468621	0.026455083	346009757	6	2	322a8b3d7a5e
+ML2_10	aucs	OO	new	1	--regularized -2 -N10	5.567468621	0.026993583	345992953	6	2	322a8b3d7a5e
+ML1	aucs	C	old	1	--regularized -N1	5.572056378	0.007053334	153387177	6	2	4aa3a039e22b
+ML1	aucs	C	new	1	--regularized -N1	5.572056378	0.007443625	154594331	6	2	4aa3a039e22b
+ML1	aucs	OO	old	1	--regularized -N1	5.605364123	0.006776291	145147865	5	2	b8935d29bb3e
+ML1	aucs	OO	new	1	--regularized -N1	5.605364123	0.006986917	145068399	5	2	b8935d29bb3e
+ML10	StarWars	C	old	1	--regularized -N10	4.47873875	0.030047958	409964330	8	2	83f19bd0be1b
+ML10	StarWars	C	new	1	--regularized -N10	4.47873875	0.029631208	409699268	8	2	83f19bd0be1b
+ML10	StarWars	OO	old	1	--regularized -N10	4.482655578	0.073432042	836406072	7	2	3da77804580b
+ML10	StarWars	OO	new	1	--regularized -N10	4.482655578	0.105787708	837946748	7	2	3da77804580b
+ML2_10	StarWars	C	old	1	--regularized -2 -N10	4.47873875	0.031121417	433704289	8	2	79bd34b190f0
+ML2_10	StarWars	C	new	1	--regularized -2 -N10	4.47873875	0.032266	434269893	8	2	79bd34b190f0
+ML2_10	StarWars	OO	old	1	--regularized -2 -N10	4.482655578	0.041820042	506632984	7	2	3da77804580b
+ML2_10	StarWars	OO	new	1	--regularized -2 -N10	4.482655578	0.040628666	506992259	7	2	3da77804580b
+ML1	StarWars	C	old	1	--regularized -N1	4.494098175	0.01122525	202580527	7	2	fbdd9fcde5a0
+ML1	StarWars	C	new	1	--regularized -N1	4.494098175	0.011785167	202195825	7	2	fbdd9fcde5a0
+ML1	StarWars	OO	old	1	--regularized -N1	4.548758239	0.01445375	225091342	9	2	69783e2188ac
+ML1	StarWars	OO	new	1	--regularized -N1	4.548758239	0.013426833	223954555	9	2	69783e2188ac
+ML10	DanioRerio	C	old	1	--regularized -N10	7.222908294	0.024850167	359348040	2	2	363a6d1d1e36
+ML10	DanioRerio	C	new	1	--regularized -N10	7.222908294	0.025678208	360025908	2	2	363a6d1d1e36
+ML10	DanioRerio	OO	old	1	--regularized -N10	7.226074952	0.035187917	485479547	1	2	db1bd4ad67a4
+ML10	DanioRerio	OO	new	1	--regularized -N10	7.226074952	0.036242291	485659867	1	2	db1bd4ad67a4
+ML2_10	DanioRerio	C	old	1	--regularized -2 -N10	7.222908294	0.024952208	354231752	2	2	363a6d1d1e36
+ML2_10	DanioRerio	C	new	1	--regularized -2 -N10	7.222908294	0.024707459	354274991	2	2	363a6d1d1e36
+ML2_10	DanioRerio	OO	old	1	--regularized -2 -N10	7.226074952	0.035855166	486300237	1	2	db1bd4ad67a4
+ML2_10	DanioRerio	OO	new	1	--regularized -2 -N10	7.226074952	0.03563125	486447568	1	2	db1bd4ad67a4
+ML1	DanioRerio	C	old	1	--regularized -N1	7.222908294	0.008415209	166066881	2	2	363a6d1d1e36
+ML1	DanioRerio	C	new	1	--regularized -N1	7.222908294	0.008602	166095383	2	2	363a6d1d1e36
+ML1	DanioRerio	OO	old	1	--regularized -N1	7.226074952	0.007043959	139563966	1	2	db1bd4ad67a4
+ML1	DanioRerio	OO	new	1	--regularized -N1	7.226074952	0.005949416	139558419	1	2	db1bd4ad67a4
+ML10	Jelena synthetic 0%	C	old	1	--regularized -N10	8.826351931	0.833355666	7221751078	10	2	70769b271781
+ML10	Jelena synthetic 0%	C	new	1	--regularized -N10	8.826351931	0.885753292	7227362882	10	2	70769b271781
+ML10	Jelena synthetic 0%	OO	old	1	--regularized -N10	8.825469368	1.218174083	10985679005	10	2	c487225cb0b8
+ML10	Jelena synthetic 0%	OO	new	1	--regularized -N10	8.825469368	1.256924459	10987847812	10	2	c487225cb0b8
+ML2_10	Jelena synthetic 0%	C	old	1	--regularized -2 -N10	8.826351931	0.8263625	6566458913	10	2	70769b271781
+ML2_10	Jelena synthetic 0%	C	new	1	--regularized -2 -N10	8.826351931	0.828305375	6569905460	10	2	70769b271781
+ML2_10	Jelena synthetic 0%	OO	old	1	--regularized -2 -N10	8.825469368	0.846864625	7651375969	10	2	c487225cb0b8
+ML2_10	Jelena synthetic 0%	OO	new	1	--regularized -2 -N10	8.825469368	0.889823084	7652742704	10	2	c487225cb0b8
+ML1	Jelena synthetic 0%	C	old	1	--regularized -N1	8.826351931	0.274534375	2666333365	10	2	496e39985179
+ML1	Jelena synthetic 0%	C	new	1	--regularized -N1	8.826351931	0.254222208	2661553820	10	2	496e39985179
+ML1	Jelena synthetic 0%	OO	old	1	--regularized -N1	8.826331404	0.215183917	2283226981	10	2	d85ec5908edb
+ML1	Jelena synthetic 0%	OO	new	1	--regularized -N1	8.826331404	0.224671875	2284644707	10	2	d85ec5908edb
+ML10	Jelena synthetic 50%	C	old	1	--regularized -N10	9.19313814	0.697836417	5669306470	10	2	4734cf060e5e
+ML10	Jelena synthetic 50%	C	new	1	--regularized -N10	9.19313814	0.730076459	5667987389	10	2	4734cf060e5e
+ML10	Jelena synthetic 50%	OO	old	1	--regularized -N10	9.193244883	1.085856959	8647818921	10	2	c35bbb86e0a0
+ML10	Jelena synthetic 50%	OO	new	1	--regularized -N10	9.193244883	0.992578292	8648926641	10	2	c35bbb86e0a0
+ML2_10	Jelena synthetic 50%	C	old	1	--regularized -2 -N10	9.19313814	0.760932167	5588305147	10	2	4734cf060e5e
+ML2_10	Jelena synthetic 50%	C	new	1	--regularized -2 -N10	9.19313814	0.717272875	5581738318	10	2	4734cf060e5e
+ML2_10	Jelena synthetic 50%	OO	old	1	--regularized -2 -N10	9.193244883	1.006370375	6171831259	10	2	c35bbb86e0a0
+ML2_10	Jelena synthetic 50%	OO	new	1	--regularized -2 -N10	9.193244883	0.708238291	6165161800	10	2	c35bbb86e0a0
+ML1	Jelena synthetic 50%	C	old	1	--regularized -N1	9.196605053	0.19775375	1953156858	10	2	8ab5f46e1ac1
+ML1	Jelena synthetic 50%	C	new	1	--regularized -N1	9.196605053	0.193332	1949873201	10	2	8ab5f46e1ac1
+ML1	Jelena synthetic 50%	OO	old	1	--regularized -N1	9.196274281	0.139027041	1428263868	10	2	b3c15a5c7e02
+ML1	Jelena synthetic 50%	OO	new	1	--regularized -N1	9.196274281	0.140522167	1428405860	10	2	b3c15a5c7e02
+LO10	jazz	C	old	1	--lossy -N10	5.085015011	0.008640166	162743371	1	2	1a7ebeecc544
+LO10	jazz	C	new	1	--lossy -N10	5.085015011	0.008266541	162769278	1	2	1a7ebeecc544
+LO10l	jazz	C	old	1	--lossy --lambda 0.5 -N10	2.542507505	0.006503166	143740295	1	2	1a7ebeecc544
+LO10l	jazz	C	new	1	--lossy --lambda 0.5 -N10	2.542507505	0.00628525	143789951	1	2	1a7ebeecc544
+LO10	netscience	C	old	1	--lossy -N10	2.350340001	0.030438542	389337711	1	2	95cfb7c65246
+LO10	netscience	C	new	1	--lossy -N10	2.350340001	0.029124958	388676082	1	2	95cfb7c65246
+LO10l	netscience	C	old	1	--lossy --lambda 0.5 -N10	1.17517	0.029287041	378367243	1	2	95cfb7c65246
+LO10l	netscience	C	new	1	--lossy --lambda 0.5 -N10	1.17517	0.0273535	377899180	1	2	95cfb7c65246
+LO10	lazega	C	old	1	--lossy -N10	3.762742661	0.002635791	88428377	1	2	3f9fba5ca092
+LO10	lazega	C	new	1	--lossy -N10	3.762742661	0.00247825	89186699	1	2	3f9fba5ca092
+LO10l	lazega	C	old	1	--lossy --lambda 0.5 -N10	1.881371331	0.002192834	85171041	1	2	3f9fba5ca092
+LO10l	lazega	C	new	1	--lossy --lambda 0.5 -N10	1.881371331	0.002176584	85172847	1	2	3f9fba5ca092
+ML1	multilayer_intra (ex.)	C	old	2	--regularized -N1	2.296430569	0.000970375	67730100	1	2	2bf005fb8c58
+ML1	multilayer_intra (ex.)	C	new	2	--regularized -N1	2.296430569	0.000842625	67697720	1	2	2bf005fb8c58
+ML1	multilayer_intra (ex.)	OO	old	2	--regularized -N1	2.296430569	0.000730916	66884351	1	2	8668f7a22288
+ML1	multilayer_intra (ex.)	OO	new	2	--regularized -N1	2.296430569	0.000612	67927037	1	2	8668f7a22288
+ML1	multilayer_intra_inter (ex.)	C	old	2	--regularized -N1	1.932188917	0.000682084	67797713	2	2	d59a2242da96
+ML1	multilayer_intra_inter (ex.)	C	new	2	--regularized -N1	1.932188917	0.000856625	66990138	2	2	d59a2242da96
+ML1	multilayer_intra_inter (ex.)	OO	old	2	--regularized -N1	1.932188917	0.0008665	67712114	2	2	d59a2242da96
+ML1	multilayer_intra_inter (ex.)	OO	new	2	--regularized -N1	1.932188917	0.000852583	68917848	2	2	d59a2242da96
+ML1	malaria	C	old	2	--regularized -N1	8.030974149	0.25546375	3178034280	22	2	afa1988577a7
+ML1	malaria	C	new	2	--regularized -N1	8.030974149	0.257545125	3178527367	22	2	afa1988577a7
+ML1	malaria	OO	old	2	--regularized -N1	8.054124278	0.197201834	2288286521	9	2	624c8aea9839
+ML1	malaria	OO	new	2	--regularized -N1	8.054124278	0.208046708	2288750189	9	2	624c8aea9839
+ML1	EU airlines	C	old	2	--regularized -N1	7.335550298	0.010094375	185085318	1	2	c68829c8e317
+ML1	EU airlines	C	new	2	--regularized -N1	7.335550298	0.009625083	184795921	1	2	c68829c8e317
+ML1	EU airlines	OO	old	2	--regularized -N1	7.335550298	0.006767458	146984905	1	2	ac0798064375
+ML1	EU airlines	OO	new	2	--regularized -N1	7.335550298	0.006144375	147179086	1	2	ac0798064375
+ML1	aucs	C	old	2	--regularized -N1	5.572056378	0.0071125	152498656	6	2	4aa3a039e22b
+ML1	aucs	C	new	2	--regularized -N1	5.572056378	0.007393375	153018948	6	2	4aa3a039e22b
+ML1	aucs	OO	old	2	--regularized -N1	5.605364123	0.006484833	144609802	5	2	b8935d29bb3e
+ML1	aucs	OO	new	2	--regularized -N1	5.605364123	0.006501917	145623521	5	2	b8935d29bb3e
+ML1	StarWars	C	old	2	--regularized -N1	4.494098175	0.011459625	202373857	7	2	fbdd9fcde5a0
+ML1	StarWars	C	new	2	--regularized -N1	4.494098175	0.011158667	201918282	7	2	fbdd9fcde5a0
+ML1	StarWars	OO	old	2	--regularized -N1	4.548758239	0.013195208	224260405	9	2	69783e2188ac
+ML1	StarWars	OO	new	2	--regularized -N1	4.548758239	0.012937042	224706786	9	2	69783e2188ac
+ML1	DanioRerio	C	old	2	--regularized -N1	7.222908294	0.008409084	166283689	2	2	363a6d1d1e36
+ML1	DanioRerio	C	new	2	--regularized -N1	7.222908294	0.00806575	165899565	2	2	363a6d1d1e36
+ML1	DanioRerio	OO	old	2	--regularized -N1	7.226074952	0.006032125	139893547	1	2	db1bd4ad67a4
+ML1	DanioRerio	OO	new	2	--regularized -N1	7.226074952	0.006014708	140442957	1	2	db1bd4ad67a4
+ML1	Jelena synthetic 0%	C	old	2	--regularized -N1	8.826351931	0.306291291	2665431630	10	2	496e39985179
+ML1	Jelena synthetic 0%	C	new	2	--regularized -N1	8.826351931	0.243781167	2656824144	10	2	496e39985179
+ML1	Jelena synthetic 0%	OO	old	2	--regularized -N1	8.826331404	0.219815458	2281930490	10	2	d85ec5908edb
+ML1	Jelena synthetic 0%	OO	new	2	--regularized -N1	8.826331404	0.212482208	2281523293	10	2	d85ec5908edb
+ML1	Jelena synthetic 50%	C	old	2	--regularized -N1	9.196605053	0.205122916	1952374811	10	2	8ab5f46e1ac1
+ML1	Jelena synthetic 50%	C	new	2	--regularized -N1	9.196605053	0.189407667	1946701377	10	2	8ab5f46e1ac1
+ML1	Jelena synthetic 50%	OO	old	2	--regularized -N1	9.196274281	0.1395915	1428463491	10	2	b3c15a5c7e02
+ML1	Jelena synthetic 50%	OO	new	2	--regularized -N1	9.196274281	0.140558958	1428925068	10	2	b3c15a5c7e02
+ML1	multilayer_intra (ex.)	C	old	3	--regularized -N1	2.296430569	0.000976666	68152766	1	2	2bf005fb8c58
+ML1	multilayer_intra (ex.)	C	new	3	--regularized -N1	2.296430569	0.000878625	67842259	1	2	2bf005fb8c58
+ML1	multilayer_intra (ex.)	OO	old	3	--regularized -N1	2.296430569	0.000778583	68097963	1	2	8668f7a22288
+ML1	multilayer_intra (ex.)	OO	new	3	--regularized -N1	2.296430569	0.000698375	67000334	1	2	8668f7a22288
+ML1	multilayer_intra_inter (ex.)	C	old	3	--regularized -N1	1.932188917	0.000918833	67514971	2	2	d59a2242da96
+ML1	multilayer_intra_inter (ex.)	C	new	3	--regularized -N1	1.932188917	0.000761417	67529015	2	2	d59a2242da96
+ML1	multilayer_intra_inter (ex.)	OO	old	3	--regularized -N1	1.932188917	0.000741916	67975653	2	2	d59a2242da96
+ML1	multilayer_intra_inter (ex.)	OO	new	3	--regularized -N1	1.932188917	0.000815208	68304161	2	2	d59a2242da96
+ML1	malaria	C	old	3	--regularized -N1	8.030974149	0.281302541	3180760239	22	2	afa1988577a7
+ML1	malaria	C	new	3	--regularized -N1	8.030974149	0.254529167	3179903080	22	2	afa1988577a7
+ML1	malaria	OO	old	3	--regularized -N1	8.054124278	0.200059	2290168902	9	2	624c8aea9839
+ML1	malaria	OO	new	3	--regularized -N1	8.054124278	0.194776792	2288296368	9	2	624c8aea9839
+ML1	EU airlines	C	old	3	--regularized -N1	7.335550298	0.009749958	184951681	1	2	c68829c8e317
+ML1	EU airlines	C	new	3	--regularized -N1	7.335550298	0.009968667	186176424	1	2	c68829c8e317
+ML1	EU airlines	OO	old	3	--regularized -N1	7.335550298	0.006244625	148435065	1	2	ac0798064375
+ML1	EU airlines	OO	new	3	--regularized -N1	7.335550298	0.00660275	147058522	1	2	ac0798064375
+ML1	aucs	C	old	3	--regularized -N1	5.572056378	0.007423292	152965377	6	2	4aa3a039e22b
+ML1	aucs	C	new	3	--regularized -N1	5.572056378	0.008772667	153372095	6	2	4aa3a039e22b
+ML1	aucs	OO	old	3	--regularized -N1	5.605364123	0.007184	144941247	5	2	b8935d29bb3e
+ML1	aucs	OO	new	3	--regularized -N1	5.605364123	0.007681792	145378124	5	2	b8935d29bb3e
+ML1	StarWars	C	old	3	--regularized -N1	4.494098175	0.01052525	201722358	7	2	fbdd9fcde5a0
+ML1	StarWars	C	new	3	--regularized -N1	4.494098175	0.010742709	202331729	7	2	fbdd9fcde5a0
+ML1	StarWars	OO	old	3	--regularized -N1	4.548758239	0.012845	223992760	9	2	69783e2188ac
+ML1	StarWars	OO	new	3	--regularized -N1	4.548758239	0.013364708	224230536	9	2	69783e2188ac
+ML1	DanioRerio	C	old	3	--regularized -N1	7.222908294	0.008244167	166562361	2	2	363a6d1d1e36
+ML1	DanioRerio	C	new	3	--regularized -N1	7.222908294	0.009142125	166595430	2	2	363a6d1d1e36
+ML1	DanioRerio	OO	old	3	--regularized -N1	7.226074952	0.007248917	139778450	1	2	db1bd4ad67a4
+ML1	DanioRerio	OO	new	3	--regularized -N1	7.226074952	0.006489708	139801541	1	2	db1bd4ad67a4
+ML1	Jelena synthetic 0%	C	old	3	--regularized -N1	8.826351931	0.261294334	2662940354	10	2	496e39985179
+ML1	Jelena synthetic 0%	C	new	3	--regularized -N1	8.826351931	0.256465875	2661534353	10	2	496e39985179
+ML1	Jelena synthetic 0%	OO	old	3	--regularized -N1	8.826331404	0.249929833	2283976951	10	2	d85ec5908edb
+ML1	Jelena synthetic 0%	OO	new	3	--regularized -N1	8.826331404	0.226908959	2286432927	10	2	d85ec5908edb
+ML1	Jelena synthetic 50%	C	old	3	--regularized -N1	9.196605053	0.199938583	1954616489	10	2	8ab5f46e1ac1
+ML1	Jelena synthetic 50%	C	new	3	--regularized -N1	9.196605053	0.187263625	1949240120	10	2	8ab5f46e1ac1
+ML1	Jelena synthetic 50%	OO	old	3	--regularized -N1	9.196274281	0.141380125	1429050288	10	2	b3c15a5c7e02
+ML1	Jelena synthetic 50%	OO	new	3	--regularized -N1	9.196274281	0.139163333	1427950387	10	2	b3c15a5c7e02

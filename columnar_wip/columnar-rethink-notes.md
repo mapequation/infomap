@@ -6507,3 +6507,80 @@ and against `403ac199` it is −24.6% in instructions and −26.8% in seconds (m
 
 Lesson: a pass that runs after the trials needs the final codelength. The per-trial values answer per-trial
 questions only.
+
+### F83 — Preferred modules count the top modules: the search has to build the top for the bias, the top it builds can be padded, and two stamps of "number of modules" were wrong (#1068) (2026-10-29)
+
+#1068 settled that `--preferred-number-of-modules` counts the top modules, OO's `root.childDegree()`; the columnar
+bias counted leaf modules. Moving the penalty alone is not enough. Priced at the top, the tip's `-C` trees
+cost 103.1 bits on jazz K = 100, 402.0 on polblogs K = 400, 1499.9 on powergrid K = 1500 and 3005.7 on word_assoc
+K = 3000: its search steers the leaf count, and its up-build then stacks 5 or 6 top modules on K_pref leaf modules.
+
+**The design.** The bottom and the up-build run unbiased, and the bias enters where top modules are formed.
+- **Leaf crossing.** The unbiased bottom has fewer modules than K_pref, so no level above it gets closer. The top
+  is the leaf partition, searched with the bias from that bottom and from singletons; the better is kept.
+- **Crossing regroup.** The up-build would drop below K_pref. The modules of the last level above it are
+  regrouped with the bias, from singletons and from the last unbiased super partition. The regroup is pushed only if
+  it beats that level's own index codebook plus its penalty.
+- `refineTopLayer` prices its regroup with the bias. `mergeLeafModulesWithinParents` counts it only without a
+  grandparent.
+
+On 24 runs (12 networks × standard and `-2`, `columnar_wip/pref-top-vs-oo.tsv`), the standard search is lower in
+bits than OO on 9 of the 10 comparable runs, by 0.22% to 1.89%, and never slower. word_assoc K = 3000 is 0.80%
+higher, as its `-2` is. `-2` is bit-identical to the tip: on a two-level partition the leaf modules are the top.
+
+**Padding.** Where no natural level lies near K_pref, the cheapest K_pref top modules are one holding nearly
+everything plus small ones. Top modules (non-trivial, effective) against OO:
+
+| run | this PR | OO |
+|---|---|---|
+| word_assoc K = 25 | 25 (8, 1.0) | 25 (25, 21.4) |
+| word_assoc K = 100 | 100 (30, 1.0) | 100 (100, 79.0) |
+| polblogs K = 5 | 5 (1, 1.0) | 5 (5, 2.6) |
+| science2001 K = 25 | 25 (14, 2.9) | 25 (25, 14.9) |
+
+It is the objective's optimum. On word_assoc K = 25 the padded tree costs 0.0055 bits more than the unbiased run,
+and any thorough regroup of a fine level finds it. OO avoids it only by construction: it builds its top as a flat
+partition first. Where a natural level does cross K_pref the regroup is balanced: powergrid K = 30 regroups 88
+modules into 30 at 25.3 effective, OO 29.4. Avoiding padding would take a second construction for the
+no-crossing case plus a gate on the top regroup. Daniel kept the design as it is, to keep the code small for a
+rarely used option.
+
+**Empty modules counted as modules.** A level split that relocates units across grandparents re-aggregated the
+levels above while keeping each level's size, so a grandparent left without children stayed as an empty module.
+It costs nothing in the map equation, but a level's size stopped being its module count. The new penalty read it
+as one: air30k K = 20 `-C -N5`, where the winner's split repair emptied 7 of 20 top modules, reported 5.4280 bits
+for a 13-module top that scores 12.4280. The first fix counted the non-empty top modules in the penalty. It was
+replaced by dropping the module where it empties (`ColumnarStack::reaggregateFrom`, cascading upward):
+- every reader of a level's size gets a module count, including the entropy bias's free-parameter count;
+- the #1375 seed compaction, which existed for the same empty ids, goes, with an assert in its place.
+
+On 14 memory, metadata, multilayer and entropy runs (`columnar_wip/pref-top-drop-ab.tsv`) the bits are identical
+wherever modules drop without the bias (om6 E100k `-d`: 83, wikispeedia `-d`: 3). Seconds move −2.1% to +0.8%.
+
+**The dissolve under the bias.** It was off, as OO's pass is. Dissolving a module below the top leaves the count
+alone, so it now keeps only the top modules out of its candidates. It lowers air30k K = 20 by 0.93% (−1.06% at
+`-N1`), powergrid K = 30 by 0.66%, and netscience by 0.005%. It leaves the other 18 standard searches bit-identical,
+with time unchanged within noise (`columnar_wip/pref-top-dissolve-ab.tsv`).
+
+The pass stamps the kept nodes from its own terms. Its root stamp held the base index term and the per-node
+charges but not the penalty, which the bias charges to the root as one scalar. The reported codelength was
+right, but the per-level table summed to the penalty less: netscience K = 50 reported 221.36 bits over a table of
+3.36. Every check on air30k and powergrid passed, because there the top count equals K_pref and the penalty is 0.
+The fix carries the penalty unchanged. The test that pins it uses two disjoint copies of ninetriangles with
+K_pref = 1, where the component floor (#1407) holds the top at 2.
+
+**Cost.** In the snapshot, word_assoc (pref.) K = 25 is the one changed configuration, in four searches:
+- −1.75% to −5.19% in bits;
+- +14.0% to +68.3% in seconds and +32.7% to +92.3% in instructions.
+
+A profile puts the time in `refineLayerWithinGrandparent` (248 → 1264 samples on `-C -N10`). The answer now has a
+level under 25 top modules, one of which holds nearly all of the network, so re-deriving a layer within its
+grandparent is close to a whole-network re-solve. It is also where the bits come from: on `-N1` the built tree is
+11.7245 bits and the refined one 11.4585. On the 24 runs, word_assoc K = 100 pays the same refine for −0.16% in bits
+at +17.4% in seconds (+33.7% in instructions). That is the marginal case, put to Daniel with the snapshot.
+
+Lessons:
+- A count read off a container's size is a module count only while the container is compact. Fix the container,
+  not the reader: the reader-side fix covered one reader, and two more read the same size.
+- A penalty charged to the root as one number has to survive every path that re-derives per-node stamps. Checks
+  where the penalty is 0 cannot see it, so test where it is not.
