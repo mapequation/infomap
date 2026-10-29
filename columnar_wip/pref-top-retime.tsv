@@ -1,0 +1,130 @@
+C1	multilayer (ex.)	-C -N1	old	0	0.000538375	60992743	2.011405238
+C1	multilayer (ex.)	-C -N1	new	0	0.000597667	59373700	2.011405238
+C1	multilayer (ex.)	-C -N1	new	1	0.000227875	59065500	2.011405238
+C1	multilayer (ex.)	-C -N1	old	1	0.000226417	59092067	2.011405238
+C1	multilayer (ex.)	-C -N1	old	2	0.000241416	59224018	2.011405238
+C1	multilayer (ex.)	-C -N1	new	2	0.000224791	59091040	2.011405238
+C1	multilayer (ex.)	-C -N1	new	3	0.0002275	59159700	2.011405238
+C1	multilayer (ex.)	-C -N1	old	3	0.000294125	59136972	2.011405238
+C1	multilayer (ex.)	-C -N1	old	4	0.00020075	59128846	2.011405238
+C1	multilayer (ex.)	-C -N1	new	4	0.000225916	59092106	2.011405238
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	old	0	0.529489542	4487054461	11.94886955
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	new	0	0.737362708	7857488124	11.45853218
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	new	1	0.666625	7852427892	11.45853218
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	old	1	0.50357925	4484550688	11.94886955
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	old	2	0.552899083	4483067106	11.94886955
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	new	2	0.678716167	7856274068	11.45853218
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	new	3	0.676372959	7853241939	11.45853218
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	old	3	0.560447583	4487286851	11.94886955
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	old	4	0.537026333	4490840995	11.94886955
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	new	4	0.6786125	7854414528	11.45853218
+FAM	om4_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	old	0	0.861838083	5504235638	7.9258537
+FAM	om4_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	new	0	0.74634875	5495966484	7.9258537
+FAM	om4_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	new	1	0.809107459	5499182393	7.9258537
+FAM	om4_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	old	1	0.800529	5506454619	7.9258537
+FAM	om4_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	old	2	0.772058375	5506309518	7.9258537
+FAM	om4_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	new	2	0.7870565	5504349024	7.9258537
+FAM	om4_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	new	3	1.36407675	5514474033	7.9258537
+FAM	om4_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	old	3	0.76226575	5506217835	7.9258537
+FAM	om4_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	old	4	0.801417625	5502247233	7.9258537
+FAM	om4_N256_E50k `-2d --regularized -N1`	-C -2d --regularized -N1	new	4	0.810644417	5507578065	7.9258537
+FAM	om8_N256_E50k `-2d -N1`	-C -2d -N1	old	0	0.537671667	3500123394	3.864684914
+FAM	om8_N256_E50k `-2d -N1`	-C -2d -N1	new	0	0.543948584	3498805162	3.864684914
+FAM	om8_N256_E50k `-2d -N1`	-C -2d -N1	new	1	0.647918583	3504845311	3.864684914
+FAM	om8_N256_E50k `-2d -N1`	-C -2d -N1	old	1	0.55612275	3501373796	3.864684914
+FAM	om8_N256_E50k `-2d -N1`	-C -2d -N1	old	2	0.583644	3501892059	3.864684914
+FAM	om8_N256_E50k `-2d -N1`	-C -2d -N1	new	2	0.657363583	3503841349	3.864684914
+FAM	om8_N256_E50k `-2d -N1`	-C -2d -N1	new	3	0.565023625	3500659877	3.864684914
+FAM	om8_N256_E50k `-2d -N1`	-C -2d -N1	old	3	0.549347083	3498252271	3.864684914
+FAM	om8_N256_E50k `-2d -N1`	-C -2d -N1	old	4	0.637168917	3501471320	3.864684914
+FAM	om8_N256_E50k `-2d -N1`	-C -2d -N1	new	4	0.531418583	3495112412	3.864684914
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	0	4.159250917	38367450264	11.64534667
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	0	4.813951791	50897803012	11.442104
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	1	4.963421459	50889144143	11.442104
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	1	4.079120458	38349788220	11.64534667
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	2	4.096891209	38361733837	11.64534667
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	2	4.916306291	50902162399	11.442104
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	3	4.816560083	50885866717	11.442104
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	3	4.142141458	38360358751	11.64534667
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	4	4.131139	38364382770	11.64534667
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	4	4.846411583	50892636987	11.442104
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	0	4.618384292	43100960386	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	0	6.019698	62114496073	11.442104
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	1	5.967638458	62115781111	11.442104
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	1	4.966333417	43144029603	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	2	4.545408959	43097914007	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	2	6.04531375	62159692288	11.442104
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	3	6.09090375	62136914833	11.442104
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	3	4.849896417	43132702894	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	4	4.625789458	43118310699	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	4	5.941948542	62107300537	11.442104
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	0	4.557734125	43436626919	12.61703093
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	0	7.659441833	83497805253	11.96170428
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	1	7.833447041	83514816528	11.96170428
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	1	4.5973185	43463398242	12.61703093
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	2	4.586130208	43458381678	12.61703093
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	2	7.67235475	83512748849	11.96170428
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	3	7.79115725	83517664308	11.96170428
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	3	4.683577125	43491976392	12.61703093
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	4	4.7343145	43491245239	12.61703093
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	4	7.821794834	83524006115	11.96170428
+C10	air30k	-C -N10	old	0	4.245261667	38819741912	5.39323549
+C10	air30k	-C -N10	new	0	4.196959709	38865458932	5.39323549
+C10	air30k	-C -N10	new	1	4.176761042	38868644840	5.39323549
+C10	air30k	-C -N10	old	1	4.109920834	38809457516	5.39323549
+C10	air30k	-C -N10	old	2	4.1553115	38806861845	5.39323549
+C10	air30k	-C -N10	new	2	4.075062208	38854160171	5.39323549
+C10	air30k	-C -N10	new	3	4.201660292	38858927877	5.39323549
+C10	air30k	-C -N10	old	3	4.259836917	38821203725	5.39323549
+C10	air30k	-C -N10	old	4	4.125390125	38817954123	5.39323549
+C10	air30k	-C -N10	new	4	4.264391042	38878762950	5.39323549
+FAM	om3_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	0	3.003874042	23130439015	7.917872981
+FAM	om3_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	0	3.021542959	23116696064	7.917872981
+FAM	om3_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	1	3.095774125	23133338714	7.917872981
+FAM	om3_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	1	3.036064458	23125856900	7.917872981
+FAM	om3_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	2	3.012713666	23133295848	7.917872981
+FAM	om3_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	2	3.189594916	23138820352	7.917872981
+FAM	om3_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	3	3.149034333	23133670196	7.917872981
+FAM	om3_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	3	3.29166175	23141326058	7.917872981
+FAM	om3_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	4	3.149278375	23146920066	7.917872981
+FAM	om3_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	4	3.193766416	23141943997	7.917872981
+L10	polblogs	-C --non-redundant -N10 -d	old	0	0.083130417	943279756	7.592668282
+L10	polblogs	-C --non-redundant -N10 -d	new	0	0.08269325	944072830	7.592668282
+L10	polblogs	-C --non-redundant -N10 -d	new	1	0.0824885	943445144	7.592668282
+L10	polblogs	-C --non-redundant -N10 -d	old	1	0.082681666	942855210	7.592668282
+L10	polblogs	-C --non-redundant -N10 -d	old	2	0.082213667	942314105	7.592668282
+L10	polblogs	-C --non-redundant -N10 -d	new	2	0.082366125	944700702	7.592668282
+L10	polblogs	-C --non-redundant -N10 -d	new	3	0.08191225	944175478	7.592668282
+L10	polblogs	-C --non-redundant -N10 -d	old	3	0.083394292	943134529	7.592668282
+L10	polblogs	-C --non-redundant -N10 -d	old	4	0.084186625	943199938	7.592668282
+L10	polblogs	-C --non-redundant -N10 -d	new	4	0.083658417	944952351	7.592668282
+F10	polblogs	-C -F -N10 -d	old	0	0.0810565	925336043	7.592773105
+F10	polblogs	-C -F -N10 -d	new	0	0.081537042	925227012	7.592773105
+F10	polblogs	-C -F -N10 -d	new	1	0.086312625	926126785	7.592773105
+F10	polblogs	-C -F -N10 -d	old	1	0.082940417	924746682	7.592773105
+F10	polblogs	-C -F -N10 -d	old	2	0.083404333	924997337	7.592773105
+F10	polblogs	-C -F -N10 -d	new	2	0.080871958	924888280	7.592773105
+F10	polblogs	-C -F -N10 -d	new	3	0.081607708	924999180	7.592773105
+F10	polblogs	-C -F -N10 -d	old	3	0.082969917	924217326	7.592773105
+F10	polblogs	-C -F -N10 -d	old	4	0.082253958	925010270	7.592773105
+F10	polblogs	-C -F -N10 -d	new	4	0.090481292	928425493	7.592773105
+F10	wikispeedia `-d`	-C -F -d -N10	old	0	0.747534959	6706153991	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	new	0	0.7384515	6705238756	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	new	1	0.722556417	6700486161	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	old	1	0.762044666	6696383167	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	old	2	0.742446416	6700077919	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	new	2	0.718236666	6702078383	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	new	3	0.786308125	6710832154	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	old	3	0.730868375	6701218357	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	old	4	0.715869166	6697339581	5.907904741
+F10	wikispeedia `-d`	-C -F -d -N10	new	4	0.742844792	6709732696	5.907904741
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	0	0.817653084	7884927953	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	0	0.882656417	7886120603	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	1	0.812563167	7883220674	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	1	0.867621	7885815194	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	2	0.825395084	7882983650	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	2	0.808265541	7883866297	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	3	0.861233292	7886748018	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	3	0.808706875	7881911581	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	old	4	0.854532083	7886312342	6.624310588
+REG	wikispeedia `-d --recorded-teleportation -N10`	-C -d --recorded-teleportation -N10	new	4	0.803149542	7881273830	6.624310588
