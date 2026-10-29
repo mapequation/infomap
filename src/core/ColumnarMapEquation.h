@@ -205,13 +205,15 @@ public:
   // pass never moves) -- so a correction contributes to a dissolve gain only if
   // its cost depends on the SET of internal codebooks. Two cases, both default
   // to the no-op:
-  //  * blocksLevelDissolve(): the |K - K_pref| bias is a tree-level scalar a
-  //    local per-node delta cannot see, so it disables the pass (as the OO pass
-  //    guards on preferredNumberOfModules). The entropy bias does NOT block: its
-  //    cost is a per-codebook free-parameter count, which is exactly local.
+  //  * keepsTopModules(): the |K - K_pref| bias prices the number of top modules,
+  //    a tree-level scalar a local per-node delta cannot see. Dissolving a lower
+  //    module leaves it alone, so the pass only spares the top modules (the OO
+  //    pass turns off on preferredNumberOfModules instead). The entropy bias does
+  //    not need it: its cost is a per-codebook free-parameter count, which is
+  //    exactly local.
   //  * dissolveGainPerInternalNode(): bits saved by removing one internal
   //    codebook -- non-zero only for the entropy bias (one free parameter fewer).
-  virtual bool blocksLevelDissolve() const { return false; }
+  virtual bool keepsTopModules() const { return false; }
   virtual double dissolveGainPerInternalNode() const { return 0.0; }
   // True when hierarchicalCorrection reads only the leaf partition (the leaf ->
   // level-1 assignment and level 1) and charges only level 1 and the root, so a
@@ -690,10 +692,10 @@ public:
       : m_preferredNumModules(static_cast<int>(preferredNumModules)) {}
   double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const override;
 
-  // |K - K_pref| is a scalar over the whole partition, not a sum over codebooks,
-  // so a local per-node dissolve gain cannot account for it -- disable the pass,
-  // exactly as the OO pass returns early on preferredNumberOfModules > 0.
-  bool blocksLevelDissolve() const override { return true; }
+  // |K - K_pref| counts the top modules, not a sum over codebooks, so a local
+  // per-node dissolve gain cannot account for a dissolved top module; the pass
+  // keeps them and dissolves only below (the OO pass returns early instead).
+  bool keepsTopModules() const override { return true; }
 
   bool chargesTopLevelOnly() const override { return true; }
   std::unique_ptr<ColumnarCorrection> topLevelCopy() const override { return std::make_unique<PreferredModulesCorrection>(static_cast<unsigned int>(m_preferredNumModules)); }

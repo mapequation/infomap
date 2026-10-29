@@ -295,15 +295,16 @@ double ColumnarHierarchy::dissolveUnprofitableLevels(bool gainOnly)
   if (top < 2)
     return startL; // no module-of-modules to dissolve (two-level or flat)
 
-  // The |K - K_pref| bias is the one correction a local per-node gain cannot see;
-  // it turns the pass off, matching the OO pass's preferredNumberOfModules guard.
-  // Every other correction adds only a per-internal-codebook gain (the entropy
-  // bias; zero for the rest), because dissolve moves module-of-modules terms only
-  // and each correction's own cost lives on the leaf modules it never touches.
+  // The |K - K_pref| bias prices the number of top modules, which a local per-node
+  // gain cannot see; dissolving a lower module leaves that number alone, so the
+  // bias only keeps the top modules out of the pass (#1068). Every other correction
+  // adds only a per-internal-codebook gain (the entropy bias; zero for the rest),
+  // because dissolve moves module-of-modules terms only and each correction's own
+  // cost lives on the leaf modules it never touches.
+  bool keepTopModules = false;
   double corrGainPerNode = 0.0;
   for (const auto& c : corrections()) {
-    if (c->blocksLevelDissolve())
-      return startL;
+    keepTopModules = keepTopModules || c->keepsTopModules();
     corrGainPerNode += c->dissolveGainPerInternalNode();
   }
 
@@ -357,6 +358,7 @@ double ColumnarHierarchy::dissolveUnprofitableLevels(bool gainOnly)
   }
   // Only a module-of-modules can dissolve: its children are modules (k >= 2).
   const int firstModuleOfModules = offset[2];
+  const int endCandidates = keepTopModules ? offset[top] : N;
 
   // Base module-of-modules / root term of p over its current children.
   auto term = [&](int p) {
@@ -401,7 +403,7 @@ double ColumnarHierarchy::dissolveUnprofitableLevels(bool gainOnly)
   unsigned int nextOrder = 0;
   auto offer = [&](int m) {
     ++version[m];
-    if (m < firstModuleOfModules || !alive[m]) // only a live module-of-modules can dissolve
+    if (m < firstModuleOfModules || m >= endCandidates || !alive[m]) // only a live module-of-modules can dissolve
       return;
     const double g = dissolveGain(m);
     if (g > kDissolveMinGain)
@@ -464,7 +466,21 @@ double ColumnarHierarchy::dissolveUnprofitableLevels(bool gainOnly)
   for (int id = firstModuleOfModules; id < N; ++id)
     if (alive[id])
       m_dissolveTerm[id] = term(id) + nodeCharge(id, hasExitCodeword(id));
-  m_dissolveTerm[0] = term(0) + nodeCharge(0, false);
+  // A correction that keeps the top modules prices only what they decide, which the
+  // pass left alone, so its root share carries over unchanged (the |K - K_pref|
+  // penalty, #1068).
+  double keptRootCharge = 0.0;
+  if (keepTopModules) {
+    const ColumnarStackView view = stackView(m_stack);
+    for (const auto& c : corrections())
+      if (c->keepsTopModules()) {
+        StackBreakdown own;
+        prepareBreakdown(t, own);
+        c->hierarchicalCorrection(view, &own);
+        keptRootCharge += own.rootTerm;
+      }
+  }
+  m_dissolveTerm[0] = term(0) + nodeCharge(0, false) + keptRootCharge;
 
   // Emit one ragged module-path per leaf: its level-1 module, then up the current
   // parent chain to the root. Coarsest-first (root side first), root excluded. A
