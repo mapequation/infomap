@@ -75,16 +75,17 @@ double BiasedEntropyCorrection::hierarchicalCorrection(const ColumnarStackView& 
 
 double PreferredModulesCorrection::hierarchicalCorrection(const ColumnarStackView& core, StackBreakdown* breakdown) const
 {
-  // Leaf-module level, matching where the move-loop bias acts (and the other
-  // corrections apply). <2 levels means no modules; the base handles that and
-  // the one-level fallback would collapse it anyway.
+  // The TOP modules, the root's children -- the object-oriented engine's K
+  // (calcTreeCodelengthCost(root.childDegree()), #1068). On a two-level stack that
+  // is the leaf-module level. <2 levels means no modules; the base handles that
+  // and the one-level fallback would collapse it anyway.
   if (core.hierNumLevels() < 2)
     return 0.0;
-  const double penalty = cost(core.hierLevelSize(1));
+  const double penalty = cost(core.hierLevelSize(static_cast<int>(core.hierNumLevels()) - 1));
   // |K - K_pref| is one global scalar about the partition as a whole, not a sum
   // over modules — there is nothing to split, and splitting it evenly would invent
   // a per-module structure the penalty does not have. Convention: charge it to the
-  // root, i.e. it shows up as index bits on level 1 of the per-level table.
+  // root, whose index codebook names the modules it counts.
   if (breakdown != nullptr)
     breakdown->rootTerm += penalty;
   return penalty;

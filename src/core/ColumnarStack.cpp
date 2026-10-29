@@ -216,13 +216,41 @@ void ColumnarStack::setParents(int k, std::vector<int> parents)
   m_assign[static_cast<std::size_t>(k)] = std::move(parents);
 }
 
-void ColumnarStack::reaggregateFrom(int k)
+int ColumnarStack::reaggregateFrom(int k)
 {
+  int dropped = 0;
   for (int j = k; j < topLevel(); ++j) {
-    Level modules = m_flow->aggregate(level(j), m_assign[static_cast<std::size_t>(j)], size(j + 1));
+    const std::size_t J = static_cast<std::size_t>(j);
+    // Renumber the level-(j+1) modules that still have children; dropping one can
+    // empty its parent in turn, which the next j drops.
+    const int K = size(j + 1);
+    std::vector<int> id(static_cast<std::size_t>(K), -1);
+    for (int m : m_assign[J])
+      id[static_cast<std::size_t>(m)] = 0;
+    int kept = 0;
+    for (int& m : id)
+      if (m == 0)
+        m = kept++;
+    if (kept < K) {
+      std::vector<int> below = m_assign[J];
+      for (int& m : below)
+        m = id[static_cast<std::size_t>(m)];
+      setParents(j, std::move(below));
+      if (j + 1 < topLevel()) {
+        std::vector<int> above;
+        above.reserve(static_cast<std::size_t>(kept));
+        for (int m = 0; m < K; ++m)
+          if (id[static_cast<std::size_t>(m)] >= 0)
+            above.push_back(m_assign[J + 1][static_cast<std::size_t>(m)]);
+        setParents(j + 1, std::move(above));
+      }
+      dropped += K - kept;
+    }
+    Level modules = m_flow->aggregate(level(j), m_assign[J], kept);
     saveLevel(j + 1);
-    m_levels[static_cast<std::size_t>(j) + 1] = std::move(modules);
+    m_levels[J + 1] = std::move(modules);
   }
+  return dropped;
 }
 
 ColumnarStack::Checkpoint ColumnarStack::checkpoint()

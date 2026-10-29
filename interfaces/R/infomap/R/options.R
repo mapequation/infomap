@@ -297,7 +297,7 @@ REMOVED_OPTIONS <- list(
 #'   \item{`variable_markov_time`}{Vary Markov time locally to reduce overpartitioning in sparse areas while keeping higher resolution in dense areas.}
 #'   \item{`variable_markov_damping`}{With --variable-markov-time, set damping between local effective degree (0) and local entropy (1).}
 #'   \item{`variable_markov_min_scale`}{With --variable-markov-time, set the minimum local scale for zero-entropy nodes. Local Markov time is max scale divided by local scale.}
-#'   \item{`preferred_number_of_modules`}{Penalize solutions by how far their number of modules differs from this value.}
+#'   \item{`preferred_number_of_modules`}{Penalize solutions by how far their number of top modules differs from this value.}
 #'   \item{`preferred_number_of_levels`}{Soft preference for the depth of the hierarchy. Steering to a shallower depth is reliable at a small codelength cost; deeper is best-effort, bounded by what the optimizer proposes. No-op with --two-level or strength 0.}
 #'   \item{`preferred_number_of_levels_strength`}{Scale the strength of --preferred-number-of-levels. 0 disables the preference; larger values increase the cost of deviating from the preferred depth.}
 #'   \item{`multilayer_relax_rate`}{Set the probability of relaxing from a state node to neighboring layers instead of staying in the current layer.}

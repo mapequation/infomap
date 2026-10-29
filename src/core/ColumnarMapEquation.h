@@ -141,6 +141,18 @@ public:
   // two modules, so the delta and update read/write per-module state keyed by
   // the unit's own attribute (Mem: its physical node; Meta: its category).
   virtual bool participatesInMoveLoop() const { return false; }
+  // Whether the correction charges only the TOP modules (the |K - K_pref| bias,
+  // #1068): it then joins only a move loop whose partition is the top level
+  // (ColumnarTwoLevel::setTopLevelSearch), since moves anywhere else leave its
+  // cost unchanged. A search for the top level that does not own the correction
+  // (the up-build's super-searches, the top regroup) gets topLevelCopy(), and
+  // targetTopModules() is the count it steers to (0: none).
+  virtual bool chargesTopLevelOnly() const { return false; }
+  virtual std::unique_ptr<ColumnarCorrection> topLevelCopy() const { return nullptr; }
+  virtual int targetTopModules() const { return 0; }
+  // Whether the correction joins a move loop: participatesInMoveLoop, and, for a
+  // top-level-only one, a loop whose partition is the top level.
+  bool inMoveLoop(bool topLevelSearch) const { return participatesInMoveLoop() && (topLevelSearch || !chargesTopLevelOnly()); }
   // (Re)build per-module correction state for the given leaf->module partition.
   // Returns this correction's contribution to the current codelength.
   virtual double initMoveLoop(const std::vector<int>& /*leafModule*/, int /*numModules*/) { return 0.0; }
@@ -193,13 +205,15 @@ public:
   // pass never moves) -- so a correction contributes to a dissolve gain only if
   // its cost depends on the SET of internal codebooks. Two cases, both default
   // to the no-op:
-  //  * blocksLevelDissolve(): the |K - K_pref| bias is a tree-level scalar a
-  //    local per-node delta cannot see, so it disables the pass (as the OO pass
-  //    guards on preferredNumberOfModules). The entropy bias does NOT block: its
-  //    cost is a per-codebook free-parameter count, which is exactly local.
+  //  * keepsTopModules(): the |K - K_pref| bias prices the number of top modules,
+  //    a tree-level scalar a local per-node delta cannot see. Dissolving a lower
+  //    module leaves it alone, so the pass only spares the top modules (the OO
+  //    pass turns off on preferredNumberOfModules instead). The entropy bias does
+  //    not need it: its cost is a per-codebook free-parameter count, which is
+  //    exactly local.
   //  * dissolveGainPerInternalNode(): bits saved by removing one internal
   //    codebook -- non-zero only for the entropy bias (one free parameter fewer).
-  virtual bool blocksLevelDissolve() const { return false; }
+  virtual bool keepsTopModules() const { return false; }
   virtual double dissolveGainPerInternalNode() const { return 0.0; }
   // True when hierarchicalCorrection reads only the leaf partition (the leaf ->
   // level-1 assignment and level 1) and charges only level 1 and the root, so a
@@ -448,10 +462,17 @@ public:
   bool hasAttributeCorrections() const
   {
     for (const auto& c : m_corrections)
-      if (c->participatesInMoveLoop() && c->participatesInModuleMoves() && c->tracksUnitAttributes())
+      if (inMoveLoop(*c) && c->participatesInModuleMoves() && c->tracksUnitAttributes())
         return true;
     return false;
   }
+
+  // Whether this search's partition is the top level of the answer (default). The
+  // hierarchical search's bottom is not, and clears it so the corrections that
+  // charge only the top modules (chargesTopLevelOnly) stay out of its move loops
+  // and its score (#1068).
+  void setTopLevelSearch(bool on) { m_topLevelSearch = on; }
+  bool inMoveLoop(const ColumnarCorrection& c) const { return c.inMoveLoop(m_topLevelSearch); }
 
   unsigned int numTopModules() const { return m_numTopModules; }
   // Final leaf -> top-module assignment (compacted ids), one entry per leaf.
@@ -501,6 +522,7 @@ private:
   bool m_leafMoveLoop = false; // true while moveLoop units are leaves (corrections active)
   bool m_moduleCorrActive = false; // true while module-move-capable corrections participate in a module-level move loop
   bool m_seededPhase = false; // true when the move loop starts from an existing partition (fine-tune/refine)
+  bool m_topLevelSearch = true; // see setTopLevelSearch
   double m_lastCorrection = 0.0; // correction total of the last move loop's active corrections (0 if none)
   std::vector<std::unique_ptr<ColumnarCorrection>> m_corrections; // objective add-ons
   std::function<void()> m_interruptCallback;
@@ -592,6 +614,7 @@ private:
     ColumnarBoundaryFlow::TeleportSums tele;
     std::vector<int> mMembers;
     double codelength = 0.0;
+    bool topLevelSearch = true; // the sweep's m_topLevelSearch: it decides which corrections ran
   };
   bool m_keepPass1State = false;
   int m_fineTunePassLimit = 0; // see setFineTunePassLimit
@@ -648,36 +671,35 @@ private:
 /**
  * Preferred-number-of-modules bias (--preferred-number-of-modules): the same
  * |K - K_pref| penalty (1 bit per module away from the target) that
- * BiasedMapEquation applies on the OO path, wired into the columnar two-level
- * move loop (leaf and module passes) and merge so the search — not only the
- * reported codelength — is steered toward K_pref modules. K is the current non-empty leaf-module count,
- * tracked from the partition the move loop maintains (initMoveLoop seeds it,
- * applyMove/applyMerge keep it exact). Objective-agnostic: an additive
- * structural term that composes with base/meta/mem/lossy, like the entropy
- * bias. Applies at the top-level partition ONLY — OO does not propagate
- * preferredNumberOfModules to sub-Infomaps (cloneAsNonMain omits it), so
- * sliceForLeaves returns nullptr and the bias never recurses into sub-networks.
+ * BiasedMapEquation applies on the OO path. K counts the TOP modules -- the
+ * object-oriented engine's reading, the root's child degree in
+ * calcTreeCodelengthCost (#1068) -- so the score charges the top level of the
+ * stack, and the move-loop bias acts only on a search whose partition is that
+ * level (chargesTopLevelOnly): the two-level search (leaf and module passes and
+ * merge), the leaf crossing of a hierarchy whose unbiased bottom is coarser than
+ * K_pref, and the up-build's crossing regroup and top regroup, which get their
+ * own copy (topLevelCopy). The hierarchical search's bottom is built without
+ * it. In a move loop K is the current non-empty module count, tracked from the
+ * partition the loop maintains (initMoveLoop seeds it, applyMove/applyMerge
+ * keep it exact). Objective-agnostic: an additive structural term that composes
+ * with base/meta/mem/lossy, like the entropy bias. Never in a sub-network: OO
+ * does not propagate preferredNumberOfModules to sub-Infomaps (cloneAsNonMain
+ * omits it), so sliceForLeaves returns nullptr.
  */
 class PreferredModulesCorrection final : public ColumnarCorrection {
 public:
   explicit PreferredModulesCorrection(unsigned int preferredNumModules)
       : m_preferredNumModules(static_cast<int>(preferredNumModules)) {}
   double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const override;
-  bool readsLeafPartitionOnly() const override { return true; }
 
-  // The same penalty for a caller that has a leaf-module count but no stack to
-  // attach a correction to: InfomapBase::evaluateColumnarPartition's fallback to
-  // the object-oriented tree, where this is the one correction with no OO
-  // counterpart to reproduce it.
-  static double costOf(int numModules, unsigned int preferredNumModules)
-  {
-    return std::abs(numModules - static_cast<int>(preferredNumModules));
-  }
+  // |K - K_pref| counts the top modules, not a sum over codebooks, so a local
+  // per-node dissolve gain cannot account for a dissolved top module; the pass
+  // keeps them and dissolves only below (the OO pass returns early instead).
+  bool keepsTopModules() const override { return true; }
 
-  // |K - K_pref| is a scalar over the whole partition, not a sum over codebooks,
-  // so a local per-node dissolve gain cannot account for it -- disable the pass,
-  // exactly as the OO pass returns early on preferredNumberOfModules > 0.
-  bool blocksLevelDissolve() const override { return true; }
+  bool chargesTopLevelOnly() const override { return true; }
+  std::unique_ptr<ColumnarCorrection> topLevelCopy() const override { return std::make_unique<PreferredModulesCorrection>(static_cast<unsigned int>(m_preferredNumModules)); }
+  int targetTopModules() const override { return m_preferredNumModules; }
 
   bool participatesInMoveLoop() const override { return true; }
   // The aggregation's module passes too (#834's reason): without them they optimize
@@ -699,7 +721,7 @@ public:
 private:
   // |K - K_pref| with unit weight (1 bit per module), matching
   // BiasedMapEquation::calcNumModuleCost.
-  double cost(int numModules) const { return costOf(numModules, static_cast<unsigned int>(m_preferredNumModules)); }
+  double cost(int numModules) const { return std::abs(numModules - m_preferredNumModules); }
 
   int m_preferredNumModules;
   std::vector<int> m_moduleMembers; // per module: member count

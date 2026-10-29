@@ -181,8 +181,8 @@ public:
   // cannot hold a ragged tree, so the surviving partition is emitted as ragged
   // per-leaf paths (toNodePaths returns them, and hasDissolvedResult() flags that
   // the caller must score/stamp the materialized tree rather than the stack). No
-  // change to leaf modules, so mem/meta/lossy/regularized are untouched; disabled
-  // under the |K - K_pref| bias (see ColumnarCorrection::blocksLevelDissolve).
+  // change to leaf modules, so mem/meta/lossy/regularized are untouched; the top
+  // modules stay under the |K - K_pref| bias (see ColumnarCorrection::keepsTopModules).
   // Returns the (never-greater) codelength of the dissolved tree from the pass's own
   // accounting -- exact for every objective but L*, whose module-of-modules term this
   // pass does not price -- or the stack's own codelength when nothing dissolves.
@@ -549,6 +549,18 @@ private:
   // objective and for structural corrections. Only valid where the refined
   // units are leaves (k == 0) — interior levels stay first-order (base).
   void addSlicedLeafCorrections(ColumnarTwoLevel& subOpt, const std::vector<int>& globalLeafIds) const;
+
+  // Corrections that charge only the top modules (#1068): the top-module count
+  // they steer to (0: none), and their copies onto a search whose partition
+  // becomes the top level (ColumnarCorrection::topLevelCopy).
+  int targetTopModules() const;
+  void addTopLevelCorrections(ColumnarTwoLevel& opt) const;
+  // The hierarchical search's bottom (leaf -> module, returns its module count):
+  // the two-level search without the top-level-only corrections, unless that bottom
+  // is already coarser than their target, when the top has to be found at the
+  // leaves -- the biased leaf search from the unbiased bottom and from singletons,
+  // the better of the two (#1068).
+  int buildBottom(unsigned int bottomBlockLimit, std::vector<int>& bottom);
 
   // Sum of the composable corrections' contributions to the codelength of
   // `stack` (0 for the base objective, i.e. no corrections). `breakdown`, when

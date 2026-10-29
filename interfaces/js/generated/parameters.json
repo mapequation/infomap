@@ -586,7 +586,7 @@
   {
     "long": "--preferred-number-of-modules",
     "short": "",
-    "description": "Penalize solutions by how far their number of modules differs from this value.",
+    "description": "Penalize solutions by how far their number of top modules differs from this value.",
     "group": "Algorithm",
     "required": true,
     "advanced": true,

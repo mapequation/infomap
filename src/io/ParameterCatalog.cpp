@@ -685,7 +685,7 @@ const std::vector<ParameterSpec>& parameterCatalog()
         .configTarget(&Config::variableMarkovTimeMinLocalScale),
     param()
         .longName("preferred-number-of-modules")
-        .description("Penalize solutions by how far their number of modules differs from this value.")
+        .description("Penalize solutions by how far their number of top modules differs from this value.")
         .argument(ArgType::integer)
         .group("Algorithm")
         .advanced()

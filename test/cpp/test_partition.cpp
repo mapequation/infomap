@@ -462,13 +462,55 @@ TEST_CASE("Columnar dissolve reports the codelength a re-score of its own tree g
   }
 }
 
+TEST_CASE("Columnar dissolve keeps the top modules and their charge under --preferred-number-of-modules (#1068) [fast][core][partition][columnar][columnar-contract]")
+{
+  // The |K - K_pref| penalty prices the number of top modules, so the dissolve spares
+  // them and dissolves below. Two disjoint copies of ninetriangles hold the top at one
+  // module per component (#1407), so K_pref = 1 charges the root 1 bit. The pass stamps
+  // the kept nodes from its own terms: without that bit in the root's stamp the per-node
+  // codelengths sum to 1 bit under the reported codelength.
+  if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
+    return;
+  InfomapWrapper im(infomap::test::defaultFlags("--preferred-number-of-modules 1"));
+  {
+    std::ifstream in(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+    std::string line;
+    while (std::getline(in, line)) {
+      std::istringstream fields(line);
+      unsigned int source = 0, target = 0;
+      double weight = 1.0;
+      if (line.empty() || line[0] == '#' || line[0] == '*' || !(fields >> source >> target))
+        continue;
+      fields >> weight;
+      im.addLink(source, target, weight);
+      im.addLink(source + 100, target + 100, weight);
+    }
+  }
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  REQUIRE(im.numTopModules() == 2);
+  // The pass fired: leaves at more than one depth.
+  std::set<unsigned int> leafDepths;
+  for (auto it = im.iterTree(); !it.isEnd(); ++it)
+    if (it->isLeaf())
+      leafDepths.insert(it.depth());
+  REQUIRE(leafDepths.size() > 1);
+  double stamped = im.root().codelength;
+  for (auto it = im.root().begin_tree(); !it.isEnd(); ++it)
+    if (!it->isLeaf() && !it->isRoot())
+      stamped += it->codelength;
+  CHECK(stamped == doctest::Approx(im.codelength()).epsilon(1e-9));
+}
+
 TEST_CASE("Columnar level split seeds its piece move loop with ids it has slots for (#1375) [fast][core][partition][columnar][columnar-contract]")
 {
   // splitLevelModules recombines a level's pieces in a move loop with one module slot per
   // piece, seeded at each piece's level-(k+1) module. A module emptied by an earlier split
-  // keeps its id there, so a seed id could reach the piece count, and moveUnit wrote past
-  // every per-module array: aucs.net under -C -N10 corrupted the heap. These 34 of its
-  // links reach such a seed; the sanitizer job reports the overrun if the compaction goes.
+  // used to keep its id there, so a seed id could reach the piece count, and moveUnit wrote
+  // past every per-module array: aucs.net under -C -N10 corrupted the heap. The stack now
+  // drops an emptied module. These 34 of its links empty one; the sanitizer job reports
+  // the overrun if the drop goes.
   const std::string network = "columnar_split_seed_1375.net";
   {
     std::ofstream out(network);
@@ -480,15 +522,15 @@ TEST_CASE("Columnar level split seeds its piece move loop with ids it has slots 
         << "5 52 48 1\n4 52 58 1\n5 52 58 1\n1 61 15 1\n5 61 15 1\n4 61 16 1\n"
         << "5 61 16 1\n3 61 24 1\n4 61 24 1\n1 61 38 1\n";
   }
-  const long long before = infomap::columnar::g_hSplitSeedCompactions.load();
+  const long long before = infomap::columnar::g_hSplitDroppedModules.load();
   InfomapWrapper im(infomap::test::defaultFlags("--columnar --num-trials 10 --seed 1"));
   im.readInputData(network);
   im.run();
   std::remove(network.c_str());
   infomap::test::checkRunSanity(im);
-  // Without a compacted seed the test no longer covers #1375: a search change that moves
+  // Without an emptied module the test no longer covers #1375: a search change that moves
   // this input off the path needs a new input, not a pass.
-  CHECK(infomap::columnar::g_hSplitSeedCompactions.load() > before);
+  CHECK(infomap::columnar::g_hSplitDroppedModules.load() > before);
 }
 
 TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition][columnar-contract]")
