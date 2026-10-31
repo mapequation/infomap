@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.16.1](https://github.com/mapequation/infomap/compare/v2.16.0...v2.16.1) (2026-10-31)
+
+
+### Bug Fixes
+
+* keep FlowCalculator linkable as C++14 ([#1402](https://github.com/mapequation/infomap/issues/1402)) ([53a2c0f](https://github.com/mapequation/infomap/commit/53a2c0f83fcd31782d97b9b6d67bd15dd1a1b5ed))
+
 ## [2.16.0](https://github.com/mapequation/infomap/compare/v2.15.1...v2.16.0) (2026-10-26)
 
 
