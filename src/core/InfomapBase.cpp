@@ -34,6 +34,7 @@
 #include "../utils/ThreadConfig.h"
 #include "../utils/TimingRegistry.h"
 #include "../utils/convert.h"
+#include "../utils/FaultInjection.h"
 #include "../utils/format.h"
 #include "../utils/formatters.h"
 
@@ -551,9 +552,10 @@ private:
 
     std::vector<double> codelengths(m_numTrials, std::numeric_limits<double>::max());
     std::vector<unsigned int> numTopModules(m_numTrials, 0);
-    bool hasError = false;
+    // The error of the lowest failing trial. No exception may leave the parallel
+    // loop, so it is kept here and reported once the workers have joined.
+    std::exception_ptr firstError;
     unsigned int firstErrorTrial = 0;
-    std::string firstError;
     std::mutex bestResultMutex;
     // result.bestHierarchicalCodelength, readable without the lock so a trial that
     // cannot win skips building its tree (#996). Written under bestResultMutex;
@@ -561,15 +563,17 @@ private:
     std::atomic<double> bestCodelengthSoFar(std::numeric_limits<double>::infinity());
     std::mutex errorMutex;
     std::mutex outputMutex;
+    const auto recordError = [&](unsigned int trialIndex) {
+      std::lock_guard<std::mutex> lock(errorMutex);
+      if (!firstError || trialIndex < firstErrorTrial) {
+        firstError = std::current_exception();
+        firstErrorTrial = trialIndex;
+      }
+    };
 
-#ifdef _OPENMP
-    ScopedOpenMpMaxActiveLevels scopedMaxActiveLevels(1);
-#pragma omp parallel for schedule(dynamic) num_threads(numWorkers)
-#endif
-    for (int workerIndex = 0; workerIndex < static_cast<int>(numWorkers); ++workerIndex) {
-#ifdef _OPENMP
-      m_infomap.recordTeamSize(static_cast<unsigned int>(omp_get_num_threads()));
-#endif
+    const auto makeWorker = [&](int workerIndex) {
+      faultinjection::inject(faultinjection::Site::ParallelTrialWorkerSetup);
+
       auto workerConfig = m_infomap.getConfig();
       // The run's trial count, not the worker's one trial: this field names and
       // labels the worker's --print-all-trials artifacts. outputPlanBasename only
@@ -583,21 +587,41 @@ private:
       workerConfig.innerParallelization = false;
       workerConfig.seedToRandomNumberGenerator = m_baseSeed + static_cast<unsigned int>(workerIndex);
 
-      InfomapBase worker(workerConfig);
-      worker.m_initialPartition = m_infomap.m_initialPartition;
+      auto worker = std::make_unique<InfomapBase>(workerConfig);
+      worker->m_initialPartition = m_infomap.m_initialPartition;
       // A worker writes its own --print-all-trials artifacts, so it needs the
       // run's captured provenance; built from a Config, it would otherwise
       // publish headers with no input identity at all (#1026).
-      worker.m_inputIdentity = m_infomap.m_inputIdentity;
-      worker.m_clusterDataIdentity = m_infomap.m_clusterDataIdentity;
-      worker.m_metaDataIdentity = m_infomap.m_metaDataIdentity;
-      worker.m_configFingerprint = m_infomap.m_configFingerprint;
-      worker.m_baseSeed = m_infomap.baseSeed();
-      worker.m_haveBaseSeed = true;
+      worker->m_inputIdentity = m_infomap.m_inputIdentity;
+      worker->m_clusterDataIdentity = m_infomap.m_clusterDataIdentity;
+      worker->m_metaDataIdentity = m_infomap.m_metaDataIdentity;
+      worker->m_configFingerprint = m_infomap.m_configFingerprint;
+      worker->m_baseSeed = m_infomap.baseSeed();
+      worker->m_haveBaseSeed = true;
       // Share the cancel flag so workers observe a cancel; they only read it and
       // unwind, caught by the per-trial handler below (issue #412).
-      worker.inheritRuntimeContext(m_infomap);
-      worker.m_flowSumsToOne = m_infomap.m_flowSumsToOne;
+      worker->inheritRuntimeContext(m_infomap);
+      worker->m_flowSumsToOne = m_infomap.m_flowSumsToOne;
+      return worker;
+    };
+
+#ifdef _OPENMP
+    ScopedOpenMpMaxActiveLevels scopedMaxActiveLevels(1);
+#pragma omp parallel for schedule(dynamic) num_threads(numWorkers)
+#endif
+    for (int workerIndex = 0; workerIndex < static_cast<int>(numWorkers); ++workerIndex) {
+#ifdef _OPENMP
+      m_infomap.recordTeamSize(static_cast<unsigned int>(omp_get_num_threads()));
+#endif
+      std::unique_ptr<InfomapBase> workerInstance;
+      try {
+        workerInstance = makeWorker(workerIndex);
+      } catch (...) {
+        // Charged to the worker's first trial, which never ran.
+        recordError(static_cast<unsigned int>(workerIndex));
+        continue;
+      }
+      InfomapBase& worker = *workerInstance;
 
       for (unsigned int trialIndex = static_cast<unsigned int>(workerIndex); trialIndex < m_numTrials; trialIndex += numWorkers) {
         try {
@@ -676,20 +700,8 @@ private:
             result.bestTree = std::move(trialTree);
             bestCodelengthSoFar.store(trialCodelength, std::memory_order_relaxed);
           }
-        } catch (const std::exception& e) {
-          std::lock_guard<std::mutex> lock(errorMutex);
-          if (!hasError || trialIndex < firstErrorTrial) {
-            hasError = true;
-            firstErrorTrial = trialIndex;
-            firstError = e.what();
-          }
         } catch (...) {
-          std::lock_guard<std::mutex> lock(errorMutex);
-          if (!hasError || trialIndex < firstErrorTrial) {
-            hasError = true;
-            firstErrorTrial = trialIndex;
-            firstError = "unknown error";
-          }
+          recordError(trialIndex);
         }
       }
     }
@@ -700,8 +712,16 @@ private:
       throw InterruptionError();
     }
 
-    if (hasError) {
-      throw std::runtime_error(fmt::format(FMT_STRING("Parallel trial {}/{} failed: {}"), firstErrorTrial + 1, m_numTrials, firstError));
+    if (firstError) {
+      std::string message;
+      try {
+        std::rethrow_exception(firstError);
+      } catch (const std::exception& e) {
+        message = e.what();
+      } catch (...) {
+        message = "unknown error";
+      }
+      throw std::runtime_error(fmt::format(FMT_STRING("Parallel trial {}/{} failed: {}"), firstErrorTrial + 1, m_numTrials, message));
     }
 
     m_infomap.m_codelengths = std::move(codelengths);
@@ -3829,7 +3849,7 @@ namespace detail {
     double leafCodelength = 0.0;
     double queueFlow = 0.0; // flow of the sub-queue spawned from this module
     std::vector<PartitionTaskRecord> children;
-    // An error from this module's sub-run. It must not escape the OpenMP task, so it is
+    // An error from this module's task. It must not escape the OpenMP task, so it is
     // kept here and rethrown once the task graph has joined.
     std::exception_ptr error;
   };
@@ -4167,7 +4187,18 @@ void InfomapBase::queueLeafModules(PartitionQueue& partitionQueue)
   partitionQueue.level = maxDepth;
 }
 
-void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int level, detail::PartitionTaskRecord& record) const
+void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int level, detail::PartitionTaskRecord& record) const noexcept
+{
+  // Runs as an OpenMP task, which no exception may leave: keep it on the record,
+  // recursivePartition rethrows it once the task graph has joined.
+  try {
+    partitionModule(module, level, record);
+  } catch (...) {
+    record.error = std::current_exception();
+  }
+}
+
+void InfomapBase::partitionModule(InfoNode& module, unsigned int level, detail::PartitionTaskRecord& record) const
 {
   module.codelength = calcCodelength(module);
   // Delete former sub-structure if exists
@@ -4190,6 +4221,7 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
 
   double oldModuleCodelength = module.codelength;
 
+  faultinjection::inject(faultinjection::Site::RecursiveSubNetwork);
   auto& subInfomap = getSubInfomap(module)
                          .initNetwork(module);
   // Run two-level partition + find hierarchically super modules (skip recursion).
@@ -4249,17 +4281,22 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
   // different edge order than the lazy clone path, so the order-sensitive greedy
   // optimizer can settle on a different (quality-equivalent) optimum on deep
   // networks; output is byte-identical only where recursion stays shallow.
-  // New module nodes use raw `new` (NOT the instance pool): the
+  // New module nodes are heap-allocated (NOT the instance pool): the
   // task graph runs this function concurrently and ObjectPool is per-instance,
   // not thread-safe; malloc is. They are few, and InfoNode teardown deletes
-  // non-pool nodes via `delete`.
+  // non-pool nodes via `delete`. Until they are attached they are owned here, and
+  // everything that can throw runs before `module` lets go of its leaves, so a
+  // failure leaves the tree as it was and frees what was built (#1252).
   std::vector<InfoNode*> materializedSubModules(numSubModulesQueued, nullptr);
   {
+    std::vector<std::unique_ptr<InfoNode>> ownedSubModules;
+    ownedSubModules.reserve(numSubModulesQueued);
     std::unordered_map<const InfoNode*, InfoNode*> cloneToMaterialized;
     cloneToMaterialized.reserve(numSubModulesQueued);
     for (unsigned int k = 0; k < numSubModulesQueued; ++k) {
       const InfoNode* cloneSubModule = subQueue[k];
-      auto* newSubModule = new InfoNode(cloneSubModule->data);
+      ownedSubModules.push_back(std::make_unique<InfoNode>(cloneSubModule->data));
+      InfoNode* newSubModule = ownedSubModules.back().get();
       newSubModule->codelength = cloneSubModule->codelength;
       // So the materialized node is equivalent to the lazy sub-Infomap module node.
       copyModuleAggregates(*newSubModule, *cloneSubModule);
@@ -4272,8 +4309,6 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
     for (auto& child : module)
       originalLeaves.push_back(&child);
 
-    module.releaseChildren();
-
     // The sub-Infomap clones `module`'s leaves 1:1 in the same order, so clone
     // leaf i corresponds to original leaf i. Assert that invariant explicitly:
     // an indexed loop with a size check fails fast with a clear error if future
@@ -4282,13 +4317,18 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
     const auto& cloneLeaves = subInfomap.leafNodes();
     if (cloneLeaves.size() != originalLeaves.size())
       throw std::logic_error("InfomapBase::partitionModuleRecursively(): sub-Infomap leaf count does not match the module's original leaves");
-    for (std::size_t i = 0; i < originalLeaves.size(); ++i) {
-      const InfoNode* cloneSubModule = cloneLeaves[i]->parent;
-      cloneToMaterialized.at(cloneSubModule)->addChild(originalLeaves[i]);
-    }
+    std::vector<InfoNode*> leafParents(originalLeaves.size());
+    for (std::size_t i = 0; i < originalLeaves.size(); ++i)
+      leafParents[i] = cloneToMaterialized.at(cloneLeaves[i]->parent);
 
-    for (InfoNode* newSubModule : materializedSubModules)
-      module.addChild(newSubModule);
+    faultinjection::inject(faultinjection::Site::RecursiveMaterialize);
+
+    // Nothing below throws until the sub-Infomap is disposed.
+    module.releaseChildren();
+    for (std::size_t i = 0; i < originalLeaves.size(); ++i)
+      leafParents[i]->addChild(originalLeaves[i]);
+    for (auto& newSubModule : ownedSubModules)
+      module.addChild(newSubModule.release());
 
     // module now plays the role the sub-Infomap root did under getInfomapRoot(),
     // but priced where it sits: the sub-Infomap root has no exit codeword, module
@@ -4308,13 +4348,7 @@ void InfomapBase::partitionModuleRecursively(InfoNode& module, unsigned int leve
     double pricedSubModuleCodelength = 0.0;
     for (const InfoNode* subModule : materializedSubModules)
       pricedSubModuleCodelength += calcCodelength(*subModule);
-    try {
-      checkCodelength(subModuleCodelength, pricedSubModuleCodelength, "keeping a sub-partition");
-    } catch (const std::exception&) {
-      // Inside an OpenMP task: record it, recursivePartition rethrows after the region.
-      record.error = std::current_exception();
-      return;
-    }
+    checkCodelength(subModuleCodelength, pricedSubModuleCodelength, "keeping a sub-partition");
   }
 #endif
   record.indexCodelength = module.codelength;
