@@ -370,9 +370,9 @@ parallel `notify-mapequation` dispatch refreshes the
 On pull requests, the `docs` job in `.github/workflows/ci.yml` runs
 `make build-docs` to verify the site still builds. CI deploys nothing.
 The `docs/` directory is build output and is not tracked in the repo.
-(`.github/workflows/deploy-redirect.yml` is a separate,
-manually-dispatched workflow that publishes only a GitHub Pages redirect stub;
-it is not part of the release flow.)
+This repository has no GitHub Pages site: `mapequation.org/infomap/` is
+served by `mapequation/mapequation.github.io`, and enabling Pages here would
+take that path over.
 
 ## Recovery
 
