@@ -80,10 +80,7 @@ def check_properties(net: GeneratedNetwork, search: dict) -> None:
 
         assert math.isfinite(result.codelength)
         assert math.isfinite(result.one_level_codelength)
-        # With meta data, a search that ends in singleton modules can stay
-        # above the one-level codelength (#1320).
-        if net.meta is None or result.num_non_trivial_top_modules > 0:
-            assert result.codelength <= result.one_level_codelength + TOLERANCE
+        assert result.codelength <= result.one_level_codelength + TOLERANCE
 
         leaves = [node for node in result.tree() if node.is_leaf]
         assert {node.node_id for node in leaves} == net.nodes
@@ -163,7 +160,6 @@ def test_one_node_tree_reads_back_with_the_same_modules(tmp_path):
 
 
 @pytest.mark.fast
-@pytest.mark.xfail(reason="#1320", strict=True)
 def test_meta_singletons_code_no_worse_than_one_level(tmp_path):
     path, options = META_SINGLETONS.write(tmp_path)
     result = run(str(path), silent=True, seed=1, **options, **THREADS)
