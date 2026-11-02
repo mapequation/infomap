@@ -26,8 +26,9 @@
 // The enter and exit rates agree exactly when the boundary rates account for every
 // step the visit rate counts -- undirected flow, and directed flow with recorded
 // teleportation -- and the leaf term then collapses to p_a lg Z_a + q_a lg(p_a/q_a).
-// They come apart under unrecorded teleportation (-d, outdirdir, undirdir) and under
-// rawdir, which is where writing p_a there cost up to 0.103 bits.
+// They come apart under unrecorded teleportation (-d, outdirdir, undirdir), where the
+// teleport steps are in the node flow and not in the link flow, and under rawdir, which
+// never balanced. Stationarity is not the condition: the PageRank walk is stationary.
 //
 // Every golden below is computed independently in Python, from the closed form in
 // output/primer/rungs_models.py (Lhat_hier_plogp), which is itself verified against
@@ -132,17 +133,18 @@ TEST_CASE("Lhat*/columnar: a directed golden, from a flow this test knows by sym
 
 TEST_CASE("Lhat*/columnar: rawdir, where qEnter and qExit genuinely differ [fast][core][non-redundant]")
 {
-  // The case every other golden here misses. Flux balance forces qEnter == qExit for
-  // every module of a genuine stationary chain -- counting a module's internal steps
-  // from the inside and from the outside gives moduleFlow - qExit and moduleFlow -
-  // qEnter -- so undirected, PageRank-directed and recorded-teleportation runs cannot
-  // tell the two rates apart. --flow-model rawdir can: the link weights ARE the flow and
-  // the visit rate is the in-flow, with no stationarity assumed.
+  // The case every other golden here misses. qEnter == qExit exactly when the boundary
+  // rates account for every step the visit rate counts: counting a module's internal
+  // steps from the inside gives moduleFlow - qExit and from the outside moduleFlow -
+  // qEnter. Undirected flow satisfies that, and recorded teleportation restores it by
+  // folding the teleport flow into enter/exit, so neither can tell the two rates apart.
+  // rawdir can, and so can every unrecorded-teleportation model (-d, outdirdir,
+  // undirdir), where the teleport steps sit in the node flow and not in the link flow.
   //
   // That made the within codebook's weight invisible. It is how often the book is
   // OPENED, (moduleFlow - qEnter) + qExit, not moduleFlow; the two agree exactly when
-  // qEnter == qExit. Writing moduleFlow cost up to 0.1 bits here and nothing anywhere
-  // else, and every assertion in this file passed either way.
+  // qEnter == qExit. Writing moduleFlow cost 0.103 bits on -d and 0.081 on rawdir, and
+  // every assertion in this file passed either way.
   //
   // The golden comes from the EXPLICIT kernel, not from the closed form the engine
   // implements: with pi_ij = w_ij / sum(w) and p = the in-flow, T is built entry by

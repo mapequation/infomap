@@ -6641,12 +6641,23 @@ from the model's definition, check its rows sum to 1, and take `-sum_ij pi_ij lg
 | `-d --recorded-teleportation` | 2.232277604428 | unchanged |
 
 So this was **not** confined to `rawdir`, as the first scoping of it had it: ordinary `-d` is
-affected too, and that is the common directed case. The rule is sharper than "directed": `q^en` and
-`q^ex` agree exactly when the enter/exit rates account for every step the visit rate counts. Flux
-balance gives that for undirected flow, and recorded teleportation restores it by folding the
-teleport flow into enter/exit. Unrecorded teleportation does not — the teleport steps are in the
-PageRank node flow and not in the link flow — so `-d`, `outdirdir` and `undirdir` all come apart,
-and `rawdir` never balanced to begin with.
+affected too, and that is the common directed case.
+
+The rule is sharper than "directed", and sharper than "stationary": `q^en` and `q^ex` agree exactly
+when the enter/exit rates **account for every step the visit rate counts**. Undirected flow
+satisfies that, and recorded teleportation restores it by folding the teleport flow into enter/exit.
+Unrecorded teleportation does not — the teleport steps are in the PageRank node flow and absent from
+the link flow — so `-d`, `outdirdir` and `undirdir` all come apart, and `rawdir` never balanced.
+**Stationarity is not the condition**: the PageRank walk is perfectly stationary; what fails is the
+recording. Measured on the research side, on a six-node digraph at `alpha = 0.15`, as
+`max|q^ex - q^en|` over modules: recorded teleportation `1.11e-16`, unrecorded `1.78e-02`, rawdir
+`2.22e-01` — the mechanism, where the engine before/after above is the consequence.
+
+**The first scoping reached the source comments before it was measured.** `lhatLeafModule` and the
+new rawdir test both carried "the two rates come apart only under rawdir", and the test comment went
+further and claimed PageRank-directed runs *cannot* tell the rates apart — which the `-d` row above
+flatly contradicts. Corrected in both. Worth the line because the number was right and the sentence
+next to it was wrong, which is the harder failure to notice: nothing in the arithmetic disagreed.
 
 **Why nothing caught it.** Every absolute golden in the PR was undirected, where the two weights
 coincide identically. The one directed case asserted `isfinite`, `> 0` and `!=` the other two

@@ -185,12 +185,23 @@ namespace columnar {
   // arrivals are handled by the enter book instead. So the book opens
   // (moduleFlow - qEnter) + qExit times.
   //
-  // Writing moduleFlow there instead is correct only when qEnter == qExit, which flux
-  // balance forces for every module of a genuine stationary chain: counting a module's
-  // internal steps from the inside and from the outside gives moduleFlow - qExit and
-  // moduleFlow - qEnter. The two rates come apart only when the flow is not the
-  // stationary distribution of the transitions, i.e. --flow-model rawdir -- which is
-  // where this was wrong by up to 0.1 bits, and why only that corner was ever at risk.
+  // Writing moduleFlow there instead is correct exactly when qEnter == qExit, and the
+  // condition for that is not stationarity: it is that the boundary rates account for
+  // every step the visit rate counts. Counting a module's internal steps from the
+  // inside gives moduleFlow - qExit and from the outside moduleFlow - qEnter, so the
+  // two agree only if nothing the node flow counts is missing from the link flow.
+  //
+  // Undirected flow satisfies that, and recorded teleportation restores it by folding
+  // the teleport flow into enter/exit. UNRECORDED teleportation does not: the teleport
+  // steps are in the PageRank node flow and absent from the link flow. So -d,
+  // outdirdir and undirdir all come apart, and rawdir never balanced to begin with.
+  // The PageRank walk is perfectly stationary -- what fails is the recording.
+  //
+  // Measured either side of the fix, on a fixed two-module partition of
+  // twotriangles_flow.net: -d 1.894664603626 -> 1.791821407552, rawdir (and outdirdir,
+  // undirdir) 1.323448905791 -> 1.404184397997, undirected and -d
+  // --recorded-teleportation unchanged. An earlier reading of this scoped it to rawdir
+  // alone, which understated it by the whole ordinary directed path.
   inline double lhatLeafModule(double moduleFlow, double qEnter, double qExit, double F)
   {
     using infomath::log2;
