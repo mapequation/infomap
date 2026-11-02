@@ -6572,10 +6572,13 @@ and read nowhere in `src/`, and `ninetriangles -C --non-redundant -N10 --seed 12
 would help is untested, and cheaper to try than it was for `L*` — property 1 above makes a single-node
 move `O(depth + |ch|)` rather than `O(n)`.
 
-**What the two objectives find differs, sometimes a lot.** `-C --non-redundant -N10 --seed 123`, old
-binary against new: jazz 6 top modules → 9; word_assoc 1789 → 4; malaria 2 → 25; wikispeedia `-d`
-199 → 58. Not a regression on either side — they are different objectives — but it is the size of the
-change the replacement makes to every `--non-redundant` run.
+**What the two objectives find differs, sometimes a lot.** `-C --non-redundant -N10 --seed 123`,
+old binary against new, **with each network's own flags from `benchmark-networks.md`**: jazz 6 top
+modules → 9; word_assoc `-d` 1789 → 2; malaria 2 → 25; wikispeedia `-d` 199 → 58. Not a regression
+on either side — they are different objectives — but it is the size of the change the replacement
+makes to every `--non-redundant` run. The flags matter: `word_assoc.txt` carries its directedness as
+the comment `# directed` on line 2, which Infomap reads as a comment, so without `-d` the same two
+runs give 2820 against 2841 and the example falls apart.
 
 ### F83 addendum
 
@@ -6604,3 +6607,59 @@ rejection stays all the same, for what was always the other half: the rate-disto
 derived against the standard map equation's codebook structure, and `noiseTopModules()` /
 `getLossyRate()` / `getLossyDistortion()` are base-flavoured. Lifting it is now a decision backed by
 that work rather than a blocked one — a change of status worth recording, not a change made here.
+
+
+### F83 addendum 2
+
+**The leaf term weighted `lg Z_a` by the wrong rate, and no test could have caught it.** Found by an
+adversarial review pass, confirmed here against an explicit kernel before any code moved.
+
+`lhatLeafModule` charged `moduleFlow * lg Z_a`. The coefficient of `lg Z_a` is how often the within
+book is **opened**, which is not the module's flow: the book names a node once per arrival from
+*inside* the module and emits `exit` once per step leaving it. `moduleFlow` is the visit rate — the
+**in-flow** — so arrivals from inside are `moduleFlow - q^en`, the other `q^en` being the enter
+book's job. The weight is `(moduleFlow - q^en) + q^ex`.
+
+Decided by construction, not by algebra on either candidate: build the kernel `T` entry by entry
+from the model's definition, check its rows sum to 1, and take `-sum_ij pi_ij lg T_ij`.
+
+| case | kernel NLL | `p_a` weight | `(p_a - q^en + q^ex)` weight |
+|---|---|---|---|
+| twotriangles as arcs, rawdir | 1.404184397997 | 1.323448905791 (8.1e-02) | 1.404184397997 (**2.2e-16**) |
+| random 9-node digraph, 3 modules | 3.207706401334 | 3.223137497935 (1.5e-02) | 3.207706401334 (**0.0**) |
+| undirected control | 1.999192930915 | 1.999192930915 | 1.999192930915 |
+
+**Which flow models it moved, measured rather than reasoned** — a fixed two-module partition of
+`twotriangles_flow.net`, the pre-fix build against the fixed one:
+
+| flow model | before | after |
+|---|---|---|
+| undirected | 1.999192930915 | unchanged |
+| `-d` (PageRank, unrecorded teleport) | 1.894664603626 | **1.791821407552** |
+| `--flow-model rawdir` | 1.323448905791 | **1.404184397997** |
+| `--flow-model outdirdir` / `undirdir` | 1.323448905791 | **1.404184397997** |
+| `-d --recorded-teleportation` | 2.232277604428 | unchanged |
+
+So this was **not** confined to `rawdir`, as the first scoping of it had it: ordinary `-d` is
+affected too, and that is the common directed case. The rule is sharper than "directed": `q^en` and
+`q^ex` agree exactly when the enter/exit rates account for every step the visit rate counts. Flux
+balance gives that for undirected flow, and recorded teleportation restores it by folding the
+teleport flow into enter/exit. Unrecorded teleportation does not — the teleport steps are in the
+PageRank node flow and not in the link flow — so `-d`, `outdirdir` and `undirdir` all come apart,
+and `rawdir` never balanced to begin with.
+
+**Why nothing caught it.** Every absolute golden in the PR was undirected, where the two weights
+coincide identically. The one directed case asserted `isfinite`, `> 0` and `!=` the other two
+objectives, and said so in its own comment. Swapping `qEnter` and `qExit` in `lhatLeafModule` left
+every assertion passing. The gap was upstream too: `output/primer/rungs_models.py` carried one `q`
+per tree node, so the reference had no directed branch to disagree with.
+
+Now pinned three ways: four unit goldens on `lhatLeafModule` with `q^en != q^ex`, two of them
+one-sided (`q^ex = 0`, then `q^en = 0`) where a swapped argument is unmistakable; an end-to-end
+`--flow-model rawdir` golden of 1.404184397997 taken from the **explicit kernel**, so it would also
+catch a closed form that failed to cancel a pairwise crossing rate — which no golden derived from
+module-level statistics can; and the directed 6-cycle, whose uniform flow is known by symmetry.
+
+**Lesson.** "The undirected and directed paths share the same code" is not coverage. Two quantities
+that are equal under the default flow model need a fixture where they are not, or the code is free
+to confuse them.

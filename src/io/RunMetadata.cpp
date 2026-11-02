@@ -317,8 +317,10 @@ std::string canonicalConfigJson(const Config& config)
   json["columnar_check"] = config.columnarCheck;
   json["hier_from_blocks"] = config.hierFromBlocks;
 
-  // L* is a different objective, and its exact variant a different leaf move loop,
-  // so neither run shares a fingerprint with the base map equation.
+  // The generative map equation is a different objective, so a --non-redundant run does
+  // not share a fingerprint with a base map equation one. --non-redundant-exact is
+  // reserved and currently changes nothing, but it stays here so that a later phase,
+  // where it would select a different leaf move loop, cannot merge runs across it.
   json["non_redundant"] = config.nonRedundant;
   json["non_redundant_exact"] = config.nonRedundantExact;
 

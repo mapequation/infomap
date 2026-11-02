@@ -177,6 +177,20 @@ namespace columnar {
 
   // Level-1 (leaf) module: its within codebook plus its leaves' own entropy.
   // F is the module's sum_{leaf in module} plogp(leafFlow).
+  //
+  // The coefficient of lg Z is how often the within book is OPENED, which is not the
+  // module's flow: the book names a node once per arrival from INSIDE the module, and
+  // emits `exit' once per step leaving it. Arrivals from inside are (moduleFlow -
+  // qEnter), since moduleFlow is the visit rate -- the IN-flow -- and qEnter of those
+  // arrivals are handled by the enter book instead. So the book opens
+  // (moduleFlow - qEnter) + qExit times.
+  //
+  // Writing moduleFlow there instead is correct only when qEnter == qExit, which flux
+  // balance forces for every module of a genuine stationary chain: counting a module's
+  // internal steps from the inside and from the outside gives moduleFlow - qExit and
+  // moduleFlow - qEnter. The two rates come apart only when the flow is not the
+  // stationary distribution of the transitions, i.e. --flow-model rawdir -- which is
+  // where this was wrong by up to 0.1 bits, and why only that corner was ever at risk.
   inline double lhatLeafModule(double moduleFlow, double qEnter, double qExit, double F)
   {
     using infomath::log2;
@@ -185,7 +199,7 @@ namespace columnar {
     double term = -F; // this module's share of H(p)
     if (Z < 1e-16)
       return term;
-    term += moduleFlow * log2(Z) - plogp(qExit);
+    term += (moduleFlow - qEnter + qExit) * log2(Z) - plogp(qExit);
     if (moduleFlow > 1e-16)
       term += qEnter * log2(moduleFlow); // the enter book names the node arrived at
     return term;
