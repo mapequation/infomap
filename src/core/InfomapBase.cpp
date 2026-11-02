@@ -3172,6 +3172,7 @@ void InfomapBase::setupColumnarOptimizer(ColumnarHierarchy& opt, unsigned long s
   }
   opt.search().setRecordedTeleportation(recordsTeleportation());
   opt.setNonRedundant(nonRedundant);
+  opt.setNonRedundantEntropyScore(nonRedundantEntropyScore);
   opt.setNonRedundantExact(nonRedundantExact);
   // The columnar interior refinement stops at a diminishing-returns knee; its
   // default (5e-3, set in ColumnarHierarchy) drops the low-value tail sweeps

@@ -71,8 +71,8 @@ namespace columnar {
  */
 class ColumnarStackView {
 public:
-  ColumnarStackView(const ColumnarStack& stack, bool nonRedundant, double exitNetworkFlow)
-      : m_stack(stack), m_nonRedundant(nonRedundant), m_exitNetworkFlow(exitNetworkFlow) {}
+  ColumnarStackView(const ColumnarStack& stack, bool nonRedundant, bool entropyScore, double exitNetworkFlow)
+      : m_stack(stack), m_nonRedundant(nonRedundant), m_nrEntropyScore(entropyScore), m_exitNetworkFlow(exitNetworkFlow) {}
 
   const ColumnarStack& stack() const { return m_stack; }
   // Number of tree levels in the stack (0 = leaves).
@@ -94,14 +94,17 @@ public:
   // with either objective unweighted and must not call this.
   //
   // Returns EMPTY when the rate is uniformly 1, which is the base map equation's
-  // whole leaf-module level, so the caller can skip the per-module rates (and
-  // the per-module state sums they weight). Non-empty only under L*, where the
-  // rate is nrLeafCodebookRate(flow, enter, exit) >= 1 and differs per module.
+  // whole leaf-module level — and Lhat*'s too, whose only F-carrying term is the
+  // partition-independent H(p) — so the caller can skip the per-module rates (and
+  // the per-module state sums they weight). Non-empty only under the entropy score
+  // L*, where the rate is nrLeafCodebookRate(flow, enter, exit) >= 1 and differs per
+  // module.
   std::vector<double> leafCodebookRates() const;
 
 private:
   const ColumnarStack& m_stack;
   bool m_nonRedundant;
+  bool m_nrEntropyScore;
   double m_exitNetworkFlow;
 };
 

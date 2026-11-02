@@ -293,6 +293,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         multilayer_relax_by_jsd: bool = False,
         multilayer_relax_to_self: bool = False,
         non_redundant: bool = False,
+        non_redundant_score: NonRedundantScore | None = None,
         non_redundant_exact: bool = False,
         seed: int = _UNSET,
         num_trials: int = _UNSET,
@@ -770,25 +771,40 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
         non_redundant : bool, optional
-            Use the non-redundant map equation L*: a module's exit codebook excludes the
-            module just left (no impossible immediate re-entry) and the first visit
-            after entering uses a separate enter codebook (no impossible immediate
-            exit). Runs on the non-recursive columnar engine (implies --columnar).
-            Supports undirected and directed flow, recorded teleportation, and the
-            composable objectives (metadata, memory/state, multilayer, entropy bias,
-            preferred number of modules), since L* restricts which walk steps are
-            possible, independently of which codebook a step is coded in. Cannot be
+            Use the non-redundant code: a module's exit codebook excludes the module
+            just left (no impossible immediate re-entry) and the first visit after
+            entering uses a separate enter codebook (no impossible immediate exit).
+            Scored by what that code costs on the walk, the generative map equation;
+            --non-redundant-score entropy selects the codebook-entropy sum L* instead.
+            Runs on the non-recursive columnar engine (implies --columnar). Supports
+            undirected and directed flow, recorded teleportation, and the composable
+            objectives (metadata, memory/state, multilayer, entropy bias, preferred
+            number of modules), since the non-redundant code restricts which walk steps
+            are possible, independently of which codebook a step is coded in. Cannot be
             combined with the lossy (rate-distortion) objective, whose noise credit is
             derived against the standard map equation.
+
+            .. versionchanged:: 2.15
+                Pass it via ``Options``; moves off this signature in 3.0.
+        non_redundant_score : str, optional
+            With --non-redundant, which score prices the non-redundant code.
+            'codelength' (default) is the generative map equation, what that code
+            actually costs on the walk: the sum of its codebooks' cross-entropies
+            against the flow they carry, which is an exact codelength, an exact negative
+            log-likelihood, and a function of the flow model. 'entropy' is the
+            non-redundant map equation L*, the sum of the same codebooks' own entropies,
+            which the unmatched codebooks make a bound the walk does not reach. Ignored
+            without --non-redundant.
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
         non_redundant_exact : bool, optional
             Reserved, currently inert: with --non-redundant, drive the leaf move loop
             with the exact O(m) leave-one-out exit sweep instead of the O(1) adaptive
-            power-series delta. The leaf move loop is not yet L*-aware (it optimizes the
-            base map equation and L* drives the structural search), so neither variant
-            exists and this option does not change the result.
+            power-series delta. The leaf move loop is not non-redundant-aware under
+            either score (it optimizes the base map equation, and the selected
+            non-redundant score drives the structural search), so neither variant exists
+            and this option does not change the result.
 
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
@@ -1001,6 +1017,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
         multilayer_relax_by_jsd: bool = False,
         multilayer_relax_to_self: bool = False,
         non_redundant: bool = False,
+        non_redundant_score: NonRedundantScore | None = None,
         non_redundant_exact: bool = False,
         seed: int = _UNSET,
         num_trials: int = _UNSET,

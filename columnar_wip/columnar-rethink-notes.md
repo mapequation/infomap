@@ -6507,3 +6507,71 @@ and against `403ac199` it is −24.6% in instructions and −26.8% in seconds (m
 
 Lesson: a pass that runs after the trials needs the final codelength. The per-trial values answer per-trial
 questions only.
+
+### F83
+
+**The non-redundant code has two scores, and the engine computed the one that is not a codelength.**
+`--non-redundant` reported `L*`, the sum of the non-redundant codebooks' *entropies*. The code is proper
+but **unmatched** — a codebook's model weights are not the frequencies the walk puts through it — so its
+entropy is not its price. What that code actually costs is the sum of the same codebooks'
+*cross*-entropies against the flow they carry, `L̂*`. That is at once an exact codelength, an exact
+negative log-likelihood with no partition-dependent normaliser, and a function of the flow model, which
+`L*` is none of. So `--non-redundant` now reports `L̂*`, and `--non-redundant-score entropy` restores
+`L*`.
+
+The closed form, derived and verified outside this repository (`output/primer/rungs_models.py`,
+`output/theory_dcsbm/ce/ce_core.py` in the research project; residual 8.9e-16 against the explicit
+hierarchical kernel), with `Z_a = p_a + q_a`, `E_v = sum_{c in ch(v)} q_c` and `D_v = q_v + E_v`:
+
+```
+L̂* = H(p)
+   + sum_{leaf modules a} [ p_a lg Z_a + q_a lg(p_a / q_a) ]
+   + sum_{internal v}     [ sum_{c in ch(v)} q_c lg((D_v - q_c)/q_c) + q_v lg(E_v / q_v) ]
+```
+
+The engine needs the enter/exit split (`q^en != q^ex` under recorded teleportation), which the derivation
+above does not carry. Doing the same accounting with the two rates separate:
+
+```
+leaf a:     p_a lg Z_a - q^ex_a lg q^ex_a + q^en_a lg p_a            (Z_a = p_a + q^ex_a)
+internal v: sum_c [ q^ex_c lg(D_v - q^en_c) - q^en_c lg q^en_c ] - q^ex_v lg q^ex_v + q^en_v lg E_v
+            with E_v = sum_c q^en_c, D_v = q^ex_v + E_v
+```
+
+which reduces term for term to the single-rate form when `q^en == q^ex`. That is what
+`scoreStackLhat` implements.
+
+**Three properties that made the implementation small**, each pinned by a test:
+
+1. **Only module-level statistics survive.** Every pairwise crossing rate cancels at every internal node,
+   because all flow leaving a child either reaches a sibling or leaves the parent, and both are coded
+   from the same leave-one-out index book. A node's term therefore reads only its own enter/exit rates
+   and its children's — no `O(n)` term anywhere above the leaves.
+2. **`H(p)` is the only term that touches leaf flow, and it is partition-independent**
+   (`-sum_i plogp(p_i) = -sum_m F_m`). So `L̂*` consumes `F` at the uniform rate 1, exactly as the base
+   map equation does, and `ColumnarStackView::leafCodebookRates()` returns empty for it. `MemCorrection`
+   substitutes the physical-node `F` unweighted — the whole of #1009's hazard is absent here rather than
+   re-solved. Checked on the exactly lumpable state duplication: invariant to 1e-12 on undirected,
+   PageRank-directed and rawdir.
+3. **A pass-through (single-child) level costs exactly 0**, as under `L*`: there `D_v - q^en_c == q^ex_v`
+   and `E_v == q^en_v`, so the node's two terms cancel. `padLeafPathsToUniformDepth`'s padding is free
+   under this score too, with no special case. Measured, not only argued: the 12-node network scored
+   through two module levels and through three with a pass-through gives 2.909481872608 both ways.
+
+**Validation.** Engine against the Python closed forms, read from `-o json`, worst residual **2.7e-15**
+over: a 3-level 12-node network (2.485869478407), a ragged tree (2.697675675508), a pass-through tree,
+weighted karate at K=3 (3.950758387291, the handoff's reference value), karate singletons and karate as
+one module. On `ninetriangles -C --non-redundant -N10` the engine reports 3.077553137896 and the Python
+closed form gives 3.077553137896 for the tree it wrote.
+
+**The leaf move loop is unchanged and stays on the base map equation.** It was never `L*`-aware either
+(`--non-redundant-exact` has been inert since it was added), so there is no analogue of the known
+negative result to transfer: base-`L` building blocks with the selected non-redundant score driving the
+structural search is what both scores do. Whether an `L̂*`-aware move loop would help is untested, and
+cheaper to try than it was for `L*` — property 1 above makes a single-node move `O(depth + |ch|)` rather
+than `O(n)`.
+
+**What the two scores find differs, sometimes a lot.** `-N10 --seed 123`: jazz 9 top modules under `L̂*`
+against 6 under `L*`; word_assoc 4 against 1789; malaria 25 against 2. Not a regression on either side —
+they are different objectives — but it says the 44-cluster landscape depth comparison, measured under
+`L*`, has to be re-run before `L*` can be retired. That is why the option keeps both.

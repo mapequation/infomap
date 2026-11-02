@@ -320,6 +320,7 @@ std::string canonicalConfigJson(const Config& config)
   // L* is a different objective, and its exact variant a different leaf move loop,
   // so neither run shares a fingerprint with the base map equation.
   json["non_redundant"] = config.nonRedundant;
+  json["non_redundant_score"] = config.nonRedundantScore;
   json["non_redundant_exact"] = config.nonRedundantExact;
 
   return json.dump();

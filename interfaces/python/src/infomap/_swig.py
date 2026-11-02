@@ -154,6 +154,8 @@ class Config(object):
     columnarTwoLevel = property(_infomap.Config_columnarTwoLevel_get, _infomap.Config_columnarTwoLevel_set)
     columnarSearch = property(_infomap.Config_columnarSearch_get, _infomap.Config_columnarSearch_set)
     nonRedundant = property(_infomap.Config_nonRedundant_get, _infomap.Config_nonRedundant_set)
+    nonRedundantScore = property(_infomap.Config_nonRedundantScore_get, _infomap.Config_nonRedundantScore_set)
+    nonRedundantEntropyScore = property(_infomap.Config_nonRedundantEntropyScore_get, _infomap.Config_nonRedundantEntropyScore_set)
     nonRedundantExact = property(_infomap.Config_nonRedundantExact_get, _infomap.Config_nonRedundantExact_set)
     preferModularSolution = property(_infomap.Config_preferModularSolution_get, _infomap.Config_preferModularSolution_set)
     innerParallelization = property(_infomap.Config_innerParallelization_get, _infomap.Config_innerParallelization_set)

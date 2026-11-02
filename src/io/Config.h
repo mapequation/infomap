@@ -172,18 +172,31 @@ struct Config {
   // capped by tuneIterationLimit) — instead of the recursive two-level-then-
   // refine algorithm. Produces the normal output tree.
   bool columnarSearch = false;
-  // Non-redundant map equation L* on the columnar engine: the exit codebook of a
-  // module excludes the module just left (no impossible immediate re-entry) and the
-  // first visit after entering uses a separate enter codebook (no impossible
-  // immediate exit). Implemented as a base-objective variant of the columnar core,
-  // so it implies --columnar (the only L* implementation on this branch).
-  // Composes with every objective correction and with higher-order input: L* restricts
-  // which walk steps are possible, not which codebook a step is coded in.
+  // The non-redundant code on the columnar engine: the exit codebook of a module
+  // excludes the module just left (no impossible immediate re-entry) and the first
+  // visit after entering uses a separate enter codebook (no impossible immediate
+  // exit). Implemented as a base-objective variant of the columnar core, so it implies
+  // --columnar (the only implementation on this branch). Composes with every objective
+  // correction and with higher-order input: the code restricts which walk steps are
+  // possible, not which codebook a step is coded in.
   bool nonRedundant = false;
+  // Which score prices that code (--non-redundant-score), read only when nonRedundant
+  // is set:
+  //   "codelength" (default) — Lhat*, what the code costs on the walk: the sum of its
+  //                codebooks' CROSS-entropies against the flow they carry. An exact
+  //                codelength, an exact negative log-likelihood, and a function of the
+  //                flow model.
+  //   "entropy"  — L*, the sum of the same codebooks' own entropies, which the
+  //                unmatched codebooks make a bound the walk does not reach. Kept
+  //                because the landscape depth comparison that favoured nested
+  //                descriptions was measured under it.
+  // Parsed into nonRedundantEntropyScore by applyNonRedundantInteraction.
+  std::string nonRedundantScore = "codelength";
+  bool nonRedundantEntropyScore = false;
   // Reserved, currently inert: with --non-redundant, drive the leaf move loop with the
   // exact O(m) leave-one-out exit sweep instead of the O(1) adaptive power-series delta.
-  // The leaf move loop is not yet L*-aware, so neither variant exists and this changes
-  // nothing; it stays in the config fingerprint so a later phase cannot merge runs
+  // The leaf move loop is not non-redundant-aware under either score, so neither variant
+  // exists and this changes nothing; it stays in the config fingerprint so a later phase cannot merge runs
   // across the two.
   bool nonRedundantExact = false;
   bool preferModularSolution = false;
@@ -306,6 +319,8 @@ struct Config {
     columnarTwoLevel = other.columnarTwoLevel;
     columnarSearch = other.columnarSearch;
     nonRedundant = other.nonRedundant;
+    nonRedundantScore = other.nonRedundantScore;
+    nonRedundantEntropyScore = other.nonRedundantEntropyScore;
     nonRedundantExact = other.nonRedundantExact;
 #if INFOMAP_FEATURE_TEST_FEATURE
     testFeature = other.testFeature;

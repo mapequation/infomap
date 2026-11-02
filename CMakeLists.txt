@@ -269,6 +269,7 @@ if(BUILD_TESTING)
     add_infomap_cpp_test(infomap_cpp_map_equation_invariants_tests test/cpp/test_map_equation_invariants.cpp "fast;core;mapeq")
     add_infomap_cpp_test(infomap_cpp_infomath_tests test/cpp/test_infomath.cpp "fast;core;utils")
     add_infomap_cpp_test(infomap_cpp_non_redundant_tests test/cpp/test_non_redundant_columnar.cpp "fast;core;non-redundant")
+    add_infomap_cpp_test(infomap_cpp_lhat_star_tests test/cpp/test_lhat_star_columnar.cpp "fast;core;non-redundant")
     add_infomap_cpp_test(infomap_cpp_columnar_stack_tests test/cpp/test_columnar_stack.cpp "fast;core;columnar-stack")
     add_infomap_cpp_test(infomap_cpp_columnar_grandparent_refine_tests test/cpp/test_columnar_grandparent_refine.cpp "fast;core;columnar-stack")
 
@@ -413,6 +414,7 @@ if(BUILD_TESTING)
             infomap_cpp_map_equation_invariants_tests
             infomap_cpp_infomath_tests
             infomap_cpp_non_redundant_tests
+            infomap_cpp_lhat_star_tests
             infomap_cpp_columnar_stack_tests
             infomap_cpp_columnar_grandparent_refine_tests
             infomap_cli

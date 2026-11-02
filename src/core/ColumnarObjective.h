@@ -215,6 +215,76 @@ namespace columnar {
     return qExit * (plogp(Z) - (sumEnterLogEnter - plogp(qEnter)) - plogp(e)) / Z;
   }
 
+  // --- Generative map equation (Lhat*) per-node terms --------------------------
+  // What the non-redundant code actually COSTS on the walk: the cross-entropy of
+  // the walk under that code's kernel, as opposed to L* above, which sums the same
+  // codebooks' ENTROPIES. The two differ because the non-redundant code is proper
+  // but unmatched -- each codebook's model weights are not the frequencies the
+  // stream puts through it -- so its entropy is not its price.
+  //
+  // Derived in the project's primer (Section 8.5 and Appendix A) and verified there
+  // against the explicit hierarchical kernel to 9e-16; see
+  // test/cpp/test_lhat_star_columnar.cpp for the fixtures this implementation is
+  // pinned to. Two properties shape the code:
+  //
+  //  (1) Only module-level statistics survive. Every pairwise crossing rate cancels
+  //      at every internal node, because all flow leaving a child either reaches a
+  //      sibling or leaves the parent, and both are coded from the same leave-one-out
+  //      index book. So a node's term reads only its own enter/exit rates and its
+  //      children's.
+  //  (2) The leaf-node entropy H(p) enters as one partition-independent constant
+  //      (-sum_i plogp(p_i) = -sum_m F_m). It is folded into the leaf-module term
+  //      here so each level-1 module's charge is self-contained, which is also what
+  //      makes the per-module decomposition sum to the reported total.
+  //
+  // Both deletions apply at EVERY level: a node's index book excludes the child the
+  // walker just left (normalizer D - qEnter_child), and a book opened on arrival from
+  // outside cannot emit `exit' (normalizer E).
+
+  // Level-1 (leaf) module: its within codebook plus its leaves' own entropy.
+  // F is the module's sum_{leaf in module} plogp(leafFlow), as for nrEnterWithin.
+  inline double lhatLeafModule(double moduleFlow, double qEnter, double qExit, double F)
+  {
+    using infomath::log2;
+    using infomath::plogp;
+    const double Z = moduleFlow + qExit; // the within book's mass: the nodes plus `exit'
+    double term = -F; // this module's share of H(p)
+    if (Z < 1e-16)
+      return term;
+    term += moduleFlow * log2(Z) - plogp(qExit);
+    if (moduleFlow > 1e-16)
+      term += qEnter * log2(moduleFlow); // the enter book names the node arrived at
+    return term;
+  }
+
+  // One child's contribution to its parent's index book: the child's exit flow is coded
+  // in a book normalized leave-one-out (D - qEnter_child), and the child's own name is
+  // drawn at rate qEnter_child by whoever addresses it. D = qExit_parent +
+  // sum_{c in children} qEnter_c is the full index-book mass.
+  inline double lhatChildTerm(double qEnterChild, double qExitChild, double D)
+  {
+    using infomath::log2;
+    using infomath::plogp;
+    double term = -plogp(qEnterChild);
+    const double Z = D - qEnterChild;
+    if (Z > 1e-16)
+      term += qExitChild * log2(Z);
+    return term;
+  }
+
+  // An internal node's own two contributions: the `exit' symbol it draws from its index
+  // book, and the descend-only book (mass E = sum_c qEnter_c) it opens for a walker
+  // arriving from outside, which cannot leave again before landing.
+  inline double lhatNodeTerm(double qEnterSelf, double qExitSelf, double E)
+  {
+    using infomath::log2;
+    using infomath::plogp;
+    double term = -plogp(qExitSelf);
+    if (E > 1e-16)
+      term += qEnterSelf * log2(E);
+    return term;
+  }
+
 } // namespace columnar
 } // namespace infomap
 

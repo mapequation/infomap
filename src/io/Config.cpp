@@ -246,11 +246,24 @@ namespace {
 
   void applyNonRedundantInteraction(Config& config)
   {
+    // --non-redundant-score picks which score prices the non-redundant code.
+    // `.choices()` is only help text and shell completion (ProgramInterface never
+    // validates against it), so the value is checked here, where a typo becomes a
+    // message instead of a silent fall-through to the default. Checked before the early
+    // return, so a misspelling is caught even when the option has no effect.
+    if (config.nonRedundantScore == "codelength")
+      config.nonRedundantEntropyScore = false;
+    else if (config.nonRedundantScore == "entropy")
+      config.nonRedundantEntropyScore = true;
+    else
+      throw std::runtime_error("--non-redundant-score must be 'codelength' (the generative map equation, the default) or 'entropy' (the non-redundant map equation L*), not '" + config.nonRedundantScore + "'");
+
     if (!config.nonRedundant)
       return;
 
-    // L* is implemented as a base-objective variant of the columnar engine (the
-    // non-recursive search that hosts it cleanly), so --non-redundant runs there.
+    // The non-redundant code is implemented as a base-objective variant of the columnar
+    // engine (the non-recursive search that hosts it cleanly), so --non-redundant runs
+    // there.
     config.columnarSearch = true;
 
     // No input is excluded, and every objective except --lossy composes. L*

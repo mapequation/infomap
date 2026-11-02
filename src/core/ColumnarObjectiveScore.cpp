@@ -182,7 +182,7 @@ namespace {
    *      siblings, e = exitNetworkFlow). This replaces the base index term: L*
    *      codes the module transition once, in the exit codebook of the module left.
    */
-  double scoreStackNonRedundant(const StackTerms& t, StackBreakdown* breakdown = nullptr)
+  double scoreStackLstar(const StackTerms& t, StackBreakdown* breakdown = nullptr)
   {
     using infomath::plogp;
     double total = 0.0;
@@ -252,6 +252,100 @@ namespace {
     return total;
   }
 
+  /**
+   * The generative map equation Lhat* over the stack.
+   *
+   * What the same non-redundant code COSTS on the walk, where scoreStackLstar sums its
+   * codebooks' entropies. The node-level terms are in ColumnarObjective.h; the shape
+   * here is simpler than L*'s because the objective reads only module-level statistics,
+   * with the leaf-node entropy H(p) folded into the level-1 charges:
+   *  (1) a leaf module (level 1) charges its within codebook plus its leaves' own
+   *      entropy -F_m;
+   *  (2) every internal node (level 2..top) charges its children's leave-one-out
+   *      index-book terms plus its own `exit' symbol and its descend-only arrival book;
+   *  (3) the root is an internal node like any other, with the (sub-)network's
+   *      exitNetworkFlow as both its enter and its exit rate — 0 for the whole closed
+   *      network, where its own two terms vanish and only its children's index-book
+   *      terms remain.
+   *
+   * A single-child internal node contributes exactly 0 (there D - enter_c == exit_p and
+   * E == enter_p), so Lhat* is invariant to the pass-through levels
+   * padLeafPathsToUniformDepth inserts: the three spellings of a bare top-level leaf
+   * score alike without a special case.
+   */
+  double scoreStackLhat(const StackTerms& t, StackBreakdown* breakdown = nullptr)
+  {
+    using infomath::plogp;
+    double total = 0.0;
+
+    // (1) Level-1 leaf modules: within codebook + the leaves' own entropy.
+    {
+      const ColumnarLevel& L1 = t.level(1);
+      const std::vector<int>& leafToL1 = t.assign(0);
+      std::vector<double> F(L1.n, 0.0);
+      for (int i = 0; i < t.leaves.n; ++i)
+        F[leafToL1[i]] += plogp(t.leaves.flow[i]);
+      for (int m = 0; m < L1.n; ++m) {
+        const double term = lhatLeafModule(L1.flow[m], t.enter(1, m), t.exit(1, m), F[m]);
+        total += term;
+        charge(breakdown, 1, m, term);
+      }
+    }
+
+    // (2) Internal nodes (level 2..top): the index book over their children, plus their
+    // own exit symbol and arrival book. Both charges land on the parent, the same
+    // attribution scoreStackLstar uses.
+    for (int k = 2; k <= t.topLevel; ++k) {
+      const ColumnarLevel& Lk = t.level(k);
+      const ColumnarLevel& Lkm1 = t.level(k - 1);
+      const std::vector<int>& childToParent = t.assign(k - 1);
+      std::vector<double> E(Lk.n, 0.0);
+      for (int c = 0; c < Lkm1.n; ++c)
+        E[childToParent[c]] += t.enter(k - 1, c);
+      for (int c = 0; c < Lkm1.n; ++c) {
+        const int p = childToParent[c];
+        const double term = lhatChildTerm(t.enter(k - 1, c), t.exit(k - 1, c), t.exit(k, p) + E[p]);
+        total += term;
+        charge(breakdown, k, p, term);
+      }
+      for (int p = 0; p < Lk.n; ++p) {
+        const double term = lhatNodeTerm(t.enter(k, p), t.exit(k, p), E[p]);
+        total += term;
+        charge(breakdown, k, p, term);
+      }
+    }
+
+    // (3) The root, the same way: its enter and exit are both the (sub-)network's
+    // exitNetworkFlow, so its own two terms vanish for the closed network.
+    {
+      const ColumnarLevel& Ltop = t.level(t.topLevel);
+      double E = 0.0;
+      for (int m = 0; m < Ltop.n; ++m)
+        E += t.enter(t.topLevel, m);
+      const double e = t.exitNetworkFlow; // 0 for the whole closed network
+      for (int m = 0; m < Ltop.n; ++m) {
+        const double term = lhatChildTerm(t.enter(t.topLevel, m), t.exit(t.topLevel, m), e + E);
+        total += term;
+        chargeRoot(breakdown, term);
+      }
+      const double self = lhatNodeTerm(e, e, E);
+      total += self;
+      chargeRoot(breakdown, self);
+    }
+
+    return total;
+  }
+
+  // The one place the active base objective is chosen. --non-redundant selects the
+  // non-redundant code; --non-redundant-score then prices it either by what it costs on
+  // the walk (Lhat*, the default) or by its codebooks' entropies (L*).
+  double scoreStackFor(bool nonRedundant, bool entropyScore, const StackTerms& t, StackBreakdown* breakdown)
+  {
+    if (!nonRedundant)
+      return scoreStackBase(t, breakdown);
+    return entropyScore ? scoreStackLstar(t, breakdown) : scoreStackLhat(t, breakdown);
+  }
+
 } // namespace
 
 namespace {
@@ -275,7 +369,7 @@ double ColumnarHierarchy::scoreStack(const ColumnarStack& stack, StackBreakdown*
   const StackTerms terms = buildStackTerms(stack, m_search.exitNetworkFlow());
   if (breakdown != nullptr)
     prepareBreakdown(terms, *breakdown);
-  const double base = m_nonRedundant ? scoreStackNonRedundant(terms, breakdown) : scoreStackBase(terms, breakdown);
+  const double base = scoreStackFor(m_nonRedundant, m_nrEntropyScore, terms, breakdown);
   return base + objectiveCorrection(stack, breakdown);
 }
 
@@ -507,7 +601,10 @@ std::vector<double> ColumnarStackView::leafCodebookRates() const
   // Empty = the uniform rate 1 of the base objective (see the header). Reusing
   // buildStackTerms keeps a correction's substitution on exactly the boundary
   // rates the scorer charges.
-  if (!m_nonRedundant || !m_stack.hasModules())
+  // Lhat* consumes F at the uniform rate 1 too: its only F-carrying term is the
+  // partition-independent H(p) = -sum_m F_m, with coefficient exactly -1. So only the
+  // entropy score (L*) has a rate that differs per module.
+  if (!m_nonRedundant || !m_nrEntropyScore || !m_stack.hasModules())
     return {};
   const StackTerms terms = buildStackTerms(m_stack, m_exitNetworkFlow);
   const ColumnarLevel& L1 = terms.level(1);

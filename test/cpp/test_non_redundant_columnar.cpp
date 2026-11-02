@@ -12,7 +12,11 @@
 // base-objective variant of ColumnarTwoLevel (not a composable correction): it
 // restructures the enter/within/exit codebooks at every level, the exit codebook
 // using a leave-one-out normalizer over sibling modules. --non-redundant implies
-// --columnar (the only L* implementation on this branch).
+// --columnar (the only implementation on this branch).
+//
+// Every golden here is L*, the sum of those codebooks' ENTROPIES, so every scoring call
+// names it: --non-redundant-score entropy. The default score is what the same code
+// COSTS on the walk, which test_lhat_star_columnar.cpp covers.
 //
 // The fixed-partition goldens below are computed independently from the three-codebook
 // definition of L* (see "Non-redundant map equation - expanded form.ipynb") and match
@@ -108,7 +112,13 @@ TEST_CASE("NonRedundant/columnar: --non-redundant parses and implies --columnar 
 {
   const auto conf = nonRedundantConfig("--non-redundant");
   CHECK(conf.nonRedundant);
-  CHECK(conf.columnarSearch); // L* runs on the columnar engine
+  CHECK(conf.columnarSearch); // the non-redundant code runs on the columnar engine
+  CHECK_FALSE(conf.nonRedundantEntropyScore); // whose default score is not L*
+
+  const auto entropyConf = nonRedundantConfig("--non-redundant --non-redundant-score entropy");
+  CHECK(entropyConf.nonRedundantEntropyScore);
+  const auto codelengthConf = nonRedundantConfig("--non-redundant --non-redundant-score codelength");
+  CHECK_FALSE(codelengthConf.nonRedundantEntropyScore);
 
   const auto exactConf = nonRedundantConfig("--non-redundant --non-redundant-exact");
   CHECK(exactConf.nonRedundant);
@@ -151,7 +161,7 @@ TEST_CASE("NonRedundant/columnar: higher-order input runs under L* [fast][core][
   // to know higher-order input is accepted is to run it. Both of these carry the physical
   // codebook (MemCorrection) on top of the L* base.
   for (const char* net : { "states_flow.net", "multilayer.net" }) {
-    InfomapWrapper im(defaultFlags("--non-redundant --num-trials 1"));
+    InfomapWrapper im(defaultFlags("--non-redundant --non-redundant-score entropy --num-trials 1"));
     im.readInputData(networkFixturePath(net));
     im.run();
     CHECK(std::isfinite(im.codelength()));
@@ -182,8 +192,8 @@ TEST_CASE("NonRedundant/columnar: an ADDITIVE correction adds the same term unde
 
   const double L = scoreFixedPartition(net, clu, "--columnar --two-level");
   const double Lmeta = scoreFixedPartition(net, clu, "--columnar --two-level" + meta);
-  const double Lstar = scoreFixedPartition(net, clu, "--non-redundant --two-level");
-  const double LstarMeta = scoreFixedPartition(net, clu, "--non-redundant --two-level" + meta);
+  const double Lstar = scoreFixedPartition(net, clu, "--non-redundant --non-redundant-score entropy --two-level");
+  const double LstarMeta = scoreFixedPartition(net, clu, "--non-redundant --non-redundant-score entropy --two-level" + meta);
 
   CHECK(Lmeta != doctest::Approx(L)); // the correction has to bite for this to mean anything
   CHECK(LstarMeta - Lstar == doctest::Approx(Lmeta - L).epsilon(1e-9));
@@ -193,7 +203,7 @@ TEST_CASE("NonRedundant/columnar: an ADDITIVE correction adds the same term unde
 
 TEST_CASE("NonRedundant/columnar: two-level L* on a fixed partition, undirected, differs from standard L [fast][core][non-redundant]")
 {
-  const double Lstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--non-redundant --two-level");
+  const double Lstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--non-redundant --non-redundant-score entropy --two-level");
   const double Lstd = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--two-level");
 
   CHECK(Lstar == doctest::Approx(1.983611049901).epsilon(1e-9));
@@ -202,13 +212,13 @@ TEST_CASE("NonRedundant/columnar: two-level L* on a fixed partition, undirected,
 
 TEST_CASE("NonRedundant/columnar: two-level L* on a fixed partition, directed [fast][core][non-redundant]")
 {
-  const double Lstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--non-redundant --two-level --directed");
+  const double Lstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--non-redundant --non-redundant-score entropy --two-level --directed");
   CHECK(Lstar == doctest::Approx(1.791821407552).epsilon(1e-9));
 }
 
 TEST_CASE("NonRedundant/columnar: one module reduces to the node entropy (== standard L) [fast][core][non-redundant]")
 {
-  const double Lstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--non-redundant --two-level");
+  const double Lstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--non-redundant --non-redundant-score entropy --two-level");
   const double Lstd = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--two-level");
   CHECK(Lstar == doctest::Approx(2.470950594455).epsilon(1e-9));
   CHECK(Lstar == doctest::Approx(Lstd).epsilon(1e-9));
@@ -219,11 +229,11 @@ TEST_CASE("NonRedundant/columnar: hierarchical L* on a multilevel fixed partitio
   // A three-level tree whose middle level is trivial (one sub-module per top module)
   // must reduce to the two-level L* of the same leaf partition: a trivial interior
   // level contributes a zero enter codebook and zero-Z exit codebooks.
-  const double Lstar3 = scoreFixedPartition("twotriangles_flow.net", "twotriangles_three_level.tree", "--non-redundant");
+  const double Lstar3 = scoreFixedPartition("twotriangles_flow.net", "twotriangles_three_level.tree", "--non-redundant --non-redundant-score entropy");
   CHECK(Lstar3 == doctest::Approx(1.983611049901).epsilon(1e-9));
 }
 
-TEST_CASE("NonRedundant/columnar: L* is invariant under exactly lumpable state duplication [fast][core][non-redundant]")
+TEST_CASE("NonRedundant/columnar: both scores are invariant under exactly lumpable state duplication [fast][core][non-redundant]")
 {
   // The regression test for #1009. Splitting a physical node into states that are
   // indistinguishable to the walker, with the partition lifted so no physical node is
@@ -247,16 +257,25 @@ TEST_CASE("NonRedundant/columnar: L* is invariant under exactly lumpable state d
       const double Ldup = scoreRingOfTriangles(k, 2, "--columnar" + flow);
       CHECK(Ldup == doctest::Approx(L).epsilon(1e-12));
 
-      const double Lstar = scoreRingOfTriangles(k, 1, "--non-redundant" + flow);
-      const double LstarDup = scoreRingOfTriangles(k, 2, "--non-redundant" + flow);
+      const double Lstar = scoreRingOfTriangles(k, 1, "--non-redundant --non-redundant-score entropy" + flow);
+      const double LstarDup = scoreRingOfTriangles(k, 2, "--non-redundant --non-redundant-score entropy" + flow);
       CHECK(LstarDup == doctest::Approx(Lstar).epsilon(1e-12));
       CHECK(Lstar < L); // L* is the cheaper description of the same partition
+
+      // And the other score of the same code. Lhat* consumes F at the uniform rate 1 --
+      // its only F-carrying term is the partition-independent H(p) -- so
+      // ColumnarStackView::leafCodebookRates() returns empty for it and MemCorrection
+      // substitutes unweighted, exactly as under the base objective. That is a claim
+      // about the rate, not a restatement of #1009's fix, so it is checked here too.
+      const double Lhat = scoreRingOfTriangles(k, 1, "--non-redundant" + flow);
+      const double LhatDup = scoreRingOfTriangles(k, 2, "--non-redundant" + flow);
+      CHECK(LhatDup == doctest::Approx(Lhat).epsilon(1e-12));
     }
   }
 
   // Goldens on the physical arm, so the pair cannot pass by both sides moving together.
-  CHECK(scoreRingOfTriangles(2, 1, "--non-redundant") == doctest::Approx(2.361270125569452).epsilon(1e-9));
-  CHECK(scoreRingOfTriangles(5, 1, "--non-redundant") == doctest::Approx(2.861270125569453).epsilon(1e-9));
+  CHECK(scoreRingOfTriangles(2, 1, "--non-redundant --non-redundant-score entropy") == doctest::Approx(2.361270125569452).epsilon(1e-9));
+  CHECK(scoreRingOfTriangles(5, 1, "--non-redundant --non-redundant-score entropy") == doctest::Approx(2.861270125569453).epsilon(1e-9));
 }
 
 TEST_CASE("NonRedundant/columnar: nrLeafCodebookRate is the rate nrEnterWithin consumes F at [fast][core][non-redundant]")
@@ -284,7 +303,7 @@ TEST_CASE("NonRedundant/columnar: nrLeafCodebookRate is the rate nrEnterWithin c
 
 TEST_CASE("NonRedundant/columnar: hierarchical search produces a sound, self-consistent L* [fast][core][non-redundant]")
 {
-  InfomapWrapper hier(defaultFlags("--non-redundant --num-trials 5"));
+  InfomapWrapper hier(defaultFlags("--non-redundant --non-redundant-score entropy --num-trials 5"));
   hier.readInputData(repoPath("examples/networks/ninetriangles.net"));
   hier.run();
   const double searched = hier.codelength();
@@ -301,7 +320,7 @@ TEST_CASE("NonRedundant/columnar: hierarchical search produces a sound, self-con
   std::remove(treePath.c_str());
   hier.writeTree(treePath);
 
-  InfomapWrapper rescored(defaultFlags("--non-redundant --no-infomap --cluster-data " + treePath));
+  InfomapWrapper rescored(defaultFlags("--non-redundant --non-redundant-score entropy --no-infomap --cluster-data " + treePath));
   rescored.readInputData(repoPath("examples/networks/ninetriangles.net"));
   rescored.run();
   CHECK(rescored.codelength() == doctest::Approx(searched).epsilon(1e-9));
@@ -316,8 +335,8 @@ TEST_CASE("NonRedundant/columnar: a ragged tree is scored under L*, not the base
   // without the flag. Padding the short paths with a pass-through level makes the tree
   // rectangular at zero cost under L*, so the two now agree with the hand-padded
   // fixture instead.
-  const double raggedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant");
-  const double paddedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant");
+  const double raggedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant --non-redundant-score entropy");
+  const double paddedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant --non-redundant-score entropy");
   const double raggedL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "");
 
   CHECK(raggedLstar == doctest::Approx(paddedLstar).epsilon(1e-12));
@@ -331,8 +350,8 @@ TEST_CASE("NonRedundant/columnar: a ragged STATE tree is scored under L* [fast][
   // Same, with MemCorrection in play: the physical-node codebook substitution is
   // charged at the leaf-module rate, which differs between L and L*, so this is the
   // case where "just reuse the object-oriented value" is furthest from right.
-  const double raggedLstar = scoreFixedPartition("states.net", "states_ragged_branches.tree", "--non-redundant");
-  const double paddedLstar = scoreFixedPartition("states.net", "states_ragged_branches_padded.tree", "--non-redundant");
+  const double raggedLstar = scoreFixedPartition("states.net", "states_ragged_branches.tree", "--non-redundant --non-redundant-score entropy");
+  const double paddedLstar = scoreFixedPartition("states.net", "states_ragged_branches_padded.tree", "--non-redundant --non-redundant-score entropy");
   const double raggedL = scoreFixedPartition("states.net", "states_ragged_branches.tree", "");
 
   CHECK(raggedLstar == doctest::Approx(paddedLstar).epsilon(1e-12));
@@ -340,18 +359,20 @@ TEST_CASE("NonRedundant/columnar: a ragged STATE tree is scored under L* [fast][
   CHECK(raggedL == doctest::Approx(4.251629167).epsilon(1e-9));
 }
 
-TEST_CASE("NonRedundant/columnar: only L* is invariant under a pass-through level [fast][core][non-redundant]")
+TEST_CASE("NonRedundant/columnar: L* is invariant under a pass-through level, the base map equation is not [fast][core][non-redundant]")
 {
   // The theorem the padding rests on, pinned from both sides so that "simplifying" the
   // gate away would fail: inserting a single-child level costs exactly 0 under L* (its
   // enter codebook is e*(plogp(e)-plogp(e))/e and its child's exit term has numerator
-  // plogp(x)-0-plogp(x)) and costs real bits under the base map equation.
+  // plogp(x)-0-plogp(x)) and costs real bits under the base map equation. Lhat* is
+  // invariant too, for its own reason (see test_lhat_star_columnar.cpp); the base
+  // objective is the one that is not, which is what the padding gate turns on.
   const double raggedL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "");
   const double paddedL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "");
   CHECK(paddedL > raggedL + 1e-6);
 
-  const double raggedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant");
-  const double paddedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant");
+  const double raggedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant --non-redundant-score entropy");
+  const double paddedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant --non-redundant-score entropy");
   CHECK(raggedLstar == doctest::Approx(paddedLstar).epsilon(1e-12));
 }
 
@@ -367,13 +388,13 @@ TEST_CASE("NonRedundant/columnar: the ragged padding does not leak into the entr
   // those codebook slots carry no free parameter -- the root's index codebook holds
   // one codeword, and the module holds all the flow so it has no exit codeword -- so
   // the gap the flag opens there is 5 times the per-node term.
-  const double oneModule = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--non-redundant --two-level");
-  const double oneModuleBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--non-redundant --two-level --entropy-corrected");
+  const double oneModule = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--non-redundant --non-redundant-score entropy --two-level");
+  const double oneModuleBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--non-redundant --non-redundant-score entropy --two-level --entropy-corrected");
   const double biasPerNode = (oneModuleBiased - oneModule) / 5.0;
   CHECK(biasPerNode > 0.0);
 
-  const double raggedBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant --entropy-corrected");
-  const double paddedBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant --entropy-corrected");
+  const double raggedBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant --non-redundant-score entropy --entropy-corrected");
+  const double paddedBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant --non-redundant-score entropy --entropy-corrected");
   CHECK(raggedBiased == doctest::Approx(paddedBiased - biasPerNode).epsilon(1e-9));
 }
 
@@ -388,9 +409,9 @@ TEST_CASE("NonRedundant/columnar: a BARE top-level leaf is scored under L* too [
   //
   // The three fixtures are three spellings of ONE partition -- bare, explicit module,
   // explicit module plus a pass-through -- so L* must give all three the same value.
-  const double bareLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf.tree", "--non-redundant");
-  const double moduleLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_module.tree", "--non-redundant");
-  const double rectLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_rect.tree", "--non-redundant");
+  const double bareLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf.tree", "--non-redundant --non-redundant-score entropy");
+  const double moduleLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_module.tree", "--non-redundant --non-redundant-score entropy");
+  const double rectLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_rect.tree", "--non-redundant --non-redundant-score entropy");
 
   CHECK(bareLstar == doctest::Approx(moduleLstar).epsilon(1e-12));
   CHECK(bareLstar == doctest::Approx(rectLstar).epsilon(1e-12));
@@ -408,9 +429,9 @@ TEST_CASE("NonRedundant/columnar: a BARE top-level leaf is scored under L* too [
 
   // --entropy-corrected counts nodes, so the pass-through the padding stacks above A's
   // module is discounted -- but A's own module is not phantom and is counted.
-  const double bareBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf.tree", "--non-redundant --entropy-corrected");
-  const double moduleBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_module.tree", "--non-redundant --entropy-corrected");
-  const double rectBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_rect.tree", "--non-redundant --entropy-corrected");
+  const double bareBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf.tree", "--non-redundant --non-redundant-score entropy --entropy-corrected");
+  const double moduleBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_module.tree", "--non-redundant --non-redundant-score entropy --entropy-corrected");
+  const double rectBiased = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_rect.tree", "--non-redundant --non-redundant-score entropy --entropy-corrected");
   CHECK(bareBiased == doctest::Approx(moduleBiased).epsilon(1e-9));
   CHECK(rectBiased > bareBiased + 1e-9); // the hand-written pass-through is a real node
 }
@@ -430,8 +451,8 @@ TEST_CASE("NonRedundant/columnar: an all-top-level tree never becomes ragged in 
   //
   // What this still checks: one partition (one module per node) written two ways, as a
   // depth-1 .tree and as a .clu, must score the same, and L* must undercut base L.
-  const double flatTreeLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_all_top_level.tree", "--non-redundant");
-  const double cluLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_singletons.clu", "--non-redundant");
+  const double flatTreeLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_all_top_level.tree", "--non-redundant --non-redundant-score entropy");
+  const double cluLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_singletons.clu", "--non-redundant --non-redundant-score entropy");
   CHECK(flatTreeLstar == doctest::Approx(cluLstar).epsilon(1e-12));
 
   const double flatTreeL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_all_top_level.tree", "");
