@@ -403,11 +403,9 @@ double MemCorrection::hierarchicalCorrection(const ColumnarStackView& core, Stac
   if (core.hierNumLevels() < 2)
     return 0.0;
   const int numModules = core.hierLevelSize(1);
-  // Per level-1 module, the rate the active objective charges F_m at. Empty ==
-  // uniformly 1 == the base map equation; see the class comment for why the two
-  // objectives differ here and the header for why empty rather than a vector of ones.
-  const std::vector<double> rates = core.leafCodebookRates();
-  const bool perModule = !rates.empty() || breakdown != nullptr;
+  // Every base objective charges F_m at exactly 1 (see the class comment), so the
+  // substitution telescopes and the per-module split is needed only to report one.
+  const bool perModule = breakdown != nullptr;
   std::vector<double> fState, fPhys;
   if (perModule) {
     fState.assign(static_cast<std::size_t>(numModules), 0.0);
@@ -439,23 +437,13 @@ double MemCorrection::hierarchicalCorrection(const ColumnarStackView& core, Stac
     }
     m_touched.clear();
   }
-  if (rates.empty()) {
-    // rate == 1 everywhere, so sum_m (F_m^state - F_m^phys) telescopes into the
-    // two global sums. The split is still what a breakdown reports: the physical
-    // codebook substitution happens per leaf module.
-    if (breakdown != nullptr)
-      for (int m = 0; m < numModules; ++m)
-        breakdown->moduleTerm[1][static_cast<std::size_t>(m)] += fState[static_cast<std::size_t>(m)] - fPhys[static_cast<std::size_t>(m)];
-    return m_cState - physSum;
-  }
-  double total = 0.0;
-  for (std::size_t m = 0; m < rates.size(); ++m) {
-    const double term = rates[m] * (fState[m] - fPhys[m]);
-    total += term;
-    if (breakdown != nullptr)
-      breakdown->moduleTerm[1][m] += term;
-  }
-  return total;
+  // sum_m (F_m^state - F_m^phys) telescopes into the two global sums. The split is
+  // still what a breakdown reports: the physical codebook substitution happens per
+  // leaf module.
+  if (breakdown != nullptr)
+    for (int m = 0; m < numModules; ++m)
+      breakdown->moduleTerm[1][static_cast<std::size_t>(m)] += fState[static_cast<std::size_t>(m)] - fPhys[static_cast<std::size_t>(m)];
+  return m_cState - physSum;
 }
 
 void MemCorrection::setUnits(const std::vector<int>& leafToUnit, int numUnits)

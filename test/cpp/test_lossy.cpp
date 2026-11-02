@@ -43,7 +43,9 @@ TEST_CASE("Lossy: rejects unsupported configurations [fast][core][lossy]")
   throws("--lossy --markov-time 2");
   // The noise credit is derived against the standard map equation: it hands back
   // sum_leaf plogp(f) at coefficient 1, which is the rate scoreStackBase charges it
-  // at, while L* charges nrLeafCodebookRate >= 1. See #1011 / F38.
+  // at; what is not established is the rest -- the rate-distortion trade-off is derived
+  // against the standard map equation and the reporting layer is base-flavoured. See
+  // #1011 / F38 / F83.
   throws("--lossy --non-redundant");
 }
 

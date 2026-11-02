@@ -149,72 +149,6 @@ namespace columnar {
     return delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
   }
 
-  // --- Non-redundant map equation (L*) per-module codebook terms ---------------
-  // These are the ONLY implementation of L* in the codebase: the object-oriented
-  // objectives have no non-redundant counterpart, which is why every fallback from
-  // the columnar core to calcCodelengthOnTree silently reports the base map equation
-  // instead (see InfomapBase::evaluateColumnarPartition). Said here because an
-  // earlier version of this comment claimed these were "direct ports of
-  // MapEquation::nrEnterWithin / nrExitTerm" -- symbols that exist nowhere in src/.
-  // F is the module's sum_{leaf in module} plogp(leafFlow). Enter/exit are the
-  // module's boundary rates (separate for directed flow). See "Non-redundant map
-  // equation - expanded form.ipynb" for the derivation.
-  inline double nrEnterWithin(double moduleFlow, double qEnter, double qExit, double F)
-  {
-    using infomath::plogp;
-    if (moduleFlow < 1e-16)
-      return 0.0;
-    const double tEnter = qEnter * (plogp(moduleFlow) - F) / moduleFlow;
-    double tWithin = 0.0;
-    const double T = moduleFlow + qExit;
-    if (T > 1e-16) {
-      const double usage = moduleFlow + qExit - qEnter; // = moduleFlow when undirected
-      tWithin = (usage / T) * (plogp(T) - F - plogp(qExit));
-    }
-    return tEnter + tWithin;
-  }
-
-  // The rate at which nrEnterWithin consumes F -- i.e. -d(nrEnterWithin)/dF.
-  //
-  // nrEnterWithin is affine in F, so this is exact:
-  //   nrEnterWithin(f, e, x, F2) - nrEnterWithin(f, e, x, F1)
-  //     == -nrLeafCodebookRate(f, e, x) * (F2 - F1).
-  // Closed form: 1 + qEnter*qExit / (moduleFlow * (moduleFlow + qExit)) >= 1, with
-  // equality iff qEnter == 0 or qExit == 0 (both hold for a one-module partition).
-  //
-  // Why this exists: a correction that SUBSTITUTES one F for another inside the
-  // leaf-module codebook -- MemCorrection swaps the state-node F for the
-  // physical-node F -- has to charge the substitution at whatever rate the active
-  // objective consumes F. The base map equation's leaf-module term consumes it at
-  // exactly 1 (see scoreStackBase, where the T-normalized module term collapses to
-  // plogp(T) - plogp(qExit) - F); L* does not, because it splits that codebook into
-  // an enter codebook normalized by moduleFlow and a within codebook normalized by
-  // T = moduleFlow + qExit. Keep this next to nrEnterWithin: the two must move
-  // together, and the 1e-16 guards below mirror it exactly (a module the scorer
-  // skips consumes no F at all, so its rate is 0, not 1).
-  inline double nrLeafCodebookRate(double moduleFlow, double qEnter, double qExit)
-  {
-    if (moduleFlow < 1e-16)
-      return 0.0; // nrEnterWithin returns 0.0 here: F never enters the total
-    double rate = qEnter / moduleFlow; // from tEnter
-    const double T = moduleFlow + qExit;
-    if (T > 1e-16)
-      rate += (moduleFlow + qExit - qEnter) / T; // from tWithin
-    return rate;
-  }
-
-  // One module's leave-one-out exit codebook contribution, given the sibling
-  // enter-rate total-plus-exit-network sumEnterPlusE = (sum_b qEnter_b) + e and
-  // sumEnterLogEnter = sum_b plogp(qEnter_b); e is the exit-to-parent codeword.
-  inline double nrExitTerm(double qEnter, double qExit, double sumEnterPlusE, double sumEnterLogEnter, double e)
-  {
-    using infomath::plogp;
-    const double Z = sumEnterPlusE - qEnter;
-    if (Z < 1e-16)
-      return 0.0;
-    return qExit * (plogp(Z) - (sumEnterLogEnter - plogp(qEnter)) - plogp(e)) / Z;
-  }
-
   // --- Generative map equation (Lhat*) per-node terms --------------------------
   // What the non-redundant code actually COSTS on the walk: the cross-entropy of
   // the walk under that code's kernel, as opposed to L* above, which sums the same
@@ -242,7 +176,7 @@ namespace columnar {
   // outside cannot emit `exit' (normalizer E).
 
   // Level-1 (leaf) module: its within codebook plus its leaves' own entropy.
-  // F is the module's sum_{leaf in module} plogp(leafFlow), as for nrEnterWithin.
+  // F is the module's sum_{leaf in module} plogp(leafFlow).
   inline double lhatLeafModule(double moduleFlow, double qEnter, double qExit, double F)
   {
     using infomath::log2;

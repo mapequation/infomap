@@ -3172,7 +3172,6 @@ void InfomapBase::setupColumnarOptimizer(ColumnarHierarchy& opt, unsigned long s
   }
   opt.search().setRecordedTeleportation(recordsTeleportation());
   opt.setNonRedundant(nonRedundant);
-  opt.setNonRedundantEntropyScore(nonRedundantEntropyScore);
   opt.setNonRedundantExact(nonRedundantExact);
   // The columnar interior refinement stops at a diminishing-returns knee; its
   // default (5e-3, set in ColumnarHierarchy) drops the low-value tail sweeps
@@ -4146,14 +4145,14 @@ double InfomapBase::evaluateColumnarPartition()
   // / 19.78 s with the medians in a different order again.
   setupColumnarOptimizer(opt, seedToRandomNumberGenerator);
   auto paths = leafModulePathsFromTree();
-  // A ragged tree does not fit the strict-level stack, and the object-oriented
-  // fallback below cannot price L* at all (no OO non-redundant objective exists;
-  // grep for nrEnterWithin outside Columnar* finds nothing), so it silently
-  // reported base L for L* runs -- ninetriangles ragged 3.458078031 for both
-  // objectives, against a true L* of 3.237864808. Under L* the tree can be made
+  // A ragged tree does not fit the strict-level stack, and the object-oriented fallback
+  // below cannot price the non-redundant code at all (no OO non-redundant objective
+  // exists; the whole implementation is in Columnar*), so it silently reported base L
+  // for --non-redundant runs -- ninetriangles ragged 3.458078031 for both objectives,
+  // against the true non-redundant value. Under --non-redundant the tree can be made
   // rectangular for free instead; see padLeafPathsToUniformDepth.
   // Rectangularize whenever the tree HAS a module structure. The padding used to be
-  // gated on --non-redundant, on the argument that a pass-through level is free under L*
+  // gated on --non-redundant, on the argument that a pass-through level is free there
   // and costs real bits under the base map equation -- true, but beside the point: the
   // stamping below already takes the phantom levels' charge back off the total in full
   // generality (padCharge), so the base objective is priced exactly too, and the ragged

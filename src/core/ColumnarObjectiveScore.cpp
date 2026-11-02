@@ -167,98 +167,12 @@ namespace {
   }
 
   /**
-   * The non-redundant map equation L* over the stack.
-   *
-   * Each internal node contributes its calcCodelength, mirroring
-   * InfomapBase::calcCodelengthOnTree:
-   *  (1) a leaf module (level 1) charges its enter + within codebooks over its
-   *      leaf-flow distribution (F = sum plogp(leaf flow));
-   *  (2) every super parent (a level 2..top module) charges its own enter
-   *      codebook over its children's enter rates, plus each child's leave-one-out
-   *      exit codebook (normalized over the parent's children + the parent's exit);
-   *  (3) the root (parent of the top modules) has no enter codebook — its enter is
-   *      the network's exitNetworkFlow (0 for the closed whole network) — and
-   *      charges the top modules' exit codebooks (leave-one-out over the top
-   *      siblings, e = exitNetworkFlow). This replaces the base index term: L*
-   *      codes the module transition once, in the exit codebook of the module left.
-   */
-  double scoreStackLstar(const StackTerms& t, StackBreakdown* breakdown = nullptr)
-  {
-    using infomath::plogp;
-    double total = 0.0;
-
-    // (1) Level-1 leaf modules: enter + within over their leaves.
-    {
-      const ColumnarLevel& L1 = t.level(1);
-      const std::vector<int>& leafToL1 = t.assign(0);
-      std::vector<double> F(L1.n, 0.0);
-      for (int i = 0; i < t.leaves.n; ++i)
-        F[leafToL1[i]] += plogp(t.leaves.flow[i]);
-      for (int m = 0; m < L1.n; ++m) {
-        const double term = nrEnterWithin(L1.flow[m], t.enter(1, m), t.exit(1, m), F[m]);
-        total += term;
-        charge(breakdown, 1, m, term);
-      }
-    }
-
-    // (2) Super parents (level 2..top): parent enter codebook + children exit codebooks.
-    for (int k = 2; k <= t.topLevel; ++k) {
-      const ColumnarLevel& Lk = t.level(k);
-      const ColumnarLevel& Lkm1 = t.level(k - 1);
-      const std::vector<int>& childToParent = t.assign(k - 1);
-      std::vector<double> sumEnter(Lk.n, 0.0), sumEnterLog(Lk.n, 0.0);
-      for (int c = 0; c < Lkm1.n; ++c) {
-        const double ec = t.enter(k - 1, c);
-        sumEnter[childToParent[c]] += ec;
-        sumEnterLog[childToParent[c]] += plogp(ec);
-      }
-      // Both charges below land on the PARENT p, which is the attribution the
-      // block comment states: a node pays its own enter codebook over its children
-      // plus each child's leave-one-out exit codebook (the child's exit codeword is
-      // drawn from the parent's codebook, so it is the parent's cost).
-      for (int p = 0; p < Lk.n; ++p) {
-        if (sumEnter[p] > 1e-16) { // parent's enter codebook: pick a child by enter rate
-          const double term = t.enter(k, p) * (plogp(sumEnter[p]) - sumEnterLog[p]) / sumEnter[p];
-          total += term;
-          charge(breakdown, k, p, term);
-        }
-      }
-      for (int c = 0; c < Lkm1.n; ++c) { // each child's leave-one-out exit codebook
-        const int p = childToParent[c];
-        const double e = t.exit(k, p);
-        const double term = nrExitTerm(t.enter(k - 1, c), t.exit(k - 1, c), sumEnter[p] + e, sumEnterLog[p], e);
-        total += term;
-        charge(breakdown, k, p, term);
-      }
-    }
-
-    // (3) Root: the top modules' exit codebooks (leave-one-out over top siblings).
-    {
-      const ColumnarLevel& Ltop = t.level(t.topLevel);
-      double sumEnter = 0.0, sumEnterLog = 0.0;
-      for (int m = 0; m < Ltop.n; ++m) {
-        const double e = t.enter(t.topLevel, m);
-        sumEnter += e;
-        sumEnterLog += plogp(e);
-      }
-      const double e = t.exitNetworkFlow; // 0 for the whole closed network
-      for (int m = 0; m < Ltop.n; ++m) {
-        const double term = nrExitTerm(t.enter(t.topLevel, m), t.exit(t.topLevel, m), sumEnter + e, sumEnterLog, e);
-        total += term;
-        chargeRoot(breakdown, term);
-      }
-    }
-
-    return total;
-  }
-
-  /**
    * The generative map equation Lhat* over the stack.
    *
-   * What the same non-redundant code COSTS on the walk, where scoreStackLstar sums its
-   * codebooks' entropies. The node-level terms are in ColumnarObjective.h; the shape
-   * here is simpler than L*'s because the objective reads only module-level statistics,
-   * with the leaf-node entropy H(p) folded into the level-1 charges:
+   * What the non-redundant code COSTS on the walk -- the cross-entropy of the walk under
+   * that code's kernel, not the entropy of its codebooks. The node-level terms are in
+   * ColumnarObjective.h; the objective reads only module-level statistics, with the
+   * leaf-node entropy H(p) folded into the level-1 charges:
    *  (1) a leaf module (level 1) charges its within codebook plus its leaves' own
    *      entropy -F_m;
    *  (2) every internal node (level 2..top) charges its children's leave-one-out
@@ -293,8 +207,8 @@ namespace {
     }
 
     // (2) Internal nodes (level 2..top): the index book over their children, plus their
-    // own exit symbol and arrival book. Both charges land on the parent, the same
-    // attribution scoreStackLstar uses.
+    // own exit symbol and arrival book. Both charges land on the parent: a node pays its
+    // own books plus the index-book slots its children occupy in them.
     for (int k = 2; k <= t.topLevel; ++k) {
       const ColumnarLevel& Lk = t.level(k);
       const ColumnarLevel& Lkm1 = t.level(k - 1);
@@ -336,24 +250,14 @@ namespace {
     return total;
   }
 
-  // The one place the active base objective is chosen. --non-redundant selects the
-  // non-redundant code; --non-redundant-score then prices it either by what it costs on
-  // the walk (Lhat*, the default) or by its codebooks' entropies (L*).
-  double scoreStackFor(bool nonRedundant, bool entropyScore, const StackTerms& t, StackBreakdown* breakdown)
-  {
-    if (!nonRedundant)
-      return scoreStackBase(t, breakdown);
-    return entropyScore ? scoreStackLstar(t, breakdown) : scoreStackLhat(t, breakdown);
-  }
-
 } // namespace
 
 namespace {
 
   // The levels, assignments and teleport-augmented boundary rates a stack scoring
   // reads, resolved once. The single source of truth for the recorded-teleportation
-  // augmentation: scoreStack and leafCodebookRates both go through it, so no
-  // consumer can re-derive a module's enter/exit differently.
+  // augmentation: every scorer goes through it, so no consumer can re-derive a
+  // module's enter/exit differently.
   StackTerms buildStackTerms(const ColumnarStack& stack, double exitNetworkFlow)
   {
     // Every module level is built by ColumnarBoundaryFlow::aggregate, so its
@@ -369,7 +273,7 @@ double ColumnarHierarchy::scoreStack(const ColumnarStack& stack, StackBreakdown*
   const StackTerms terms = buildStackTerms(stack, m_search.exitNetworkFlow());
   if (breakdown != nullptr)
     prepareBreakdown(terms, *breakdown);
-  const double base = scoreStackFor(m_nonRedundant, m_nrEntropyScore, terms, breakdown);
+  const double base = m_nonRedundant ? scoreStackLhat(terms, breakdown) : scoreStackBase(terms, breakdown);
   return base + objectiveCorrection(stack, breakdown);
 }
 
@@ -594,24 +498,6 @@ double ColumnarHierarchy::oneLevelCodelength() const
   oneModule.bind(leaf0(), m_search.flow());
   oneModule.setFlat(std::vector<int>(static_cast<std::size_t>(nLeaves()), 0), 1);
   return scoreStack(oneModule);
-}
-
-std::vector<double> ColumnarStackView::leafCodebookRates() const
-{
-  // Empty = the uniform rate 1 of the base objective (see the header). Reusing
-  // buildStackTerms keeps a correction's substitution on exactly the boundary
-  // rates the scorer charges.
-  // Lhat* consumes F at the uniform rate 1 too: its only F-carrying term is the
-  // partition-independent H(p) = -sum_m F_m, with coefficient exactly -1. So only the
-  // entropy score (L*) has a rate that differs per module.
-  if (!m_nonRedundant || !m_nrEntropyScore || !m_stack.hasModules())
-    return {};
-  const StackTerms terms = buildStackTerms(m_stack, m_exitNetworkFlow);
-  const ColumnarLevel& L1 = terms.level(1);
-  std::vector<double> rates(static_cast<std::size_t>(L1.n));
-  for (int m = 0; m < L1.n; ++m)
-    rates[static_cast<std::size_t>(m)] = nrLeafCodebookRate(L1.flow[m], terms.enter(1, m), terms.exit(1, m));
-  return rates;
 }
 
 double ColumnarHierarchy::objectiveCorrection(const ColumnarStack& stack, StackBreakdown* breakdown) const

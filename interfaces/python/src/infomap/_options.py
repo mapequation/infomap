@@ -146,10 +146,6 @@ FlowModel = Literal[
     "undirected", "directed", "undirdir", "outdirdir", "rawdir", "precomputed"
 ]
 
-NonRedundantScore = Literal[
-    "codelength", "entropy"
-]
-
 class _OptionSpec(NamedTuple):
     """Per-option record: how one Options field renders and validates.
 
@@ -244,7 +240,6 @@ _OPTION_TABLE = {
     "multilayer_relax_by_jsd": _OptionSpec("--multilayer-relax-by-jsd", "flag", False),
     "multilayer_relax_to_self": _OptionSpec("--multilayer-relax-to-self", "flag", False),
     "non_redundant": _OptionSpec("--non-redundant", "flag", False),
-    "non_redundant_score": _OptionSpec("--non-redundant-score", "value", None, choices=get_args(NonRedundantScore)),
     "non_redundant_exact": _OptionSpec("--non-redundant-exact", "flag", False),
     "directed": _OptionSpec("--directed", "directed", None, common=True),
     # accuracy
@@ -824,29 +819,22 @@ class Options(metaclass=_OptionsMeta):
         Use the non-redundant code: a module's exit codebook excludes the module just
         left (no impossible immediate re-entry) and the first visit after entering uses
         a separate enter codebook (no impossible immediate exit). Scored by what that
-        code costs on the walk, the generative map equation; --non-redundant-score
-        entropy selects the codebook-entropy sum L* instead. Runs on the non-recursive
-        columnar engine (implies --columnar). Supports undirected and directed flow,
-        recorded teleportation, and the composable objectives (metadata, memory/state,
-        multilayer, entropy bias, preferred number of modules), since the non-redundant
-        code restricts which walk steps are possible, independently of which codebook a
-        step is coded in. Cannot be combined with the lossy (rate-distortion) objective,
-        whose noise credit is derived against the standard map equation.
-    non_redundant_score : str, optional
-        With --non-redundant, which score prices the non-redundant code. 'codelength'
-        (default) is the generative map equation, what that code actually costs on the
-        walk: the sum of its codebooks' cross-entropies against the flow they carry,
-        which is an exact codelength, an exact negative log-likelihood, and a function
-        of the flow model. 'entropy' is the non-redundant map equation L*, the sum of
-        the same codebooks' own entropies, which the unmatched codebooks make a bound
-        the walk does not reach. Ignored without --non-redundant.
+        code costs on the walk, the generative map equation: the sum of its codebooks'
+        cross-entropies against the flow they carry, which is an exact codelength, an
+        exact negative log-likelihood, and a function of the flow model. Runs on the
+        non-recursive columnar engine (implies --columnar). Supports undirected and
+        directed flow, recorded teleportation, and the composable objectives (metadata,
+        memory/state, multilayer, entropy bias, preferred number of modules), since the
+        non-redundant code restricts which walk steps are possible, independently of
+        which codebook a step is coded in. Cannot be combined with the lossy
+        (rate-distortion) objective, whose noise credit is derived against the standard
+        map equation.
     non_redundant_exact : bool, optional
         Reserved, currently inert: with --non-redundant, drive the leaf move loop with
         the exact O(m) leave-one-out exit sweep instead of the O(1) adaptive
-        power-series delta. The leaf move loop is not non-redundant-aware under either
-        score (it optimizes the base map equation, and the selected non-redundant score
-        drives the structural search), so neither variant exists and this option does
-        not change the result.
+        power-series delta. The leaf move loop is not non-redundant-aware (it optimizes
+        the base map equation, and the generative map equation drives the structural
+        search), so neither variant exists and this option does not change the result.
     seed : int, optional
         Set the random number generator seed for reproducible results. Valid range: >=
         1.
@@ -1004,7 +992,6 @@ class Options(metaclass=_OptionsMeta):
     multilayer_relax_by_jsd: bool = False
     multilayer_relax_to_self: bool = False
     non_redundant: bool = False
-    non_redundant_score: NonRedundantScore | None = None
     non_redundant_exact: bool = False
     # accuracy
     seed: int = 123

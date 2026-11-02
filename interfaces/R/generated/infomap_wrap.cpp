@@ -8581,141 +8581,6 @@ R_swig_Config_nonRedundant_get ( SEXP self, SEXP s_swig_copy)
 
 
 SWIGEXPORT SEXP
-R_swig_Config_nonRedundantScore_set ( SEXP self, SEXP s_nonRedundantScore)
-{
-  {
-    infomap::Config *arg1 = 0 ;
-    std::string *arg2 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int res2 = SWIG_OLDOBJ ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_nonRedundantScore_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
-    }
-    arg1 = reinterpret_cast< infomap::Config * >(argp1);
-    {
-      std::string *ptr = (std::string *)0;
-      res2 = SWIG_AsPtr_std_string(s_nonRedundantScore, &ptr);
-      if (!SWIG_IsOK(res2)) {
-        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Config_nonRedundantScore_set" "', argument " "2"" of type '" "std::string const &""'"); 
-      }
-      if (!ptr) {
-        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "Config_nonRedundantScore_set" "', argument " "2"" of type '" "std::string const &""'"); 
-      }
-      arg2 = ptr;
-    }
-    if (arg1) (arg1)->nonRedundantScore = *arg2;
-    r_ans = R_NilValue;
-    if (SWIG_IsNewObj(res2)) delete arg2;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-    if (SWIG_IsNewObj(res2)) delete arg2;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_Config_nonRedundantScore_get ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    std::string *result = 0 ;
-    infomap::Config *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_nonRedundantScore_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
-    }
-    arg1 = reinterpret_cast< infomap::Config * >(argp1);
-    result = (std::string *) & ((arg1)->nonRedundantScore);
-    r_ans = SWIG_From_std_string(static_cast< std::string >(*result));
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_Config_nonRedundantEntropyScore_set ( SEXP self, SEXP s_nonRedundantEntropyScore)
-{
-  {
-    infomap::Config *arg1 = 0 ;
-    bool arg2 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_nonRedundantEntropyScore_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
-    }
-    arg1 = reinterpret_cast< infomap::Config * >(argp1);
-    arg2 = LOGICAL(s_nonRedundantEntropyScore)[0] ? true : false;
-    if (arg1) (arg1)->nonRedundantEntropyScore = arg2;
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_Config_nonRedundantEntropyScore_get ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    bool result;
-    infomap::Config *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_nonRedundantEntropyScore_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
-    }
-    arg1 = reinterpret_cast< infomap::Config * >(argp1);
-    result = (bool) ((arg1)->nonRedundantEntropyScore);
-    r_ans = Rf_ScalarLogical(result);
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
 R_swig_Config_nonRedundantExact_set ( SEXP self, SEXP s_nonRedundantExact)
 {
   {
@@ -51390,10 +51255,10 @@ extern "C" {
 #endif
 
 SWIGINTERN R_CallMethodDef CallEntries[] = {
-   {"R_swig_flowModelToString", (DL_FUNC) &R_swig_flowModelToString, 1},
    {"R_swig_new_InfomapIteratorPhysical__SWIG_0", (DL_FUNC) &R_swig_new_InfomapIteratorPhysical__SWIG_0, 0},
-   {"R_swig_FlowData_exitFlow_set", (DL_FUNC) &R_swig_FlowData_exitFlow_set, 2},
+   {"R_swig_flowModelToString", (DL_FUNC) &R_swig_flowModelToString, 1},
    {"R_swig_new_InfomapIteratorPhysical__SWIG_1", (DL_FUNC) &R_swig_new_InfomapIteratorPhysical__SWIG_1, 2},
+   {"R_swig_FlowData_exitFlow_set", (DL_FUNC) &R_swig_FlowData_exitFlow_set, 2},
    {"R_swig_map_uint_vector_uint_count", (DL_FUNC) &R_swig_map_uint_vector_uint_count, 3},
    {"R_swig_new_InfomapIteratorPhysical__SWIG_2", (DL_FUNC) &R_swig_new_InfomapIteratorPhysical__SWIG_2, 1},
    {"R_swig_StateNetwork_writeStateNetwork", (DL_FUNC) &R_swig_StateNetwork_writeStateNetwork, 2},
@@ -51500,7 +51365,6 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapLeafModuleIterator_copy", (DL_FUNC) &R_swig_InfomapLeafModuleIterator_copy, 2},
    {"R_swig_InfomapIterator__next_get", (DL_FUNC) &R_swig_InfomapIterator__next_get, 1},
    {"R_swig_InfomapBase_end", (DL_FUNC) &R_swig_InfomapBase_end, 2},
-   {"R_swig_Config_nonRedundantScore_get", (DL_FUNC) &R_swig_Config_nonRedundantScore_get, 2},
    {"R_swig_InfoNode_end_outEdge", (DL_FUNC) &R_swig_InfoNode_end_outEdge, 2},
    {"R_swig_InfoNode_addChild", (DL_FUNC) &R_swig_InfoNode_addChild, 2},
    {"R_swig_DeltaFlow_deltaEnter_set", (DL_FUNC) &R_swig_DeltaFlow_deltaEnter_set, 2},
@@ -51758,7 +51622,6 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapParentIterator_releaseChildren", (DL_FUNC) &R_swig_InfomapParentIterator_releaseChildren, 1},
    {"R_swig_InfomapIterator_stateId_get", (DL_FUNC) &R_swig_InfomapIterator_stateId_get, 2},
    {"R_swig_InfoNode_sortChildrenOnFlow__SWIG_0", (DL_FUNC) &R_swig_InfoNode_sortChildrenOnFlow__SWIG_0, 2},
-   {"R_swig_Config_nonRedundantEntropyScore_set", (DL_FUNC) &R_swig_Config_nonRedundantEntropyScore_set, 2},
    {"R_swig_InfomapBase_iterLeafNodes__SWIG_0", (DL_FUNC) &R_swig_InfomapBase_iterLeafNodes__SWIG_0, 3},
    {"R_swig_PartitionQueue_leafCodelength_set", (DL_FUNC) &R_swig_PartitionQueue_leafCodelength_set, 2},
    {"R_swig_InfoNode_sortChildrenOnFlow__SWIG_1", (DL_FUNC) &R_swig_InfoNode_sortChildrenOnFlow__SWIG_1, 1},
@@ -51994,7 +51857,6 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_DeltaFlow_count_get", (DL_FUNC) &R_swig_DeltaFlow_count_get, 2},
    {"R_swig_InfomapIterator__next_set", (DL_FUNC) &R_swig_InfomapIterator__next_set, 2},
    {"R_swig_DeltaFlow_PlusEqual", (DL_FUNC) &R_swig_DeltaFlow_PlusEqual, 3},
-   {"R_swig_Config_nonRedundantScore_set", (DL_FUNC) &R_swig_Config_nonRedundantScore_set, 2},
    {"R_swig_InfomapLeafModuleIterator_init", (DL_FUNC) &R_swig_InfomapLeafModuleIterator_init, 1},
    {"R_swig_map_uint_uint_swap", (DL_FUNC) &R_swig_map_uint_uint_swap, 2},
    {"R_swig_Config_multilayerInput_set", (DL_FUNC) &R_swig_Config_multilayerInput_set, 2},
@@ -52440,7 +52302,6 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Config_isUndirectedFlow", (DL_FUNC) &R_swig_Config_isUndirectedFlow, 2},
    {"R_swig_deque_uint_get_allocator", (DL_FUNC) &R_swig_deque_uint_get_allocator, 2},
    {"R_swig_InfomapParentIterator_isLast", (DL_FUNC) &R_swig_InfomapParentIterator_isLast, 2},
-   {"R_swig_Config_nonRedundantEntropyScore_get", (DL_FUNC) &R_swig_Config_nonRedundantEntropyScore_get, 2},
    {"R_swig_PartitionQueue_leafCodelength_get", (DL_FUNC) &R_swig_PartitionQueue_leafCodelength_get, 2},
    {"R_swig_InfoNode_outDegree", (DL_FUNC) &R_swig_InfoNode_outDegree, 2},
    {"R_swig_Config_maxFlowIterations_get", (DL_FUNC) &R_swig_Config_maxFlowIterations_get, 2},

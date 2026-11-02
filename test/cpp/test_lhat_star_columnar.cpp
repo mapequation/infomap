@@ -4,13 +4,14 @@
 
 #include <cmath>
 #include <cstdio>
+#include <map>
 #include <string>
 #include <vector>
 
-// The generative map equation Lhat* on the columnar (non-recursive) engine: what the
-// non-redundant code COSTS on the walk, where L* (test_non_redundant_columnar.cpp)
-// sums the same codebooks' entropies. It is the default score of --non-redundant;
-// --non-redundant-score entropy selects L*.
+// The generative map equation Lhat* on the columnar (non-recursive) engine, which is
+// what --non-redundant computes: the ARITHMETIC and its goldens. The structural
+// contracts of the flag -- parsing, composition, ragged and state trees -- are in
+// test_non_redundant_columnar.cpp.
 //
 // Closed form, with Z_a = p_a + q_a and, for a tree node v, E_v = sum_{c in ch(v)} q_c
 // and D_v = q_v + E_v (q_root = 0 for a closed network):
@@ -53,17 +54,15 @@ double scoreFixedPartition(const std::string& network, const std::string& cluste
 
 } // namespace
 
-TEST_CASE("Lhat*/columnar: --non-redundant scores the code by its codelength unless asked otherwise [fast][core][non-redundant]")
+TEST_CASE("Lhat*/columnar: --non-redundant selects this objective and offers no other [fast][core][non-redundant]")
 {
   const auto def = lhatConfig("--non-redundant");
   CHECK(def.nonRedundant);
   CHECK(def.columnarSearch);
-  CHECK(def.nonRedundantScore == "codelength");
-  CHECK_FALSE(def.nonRedundantEntropyScore);
 
-  // The option is read only with --non-redundant, but a misspelling is still a message
-  // rather than a silent fall-through to the default.
-  CHECK_THROWS_AS(lhatConfig("--non-redundant-score lstar"), std::runtime_error);
+  // There is no score selector: --non-redundant means this objective and nothing else.
+  // Pinned so that reintroducing one is a deliberate act rather than a silent widening.
+  CHECK_THROWS(lhatConfig("--non-redundant --non-redundant-score entropy"));
 }
 
 TEST_CASE("Lhat*/columnar: two-level Lhat* on a fixed partition, undirected [fast][core][non-redundant]")
@@ -71,14 +70,10 @@ TEST_CASE("Lhat*/columnar: two-level Lhat* on a fixed partition, undirected [fas
   const double Lhat = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--non-redundant --two-level");
   CHECK(Lhat == doctest::Approx(1.999192930915).epsilon(1e-9));
 
-  // The same code priced the other way, and the standard map equation, on the same
-  // partition: three different numbers, so a golden cannot pass by the dispatch
-  // falling through to a neighbouring objective.
-  const double Lstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--non-redundant --non-redundant-score entropy --two-level");
+  // The standard map equation on the same partition is a different number, so a golden
+  // cannot pass by the dispatch falling through to the neighbouring objective.
   const double L = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--columnar --two-level");
-  CHECK(Lstar == doctest::Approx(1.983611049901).epsilon(1e-9));
   CHECK(L == doctest::Approx(2.114170945008).epsilon(1e-9));
-  CHECK(Lstar < Lhat); // the entropy of an unmatched code is below what it costs
   CHECK(Lhat < L);
 }
 
@@ -103,19 +98,28 @@ TEST_CASE("Lhat*/columnar: one module is exactly the node entropy, under every f
         == doctest::Approx(2.470950594455).epsilon(1e-9));
 }
 
-TEST_CASE("Lhat*/columnar: directed Lhat* is a real third number, not a fallback [fast][core][non-redundant]")
+TEST_CASE("Lhat*/columnar: a directed golden, from a flow this test knows by symmetry [fast][core][non-redundant]")
 {
-  // The enter and exit rates of a module differ under PageRank-directed flow, and the
-  // closed form carries them separately (q^en in the node-naming terms, q^ex in the
-  // exit terms). Nothing here pins the arithmetic -- the one-module case above does
-  // that exactly -- but a dispatch that fell through to L* or to L would be caught.
-  const double Lhat = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--non-redundant --two-level --directed");
-  const double Lstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--non-redundant --non-redundant-score entropy --two-level --directed");
-  const double L = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--columnar --two-level --directed");
-  CHECK(std::isfinite(Lhat));
-  CHECK(Lhat > 0.0);
-  CHECK(Lhat != doctest::Approx(Lstar).epsilon(1e-9));
-  CHECK(Lhat != doctest::Approx(L).epsilon(1e-9));
+  // A directed 6-cycle split in half. Every node has one in- and one out-arc, so the
+  // PageRank is uniform and every arc carries 1/6 of the flow whatever the teleportation
+  // does -- which is what makes an INDEPENDENT directed golden possible here, where
+  // reproducing Infomap's directed flow model in Python otherwise would be the test.
+  //
+  // p_i = 1/6, p_a = 1/2, q^en_a = q^ex_a = 1/6, Q = 1/3, so
+  //   Lhat* = lg 6 + 2*[ (1/2) lg(1/2 + 1/6) - (1/6) lg(1/6) + (1/6) lg(1/2) ]
+  //              + 2*[ (1/6) lg(1/3 - 1/6) - (1/6) lg(1/6) ]
+  //         = 2.528320833574
+  // This exercises the enter/exit-split terms on the directed path; the one-module case
+  // below pins the degenerate end of the same path exactly.
+  InfomapWrapper im(defaultFlags("--non-redundant --two-level --directed --no-infomap"));
+  for (unsigned int i = 1; i <= 6; ++i)
+    im.addLink(i, i % 6 + 1, 1.0);
+  std::map<unsigned int, unsigned int> partition;
+  for (unsigned int i = 1; i <= 6; ++i)
+    partition[i] = i <= 3 ? 1 : 2;
+  im.setInitialPartition(partition);
+  im.run();
+  CHECK(im.codelength() == doctest::Approx(2.528320833574).epsilon(1e-9));
 }
 
 TEST_CASE("Lhat*/columnar: hierarchical Lhat* on a multilevel fixed partition [fast][core][non-redundant]")
@@ -204,7 +208,7 @@ TEST_CASE("Lhat*/columnar: the closed-form node terms are the arithmetic the sco
 
   // Lhat* consumes F at the uniform rate 1 and nothing else reads it, so the leaf term
   // is affine in F with slope -1 exactly. That is what lets MemCorrection substitute
-  // the physical-node F unweighted (ColumnarStackView::leafCodebookRates returns empty).
+  // the physical-node F unweighted: MemCorrection needs no per-module rate at all.
   const double a = lhatLeafModule(0.4, 0.1, 0.12, -0.9);
   const double b = lhatLeafModule(0.4, 0.1, 0.12, -0.4);
   CHECK(a - b == doctest::Approx(0.5).epsilon(1e-15));

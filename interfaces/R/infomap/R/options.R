@@ -72,7 +72,6 @@ ALGORITHM_OPTIONS <- list(
   list(type = "flag", name = "multilayer_relax_by_jsd", flag = "--multilayer-relax-by-jsd", default = FALSE),
   list(type = "flag", name = "multilayer_relax_to_self", flag = "--multilayer-relax-to-self", default = FALSE),
   list(type = "flag", name = "non_redundant", flag = "--non-redundant", default = FALSE),
-  list(type = "value", name = "non_redundant_score", flag = "--non-redundant-score", default = NULL, include = .skip_when_null),
   list(type = "flag", name = "non_redundant_exact", flag = "--non-redundant-exact", default = FALSE)
 )
 
@@ -115,12 +114,12 @@ OPTION_FIELD_NAMES <- c(
   "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules", "preferred_number_of_levels",
   "preferred_number_of_levels_strength", "multilayer_relax_rate", "multilayer_relax_limit", "multilayer_relax_limit_up",
   "multilayer_relax_limit_down", "multilayer_relax_by_jsd", "multilayer_relax_to_self", "non_redundant",
-  "non_redundant_score", "non_redundant_exact", "seed", "num_trials",
-  "core_loop_limit", "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold",
-  "tune_iteration_relative_threshold", "fast_hierarchical_solution", "hier_from_blocks", "columnar_check",
-  "columnar_two_level", "columnar", "inner_parallelization", "parallel_trials",
-  "converge", "num_threads", "threads", "prefer_modular_solution",
-  "num_random_moves", "max_degree_for_random_moves"
+  "non_redundant_exact", "seed", "num_trials", "core_loop_limit",
+  "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold",
+  "fast_hierarchical_solution", "hier_from_blocks", "columnar_check", "columnar_two_level",
+  "columnar", "inner_parallelization", "parallel_trials", "converge",
+  "num_threads", "threads", "prefer_modular_solution", "num_random_moves",
+  "max_degree_for_random_moves"
 )
 
 OPTION_DEFAULTS <- list(
@@ -188,7 +187,6 @@ OPTION_DEFAULTS <- list(
   multilayer_relax_by_jsd = FALSE,
   multilayer_relax_to_self = FALSE,
   non_redundant = FALSE,
-  non_redundant_score = NULL,
   non_redundant_exact = FALSE,
   seed = 123L,
   num_trials = 1L,
@@ -308,9 +306,8 @@ REMOVED_OPTIONS <- list(
 #'   \item{`multilayer_relax_limit_down`}{Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.}
 #'   \item{`multilayer_relax_by_jsd`}{Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon divergence.}
 #'   \item{`multilayer_relax_to_self`}{On relaxation, link a state node to its own physical node in the target layer instead of spreading to its out-neighbors. Builds a smaller state network with the same flow as the default.}
-#'   \item{`non_redundant`}{Use the non-redundant code: a module's exit codebook excludes the module just left (no impossible immediate re-entry) and the first visit after entering uses a separate enter codebook (no impossible immediate exit). Scored by what that code costs on the walk, the generative map equation; --non-redundant-score entropy selects the codebook-entropy sum L* instead. Runs on the non-recursive columnar engine (implies --columnar). Supports undirected and directed flow, recorded teleportation, and the composable objectives (metadata, memory/state, multilayer, entropy bias, preferred number of modules), since the non-redundant code restricts which walk steps are possible, independently of which codebook a step is coded in. Cannot be combined with the lossy (rate-distortion) objective, whose noise credit is derived against the standard map equation.}
-#'   \item{`non_redundant_score`}{With --non-redundant, which score prices the non-redundant code. 'codelength' (default) is the generative map equation, what that code actually costs on the walk: the sum of its codebooks' cross-entropies against the flow they carry, which is an exact codelength, an exact negative log-likelihood, and a function of the flow model. 'entropy' is the non-redundant map equation L*, the sum of the same codebooks' own entropies, which the unmatched codebooks make a bound the walk does not reach. Ignored without --non-redundant.}
-#'   \item{`non_redundant_exact`}{Reserved, currently inert: with --non-redundant, drive the leaf move loop with the exact O(m) leave-one-out exit sweep instead of the O(1) adaptive power-series delta. The leaf move loop is not non-redundant-aware under either score (it optimizes the base map equation, and the selected non-redundant score drives the structural search), so neither variant exists and this option does not change the result.}
+#'   \item{`non_redundant`}{Use the non-redundant code: a module's exit codebook excludes the module just left (no impossible immediate re-entry) and the first visit after entering uses a separate enter codebook (no impossible immediate exit). Scored by what that code costs on the walk, the generative map equation: the sum of its codebooks' cross-entropies against the flow they carry, which is an exact codelength, an exact negative log-likelihood, and a function of the flow model. Runs on the non-recursive columnar engine (implies --columnar). Supports undirected and directed flow, recorded teleportation, and the composable objectives (metadata, memory/state, multilayer, entropy bias, preferred number of modules), since the non-redundant code restricts which walk steps are possible, independently of which codebook a step is coded in. Cannot be combined with the lossy (rate-distortion) objective, whose noise credit is derived against the standard map equation.}
+#'   \item{`non_redundant_exact`}{Reserved, currently inert: with --non-redundant, drive the leaf move loop with the exact O(m) leave-one-out exit sweep instead of the O(1) adaptive power-series delta. The leaf move loop is not non-redundant-aware (it optimizes the base map equation, and the generative map equation drives the structural search), so neither variant exists and this option does not change the result.}
 #' }
 #'
 #' Accuracy

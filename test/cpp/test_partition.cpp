@@ -398,9 +398,9 @@ TEST_CASE("Columnar dissolve turns the symmetric nine-triangles optimum ragged [
 TEST_CASE("Columnar dissolve is never worse than the equal-depth stack it starts from [fast][core][partition][columnar][columnar-contract]")
 {
   // The pass proposes a ragged tree scored on the base map equation, but commits it
-  // only if it lowers the codelength on the TRUE objective. Under the non-redundant
-  // code the proposal is not a gain on either of its scores, so the run must fall back
-  // to the equal-depth stack unchanged.
+  // only if it lowers the codelength on the TRUE objective. Under --non-redundant the
+  // proposal is not a gain, so the run must fall back to the equal-depth stack
+  // unchanged.
   if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
     return;
   const auto codelength = [](const std::string& flags) {
@@ -412,13 +412,11 @@ TEST_CASE("Columnar dissolve is never worse than the equal-depth stack it starts
   };
   // Base: dissolve helps (a strict improvement over the equal-depth 3.38583082).
   CHECK(codelength("") < 3.38583082 - 1e-6);
-  // The non-redundant code, under both of its scores: never worse — the base-estimated
-  // proposal is not a gain on either, so the guard reverts to the equal-depth stack's
-  // own codelength rather than committing a worse tree. Both goldens are the
-  // equal-depth stack's value, computed independently in Python from the closed forms
-  // (output/primer/rungs_models.py and output/theory_dcsbm/ce/ce_core.py).
+  // --non-redundant: never worse — the base-estimated proposal is not a gain there, so
+  // the guard reverts to the equal-depth stack's own codelength rather than committing a
+  // worse tree. The golden is that stack's value, computed independently in Python from
+  // the closed form (output/primer/rungs_models.py).
   CHECK(codelength("--non-redundant") == doctest::Approx(3.077553137896).epsilon(1e-7));
-  CHECK(codelength("--non-redundant --non-redundant-score entropy") == doctest::Approx(3.078067323).epsilon(1e-7));
 }
 
 TEST_CASE("Columnar dissolve reports the codelength a re-score of its own tree gives [fast][core][partition][columnar][columnar-contract]")

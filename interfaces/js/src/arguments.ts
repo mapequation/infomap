@@ -83,9 +83,6 @@ export type Arguments = Partial<{
   multilayerRelaxByJsd: boolean;
   multilayerRelaxToSelf: boolean;
   nonRedundant: boolean;
-  nonRedundantScore:
-    | "codelength"
-    | "entropy";
   nonRedundantExact: boolean;
   // accuracy
   seed: number;
@@ -295,11 +292,6 @@ export default function argumentsToString(args: Arguments) {
   if (args.multilayerRelaxToSelf) result += " --multilayer-relax-to-self";
 
   if (args.nonRedundant) result += " --non-redundant";
-
-  if (args.nonRedundantScore != null)
-    result +=
-      " --non-redundant-score " +
-      requireNoWhitespace("nonRedundantScore", args.nonRedundantScore);
 
   if (args.nonRedundantExact) result += " --non-redundant-exact";
 

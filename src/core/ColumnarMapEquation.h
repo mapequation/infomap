@@ -63,16 +63,23 @@ namespace columnar {
 } // namespace columnar
 
 /**
- * What a correction reads when it prices a stack: the stack's shape, and the
- * rate at which the active base objective charges each leaf module's leaf
- * codewords. A correction prices whatever stack it is shown -- the search's own
- * or a candidate it never installs -- so it reads neither the optimizer nor its
- * live stack.
+ * What a correction reads when it prices a stack: the stack's shape. A correction
+ * prices whatever stack it is shown -- the search's own or a candidate it never
+ * installs -- so it reads neither the optimizer nor its live stack.
+ *
+ * It used to carry the active objective as well, because a correction that
+ * SUBSTITUTES one quantity for another inside a base codebook term inherits that
+ * term's coefficient, and L* charged the leaf plogp sum F_m at a per-module rate
+ * >= 1 instead of at 1 (#1009). Both surviving objectives charge it at exactly 1 --
+ * the base map equation because its T-normalized module term collapses to
+ * plogp(T) - plogp(qExit) - F_m, Lhat* because its only F-carrying term is the
+ * partition-independent H(p) = -sum_m F_m -- so there is no rate left to ask for.
+ * A future base objective that does not charge F_m at 1 has to put it back.
  */
 class ColumnarStackView {
 public:
-  ColumnarStackView(const ColumnarStack& stack, bool nonRedundant, bool entropyScore, double exitNetworkFlow)
-      : m_stack(stack), m_nonRedundant(nonRedundant), m_nrEntropyScore(entropyScore), m_exitNetworkFlow(exitNetworkFlow) {}
+  explicit ColumnarStackView(const ColumnarStack& stack)
+      : m_stack(stack) {}
 
   const ColumnarStack& stack() const { return m_stack; }
   // Number of tree levels in the stack (0 = leaves).
@@ -85,27 +92,8 @@ public:
   // The level-(k+1) parent of unit `unit` at stack level k (0 = leaves).
   int hierUnitParent(int level, int unit) const { return m_stack.parent(level, unit); }
 
-  // Per level-1 module: the rate at which the ACTIVE base objective's leaf-module
-  // term consumes that module's F_m = sum_{leaf in m} plogp(leafFlow).
-  //
-  // Only corrections that SUBSTITUTE one F for another need this — today just
-  // MemCorrection, which replaces the state-node F by the physical-node F. An
-  // additive correction carrying its own rate (Meta, Bias, Preferred) composes
-  // with either objective unweighted and must not call this.
-  //
-  // Returns EMPTY when the rate is uniformly 1, which is the base map equation's
-  // whole leaf-module level — and Lhat*'s too, whose only F-carrying term is the
-  // partition-independent H(p) — so the caller can skip the per-module rates (and
-  // the per-module state sums they weight). Non-empty only under the entropy score
-  // L*, where the rate is nrLeafCodebookRate(flow, enter, exit) >= 1 and differs per
-  // module.
-  std::vector<double> leafCodebookRates() const;
-
 private:
   const ColumnarStack& m_stack;
-  bool m_nonRedundant;
-  bool m_nrEntropyScore;
-  double m_exitNetworkFlow;
 };
 
 /**
@@ -774,33 +762,30 @@ private:
  *
  * This is a SUBSTITUTION, not an additive term, and that distinction is the whole
  * subtlety. Both base objectives read the leaf flows of a level-1 module only
- * through F_m = sum_{leaf in m} plogp(leafFlow), linearly; the physical codebook
- * is the same objective with F_m^state replaced by F_m^phys = sum_phys
- * plogp(physFlow). So the correction is  sum_m rate_m * (F_m^state - F_m^phys),
- * where rate_m is the rate at which the ACTIVE objective consumes F_m — and the
- * two objectives do not agree on it:
+ * through F_m = sum_{leaf in m} plogp(leafFlow), linearly; the physical codebook is
+ * the same objective with F_m^state replaced by F_m^phys = sum_phys plogp(physFlow).
+ * So the correction is  sum_m rate_m * (F_m^state - F_m^phys), where rate_m is the
+ * rate at which the ACTIVE objective consumes F_m — and both of them charge it at
+ * exactly 1:
  *
  *  - Base map equation: the T-normalized module term collapses to
  *    plogp(T) - plogp(qExit) - F_m (the module-flow*log(T) parts cancel between
- *    the state and physical versions), so rate_m == 1 for every module and the
- *    whole correction telescopes into two global sums,
- *    C_state - sum_{module,phys} plogp(physFlow), with C_state = sum_leaf
- *    plogp(stateFlow) a constant.
- *  - L* (--non-redundant): the module codebook is SPLIT into an enter codebook
- *    normalized by moduleFlow and a within codebook normalized by
- *    T = moduleFlow + qExit, and F_m is charged against both. rate_m is then
- *    nrLeafCodebookRate() = 1 + qEnter*qExit/(flow*(flow+qExit)) >= 1, varying per
- *    module, and the flat coefficient-1 correction under-subtracts a non-positive
- *    quantity (plogp is superadditive under splitting, so F^state <= F^phys) —
- *    i.e. it reports L* too HIGH, which broke invariance under exactly lumpable
- *    state duplication (#1009).
+ *    the state and physical versions).
+ *  - Lhat* (--non-redundant): F_m appears only inside the partition-independent
+ *    H(p) = -sum_m F_m, with coefficient -1.
  *
- * hierarchicalCorrection therefore asks the core for leafCodebookRates(): empty
- * under the base objective, where it returns the two global sums, and per-module
- * under L*. Leaf-module level only (module-of-modules delegates to
- * base; neither objective reads leaf flows above level 1). Same O(1) move-loop
- * hook as Meta with attribute = physical node id — the case the hook is designed
- * for; those deltas stay base-flavoured on purpose (see --non-redundant-exact).
+ * So the whole correction telescopes into two global sums, C_state -
+ * sum_{module,phys} plogp(physFlow), with C_state = sum_leaf plogp(stateFlow) a
+ * constant, and hierarchicalCorrection needs no per-module rate. L* did not charge
+ * F_m at 1 -- it split the module codebook into an enter book normalized by
+ * moduleFlow and a within book normalized by T = moduleFlow + qExit and charged F_m
+ * against both, giving a per-module rate >= 1 -- and applying the flat correction
+ * under it is what broke invariance under exactly lumpable state duplication
+ * (#1009). The invariance is still the regression guard, under both surviving
+ * objectives. Leaf-module level only (module-of-modules delegates to base; neither
+ * objective reads leaf flows above level 1). Same O(1) move-loop hook as Meta with
+ * attribute = physical node id — the case the hook is designed for; those deltas
+ * stay base-flavoured on purpose (see --non-redundant-exact).
  */
 class MemCorrection final : public ColumnarCorrection {
 public:
@@ -876,15 +861,15 @@ private:
  * inputs); only the columnarPartition wiring is behind
  * INFOMAP_FEATURE_LOSSY_MAP_EQUATION.
  *
- * It does NOT compose with the non-redundant map equation L*, and --lossy
- * --non-redundant is rejected in Config (#1011). "l_m at coefficient 1" is the
- * base objective's rate for the naming cost sum_leaf plogp(f); L* charges it at
- * nrLeafCodebookRate >= 1, so the credit is short by (rate_m - 1) * l_m and the
- * gate compares the wrong quantity. Unlike MemCorrection (#1010), which only
- * needed the rate on the accounting, the multiplier here belongs inside the
- * max(0, .) — it moves the gate too. See F38 in
- * columnar_wip/columnar-rethink-notes.md for the derived form and for what is
- * still missing (the reporting layer, not the objective).
+ * --lossy --non-redundant stays rejected in Config (#1011), for a reason that has
+ * changed. Against L* the arithmetic was wrong: "l_m at coefficient 1" is the base
+ * objective's rate for the naming cost sum_leaf plogp(f), L* charged it at a rate
+ * >= 1, and the multiplier belonged inside the max(0, .) — it moved the gate, not
+ * just the accounting (F38). Lhat* charges that cost at exactly 1, so that specific
+ * obstacle is gone. What is not established is the rest: the rate-distortion
+ * trade-off is derived against the standard map equation's codebook structure, and
+ * noiseTopModules()/getLossyRate()/getLossyDistortion() are base-flavoured. Lifting
+ * the rejection is a decision backed by that work, not a consequence of this one.
  */
 class LossyCorrection final : public ColumnarCorrection {
 public:
