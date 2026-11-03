@@ -211,23 +211,20 @@ namespace {
       throw std::runtime_error("--lossy does not support recorded teleportation or regularization");
     if (config.variableMarkovTime || config.markovTime != 1.0)
       throw std::runtime_error("--lossy does not support Markov time scaling");
-    // The rate-distortion trade-off is derived against the base map equation and is
-    // not objective-independent: the noise credit hands back the module's naming cost
-    // sum_leaf plogp(f) at coefficient +1, which is exactly what scoreStackBase
-    // charged, but L* charges it at nrLeafCodebookRate >= 1. Under --non-redundant the
-    // reported J is therefore too high by sum_m (rate_m - 1) * l_m on credited modules,
-    // and the gate fires on the wrong comparison (l_m > lambda*H_m instead of
-    // rate_m*l_m > lambda*H_m), so modules that are genuinely cheaper as noise under L*
-    // are never credited. Measured on test/fixtures/networks/lossy_benchmark.net with
+    // The rate-distortion trade-off is derived against the base map equation, and the
+    // reason to reject the combination has changed with F83. Against L* it was an
+    // arithmetic error: the noise credit hands back the module's naming cost
+    // sum_leaf plogp(f) at coefficient +1, L* charged it at a per-module rate >= 1, and
+    // the multiplier belonged INSIDE the max(0, .), so the gate fired on the wrong
+    // comparison (measured on test/fixtures/networks/lossy_benchmark.net with
     // test/fixtures/clusters/lossy_benchmark.clu at lambda 1: reported 2.35214, correct
-    // 2.33832. See F38 in columnar_wip/columnar-rethink-notes.md and #1011.
+    // 2.33832; F38 and #1011).
     //
-    // The L* form is derived (correction_m = -max(0, rate_m*l_m - lambda*H_m), verified
-    // numerically), but shipping it needs a reporting layer that does not exist yet:
-    // noiseTopModules() and getLossyRate()/getLossyDistortion() are base-flavoured and
-    // have no access to L* boundary rates, so correcting only the correction prints a J
-    // below plain L* next to an empty noise set and zero distortion. Reject until both
-    // halves land rather than emit a self-contradicting header.
+    // The generative map equation charges that cost at exactly 1, so that obstacle is
+    // gone. What is not established is the rest: the trade-off's derivation assumes the
+    // standard map equation's codebook structure, and noiseTopModules() /
+    // getLossyRate() / getLossyDistortion() are base-flavoured. Lifting this rejection
+    // is a decision backed by that work, not a side effect of changing the objective.
     //
     // Both fields read here are plain parsed flag targets (ParameterCatalog:
     // configTarget(&Config::lossy) / (&Config::nonRedundant)), so both are populated
@@ -249,8 +246,9 @@ namespace {
     if (!config.nonRedundant)
       return;
 
-    // L* is implemented as a base-objective variant of the columnar engine (the
-    // non-recursive search that hosts it cleanly), so --non-redundant runs there.
+    // The non-redundant code is implemented as a base-objective variant of the columnar
+    // engine (the non-recursive search that hosts it cleanly), so --non-redundant runs
+    // there.
     config.columnarSearch = true;
 
     // No input is excluded, and every objective except --lossy composes. L*
@@ -265,20 +263,17 @@ namespace {
     // "Composes" is not the same as "is objective-independent", and conflating the
     // two is what let #1009 through. A correction that ADDS a term carrying its own
     // rate — metadata (charged per unit of node-visit flow), entropy bias (a node
-    // count), preferred module count — contributes the identical number under L and
-    // under L*. A correction that SUBSTITUTES one quantity for another inside a base
-    // codebook term — MemCorrection, which swaps the state-node
-    // sum plogp(leafFlow) for the physical-node one — inherits that term's
-    // coefficient, and L* charges it at a per-module rate >= 1 rather than at 1. Such
-    // a correction must ask the stack view which objective is active (see
-    // ColumnarStackView::leafCodebookRates); adding it blind is a bug, not a
-    // composition.
+    // count), preferred module count — contributes the identical number under either
+    // base objective. A correction that SUBSTITUTES one quantity for another inside a
+    // base codebook term — MemCorrection, which swaps the state-node
+    // sum plogp(leafFlow) for the physical-node one — inherits that term's coefficient.
+    // Both surviving objectives charge that quantity at exactly 1, so the substitution
+    // is unweighted; L* did not, which is what #1009 was. A base objective that charges
+    // it otherwise has to reintroduce the per-module rate the stack view used to carry.
     //
     // --lossy is the second kind and is rejected in applyAndValidateLossyInteraction
-    // above (#1011): its noise credit hands the naming cost back at coefficient +1,
-    // and unlike MemCorrection the rate also belongs INSIDE the max(0, .), so the
-    // fix moves the gate and not just the accounting. The multiplier is derived and
-    // numerically verified; what is missing is the reporting layer (noiseTopModules,
+    // above (#1011). Its obstacle against L* was the rate; against the generative map
+    // equation what is missing is the reporting layer (noiseTopModules,
     // getLossyRate/getLossyDistortion). See F38.
     //
     // Earlier cuts of this option rejected memory/multilayer input, meta data,

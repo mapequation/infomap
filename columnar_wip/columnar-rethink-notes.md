@@ -6507,3 +6507,170 @@ and against `403ac199` it is −24.6% in instructions and −26.8% in seconds (m
 
 Lesson: a pass that runs after the trials needs the final codelength. The per-trial values answer per-trial
 questions only.
+
+### F83
+
+**The non-redundant code has two scores, and the engine computed the one that is not a codelength.**
+`--non-redundant` reported `L*`, the sum of the non-redundant codebooks' *entropies*. The code is proper
+but **unmatched** — a codebook's model weights are not the frequencies the walk puts through it — so its
+entropy is not its price. What that code actually costs is the sum of the same codebooks'
+*cross*-entropies against the flow they carry, `L̂*`. That is at once an exact codelength, an exact
+negative log-likelihood with no partition-dependent normaliser, and a function of the flow model, which
+`L*` is none of. So `--non-redundant` now reports `L̂*`, and `L*` is gone from the engine.
+
+The closed form, derived and verified outside this repository (`output/primer/rungs_models.py`,
+`output/theory_dcsbm/ce/ce_core.py` in the research project; residual 8.9e-16 against the explicit
+hierarchical kernel), with `Z_a = p_a + q_a`, `E_v = sum_{c in ch(v)} q_c` and `D_v = q_v + E_v`:
+
+```
+L̂* = H(p)
+   + sum_{leaf modules a} [ p_a lg Z_a + q_a lg(p_a / q_a) ]
+   + sum_{internal v}     [ sum_{c in ch(v)} q_c lg((D_v - q_c)/q_c) + q_v lg(E_v / q_v) ]
+```
+
+The engine needs the enter/exit split (`q^en != q^ex` under recorded teleportation), which the derivation
+above does not carry. Doing the same accounting with the two rates separate:
+
+```
+leaf a:     p_a lg Z_a - q^ex_a lg q^ex_a + q^en_a lg p_a            (Z_a = p_a + q^ex_a)
+internal v: sum_c [ q^ex_c lg(D_v - q^en_c) - q^en_c lg q^en_c ] - q^ex_v lg q^ex_v + q^en_v lg E_v
+            with E_v = sum_c q^en_c, D_v = q^ex_v + E_v
+```
+
+which reduces term for term to the single-rate form when `q^en == q^ex`. That is what
+`scoreStackLhat` implements.
+
+**Three properties that made the implementation small**, each pinned by a test:
+
+1. **Only module-level statistics survive.** Every pairwise crossing rate cancels at every internal node,
+   because all flow leaving a child either reaches a sibling or leaves the parent, and both are coded
+   from the same leave-one-out index book. A node's term therefore reads only its own enter/exit rates
+   and its children's — no `O(n)` term anywhere above the leaves.
+2. **`H(p)` is the only term that touches leaf flow, and it is partition-independent**
+   (`-sum_i plogp(p_i) = -sum_m F_m`). So `L̂*` consumes `F` at the uniform rate 1, exactly as the base
+   map equation does, and `ColumnarStackView::leafCodebookRates()` returns empty for it. `MemCorrection`
+   substitutes the physical-node `F` unweighted — the whole of #1009's hazard is absent here rather than
+   re-solved. Checked on the exactly lumpable state duplication: invariant to 1e-12 on undirected,
+   PageRank-directed and rawdir.
+3. **A pass-through (single-child) level costs exactly 0**, as under `L*`: there `D_v - q^en_c == q^ex_v`
+   and `E_v == q^en_v`, so the node's two terms cancel. `padLeafPathsToUniformDepth`'s padding is free
+   under this score too, with no special case. Measured, not only argued: the 12-node network scored
+   through two module levels and through three with a pass-through gives 2.909481872608 both ways.
+
+**Validation.** Engine against the Python closed forms, read from `-o json`, worst residual **2.7e-15**
+over: a 3-level 12-node network (2.485869478407), a ragged tree (2.697675675508), a pass-through tree,
+weighted karate at K=3 (3.950758387291, the handoff's reference value), karate singletons and karate as
+one module. On `ninetriangles -C --non-redundant -N10` the engine reports 3.077553137896 and the Python
+closed form gives 3.077553137896 for the tree it wrote.
+
+**The leaf move loop is unchanged and stays on the base map equation.** It was never `L*`-aware
+either, so there is no analogue of the known negative result to transfer: base-`L` building blocks
+with the non-redundant score driving the structural search is what both did. `--non-redundant-exact`
+is inert and has been since it was added — checked, not assumed: `m_nrExact` is written by its setter
+and read nowhere in `src/`, and `ninetriangles -C --non-redundant -N10 --seed 123` gives
+3.077553137895930, 3 top modules, 3 levels with and without the flag. Whether an `L̂*`-aware move loop
+would help is untested, and cheaper to try than it was for `L*` — property 1 above makes a single-node
+move `O(depth + |ch|)` rather than `O(n)`.
+
+**What the two objectives find differs, sometimes a lot.** `-C --non-redundant -N10 --seed 123`,
+old binary against new, **with each network's own flags from `benchmark-networks.md`**: jazz 6 top
+modules → 9; word_assoc `-d` 1789 → 2; malaria 2 → 25; wikispeedia `-d` 199 → 58. Not a regression
+on either side — they are different objectives — but it is the size of the change the replacement
+makes to every `--non-redundant` run. The flags matter: `word_assoc.txt` carries its directedness as
+the comment `# directed` on line 2, which Infomap reads as a comment, so without `-d` the same two
+runs give 2820 against 2841 and the example falls apart.
+
+### F83 addendum
+
+**Decision, same day: `L*` comes out entirely, rather than staying behind a score selector.** The
+first cut of this change kept it, on the measurement argument: the 44-cluster landscape depth
+comparison that favoured nested descriptions was measured under `L*`, and re-running it as a strict
+A/B on one binary needs both. Daniel's call on reading the PR was the other way — keeping a second
+score is unnecessary complexity, "and it's not correct anyway". So `--non-redundant-score` is gone
+(option, config field, fingerprint key, bindings), and with it `scoreStackLstar`, `nrEnterWithin`,
+`nrExitTerm`, `nrLeafCodebookRate`, `ColumnarStackView::leafCodebookRates()` and `MemCorrection`'s
+rate-weighted branch.
+
+The depth comparison is still wanted, but as an `L̂*`-only measurement — what hierarchical `L̂*` finds
+on the 44 landscape clusters — not an A/B against an objective nobody intends to use again.
+
+**What the removal simplifies, and what it quietly re-opens.** `leafCodebookRates()` existed because
+a correction that SUBSTITUTES one quantity for another inside a base codebook term inherits that
+term's coefficient, and `L*` charged `F_m` at a per-module rate >= 1 instead of at 1 (#1009). Both
+surviving objectives charge it at exactly 1, so the whole mechanism goes and `MemCorrection`
+telescopes unconditionally. The exactly-lumpable-state-duplication invariance stays as the guard.
+
+The same rate was the stated reason `--lossy --non-redundant` is rejected (#1011, F38): the noise
+credit hands the naming cost back at coefficient +1, `L*` charged it at more, and the multiplier
+belonged inside the `max(0, .)` so it moved the gate. Under `L̂*` that obstacle does not exist. The
+rejection stays all the same, for what was always the other half: the rate-distortion trade-off is
+derived against the standard map equation's codebook structure, and `noiseTopModules()` /
+`getLossyRate()` / `getLossyDistortion()` are base-flavoured. Lifting it is now a decision backed by
+that work rather than a blocked one — a change of status worth recording, not a change made here.
+
+
+### F83 addendum 2
+
+**The leaf term weighted `lg Z_a` by the wrong rate, and no test could have caught it.** Found by an
+adversarial review pass, confirmed here against an explicit kernel before any code moved.
+
+`lhatLeafModule` charged `moduleFlow * lg Z_a`. The coefficient of `lg Z_a` is how often the within
+book is **opened**, which is not the module's flow: the book names a node once per arrival from
+*inside* the module and emits `exit` once per step leaving it. `moduleFlow` is the visit rate — the
+**in-flow** — so arrivals from inside are `moduleFlow - q^en`, the other `q^en` being the enter
+book's job. The weight is `(moduleFlow - q^en) + q^ex`.
+
+Decided by construction, not by algebra on either candidate: build the kernel `T` entry by entry
+from the model's definition, check its rows sum to 1, and take `-sum_ij pi_ij lg T_ij`.
+
+| case | kernel NLL | `p_a` weight | `(p_a - q^en + q^ex)` weight |
+|---|---|---|---|
+| twotriangles as arcs, rawdir | 1.404184397997 | 1.323448905791 (8.1e-02) | 1.404184397997 (**2.2e-16**) |
+| random 9-node digraph, 3 modules | 3.207706401334 | 3.223137497935 (1.5e-02) | 3.207706401334 (**0.0**) |
+| undirected control | 1.999192930915 | 1.999192930915 | 1.999192930915 |
+
+**Which flow models it moved, measured rather than reasoned** — a fixed two-module partition of
+`twotriangles_flow.net`, the pre-fix build against the fixed one:
+
+| flow model | before | after |
+|---|---|---|
+| undirected | 1.999192930915 | unchanged |
+| `-d` (PageRank, unrecorded teleport) | 1.894664603626 | **1.791821407552** |
+| `--flow-model rawdir` | 1.323448905791 | **1.404184397997** |
+| `--flow-model outdirdir` / `undirdir` | 1.323448905791 | **1.404184397997** |
+| `-d --recorded-teleportation` | 2.232277604428 | unchanged |
+
+So this was **not** confined to `rawdir`, as the first scoping of it had it: ordinary `-d` is
+affected too, and that is the common directed case.
+
+The rule is sharper than "directed", and sharper than "stationary": `q^en` and `q^ex` agree exactly
+when the enter/exit rates **account for every step the visit rate counts**. Undirected flow
+satisfies that, and recorded teleportation restores it by folding the teleport flow into enter/exit.
+Unrecorded teleportation does not — the teleport steps are in the PageRank node flow and absent from
+the link flow — so `-d`, `outdirdir` and `undirdir` all come apart, and `rawdir` never balanced.
+**Stationarity is not the condition**: the PageRank walk is perfectly stationary; what fails is the
+recording. Measured on the research side, on a six-node digraph at `alpha = 0.15`, as
+`max|q^ex - q^en|` over modules: recorded teleportation `1.11e-16`, unrecorded `1.78e-02`, rawdir
+`2.22e-01` — the mechanism, where the engine before/after above is the consequence.
+
+**The first scoping reached the source comments before it was measured.** `lhatLeafModule` and the
+new rawdir test both carried "the two rates come apart only under rawdir", and the test comment went
+further and claimed PageRank-directed runs *cannot* tell the rates apart — which the `-d` row above
+flatly contradicts. Corrected in both. Worth the line because the number was right and the sentence
+next to it was wrong, which is the harder failure to notice: nothing in the arithmetic disagreed.
+
+**Why nothing caught it.** Every absolute golden in the PR was undirected, where the two weights
+coincide identically. The one directed case asserted `isfinite`, `> 0` and `!=` the other two
+objectives, and said so in its own comment. Swapping `qEnter` and `qExit` in `lhatLeafModule` left
+every assertion passing. The gap was upstream too: `output/primer/rungs_models.py` carried one `q`
+per tree node, so the reference had no directed branch to disagree with.
+
+Now pinned three ways: four unit goldens on `lhatLeafModule` with `q^en != q^ex`, two of them
+one-sided (`q^ex = 0`, then `q^en = 0`) where a swapped argument is unmistakable; an end-to-end
+`--flow-model rawdir` golden of 1.404184397997 taken from the **explicit kernel**, so it would also
+catch a closed form that failed to cancel a pairwise crossing rate — which no golden derived from
+module-level statistics can; and the directed 6-cycle, whose uniform flow is known by symmetry.
+
+**Lesson.** "The undirected and directed paths share the same code" is not coverage. Two quantities
+that are equal under the default flow model need a fixture where they are not, or the code is free
+to confuse them.

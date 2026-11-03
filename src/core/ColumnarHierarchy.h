@@ -299,10 +299,11 @@ public:
   // nothing was seeded.
   double optimizeFromSeed(bool flat, unsigned int sweepLimit = 0);
 
-  // Use the non-redundant map equation L* as the base objective: the exit codebook
-  // of a module excludes the module just left (leave-one-out over siblings) and the
-  // first visit after entering uses a separate enter codebook. Changes the two-level
-  // move-loop objective (leaf level) and hierarchicalCodelengthFromStack (all levels).
+  // Use the generative map equation Lhat* as the base objective: the non-redundant
+  // code -- a module's exit codebook excludes the module just left and the first visit
+  // after entering uses a separate enter codebook -- priced by what it costs on the
+  // walk. Changes hierarchicalCodelengthFromStack at all levels; the leaf move loop
+  // stays on the base map equation.
   void setNonRedundant(bool on) { m_nonRedundant = on; }
   // With L*, drive the leaf move loop with the exact O(m) leave-one-out exit sweep
   // instead of the default O(1) adaptive power-series delta (validation).
@@ -557,7 +558,7 @@ private:
 
   // The view a correction prices `stack` through, under this optimizer's base
   // objective.
-  ColumnarStackView stackView(const ColumnarStack& stack) const { return { stack, m_nonRedundant, m_search.exitNetworkFlow() }; }
+  ColumnarStackView stackView(const ColumnarStack& stack) const { return ColumnarStackView { stack }; }
 
   ColumnarTwoLevel m_search;
   bool m_flatFirstBottom = false; // build the bottom with the full two-level pipeline (see setFlatFirstBottom)
@@ -594,8 +595,9 @@ private:
   std::vector<std::vector<int>> m_lastLevelPieces;
   std::vector<char> m_levelFreshProductive;
 
-  // Non-redundant map equation L* (see setNonRedundant). m_nrExact selects the exact
-  // O(m) exit sweep over the O(K) power-series delta in the leaf move loop.
+  // The generative map equation Lhat* as the base objective (see setNonRedundant).
+  // m_nrExact selects the exact O(m) exit sweep over the O(K) power-series delta in
+  // the leaf move loop.
   bool m_nonRedundant = false;
   bool m_nrExact = false;
   // Interior-refine early-stop knee (0 = off, grind to convergence): stop once a

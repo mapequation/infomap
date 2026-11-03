@@ -149,70 +149,99 @@ namespace columnar {
     return delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
   }
 
-  // --- Non-redundant map equation (L*) per-module codebook terms ---------------
-  // These are the ONLY implementation of L* in the codebase: the object-oriented
-  // objectives have no non-redundant counterpart, which is why every fallback from
-  // the columnar core to calcCodelengthOnTree silently reports the base map equation
-  // instead (see InfomapBase::evaluateColumnarPartition). Said here because an
-  // earlier version of this comment claimed these were "direct ports of
-  // MapEquation::nrEnterWithin / nrExitTerm" -- symbols that exist nowhere in src/.
-  // F is the module's sum_{leaf in module} plogp(leafFlow). Enter/exit are the
-  // module's boundary rates (separate for directed flow). See "Non-redundant map
-  // equation - expanded form.ipynb" for the derivation.
-  inline double nrEnterWithin(double moduleFlow, double qEnter, double qExit, double F)
-  {
-    using infomath::plogp;
-    if (moduleFlow < 1e-16)
-      return 0.0;
-    const double tEnter = qEnter * (plogp(moduleFlow) - F) / moduleFlow;
-    double tWithin = 0.0;
-    const double T = moduleFlow + qExit;
-    if (T > 1e-16) {
-      const double usage = moduleFlow + qExit - qEnter; // = moduleFlow when undirected
-      tWithin = (usage / T) * (plogp(T) - F - plogp(qExit));
-    }
-    return tEnter + tWithin;
-  }
-
-  // The rate at which nrEnterWithin consumes F -- i.e. -d(nrEnterWithin)/dF.
+  // --- Generative map equation (Lhat*) per-node terms --------------------------
+  // What the non-redundant code actually COSTS on the walk: the cross-entropy of
+  // the walk under that code's kernel, as opposed to L* above, which sums the same
+  // codebooks' ENTROPIES. The two differ because the non-redundant code is proper
+  // but unmatched -- each codebook's model weights are not the frequencies the
+  // stream puts through it -- so its entropy is not its price.
   //
-  // nrEnterWithin is affine in F, so this is exact:
-  //   nrEnterWithin(f, e, x, F2) - nrEnterWithin(f, e, x, F1)
-  //     == -nrLeafCodebookRate(f, e, x) * (F2 - F1).
-  // Closed form: 1 + qEnter*qExit / (moduleFlow * (moduleFlow + qExit)) >= 1, with
-  // equality iff qEnter == 0 or qExit == 0 (both hold for a one-module partition).
+  // Derived in the project's primer (Section 8.5 and Appendix A) and verified there
+  // against the explicit hierarchical kernel to 9e-16; see
+  // test/cpp/test_lhat_star_columnar.cpp for the fixtures this implementation is
+  // pinned to. Two properties shape the code:
   //
-  // Why this exists: a correction that SUBSTITUTES one F for another inside the
-  // leaf-module codebook -- MemCorrection swaps the state-node F for the
-  // physical-node F -- has to charge the substitution at whatever rate the active
-  // objective consumes F. The base map equation's leaf-module term consumes it at
-  // exactly 1 (see scoreStackBase, where the T-normalized module term collapses to
-  // plogp(T) - plogp(qExit) - F); L* does not, because it splits that codebook into
-  // an enter codebook normalized by moduleFlow and a within codebook normalized by
-  // T = moduleFlow + qExit. Keep this next to nrEnterWithin: the two must move
-  // together, and the 1e-16 guards below mirror it exactly (a module the scorer
-  // skips consumes no F at all, so its rate is 0, not 1).
-  inline double nrLeafCodebookRate(double moduleFlow, double qEnter, double qExit)
-  {
-    if (moduleFlow < 1e-16)
-      return 0.0; // nrEnterWithin returns 0.0 here: F never enters the total
-    double rate = qEnter / moduleFlow; // from tEnter
-    const double T = moduleFlow + qExit;
-    if (T > 1e-16)
-      rate += (moduleFlow + qExit - qEnter) / T; // from tWithin
-    return rate;
-  }
+  //  (1) Only module-level statistics survive. Every pairwise crossing rate cancels
+  //      at every internal node, because all flow leaving a child either reaches a
+  //      sibling or leaves the parent, and both are coded from the same leave-one-out
+  //      index book. So a node's term reads only its own enter/exit rates and its
+  //      children's.
+  //  (2) The leaf-node entropy H(p) enters as one partition-independent constant
+  //      (-sum_i plogp(p_i) = -sum_m F_m). It is folded into the leaf-module term
+  //      here so each level-1 module's charge is self-contained, which is also what
+  //      makes the per-module decomposition sum to the reported total.
+  //
+  // Both deletions apply at EVERY level: a node's index book excludes the child the
+  // walker just left (normalizer D - qEnter_child), and a book opened on arrival from
+  // outside cannot emit `exit' (normalizer E).
 
-  // One module's leave-one-out exit codebook contribution, given the sibling
-  // enter-rate total-plus-exit-network sumEnterPlusE = (sum_b qEnter_b) + e and
-  // sumEnterLogEnter = sum_b plogp(qEnter_b); e is the exit-to-parent codeword.
-  inline double nrExitTerm(double qEnter, double qExit, double sumEnterPlusE, double sumEnterLogEnter, double e)
+  // Level-1 (leaf) module: its within codebook plus its leaves' own entropy.
+  // F is the module's sum_{leaf in module} plogp(leafFlow).
+  //
+  // The coefficient of lg Z is how often the within book is OPENED, which is not the
+  // module's flow: the book names a node once per arrival from INSIDE the module, and
+  // emits `exit' once per step leaving it. Arrivals from inside are (moduleFlow -
+  // qEnter), since moduleFlow is the visit rate -- the IN-flow -- and qEnter of those
+  // arrivals are handled by the enter book instead. So the book opens
+  // (moduleFlow - qEnter) + qExit times.
+  //
+  // Writing moduleFlow there instead is correct exactly when qEnter == qExit, and the
+  // condition for that is not stationarity: it is that the boundary rates account for
+  // every step the visit rate counts. Counting a module's internal steps from the
+  // inside gives moduleFlow - qExit and from the outside moduleFlow - qEnter, so the
+  // two agree only if nothing the node flow counts is missing from the link flow.
+  //
+  // Undirected flow satisfies that, and recorded teleportation restores it by folding
+  // the teleport flow into enter/exit. UNRECORDED teleportation does not: the teleport
+  // steps are in the PageRank node flow and absent from the link flow. So -d,
+  // outdirdir and undirdir all come apart, and rawdir never balanced to begin with.
+  // The PageRank walk is perfectly stationary -- what fails is the recording.
+  //
+  // Measured either side of the fix, on a fixed two-module partition of
+  // twotriangles_flow.net: -d 1.894664603626 -> 1.791821407552, rawdir (and outdirdir,
+  // undirdir) 1.323448905791 -> 1.404184397997, undirected and -d
+  // --recorded-teleportation unchanged. An earlier reading of this scoped it to rawdir
+  // alone, which understated it by the whole ordinary directed path.
+  inline double lhatLeafModule(double moduleFlow, double qEnter, double qExit, double F)
   {
+    using infomath::log2;
     using infomath::plogp;
-    const double Z = sumEnterPlusE - qEnter;
+    const double Z = moduleFlow + qExit; // the within book's mass: the nodes plus `exit'
+    double term = -F; // this module's share of H(p)
     if (Z < 1e-16)
-      return 0.0;
-    return qExit * (plogp(Z) - (sumEnterLogEnter - plogp(qEnter)) - plogp(e)) / Z;
+      return term;
+    term += (moduleFlow - qEnter + qExit) * log2(Z) - plogp(qExit);
+    if (moduleFlow > 1e-16)
+      term += qEnter * log2(moduleFlow); // the enter book names the node arrived at
+    return term;
+  }
+
+  // One child's contribution to its parent's index book: the child's exit flow is coded
+  // in a book normalized leave-one-out (D - qEnter_child), and the child's own name is
+  // drawn at rate qEnter_child by whoever addresses it. D = qExit_parent +
+  // sum_{c in children} qEnter_c is the full index-book mass.
+  inline double lhatChildTerm(double qEnterChild, double qExitChild, double D)
+  {
+    using infomath::log2;
+    using infomath::plogp;
+    double term = -plogp(qEnterChild);
+    const double Z = D - qEnterChild;
+    if (Z > 1e-16)
+      term += qExitChild * log2(Z);
+    return term;
+  }
+
+  // An internal node's own two contributions: the `exit' symbol it draws from its index
+  // book, and the descend-only book (mass E = sum_c qEnter_c) it opens for a walker
+  // arriving from outside, which cannot leave again before landing.
+  inline double lhatNodeTerm(double qEnterSelf, double qExitSelf, double E)
+  {
+    using infomath::log2;
+    using infomath::plogp;
+    double term = -plogp(qExitSelf);
+    if (E > 1e-16)
+      term += qEnterSelf * log2(E);
+    return term;
   }
 
 } // namespace columnar

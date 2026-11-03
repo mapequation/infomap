@@ -8,11 +8,16 @@
 #include <string>
 #include <vector>
 
-// The non-redundant map equation L* on the columnar (non-recursive) engine. L* is a
-// base-objective variant of ColumnarTwoLevel (not a composable correction): it
-// restructures the enter/within/exit codebooks at every level, the exit codebook
-// using a leave-one-out normalizer over sibling modules. --non-redundant implies
-// --columnar (the only L* implementation on this branch).
+// --non-redundant on the columnar (non-recursive) engine: the STRUCTURAL contracts of
+// the flag -- what it parses to, what it composes with, and that a ragged, padded,
+// bare-top-level or state-network tree is scored on the selected objective rather than
+// silently falling back to the base map equation. The arithmetic it is scored WITH, and
+// the goldens for it, live in test_lhat_star_columnar.cpp.
+//
+// The objective is a base-objective variant of the columnar core (not a composable
+// correction): it restructures the enter/within/exit codebooks at every level, the exit
+// codebook using a leave-one-out normalizer over sibling modules. --non-redundant
+// implies --columnar, the only implementation on this branch.
 //
 // The fixed-partition goldens below are computed independently from the three-codebook
 // definition of L* (see "Non-redundant map equation - expanded form.ipynb") and match
@@ -108,7 +113,7 @@ TEST_CASE("NonRedundant/columnar: --non-redundant parses and implies --columnar 
 {
   const auto conf = nonRedundantConfig("--non-redundant");
   CHECK(conf.nonRedundant);
-  CHECK(conf.columnarSearch); // L* runs on the columnar engine
+  CHECK(conf.columnarSearch); // the non-redundant code runs on the columnar engine
 
   const auto exactConf = nonRedundantConfig("--non-redundant --non-redundant-exact");
   CHECK(exactConf.nonRedundant);
@@ -144,12 +149,12 @@ TEST_CASE("NonRedundant/columnar: no input is excluded and every objective but l
 #endif
 }
 
-TEST_CASE("NonRedundant/columnar: higher-order input runs under L* [fast][core][non-redundant]")
+TEST_CASE("NonRedundant/columnar: higher-order input runs under --non-redundant [fast][core][non-redundant]")
 {
   // Config-level checks cannot cover this one: stateInput/multilayerInput are set by
   // configureNetworkMode() when the network is READ, never by an option, so the only way
   // to know higher-order input is accepted is to run it. Both of these carry the physical
-  // codebook (MemCorrection) on top of the L* base.
+  // codebook (MemCorrection) on top of the non-redundant base.
   for (const char* net : { "states_flow.net", "multilayer.net" }) {
     InfomapWrapper im(defaultFlags("--non-redundant --num-trials 1"));
     im.readInputData(networkFixturePath(net));
@@ -159,20 +164,21 @@ TEST_CASE("NonRedundant/columnar: higher-order input runs under L* [fast][core][
   }
 }
 
-TEST_CASE("NonRedundant/columnar: an ADDITIVE correction adds the same term under L* as under L [fast][core][non-redundant]")
+TEST_CASE("NonRedundant/columnar: an ADDITIVE correction adds the same term under --non-redundant as under L [fast][core][non-redundant]")
 {
-  // What "L* supports every correction" asserts for the corrections that ADD a term
-  // carrying their own rate. Metadata is one: its term is metaDataRate * sum_m F_m*H_m,
-  // a separate codebook consulted once per unit of node-visit flow in the module, and L*
-  // changes which codebook names a node, not how often a node is visited. So on a FIXED
-  // partition the metadata term is identical under both bases. Same for the entropy bias
-  // (a node count) and the preferred module count.
+  // What "--non-redundant supports every correction" asserts for the corrections that
+  // ADD a term carrying their own rate. Metadata is one: its term is metaDataRate *
+  // sum_m F_m*H_m, a separate codebook consulted once per unit of node-visit flow in the
+  // module, and the non-redundant code changes which codebook names a node, not how
+  // often a node is visited. So on a FIXED partition the metadata term is identical
+  // under both bases. Same for the entropy bias (a node count) and the preferred module
+  // count.
   //
   // It does NOT generalize to every correction, and reading it as if it did is what let
   // #1009 through: MemCorrection SUBSTITUTES the physical-node sum plogp(flow) for the
   // state-node one inside the base objective's own leaf-module term, so it inherits that
-  // term's coefficient — 1 under the base map equation, >= 1 and per-module under L*.
-  // The invariance test below is the one that pins that down.
+  // term's coefficient. Both surviving objectives happen to charge it at 1; L* did not,
+  // and that is what broke. The invariance test below is the one that pins it down.
   //
   // Both arms run on the columnar engine so the comparison isolates the base objective
   // and nothing else.
@@ -182,61 +188,32 @@ TEST_CASE("NonRedundant/columnar: an ADDITIVE correction adds the same term unde
 
   const double L = scoreFixedPartition(net, clu, "--columnar --two-level");
   const double Lmeta = scoreFixedPartition(net, clu, "--columnar --two-level" + meta);
-  const double Lstar = scoreFixedPartition(net, clu, "--non-redundant --two-level");
-  const double LstarMeta = scoreFixedPartition(net, clu, "--non-redundant --two-level" + meta);
+  const double Lhat = scoreFixedPartition(net, clu, "--non-redundant --two-level");
+  const double LhatMeta = scoreFixedPartition(net, clu, "--non-redundant --two-level" + meta);
 
   CHECK(Lmeta != doctest::Approx(L)); // the correction has to bite for this to mean anything
-  CHECK(LstarMeta - Lstar == doctest::Approx(Lmeta - L).epsilon(1e-9));
-  // ... and adding a correction must not perturb the L* base itself.
-  CHECK(Lstar == doctest::Approx(1.983611049901).epsilon(1e-9));
+  CHECK(LhatMeta - Lhat == doctest::Approx(Lmeta - L).epsilon(1e-9));
+  // ... and adding a correction must not perturb the base itself. Python's golden.
+  CHECK(Lhat == doctest::Approx(1.999192930915).epsilon(1e-9));
 }
 
-TEST_CASE("NonRedundant/columnar: two-level L* on a fixed partition, undirected, differs from standard L [fast][core][non-redundant]")
+TEST_CASE("NonRedundant/columnar: Lhat* is invariant under exactly lumpable state duplication [fast][core][non-redundant]")
 {
-  const double Lstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--non-redundant --two-level");
-  const double Lstd = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--two-level");
-
-  CHECK(Lstar == doctest::Approx(1.983611049901).epsilon(1e-9));
-  CHECK(Lstar < Lstd);
-}
-
-TEST_CASE("NonRedundant/columnar: two-level L* on a fixed partition, directed [fast][core][non-redundant]")
-{
-  const double Lstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_two_modules.clu", "--non-redundant --two-level --directed");
-  CHECK(Lstar == doctest::Approx(1.791821407552).epsilon(1e-9));
-}
-
-TEST_CASE("NonRedundant/columnar: one module reduces to the node entropy (== standard L) [fast][core][non-redundant]")
-{
-  const double Lstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--non-redundant --two-level");
-  const double Lstd = scoreFixedPartition("twotriangles_flow.net", "twotriangles_single_module.clu", "--two-level");
-  CHECK(Lstar == doctest::Approx(2.470950594455).epsilon(1e-9));
-  CHECK(Lstar == doctest::Approx(Lstd).epsilon(1e-9));
-}
-
-TEST_CASE("NonRedundant/columnar: hierarchical L* on a multilevel fixed partition (exercises the super-module codebooks) [fast][core][non-redundant]")
-{
-  // A three-level tree whose middle level is trivial (one sub-module per top module)
-  // must reduce to the two-level L* of the same leaf partition: a trivial interior
-  // level contributes a zero enter codebook and zero-Z exit codebooks.
-  const double Lstar3 = scoreFixedPartition("twotriangles_flow.net", "twotriangles_three_level.tree", "--non-redundant");
-  CHECK(Lstar3 == doctest::Approx(1.983611049901).epsilon(1e-9));
-}
-
-TEST_CASE("NonRedundant/columnar: L* is invariant under exactly lumpable state duplication [fast][core][non-redundant]")
-{
-  // The regression test for #1009. Splitting a physical node into states that are
-  // indistinguishable to the walker, with the partition lifted so no physical node is
-  // split across modules, describes the same process with the same modules — so both
-  // objectives must report the same codelength. L always did; L* did not, because
-  // MemCorrection substituted the physical-node sum plogp(flow) for the state-node one
-  // at coefficient 1 (right for the base map equation) while L*'s leaf-module term
-  // consumes it at nrLeafCodebookRate() >= 1. The substituted quantity is non-positive,
-  // so the error was always positive and grew with the number of physical nodes holding
-  // several states in one module: +0.050 bits here undirected, +0.026 directed.
+  // The regression test for #1009, kept because the invariance is the property, not the
+  // fix. Splitting a physical node into states that are indistinguishable to the walker,
+  // with the partition lifted so no physical node is split across modules, describes the
+  // same process with the same modules — so every objective must report the same
+  // codelength. L always did; L* did not, because MemCorrection substituted the
+  // physical-node sum plogp(flow) for the state-node one at coefficient 1 (right for the
+  // base map equation) while L*'s leaf-module term consumed it at a per-module rate >= 1.
   //
-  // Undirected, PageRank-directed and rawdir all run: the rate is 1 + qEnter*qExit /
-  // (flow*(flow+qExit)), so it is only the undirected case that has qEnter == qExit.
+  // Lhat* consumes it at exactly 1 — its only F-carrying term is the
+  // partition-independent H(p) — so the substitution is unweighted here as it is for the
+  // base objective, and #1009's hazard is absent rather than re-solved. That is a claim
+  // about the rate, and this is what tests it.
+  //
+  // Undirected, PageRank-directed and rawdir all run, so the case is not one where
+  // qEnter == qExit everywhere.
   for (const std::string& flow : { std::string(""), std::string(" --directed"), std::string(" --flow-model rawdir") }) {
     for (unsigned int k : { 2u, 5u }) { // two modules, then multi-module
       CAPTURE(flow);
@@ -247,112 +224,73 @@ TEST_CASE("NonRedundant/columnar: L* is invariant under exactly lumpable state d
       const double Ldup = scoreRingOfTriangles(k, 2, "--columnar" + flow);
       CHECK(Ldup == doctest::Approx(L).epsilon(1e-12));
 
-      const double Lstar = scoreRingOfTriangles(k, 1, "--non-redundant" + flow);
-      const double LstarDup = scoreRingOfTriangles(k, 2, "--non-redundant" + flow);
-      CHECK(LstarDup == doctest::Approx(Lstar).epsilon(1e-12));
-      CHECK(Lstar < L); // L* is the cheaper description of the same partition
+      const double Lhat = scoreRingOfTriangles(k, 1, "--non-redundant" + flow);
+      const double LhatDup = scoreRingOfTriangles(k, 2, "--non-redundant" + flow);
+      CHECK(LhatDup == doctest::Approx(Lhat).epsilon(1e-12));
+      CHECK(Lhat < L); // the cheaper description of the same partition
     }
   }
 
   // Goldens on the physical arm, so the pair cannot pass by both sides moving together.
-  CHECK(scoreRingOfTriangles(2, 1, "--non-redundant") == doctest::Approx(2.361270125569452).epsilon(1e-9));
-  CHECK(scoreRingOfTriangles(5, 1, "--non-redundant") == doctest::Approx(2.861270125569453).epsilon(1e-9));
+  // Computed in Python from the closed form, not read back out of the engine.
+  CHECK(scoreRingOfTriangles(2, 1, "--non-redundant") == doctest::Approx(2.383206219346).epsilon(1e-9));
+  CHECK(scoreRingOfTriangles(5, 1, "--non-redundant") == doctest::Approx(2.883206219346).epsilon(1e-9));
 }
 
-TEST_CASE("NonRedundant/columnar: nrLeafCodebookRate is the rate nrEnterWithin consumes F at [fast][core][non-redundant]")
-{
-  // The two must move together: MemCorrection weights its substitution by
-  // nrLeafCodebookRate while the scorer charges F through nrEnterWithin, and nothing
-  // else ties them. nrEnterWithin is affine in F, so the identity below is exact.
-  using namespace infomap::columnar;
-  const double flow[] = { 0.5, 0.25, 1.0, 1e-17 };
-  const double enter[] = { 0.0, 0.05, 0.3 };
-  const double exit[] = { 0.0, 0.05, 0.4 };
-  for (double f : flow) {
-    for (double e : enter) {
-      for (double x : exit) {
-        const double rate = nrLeafCodebookRate(f, e, x);
-        const double dF = nrEnterWithin(f, e, x, 0.75) - nrEnterWithin(f, e, x, 0.25);
-        CHECK(dF == doctest::Approx(-rate * 0.5).epsilon(1e-12));
-        // >= 1 unless the module is degenerate (no flow) or has no boundary in one
-        // direction, which is what makes the old flat coefficient 1 an under-charge.
-        CHECK(rate >= (f < 1e-16 ? 0.0 : 1.0 - 1e-12));
-      }
-    }
-  }
-}
-
-TEST_CASE("NonRedundant/columnar: hierarchical search produces a sound, self-consistent L* [fast][core][non-redundant]")
-{
-  InfomapWrapper hier(defaultFlags("--non-redundant --num-trials 5"));
-  hier.readInputData(repoPath("examples/networks/ninetriangles.net"));
-  hier.run();
-  const double searched = hier.codelength();
-
-  CHECK(std::isfinite(searched));
-  CHECK(searched > 0.0);
-  CHECK(hier.numLevels() >= 2); // found a hierarchy
-
-  // Round-trip: re-scoring the searched tree under L* reproduces the search codelength
-  // (the reported value is the columnar L* of the found partition).
-  // Relative, like the other round-trip tests: Windows has no /tmp, and an absolute
-  // POSIX path made this the only test that could not run there.
-  const std::string treePath = "infomap_nr_columnar_roundtrip.tree";
-  std::remove(treePath.c_str());
-  hier.writeTree(treePath);
-
-  InfomapWrapper rescored(defaultFlags("--non-redundant --no-infomap --cluster-data " + treePath));
-  rescored.readInputData(repoPath("examples/networks/ninetriangles.net"));
-  rescored.run();
-  CHECK(rescored.codelength() == doctest::Approx(searched).epsilon(1e-9));
-  std::remove(treePath.c_str());
-}
-
-TEST_CASE("NonRedundant/columnar: a ragged tree is scored under L*, not the base map equation [fast][core][non-redundant]")
+TEST_CASE("NonRedundant/columnar: a ragged tree is scored under Lhat*, not the base map equation [fast][core][non-redundant]")
 {
   // A tree whose branches end at different depths does not fit the strict-level stack,
-  // and the object-oriented fallback it used to take has no L* implementation at all --
-  // so --non-redundant silently reported the BASE codelength, identical to the run
-  // without the flag. Padding the short paths with a pass-through level makes the tree
-  // rectangular at zero cost under L*, so the two now agree with the hand-padded
-  // fixture instead.
-  const double raggedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant");
-  const double paddedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant");
+  // and the object-oriented fallback it used to take implements the base map equation
+  // only -- so --non-redundant silently reported the BASE codelength, identical to the
+  // run without the flag. Padding the short paths with a pass-through level makes the
+  // tree rectangular at zero cost, so the two now agree with the hand-padded fixture
+  // instead. The golden is Python's, from the closed form.
+  const double ragged = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant");
+  const double padded = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant");
   const double raggedL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "");
 
-  CHECK(raggedLstar == doctest::Approx(paddedLstar).epsilon(1e-12));
-  CHECK(raggedLstar == doctest::Approx(2.142186380).epsilon(1e-9));
-  CHECK(raggedLstar < raggedL); // it was bit-equal to raggedL (2.614170945) before
+  CHECK(ragged == doctest::Approx(padded).epsilon(1e-12));
+  CHECK(ragged == doctest::Approx(2.085466428681).epsilon(1e-9));
+  CHECK(ragged < raggedL); // it was bit-equal to raggedL (2.614170945) before
   CHECK(raggedL == doctest::Approx(2.614170945).epsilon(1e-9)); // the base value must not move
 }
 
-TEST_CASE("NonRedundant/columnar: a ragged STATE tree is scored under L* [fast][core][non-redundant]")
+TEST_CASE("NonRedundant/columnar: a ragged STATE tree is scored under Lhat* [fast][core][non-redundant]")
 {
-  // Same, with MemCorrection in play: the physical-node codebook substitution is
-  // charged at the leaf-module rate, which differs between L and L*, so this is the
-  // case where "just reuse the object-oriented value" is furthest from right.
-  const double raggedLstar = scoreFixedPartition("states.net", "states_ragged_branches.tree", "--non-redundant");
-  const double paddedLstar = scoreFixedPartition("states.net", "states_ragged_branches_padded.tree", "--non-redundant");
+  // Same, with MemCorrection in play: the physical-node codebook substitution lands on
+  // the leaf-module term, so this is the ragged case furthest from "just reuse the
+  // object-oriented value".
+  //
+  // STRUCTURE ONLY, deliberately: an independent golden would need this fixture's
+  // state-network flow model reproduced in Python, which three attempts did not
+  // reproduce to better than 0.17 bits, and a golden read back out of the engine would
+  // pin nothing. What is pinned is the padding invariance, that the objective is not the
+  // base map equation's, and the base value, which must not move. The arithmetic of the
+  // physical-node substitution is pinned instead by the exactly lumpable state
+  // duplication above, whose goldens ARE Python's.
+  const double ragged = scoreFixedPartition("states.net", "states_ragged_branches.tree", "--non-redundant");
+  const double padded = scoreFixedPartition("states.net", "states_ragged_branches_padded.tree", "--non-redundant");
   const double raggedL = scoreFixedPartition("states.net", "states_ragged_branches.tree", "");
 
-  CHECK(raggedLstar == doctest::Approx(paddedLstar).epsilon(1e-12));
-  CHECK(raggedLstar == doctest::Approx(2.612197223).epsilon(1e-9));
+  CHECK(ragged == doctest::Approx(padded).epsilon(1e-12));
+  CHECK(ragged != doctest::Approx(raggedL).epsilon(1e-9));
   CHECK(raggedL == doctest::Approx(4.251629167).epsilon(1e-9));
 }
 
-TEST_CASE("NonRedundant/columnar: only L* is invariant under a pass-through level [fast][core][non-redundant]")
+TEST_CASE("NonRedundant/columnar: Lhat* is invariant under a pass-through level, the base map equation is not [fast][core][non-redundant]")
 {
   // The theorem the padding rests on, pinned from both sides so that "simplifying" the
-  // gate away would fail: inserting a single-child level costs exactly 0 under L* (its
-  // enter codebook is e*(plogp(e)-plogp(e))/e and its child's exit term has numerator
-  // plogp(x)-0-plogp(x)) and costs real bits under the base map equation.
+  // gate away would fail: inserting a single-child level costs exactly 0 under Lhat* (at
+  // such a node D_v - qEnter_child == qExit_self and E_v == qEnter_self, so its two terms
+  // cancel) and costs real bits under the base map equation. The kernels themselves are
+  // pinned directly in test_lhat_star_columnar.cpp.
   const double raggedL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "");
   const double paddedL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "");
   CHECK(paddedL > raggedL + 1e-6);
 
-  const double raggedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant");
-  const double paddedLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant");
-  CHECK(raggedLstar == doctest::Approx(paddedLstar).epsilon(1e-12));
+  const double ragged = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches.tree", "--non-redundant");
+  const double padded = scoreFixedPartition("twotriangles_flow.net", "twotriangles_ragged_branches_padded.tree", "--non-redundant");
+  CHECK(ragged == doctest::Approx(padded).epsilon(1e-12));
 }
 
 TEST_CASE("NonRedundant/columnar: the ragged padding does not leak into the entropy bias [fast][core][non-redundant]")
@@ -377,24 +315,24 @@ TEST_CASE("NonRedundant/columnar: the ragged padding does not leak into the entr
   CHECK(raggedBiased == doctest::Approx(paddedBiased - biasPerNode).epsilon(1e-9));
 }
 
-TEST_CASE("NonRedundant/columnar: a BARE top-level leaf is scored under L* too [fast][core][non-redundant]")
+TEST_CASE("NonRedundant/columnar: a BARE top-level leaf is scored under Lhat* too [fast][core][non-redundant]")
 {
   // A bare top-level row (`2 0.15 "A" 1`) next to deeper paths. The reader completes it
   // to `2:1` (#1067), so node A is alone in top module 2 and the tree is ragged: A's
   // branch is one level shallower than the others. Before that completion the row reached
   // the padding as an EMPTY path, and bailing there left --non-redundant reporting the
-  // base L, bit-identical to the run without the flag (2.714170945 against a true L* of
-  // 2.187131226).
+  // base L, bit-identical to the run without the flag (2.714170945).
   //
   // The three fixtures are three spellings of ONE partition -- bare, explicit module,
-  // explicit module plus a pass-through -- so L* must give all three the same value.
-  const double bareLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf.tree", "--non-redundant");
-  const double moduleLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_module.tree", "--non-redundant");
-  const double rectLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_rect.tree", "--non-redundant");
+  // explicit module plus a pass-through -- so the objective must give all three the same
+  // value. The golden is Python's, from the closed form.
+  const double bare = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf.tree", "--non-redundant");
+  const double module_ = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_module.tree", "--non-redundant");
+  const double rect = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_rect.tree", "--non-redundant");
 
-  CHECK(bareLstar == doctest::Approx(moduleLstar).epsilon(1e-12));
-  CHECK(bareLstar == doctest::Approx(rectLstar).epsilon(1e-12));
-  CHECK(bareLstar == doctest::Approx(2.187131226).epsilon(1e-9));
+  CHECK(bare == doctest::Approx(module_).epsilon(1e-12));
+  CHECK(bare == doctest::Approx(rect).epsilon(1e-12));
+  CHECK(bare == doctest::Approx(2.146110286012).epsilon(1e-9));
 
   // The base map equation is NOT invariant under every spelling: it charges each extra
   // level a real codebook. The bare row and the explicit module are the same tree once the
@@ -404,7 +342,7 @@ TEST_CASE("NonRedundant/columnar: a BARE top-level leaf is scored under L* too [
   const double moduleL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_top_level_leaf_module.tree", "");
   CHECK(moduleL == doctest::Approx(3.014170945).epsilon(1e-9));
   CHECK(bareL == doctest::Approx(moduleL).epsilon(1e-12));
-  CHECK(bareLstar < bareL - 1e-6); // it was bit-equal to bareL before
+  CHECK(bare < bareL - 1e-6); // it was bit-equal to bareL before
 
   // --entropy-corrected counts nodes, so the pass-through the padding stacks above A's
   // module is discounted -- but A's own module is not phantom and is counted.
@@ -417,9 +355,9 @@ TEST_CASE("NonRedundant/columnar: a BARE top-level leaf is scored under L* too [
 
 TEST_CASE("NonRedundant/columnar: an all-top-level tree never becomes ragged in the first place [fast][core][non-redundant]")
 {
-  // REGRESSION GUARD, not evidence for the padding: this case passes unchanged on the
-  // pre-change binary (both values 3.220279696 there too, no fallback line). It is here
-  // to pin that the padding did not disturb the shape it does NOT handle.
+  // REGRESSION GUARD, not evidence for the padding: this case passed unchanged on the
+  // binary that predates the padding, no fallback line. It is here to pin that the
+  // padding did not disturb the shape it does NOT handle.
   //
   // Every path in this fixture is one level deep, so initTree's `maxDepth == 2 ||
   // twoLevel` shortcut fires, initPartition turns every top-level id into a real
@@ -429,13 +367,15 @@ TEST_CASE("NonRedundant/columnar: an all-top-level tree never becomes ragged in 
   // top-level leaf case above, which is the one that fails on the pre-change binary.
   //
   // What this still checks: one partition (one module per node) written two ways, as a
-  // depth-1 .tree and as a .clu, must score the same, and L* must undercut base L.
-  const double flatTreeLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_all_top_level.tree", "--non-redundant");
-  const double cluLstar = scoreFixedPartition("twotriangles_flow.net", "twotriangles_singletons.clu", "--non-redundant");
-  CHECK(flatTreeLstar == doctest::Approx(cluLstar).epsilon(1e-12));
+  // depth-1 .tree and as a .clu, must score the same, and must undercut base L. The
+  // golden is Python's, from the closed form.
+  const double flatTree = scoreFixedPartition("twotriangles_flow.net", "twotriangles_all_top_level.tree", "--non-redundant");
+  const double clu = scoreFixedPartition("twotriangles_flow.net", "twotriangles_singletons.clu", "--non-redundant");
+  CHECK(flatTree == doctest::Approx(clu).epsilon(1e-12));
+  CHECK(flatTree == doctest::Approx(3.151452828848).epsilon(1e-9));
 
   const double flatTreeL = scoreFixedPartition("twotriangles_flow.net", "twotriangles_all_top_level.tree", "");
-  CHECK(flatTreeLstar < flatTreeL - 1e-6);
+  CHECK(flatTree < flatTreeL - 1e-6);
 }
 
 TEST_CASE("Columnar: the preferred-modules penalty survives the object-oriented fallback [fast][core][non-redundant]")
