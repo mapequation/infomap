@@ -13,20 +13,21 @@ Single-thread convention: `MODE=release OPENMP=0`, `--seed 123`, best-of-N via `
 `networks/columnar-benchmark/` (git-ignored):
 
 ```
-pip install "mapequation-networks @ git+https://github.com/mapequation/networks@0e3646eb5baf38b7be80310073c06c049a599747"
+pip install "netgamut @ git+https://github.com/mapequation/netgamut@de7e89f51d33230ce139bc654894751f60dc4aa9"
 python columnar_wip/fetch-benchmark-networks.py
 ```
 
 It needs Python 3.11+. Each file is checked against
 [`columnar_wip/benchmark-networks.sha256`](benchmark-networks.sha256), so a run on the
 result uses the bytes the published numbers were measured on. Every input comes through the
-[`mapequation-networks`](https://github.com/mapequation/networks) package: public
+[`netgamut`](https://github.com/mapequation/netgamut) package: public
 repositories (netzschleuder, SNAP, the BTS DB1B coupons, Wikispeedia) and the package's
 generator for the synthetic family; ninetriangles and multilayer are in this repository.
 air30k is the slow one: the first run downloads ~270 MB of DB1B coupons and groups ~10 M
-itineraries (~15 min), cached afterwards. The networks package is pinned to a commit on
-its main branch, the first with `generate.overlapping_memory_benchmark`
-(mapequation/networks#13), until a release includes it.
+itineraries (~15 min), cached afterwards. The netgamut package is pinned to a commit on
+its main branch, the rename from `mapequation-networks` (mapequation/netgamut#14), which
+already has `generate.overlapping_memory_benchmark` (mapequation/netgamut#13), until a
+release includes both.
 
 | network | file in `networks/columnar-benchmark/` | source | run flags | directedness | type | size |
 |---|---|---|---|---|---|--:|
@@ -40,14 +41,14 @@ its main branch, the first with `generate.overlapping_memory_benchmark`
 | lazega (metadata) | `lazega.net` (+ `lazega.meta`) | netzschleuder `law_firm`, layer 2 (friendship) + `nodeGender` | `--meta-data networks/columnar-benchmark/lazega.meta` | undirected | first-order + **metadata** objective | 69 nodes |
 | multilayer (example) | `multilayer.net` | this repo, `examples/networks/` | — | undirected | **multilayer** / higher-order (memory) toy | 5 physical nodes |
 | malaria | `malaria.net` | netzschleuder `malaria_genes`, `HVR_1`–`HVR_9` as layers 1–9 | — | undirected | **multilayer** / higher-order (memory) real-world | 307 physical nodes · 9 layers |
-| air30k (states) | `air30k.net` | DB1B 2011 Q1–Q3 (`networks.paths`), second order on the 183 airports of [`air30k-airports.tsv`](air30k-airports.tsv) | — | undirected | **state / memory** (higher-order) real-world | 183 physical · 13 212 state nodes |
+| air30k (states) | `air30k.net` | DB1B 2011 Q1–Q3 (`netgamut.paths`), second order on the 183 airports of [`air30k-airports.tsv`](air30k-airports.tsv) | — | undirected | **state / memory** (higher-order) real-world | 183 physical · 13 212 state nodes |
 | air30k (regularized) | `air30k.net` | as above | `-d --regularized` | directed | **state / memory** + **recorded teleportation** | 183 physical · 13 212 state nodes |
 | recorded teleportation (REG, #1042) | every file above except `multilayer.net` and `malaria.net` | as above | each network's own flags plus `--regularized` at `-N10`, `-2 -N10` and `-N1`, and plus `--recorded-teleportation` at `-N10` and `-N1` when directed | as above |
 | regularized multilayer (#828) | `malaria.net`, plus `examples/networks/multilayer_intra.net` and `multilayer_intra_inter.net`, `networks/multilayer/real-world/` EUAirports, aucs, StarWars, DanioRerio, and Jelena's synthetic 5-layer `network_incomplete` at 0% and 50% of links removed (not yet in the fetch manifest) | as above | `--regularized` at `-N10`, `-2 -N10` and `-N1`; **feature build** (`regularized-multilayer`) on every arm, OO included; driver `columnar_wip/bench-multilayer.py` | undirected | **multilayer** + per-layer teleport prior | 4–9 layers, ≤ 5 000 state nodes |
 | word_assoc (preferred modules) | `word_assoc.txt` | netzschleuder `word_assoc` | `-d --preferred-number-of-modules 25` | directed | first-order + **preferred-number-of-modules** bias | 23 132 nodes |
 | air30k (meta) | `air30k.net` (+ `air30k_usstate.meta`) | as above; metadata from `columnar_wip/make-state-meta.py` | `--meta-data networks/columnar-benchmark/air30k_usstate.meta` | undirected | **state/memory + metadata** (both codebooks) | 183 physical · 13 212 state nodes |
-| overlapping om2–om8, labelled `om<om>_N256_E50k` / `_E100k` | `om/overlapping-memory-n256-om<om>-nc64-E<E>-mu0.1-seed1.net` (+ planted `.clu`), E = 50000 and 100000 | `networks.generate.overlapping_memory_benchmark(om, E, seed=1)` | planted (`-2d --no-infomap -c`), `-2d`, `-d`, at `-N10` and `-N1`; each also `--regularized` | directed | **state / memory**, planted overlapping communities, zero co-physical links | 256 physical · 28–59 k state nodes (table below) |
-| wikispeedia | `wikispeedia_states.net` | `networks.paths` wikispeedia, `to_state_network(order=2, max_nodes=300)` | `-2d` (also run `-d`) | directed | **state / memory**, real order-2 path network, zero co-physical links, healthy control for the overlapping rows | 300 physical · 6 475 state nodes |
+| overlapping om2–om8, labelled `om<om>_N256_E50k` / `_E100k` | `om/overlapping-memory-n256-om<om>-nc64-E<E>-mu0.1-seed1.net` (+ planted `.clu`), E = 50000 and 100000 | `netgamut.generate.overlapping_memory_benchmark(om, E, seed=1)` | planted (`-2d --no-infomap -c`), `-2d`, `-d`, at `-N10` and `-N1`; each also `--regularized` | directed | **state / memory**, planted overlapping communities, zero co-physical links | 256 physical · 28–59 k state nodes (table below) |
+| wikispeedia | `wikispeedia_states.net` | `netgamut.paths` wikispeedia, `to_state_network(order=2, max_nodes=300)` | `-2d` (also run `-d`) | directed | **state / memory**, real order-2 path network, zero co-physical links, healthy control for the overlapping rows | 300 physical · 6 475 state nodes |
 
 > **Inputs changed on 2026-10-10** (F64, F65). Before that the rows ran on local files. The
 > snapshot of that PR compares old and new on one binary:
@@ -100,7 +101,7 @@ its main branch, the first with `generate.overlapping_memory_benchmark`
 >
 > **Generator.** Andrea Lancichinetti's trigram sampler (`build_syn_network` in the
 > higher-order-regularization paper project), ported to the networks package as
-> `networks.generate.overlapping_memory_benchmark(om, E, seed=1)`: `M = 4·om` communities of `nc = 64`
+> `netgamut.generate.overlapping_memory_benchmark(om, E, seed=1)`: `M = 4·om` communities of `nc = 64`
 > physical nodes, every node in exactly `om` of them; `(1−mu)·E` trigrams a→b→c drawn inside one
 > community, each ordered pair `{a}_b` owned by the community that first drew it; `mu·E`
 > cross-community trigrams stitched from existing pairs so mixing adds no state node. The port draws

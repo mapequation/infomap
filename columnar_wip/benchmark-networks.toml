@@ -5,14 +5,14 @@
 #
 # Recipes:
 #   repo                in this repository, nothing to fetch
-#   netzschleuder       networks.netzschleuder.load(dataset), written as a link list
+#   netzschleuder       netgamut.netzschleuder.load(dataset), written as a link list
 #   lazega              netzschleuder law_firm layer 2 (friendship), both directions, + nodeGender
 #   malaria             netzschleuder malaria_genes HVR_1..9 as one multilayer network
-#   snap                networks.snap.load(dataset), the SNAP file as distributed
-#   wikispeedia         networks.paths wikispeedia, to_state_network(order=2, max_nodes=300)
-#   db1b-air30k         networks.paths db1b-coupon 2011 Q1-Q3, second order, on `airports`
+#   snap                netgamut.snap.load(dataset), the SNAP file as distributed
+#   wikispeedia         netgamut.paths wikispeedia, to_state_network(order=2, max_nodes=300)
+#   db1b-air30k         netgamut.paths db1b-coupon 2011 Q1-Q3, second order, on `airports`
 #   state-meta          columnar_wip/make-state-meta.py on another entry's output
-#   overlapping-memory  networks.generate.overlapping_memory_benchmark, network + planted .clu
+#   overlapping-memory  netgamut.generate.overlapping_memory_benchmark, network + planted .clu
 
 [[network]]
 name = "ninetriangles"

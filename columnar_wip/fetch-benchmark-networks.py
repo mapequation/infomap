@@ -10,7 +10,7 @@ bytes as the published numbers. A file already present with the pinned checksum 
 rebuilt. ``NAME`` restricts the run to those manifest entries; ``--update-checksums``
 rewrites the pins from what was built instead of checking them.
 
-Needs Python 3.11+ and the mapequation-networks package (the version is pinned in
+Needs Python 3.11+ and the netgamut package (the version is pinned in
 columnar_wip/benchmark-networks.md). Downloads go to that package's cache. air30k is the
 slow one: about 270 MB of DB1B coupons, grouped into 10 M itineraries (~15 min once).
 """
@@ -56,7 +56,7 @@ def build_repo(entry, out, manifest):
 
 
 def build_netzschleuder(entry, out, manifest):
-    from networks import netzschleuder
+    from netgamut import netzschleuder
 
     netzschleuder.load(entry["dataset"]).to_link_list(
         out, name=Path(entry["file"]).stem
@@ -64,7 +64,7 @@ def build_netzschleuder(entry, out, manifest):
 
 
 def build_lazega(entry, out, manifest):
-    from networks import netzschleuder
+    from netgamut import netzschleuder
 
     net = netzschleuder.load("law_firm")
     pairs = set()
@@ -79,7 +79,7 @@ def build_lazega(entry, out, manifest):
 
 
 def build_malaria(entry, out, manifest):
-    from networks import netzschleuder
+    from netgamut import netzschleuder
 
     links, n_nodes = [], 0
     for layer in range(1, 10):
@@ -96,13 +96,13 @@ def build_malaria(entry, out, manifest):
 
 
 def build_snap(entry, out, manifest):
-    from networks import snap
+    from netgamut import snap
 
     shutil.copyfile(snap.load(entry["dataset"]).path, out / entry["file"])
 
 
 def build_wikispeedia(entry, out, manifest):
-    from networks import paths
+    from netgamut import paths
 
     memory = paths.load("wikispeedia").to_state_network(order=2, max_nodes=300)
     memory.write(out / entry["file"])
@@ -116,7 +116,7 @@ def build_db1b_air30k(entry, out, manifest):
     paper's air30k.net: vertices in IATA order, states sorted by (previous, current), links
     sorted by state id, weights in %g.
     """
-    from networks import paths
+    from netgamut import paths
 
     airports = [
         line.split("\t")
@@ -164,7 +164,7 @@ def build_state_meta(entry, out, manifest):
 
 
 def build_overlapping_memory(entry, out, manifest):
-    from networks.generate import overlapping_memory_benchmark
+    from netgamut.generate import overlapping_memory_benchmark
 
     (out / "om").mkdir(exist_ok=True)
     for om in entry["memberships"]:

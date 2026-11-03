@@ -94,7 +94,7 @@ Configure these integrations before the first release:
    Before you merge, run `make bench-correctness` on the release PR's branch.
    It runs a debug build over the benchmark networks and re-scores every
    tree, in about two hours with three jobs. It is not in CI because the
-   networks are fetched with the private `mapequation-networks` package; the
+   networks are fetched with the private `netgamut` package; the
    docstring of `scripts/benchmarks/run_correctness_sweep.py` says how to get
    them.
 4. Merge the release PR.
