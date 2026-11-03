@@ -1,0 +1,70 @@
+FAM	om6_N256_E100k `-2d -N10`	-C -2d -N10	old	0	7.175061708	62217161677	6.893434836
+FAM	om6_N256_E100k `-2d -N10`	-C -2d -N10	new	0	7.166074709	62200811871	6.893434836
+FAM	om6_N256_E100k `-2d -N10`	-C -2d -N10	new	1	7.113640583	62196327761	6.893434836
+FAM	om6_N256_E100k `-2d -N10`	-C -2d -N10	old	1	7.16419025	62206064575	6.893434836
+FAM	om6_N256_E100k `-2d -N10`	-C -2d -N10	old	2	7.236093125	62209330492	6.893434836
+FAM	om6_N256_E100k `-2d -N10`	-C -2d -N10	new	2	7.1324925	62200862515	6.893434836
+FAM	om6_N256_E100k `-2d -N10`	-C -2d -N10	new	3	7.134330291	62193731949	6.893434836
+FAM	om6_N256_E100k `-2d -N10`	-C -2d -N10	old	3	6.501135958	62183774649	6.893434836
+FAM	om6_N256_E100k `-2d -N10`	-C -2d -N10	old	4	7.195501375	62195193275	6.893434836
+FAM	om6_N256_E100k `-2d -N10`	-C -2d -N10	new	4	7.223323083	62204483216	6.893434836
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	0	4.922665583	50276890226	12.7626516
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	0	4.217547333	43427491246	12.61703093
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	1	4.219378959	43417656586	12.61703093
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	1	4.881703917	50280879541	12.7626516
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	2	4.920980375	50275055688	12.7626516
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	2	4.172786042	43417502944	12.61703093
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	3	4.178410875	43413861049	12.61703093
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	3	4.845237666	50265661880	12.7626516
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	4	4.937250333	50273247405	12.7626516
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	4	4.185120375	43416348301	12.61703093
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	0	4.302228833	44851499465	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	0	3.66679	38313280551	11.64534667
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	1	3.6617145	38308504335	11.64534667
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	1	4.320593042	44851920156	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	2	4.311081542	44846668073	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	2	3.655067459	38301876254	11.64534667
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	3	3.649654125	38308001946	11.64534667
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	3	4.266661125	44842784496	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	4	4.275288167	44855237260	11.73480892
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	4	3.643257125	38322870738	11.64534667
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	0	4.036300333	45997667567	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	0	2.98122175	34685323848	11.64024275
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	1	3.027534208	34689347471	11.64024275
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	1	4.091902208	46001047235	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	2	4.086686375	45999803966	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	2	2.987217083	34685986640	11.64024275
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	3	2.986027041	34682097186	11.64024275
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	3	4.120704209	46004241667	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	old	4	4.052900541	46000160749	11.73480892
+C2_10	word_assoc (pref.)	-C -2 -N10 -d --preferred-number-of-modules 25	new	4	3.029517792	34694127369	11.64024275
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	0	4.795521458	49590402327	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	0	4.138836833	43052231860	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	1	4.392084167	43057286121	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	1	4.783015	49600065380	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	2	4.804268542	49595791897	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	2	4.085398709	43037248783	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	3	4.124203625	43042605044	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	3	4.785314125	49592606579	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	4	4.737474708	49594736551	11.73480892
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	4	4.104615709	43038019729	11.64534667
+C10	multilayer (ex.)	-C -N10	old	0	0.000531917	63979398	2.011405238
+C10	multilayer (ex.)	-C -N10	new	0	0.000522167	63296588	2.011405238
+C10	multilayer (ex.)	-C -N10	new	1	0.000516458	63271023	2.011405238
+C10	multilayer (ex.)	-C -N10	old	1	0.000536542	63256602	2.011405238
+C10	multilayer (ex.)	-C -N10	old	2	0.000509	63126877	2.011405238
+C10	multilayer (ex.)	-C -N10	new	2	0.000508292	63059692	2.011405238
+C10	multilayer (ex.)	-C -N10	new	3	0.000547708	63433351	2.011405238
+C10	multilayer (ex.)	-C -N10	old	3	0.000540042	63179132	2.011405238
+C10	multilayer (ex.)	-C -N10	old	4	0.000535875	63145391	2.011405238
+C10	multilayer (ex.)	-C -N10	new	4	0.00062575	63114941	2.011405238
+FAM	om2_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	0	3.386691167	35751853251	7.571301139
+FAM	om2_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	0	3.502824875	35755657483	7.571301139
+FAM	om2_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	1	3.371852667	35750467349	7.571301139
+FAM	om2_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	1	3.43142825	35738385687	7.571301139
+FAM	om2_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	2	3.195546625	35737938866	7.571301139
+FAM	om2_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	2	3.189142959	35729183163	7.571301139
+FAM	om2_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	3	3.320809084	35737898045	7.571301139
+FAM	om2_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	3	3.415745166	35753872931	7.571301139
+FAM	om2_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	old	4	3.382632459	35743526530	7.571301139
+FAM	om2_N256_E50k `-2d --regularized -N10`	-C -2d --regularized -N10	new	4	3.425792709	35745483838	7.571301139

@@ -19,7 +19,7 @@ findings. The exit status is 1 if there is a finding.
 The networks are not in this repository. Fetch them into ``--networks`` (default
 ``networks/columnar-benchmark``) with ``columnar_wip/fetch-benchmark-networks.py``
 from the ``columnar-hierarchical-core`` branch; it needs the private
-``mapequation-networks`` package and checks every file against its pinned sha256.
+``netgamut`` package and checks every file against its pinned sha256.
 Pass ``--pins`` with that branch's ``benchmark-networks.sha256`` to check them here.
 """
 

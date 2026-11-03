@@ -1,0 +1,10 @@
+# node_id module
+# The same one-module-per-node partition as twotriangles_all_top_level.tree, spelled
+# out as a cluster file instead. Both spellings reach the columnar stack as the same
+# rectangular two-level tree, so both must score the same.
+1 1
+2 2
+3 3
+4 4
+5 5
+6 6
