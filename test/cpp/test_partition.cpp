@@ -468,8 +468,9 @@ TEST_CASE("Columnar dissolve reports the codelength a re-score of its own tree g
 TEST_CASE("Columnar dissolve keeps the top modules and their charge under --preferred-number-of-modules (#1068) [fast][core][partition][columnar][columnar-contract]")
 {
   // The |K - K_pref| penalty prices the number of top modules, so the dissolve spares
-  // them and dissolves below. Two disjoint copies of ninetriangles hold the top at one
-  // module per component (#1407), so K_pref = 1 charges the root 1 bit. The pass stamps
+  // them and dissolves below. Two disjoint, identical copies of ninetriangles: one top
+  // module would cost exactly the bit the bias saves (one bit to name the copy), so the
+  // top stays at two modules and K_pref = 1 charges the root 1 bit. The pass stamps
   // the kept nodes from its own terms: without that bit in the root's stamp the per-node
   // codelengths sum to 1 bit under the reported codelength.
   if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
@@ -504,6 +505,32 @@ TEST_CASE("Columnar dissolve keeps the top modules and their charge under --pref
     if (!it->isLeaf() && !it->isRoot())
       stamped += it->codelength;
   CHECK(stamped == doctest::Approx(im.codelength()).epsilon(1e-9));
+}
+
+TEST_CASE("Columnar --preferred-number-of-modules merges modules across connected components (#1407) [fast][core][partition][columnar][columnar-contract]")
+{
+  // Six disjoint triangles: no link joins two of them, so a move loop that offers only
+  // the modules of a unit's neighbours keeps every module inside one triangle, and the
+  // search stopped at six top modules, a bit above K_pref for each. A unit without
+  // links is now offered the module of the previous such unit, so the bias can merge
+  // components, as OO's random moves let it. Both engines then give the same
+  // codelengths. Not checkRunSanity: with no flow between the top modules the index
+  // codelength rounds to -1.5e-15 on both engines (#1416).
+  if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
+    return;
+  for (const auto& [search, expected] : {std::pair<std::string, double>{"--two-level", 3.169925001442311}, {"", 1.5849625007211543}}) {
+    CAPTURE(search);
+    InfomapWrapper im(infomap::test::defaultFlags(search + " --preferred-number-of-modules 2"));
+    for (unsigned int t = 0; t < 6; ++t) {
+      const unsigned int a = 3 * t;
+      im.addLink(a, a + 1);
+      im.addLink(a + 1, a + 2);
+      im.addLink(a + 2, a);
+    }
+    im.run();
+    CHECK(im.numTopModules() == 2);
+    CHECK(im.codelength() == doctest::Approx(expected).epsilon(1e-9));
+  }
 }
 
 TEST_CASE("Columnar level split seeds its piece move loop with ids it has slots for (#1375) [fast][core][partition][columnar][columnar-contract]")
