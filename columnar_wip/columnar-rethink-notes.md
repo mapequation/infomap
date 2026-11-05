@@ -6774,3 +6774,66 @@ Lessons:
 - "Both engines count the same thing" is a claim about the count, not about which objectives charge it.
   Check a shared term on every objective that composes with it, and on state input in particular, where
   OO's objective is a different class.
+
+### F85 — Preferred modules below the number of connected components: OO merges them through its random moves, the columnar engine now through a candidate for units without links (#1407) (2026-11-05)
+
+**What was wrong.** With `--preferred-number-of-modules K`, the columnar engine never ended with fewer
+top modules than the network has connected components. netscience (netzschleuder's, 1461 linked nodes in
+268 components, the largest 379 nodes and 102 of them pairs) at K = 50 gave 268 top modules and paid
+218 bits of penalty: 222.80 bits under `-2`, 221.37 in the standard search. The move loop offers a unit
+only its neighbours' modules (and an empty one), and the gated merges only linked pairs, so two
+components never shared a module.
+
+**How OO does it.** OO tries 5 random target modules for every node of degree at most 2, in every move
+loop of every run (`--num-random-moves 5`, `--max-degree-for-random-moves 2`, on by default). After
+aggregation a whole component is a node without links, so random targets are its only candidates, and
+the bias makes any merge pay while K > K_pref. Checked: OO with `--num-random-moves 0` gives
+222.7996693 bits and 268 modules, exactly the columnar result.
+
+**The fix.** A unit without links at its level is offered the module of the previous such unit in the
+shuffled sweep, while a correction reports that unlinked merges pay
+(`ColumnarCorrection::rewardsUnlinkedMerges`; the preferred-modules bias while K > K_pref). It is OO's
+random partner without a random draw or a search, restricted to the units that have no other way out,
+and a merged pair resets it, so components merge in pairs rather than into one module. OO's general
+random moves were measured before (#1357's sweep) as a coin flip with collapses up to +4.9% in bits;
+this candidate fires only under the bias and only on units without links, so every other run is
+untouched.
+
+**Results** on the 24 preferred-modules runs, against #1408, seconds the minimum of 3 interleaved:
+- netscience K = 50: `-2` 222.80 → 5.137 bits (OO 4.799), standard 221.37 → 3.365 bits (OO 3.404),
+  both at 50 top modules, at +0.001 s and +0.003 s.
+- science2001 K = 25 `-2`: −0.19% in bits (to +0.03% above OO); air30k K = 20: `-2` −0.87%, standard
+  +0.076% in bits. Both have small components besides the giant one (air30k's state network 6, science2001
+  one plus 2 nodes without links), so the candidate fires there too.
+- The other 19 runs give the same codelength.
+
+**Why the standard search lands below OO and `-2` above it.** The standard search's 3.36465 bits is the
+unbiased `-C` codelength of netscience (3.364651): grouping whole components under one top module costs
+nothing in a hierarchy, because no flow enters their submodules, so the bias is satisfied for free. `-2`
+has no such level, and every merge of two components costs (p_a + p_b)·h(p_a / (p_a + p_b)) bits for
+modules without exit flow. There the two engines spend the merges differently: OO keeps the 379-node
+component in 15 modules and groups the small components into about 35 modules of up to 20 components;
+the columnar engine squeezes it into 5 modules and spreads the small components over 45 modules of up to
+8. Merges inside the large component cost more bits than merges between small components, and the
+columnar move loop takes them at full speed in every sweep, while the pairing can only halve the units
+without links once per aggregation pass.
+
+**The candidate's own cost, and where it lives.** The first cut put the candidate in the move loop every
+run uses. It changed no codelength in the 332-configuration snapshot, but instructions rose +0.24% summed
+(median +0.21%) on runs that never offer it. Deciding once per sweep whether to look at a unit did not
+help (+0.24% to +0.53% on five runs), so the extra state in the hot loop was the cost, not the check.
+`moveLoopWith` now takes a `LinklessPartners` template flag, set when a correction in the loop steers the
+number of modules (`targetTopModules`), and the loop every other run uses is the one it used before:
+−0.18% to +0.05% in instructions on the same five runs, +0.019% summed over the snapshot.
+
+**A side effect: the index codelength rounds below zero** when no flow crosses the top modules, on both
+engines (−1.5e−15 on six disjoint triangles, #1416). The test for this fix pins the codelengths instead of
+calling `checkRunSanity`.
+
+Lessons:
+- When an OO parity gap has a mechanism, switch the mechanism off in OO before designing the columnar
+  side: `--num-random-moves 0` reproduced the columnar number to the last digit in one run.
+- A rarely used option's code belongs in a loop of its own when it sits in the hot path: measured in
+  instructions, the state it adds costs every run, even where the branch never fires.
+- A count-based term (1 bit per module) prices every merge the same, so which merges happen is decided by
+  the order the search offers them, not by their base cost. The gap to OO under `-2` is that order.

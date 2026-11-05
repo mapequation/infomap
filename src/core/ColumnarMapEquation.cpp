@@ -378,18 +378,23 @@ const std::vector<int>& ColumnarTwoLevel::moveLeaves(const std::vector<int>& see
 
 unsigned int ColumnarTwoLevel::moveLoop(unsigned int sweepCap)
 {
+  // The corrections moveLoopWith puts in its loop, and whether one of them steers the
+  // number of modules (the preferred-modules bias).
+  const bool steersCount = std::any_of(m_corrections.begin(), m_corrections.end(), [&](const auto& c) {
+    return c->targetTopModules() > 0 && inMoveLoop(*c) && (m_leafMoveLoop || (m_moduleCorrActive && c->participatesInModuleMoves()));
+  });
   using Kind = ColumnarBoundaryFlow::TeleportKind;
   switch (m_tele.kind()) {
   case Kind::global:
-    return moveLoopWith<Kind::global>(sweepCap);
+    return steersCount ? moveLoopWith<Kind::global, true>(sweepCap) : moveLoopWith<Kind::global, false>(sweepCap);
   case Kind::layered:
-    return moveLoopWith<Kind::layered>(sweepCap);
+    return steersCount ? moveLoopWith<Kind::layered, true>(sweepCap) : moveLoopWith<Kind::layered, false>(sweepCap);
   default:
-    return moveLoopWith<Kind::none>(sweepCap);
+    return steersCount ? moveLoopWith<Kind::none, true>(sweepCap) : moveLoopWith<Kind::none, false>(sweepCap);
   }
 }
 
-template <ColumnarBoundaryFlow::TeleportKind Tele>
+template <ColumnarBoundaryFlow::TeleportKind Tele, bool LinklessPartners>
 unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
 {
   using infomath::plogp;
@@ -440,6 +445,11 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
     ++coreLoopCount;
     std::shuffle(order.begin(), order.end(), rng);
     unsigned int numMoved = 0;
+    // Units without links get a partner only while some correction rewards a merge no
+    // link supports (see below); decided once per sweep.
+    const bool linklessPartners = LinklessPartners && !m_noEmptyTargets
+        && std::any_of(corr.begin(), corr.end(), [](const ColumnarCorrection* c) { return c->rewardsUnlinkedMerges(); });
+    int linklessMod = -1; // module of the previous unit without links in this sweep
 
     for (int idx = 0; idx < n; ++idx) {
       const int u = order[idx];
@@ -506,6 +516,19 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
               touched.push_back(m);
         }
       }
+
+      // A unit with no links at this level -- after aggregation, a whole connected
+      // component -- can move only to an empty module, so a correction that rewards
+      // any merge (the preferred-modules bias while K > K_pref) could never bring K
+      // below the number of components (#1407). Offer it the module of the previous
+      // such unit in the shuffled sweep: a random partner, as OO's random moves pick
+      // one, without a search. Pairing units that no link reaches merges whole
+      // components, so the modules grow in pairs rather than into one. Suppressed
+      // during a purify-only polish, for the reason the empty module is.
+      const bool linkless = linklessPartners && lvl().outStart[u] == lvl().outStart[u + 1] && lvl().inStart[u] == lvl().inStart[u + 1];
+      if (linkless && linklessMod >= 0 && linklessMod != cMod && m_mMembers[cMod] == 1 && m_mMembers[linklessMod] > 0
+          && std::any_of(corr.begin(), corr.end(), [](const ColumnarCorrection* c) { return c->rewardsUnlinkedMerges(); }))
+        touched.push_back(linklessMod);
 
       // Hoist the old-module (A-side) terms once per unit visit (6 of the 13 plogp
       // per candidate). Per-candidate math below is unchanged, so results stay
@@ -590,6 +613,9 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
       } else {
         dirty[u] = 0;
       }
+      // A merged pair is done; the next unit without links starts a new one.
+      if (linkless)
+        linklessMod = bestMod == linklessMod ? -1 : m_module[u];
 
       // Reset scratch for the touched modules.
       for (int m : touched) {

@@ -161,6 +161,11 @@ public:
   // leaf's current module may be included; the caller skips it. Default none.
   virtual void proposeMoveTargets(int /*leaf*/, std::vector<int>& /*out*/) const {}
 
+  // True while merging any two non-empty modules lowers the correction, whatever
+  // links join them. The move loop then offers a unit without links a module no
+  // link reaches (#1407). Default false.
+  virtual bool rewardsUnlinkedMerges() const { return false; }
+
   // --- Module-level (aggregated-unit) participation --------------------------
   // The aggregation passes of the two-level search move aggregated UNITS (a
   // unit = the set of leaves consolidated into one previous-pass module). A
@@ -493,7 +498,9 @@ private:
   // teleportation the teleport flow between a unit and a module is identically
   // zero, so that instantiation carries no teleport code in the per-candidate
   // path, and the global and per-layer kinds each inline their own sums.
-  template <ColumnarBoundaryFlow::TeleportKind Tele>
+  // LinklessPartners: only a loop with a correction that steers the number of modules
+  // offers units without links a partner (#1407), so no other loop carries that code.
+  template <ColumnarBoundaryFlow::TeleportKind Tele, bool LinklessPartners>
   unsigned int moveLoopWith(unsigned int sweepCap);
   // Build the next level from the current module assignment; returns unit count.
   int consolidateToNextLevel();
@@ -694,6 +701,9 @@ public:
   bool keepsTopModules() const override { return true; }
 
   bool chargesTopLevelOnly() const override { return true; }
+  // Any merge saves a bit while there are more modules than preferred, so modules
+  // in different connected components can merge too (#1407).
+  bool rewardsUnlinkedMerges() const override { return m_numNonEmpty > m_preferredNumModules; }
   std::unique_ptr<ColumnarCorrection> topLevelCopy() const override { return std::make_unique<PreferredModulesCorrection>(static_cast<unsigned int>(m_preferredNumModules)); }
   int targetTopModules() const override { return m_preferredNumModules; }
 
