@@ -6751,3 +6751,26 @@ Lessons:
   not the reader: the reader-side fix covered one reader, and two more read the same size.
 - A penalty charged to the root as one number has to survive every path that re-derives per-node stamps. Checks
   where the penalty is 0 cannot see it, so test where it is not.
+
+### F84 addendum — The scorer without a partition dropped the bias on state input, and the rebase onto #1415 (2026-11-05)
+
+**The fallback took the penalty from an objective that does not carry it.** `objectOrientedTreeCodelength`
+scores a tree the columnar stack cannot represent, including `-C --no-infomap` with no partition. F84's
+first cut took the penalty from `calcTreeCodelengthCost(root.childDegree())`, since both engines now
+count the top modules. But only the biased map equation implements that term; the memory, meta-data and
+lossy objectives return 0, while the columnar stack composes the bias with all of them. On the Python
+suite's four-state network, K_pref = 2 scored 1.5 bits, the same as without the flag, and
+`test_columnar_scoring_without_a_partition_applies_the_module_preference` failed in CI. The fallback now
+swaps the object-oriented term for `PreferredModulesCorrection::costOf` on the root's child degree, as it
+did before F84 but at the top: 3.5 bits for 4 top modules. Ordinary input is unchanged (5.2516 bits on
+the suite's five-node network, the same as OO).
+
+**The rebase moved nothing outside `--non-redundant`.** `f498d820` brings #1415 and the netgamut
+inputs. Both arms of the new sweep give the same codelength as the 2026-10-29 session on all 317
+configurations outside `--non-redundant`, so the per-part attribution measured before the rebase still
+describes these commits.
+
+Lessons:
+- "Both engines count the same thing" is a claim about the count, not about which objectives charge it.
+  Check a shared term on every objective that composes with it, and on state input in particular, where
+  OO's objective is a different class.
