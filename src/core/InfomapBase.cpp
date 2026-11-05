@@ -1295,8 +1295,9 @@ private:
   // bare top-level leaf gets a synthetic module, nodes a .clu leaves out get modules of their
   // own), so "no input partition" is exactly the case that reaches that fallback.
   //
-  // --preferred-number-of-modules is not warned about here: the object-oriented objective
-  // charges it on the same top modules as the columnar stack (#1068), so the fallback applies it.
+  // --preferred-number-of-modules is not warned about here: objectOrientedTreeCodelength adds
+  // its penalty by hand, on the same top modules as the columnar stack (#1068), so the fallback
+  // applies it.
   void warnOnColumnarObjectOrientedScoring()
   {
     if (!m_infomap.columnarSearch || !m_infomap.noInfomap || !m_infomap.entropyBiasCorrection)
@@ -4099,16 +4100,20 @@ double InfomapBase::objectOrientedTreeCodelength()
   const double L = calcCodelengthOnTree(root(), true);
   if (preferredNumberOfModules == 0)
     return L;
-  // --preferred-number-of-modules: #1021 gave calcCodelengthOnTree its |K - K_pref|
-  // term, which the L above already includes, and both engines count K as the TOP
-  // modules (calcTreeCodelengthCost is handed the root's child degree, and
+  // --preferred-number-of-modules: both engines count K as the TOP modules
+  // (calcTreeCodelengthCost is handed the root's child degree, and
   // PreferredModulesCorrection::hierarchicalCorrection charges the stack's top
-  // level, #1068), so the ragged tree this fallback scores is priced as the columnar
-  // stack would price it. calcCodelengthOnTree adds the term to the total only; it
-  // has no per-module home, so it goes on the root -- the convention
-  // PreferredModulesCorrection uses when it does have a stack to charge.
-  m_root.codelength += calcTreeCodelengthCost(m_root.childDegree());
-  return L;
+  // level, #1068). But only the biased map equation carries the term (#1021): the
+  // memory, meta-data and lossy objectives return 0 from calcTreeCodelengthCost,
+  // while the columnar stack composes the bias with every objective. Swap the
+  // object-oriented term for the columnar one, so the tree this fallback scores is
+  // priced as the stack would price it. It has no per-module home, so it goes on
+  // the root -- the convention PreferredModulesCorrection uses when it does have a
+  // stack to charge.
+  const unsigned int numTopModules = m_root.childDegree();
+  const double penalty = PreferredModulesCorrection::costOf(static_cast<int>(numTopModules), preferredNumberOfModules);
+  m_root.codelength += penalty;
+  return L - calcTreeCodelengthCost(numTopModules) + penalty;
 }
 
 double InfomapBase::evaluateColumnarPartition()

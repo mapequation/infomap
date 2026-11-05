@@ -683,6 +683,11 @@ public:
       : m_preferredNumModules(static_cast<int>(preferredNumModules)) {}
   double hierarchicalCorrection(const ColumnarStackView& core, columnar::StackBreakdown* breakdown = nullptr) const override;
 
+  // |K - K_pref| with unit weight (1 bit per module), matching
+  // BiasedMapEquation::calcNumModuleCost. Static so that a scorer without a stack
+  // (objectOrientedTreeCodelength) charges exactly the same term.
+  static double costOf(int numModules, unsigned int preferredNumModules) { return std::abs(numModules - static_cast<int>(preferredNumModules)); }
+
   // |K - K_pref| counts the top modules, not a sum over codebooks, so a local
   // per-node dissolve gain cannot account for a dissolved top module; the pass
   // keeps them and dissolves only below (the OO pass returns early instead).
@@ -710,9 +715,7 @@ public:
   std::unique_ptr<ColumnarCorrection> sliceForLeaves(const std::vector<int>&) const override { return nullptr; }
 
 private:
-  // |K - K_pref| with unit weight (1 bit per module), matching
-  // BiasedMapEquation::calcNumModuleCost.
-  double cost(int numModules) const { return std::abs(numModules - m_preferredNumModules); }
+  double cost(int numModules) const { return costOf(numModules, static_cast<unsigned int>(m_preferredNumModules)); }
 
   int m_preferredNumModules;
   std::vector<int> m_moduleMembers; // per module: member count
