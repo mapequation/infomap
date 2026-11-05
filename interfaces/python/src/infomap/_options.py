@@ -786,8 +786,8 @@ class Options(metaclass=_OptionsMeta):
         With --variable-markov-time, set the minimum local scale for zero-entropy nodes.
         Local Markov time is max scale divided by local scale.
     preferred_number_of_modules : int, optional
-        Penalize solutions by how far their number of modules differs from this value.
-        Valid range: >= 1.
+        Penalize solutions by how far their number of top modules differs from this
+        value. Valid range: >= 1.
     preferred_number_of_levels : int, optional
         Soft preference for the depth of the hierarchy. Steering to a shallower depth is
         reliable at a small codelength cost; deeper is best-effort, bounded by what the

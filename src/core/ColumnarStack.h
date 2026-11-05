@@ -117,9 +117,10 @@ public:
   void setModules(int k, std::vector<int> assign, int K, std::vector<int> parents);
   // Replace assign(k) without re-aggregating anything; module counts unchanged.
   void setParents(int k, std::vector<int> parents);
-  // Re-aggregate levels k+1 .. top from their assignments, keeping each level's
-  // module count (a module left without children stays as an empty module).
-  void reaggregateFrom(int k);
+  // Re-aggregate levels k+1 .. top from their assignments. A module left without
+  // children is dropped and the rest keep their order, so a level's size stays its
+  // module count (#1068). Returns the number of modules dropped.
+  int reaggregateFrom(int k);
 
   // --- Checkpoints -----------------------------------------------------------
   class Checkpoint {

@@ -354,14 +354,14 @@ const std::vector<int>& ColumnarTwoLevel::moveUnits(Level&& level, const std::ve
   m_seededPhase = true;
   if (leafToUnit != nullptr)
     for (auto& c : m_corrections)
-      if (c->participatesInMoveLoop() && c->participatesInModuleMoves())
+      if (inMoveLoop(*c) && c->participatesInModuleMoves())
         c->setUnits(*leafToUnit, nUnits);
   seedAssignment(seed);
   moveLoop();
   m_moduleCorrActive = false;
   if (leafToUnit != nullptr)
     for (auto& c : m_corrections)
-      if (c->participatesInMoveLoop() && c->participatesInModuleMoves())
+      if (inMoveLoop(*c) && c->participatesInModuleMoves())
         c->resetUnitsToLeaves();
   return m_module;
 }
@@ -419,7 +419,7 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
   std::vector<ColumnarCorrection*> corr;
   double correctionTotal = 0.0;
   for (auto& c : m_corrections)
-    if (c->participatesInMoveLoop() && (m_leafMoveLoop || (m_moduleCorrActive && c->participatesInModuleMoves())))
+    if (inMoveLoop(*c) && (m_leafMoveLoop || (m_moduleCorrActive && c->participatesInModuleMoves())))
       corr.push_back(c.get());
   for (auto* c : corr)
     correctionTotal += c->initMoveLoop(m_module, n);
@@ -752,7 +752,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     double corrSum = m_lastCorrection;
     if (!m_leafMoveLoop)
       for (auto& cp : m_corrections)
-        if (cp->participatesInMoveLoop() && !(m_moduleCorrActive && cp->participatesInModuleMoves()))
+        if (inMoveLoop(*cp) && !(m_moduleCorrActive && cp->participatesInModuleMoves()))
           corrSum += cp->initMoveLoop(newTop, c);
     return m_codelength + corrSum;
   };
@@ -795,6 +795,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
         kept.tele = m_tele;
         kept.mMembers = m_mMembers;
         kept.codelength = bestCodelength;
+        kept.topLevelSearch = m_topLevelSearch;
       }
     }
     m_seededPhase = false;
@@ -827,7 +828,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
     // costlier merge scan + leaf re-tune).
     std::vector<ColumnarCorrection*> unitCorr;
     for (auto& cp : m_corrections)
-      if (cp->participatesInMoveLoop() && cp->participatesInModuleMoves())
+      if (inMoveLoop(*cp) && cp->participatesInModuleMoves())
         unitCorr.push_back(cp.get());
 
     m_moduleCorrActive = !unitCorr.empty();
@@ -921,7 +922,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
         newTop[i] = remap[m_module[comp[i]]];
       double corrSum = m_lastCorrection;
       for (auto& cp : m_corrections)
-        if (cp->participatesInMoveLoop() && !(m_moduleCorrActive && cp->participatesInModuleMoves()))
+        if (inMoveLoop(*cp) && !(m_moduleCorrActive && cp->participatesInModuleMoves()))
           corrSum += cp->initMoveLoop(newTop, c);
       const double L = m_codelength + corrSum;
       if (L < bestCodelength - kMinImprovement) {
@@ -1045,7 +1046,7 @@ double ColumnarTwoLevel::optimizeTwoLevel(unsigned int maxAggPasses, bool doFine
               newTop[i] = remap[m_module[comp0[i]]];
             double corrSum = m_lastCorrection;
             for (auto& cp : m_corrections)
-              if (cp->participatesInMoveLoop() && !(m_moduleCorrActive && cp->participatesInModuleMoves()))
+              if (inMoveLoop(*cp) && !(m_moduleCorrActive && cp->participatesInModuleMoves()))
                 corrSum += cp->initMoveLoop(newTop, c);
             double L = m_codelength + corrSum;
             // The candidate was polished purify-only at BLOCK granularity while
@@ -1259,6 +1260,12 @@ bool ColumnarTwoLevel::adoptPass1State(ColumnarTwoLevel& from)
 {
   if (!from.m_pass1State || from.m_seed != m_seed || from.m_nLeaves != m_nLeaves)
     return false;
+  // A sweep with the top-level-only corrections left out (a hierarchical bottom) is
+  // not the sweep a top-level search runs.
+  if (from.m_pass1State->topLevelSearch != m_topLevelSearch)
+    for (const auto& c : m_corrections)
+      if (c->participatesInMoveLoop() && c->chargesTopLevelOnly())
+        return false;
   m_adoptedPass1 = std::move(from.m_pass1State);
   return true;
 }

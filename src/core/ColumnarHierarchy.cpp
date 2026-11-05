@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -163,7 +164,7 @@ int ColumnarHierarchy::splitTopModules(double& L, bool allowSingletons, bool ext
   // networks bit-exact at zero cost.
   std::vector<ColumnarCorrection*> unitCorr;
   for (auto& cp : corrections())
-    if (cp->participatesInMoveLoop() && cp->participatesInModuleMoves())
+    if (m_search.inMoveLoop(*cp) && cp->participatesInModuleMoves())
       unitCorr.push_back(cp.get());
   // ...except on an externally seeded partition, whose modules the engine did not
   // build and can need subdividing under any objective (externalSeed, #824).
@@ -397,7 +398,6 @@ int ColumnarHierarchy::splitLevelModules(int k, double& L, bool allowSingletons)
     m_levelFreshProductive.resize(k + 1, 1);
   }
 
-  std::vector<int> seed; // pieceParent, compacted when it overruns the piece level
   // Recombination: a seeded move loop over the pieces of the level-k network,
   // seeded at the current level-(k+1) modules. Pieces may move to any module,
   // including an empty one — group split and cross-parent relocation in one
@@ -407,22 +407,11 @@ int ColumnarHierarchy::splitLevelModules(int k, double& L, bool allowSingletons)
     if (nPieces == K)
       return false; // every module is a single piece: nothing to split
     g_hSplitAttempts[std::min(k, kHSplitMaxLevels - 1)].fetch_add(1, std::memory_order_relaxed);
-    // The move level has one module slot per piece, but pieceParent holds
-    // level-(k+1) module ids, where a module emptied by an earlier split
-    // survives as an empty id: with enough of them a parent id reaches
-    // nPieces. Seed with compacted ids then; remap below compacts the result
-    // anyway, so only the grouping matters.
-    seed = pieceParent;
-    if (*std::max_element(seed.begin(), seed.end()) >= nPieces) {
-      g_hSplitSeedCompactions.fetch_add(1, std::memory_order_relaxed);
-      std::vector<int> id(K, -1);
-      int next = 0;
-      for (int& s : seed) {
-        if (id[s] == -1)
-          id[s] = next++;
-        s = id[s];
-      }
-    }
+    // The move level has one module slot per piece, seeded at level-(k+1) module
+    // ids. The stack drops a module a split empties (reaggregateFrom), so every
+    // module holds a piece and every id has a slot (#1375).
+    const std::vector<int>& seed = pieceParent;
+    assert(*std::max_element(seed.begin(), seed.end()) < nPieces);
     Level pieces;
     {
       PhaseTimer pt(1, phaseTiming);
@@ -484,10 +473,10 @@ int ColumnarHierarchy::splitLevelModules(int k, double& L, bool allowSingletons)
         }
         m_stack.setModules(k, std::move(newAK), nk, std::move(newAK1));
         // Re-aggregate every level above: a cross-grandparent relocation changes
-        // their aggregates. The unit counts stay put (a grandparent that lost all
-        // its children survives as an empty module, which costs nothing in the
-        // codelength and keeps the higher assignments valid).
-        m_stack.reaggregateFrom(k + 1);
+        // their aggregates, and can leave a grandparent without children, which the
+        // stack drops. An empty module costs nothing in the map equation, but a
+        // module count such as the preferred-modules penalty would still see it.
+        g_hSplitDroppedModules.fetch_add(m_stack.reaggregateFrom(k + 1), std::memory_order_relaxed);
       } else {
         m_stack.setModules(k, std::move(newAK), nk);
       }
@@ -737,8 +726,51 @@ double ColumnarHierarchy::optimizeHierarchical(unsigned int bottomBlockLimit, un
   // Bottom: leaves -> building blocks. With bottomBlockLimit > 0 we stop the
   // aggregation early (finer bottom) and skip fine-tune to preserve fineness;
   // with 0 we take the full two-level optimum with fine-tune.
+  std::vector<int> bottom;
+  const int bottomK = buildBottom(bottomBlockLimit, bottom);
+  return buildHierarchyFromBottom(std::move(bottom), bottomK, superAggLimit);
+}
+
+int ColumnarHierarchy::targetTopModules() const
+{
+  int target = 0;
+  for (const auto& c : corrections())
+    target = std::max(target, c->targetTopModules());
+  return target;
+}
+
+void ColumnarHierarchy::addTopLevelCorrections(ColumnarTwoLevel& opt) const
+{
+  for (const auto& c : corrections())
+    if (auto copy = c->topLevelCopy())
+      opt.addCorrection(std::move(copy));
+}
+
+int ColumnarHierarchy::buildBottom(unsigned int bottomBlockLimit, std::vector<int>& bottom)
+{
+  // The bottom is not the top of the hierarchy grown over it, so a correction that
+  // charges only the top modules would steer it to the wrong count; the up-build
+  // regroups toward that count instead (buildHierarchyFromBottom).
+  m_search.setTopLevelSearch(false);
   m_search.optimizeTwoLevel(bottomBlockLimit, bottomBlockLimit == 0);
-  return buildHierarchyFromBottom(m_search.leafTopModule(), static_cast<int>(m_search.numTopModules()), superAggLimit);
+  m_search.setTopLevelSearch(true);
+  bottom = m_search.leafTopModule();
+  int bottomK = static_cast<int>(m_search.numTopModules());
+  const int target = targetTopModules();
+  if (bottomK >= target)
+    return bottomK;
+  // Coarser than the target: no level grown over it gets closer, so the top is
+  // the leaf partition itself. Search it with the bias, from the unbiased bottom
+  // and from singletons, and keep the better.
+  const std::vector<int> unbiased = bottom;
+  double bestL = m_search.optimizeTwoLevel(bottomBlockLimit, bottomBlockLimit == 0, &unbiased);
+  bottom = m_search.leafTopModule();
+  bottomK = static_cast<int>(m_search.numTopModules());
+  if (m_search.optimizeTwoLevel(bottomBlockLimit, bottomBlockLimit == 0) < bestL - kMinImprovement) {
+    bottom = m_search.leafTopModule();
+    bottomK = static_cast<int>(m_search.numTopModules());
+  }
+  return bottomK;
 }
 
 // Grow the multi-level hierarchy from an ALREADY-BUILT bottom two-level (a
@@ -754,24 +786,37 @@ double ColumnarHierarchy::buildHierarchyFromBottom(std::vector<int> bottom, int 
 
   m_stack.setFlat(std::move(bottom), bottomK);
 
-  // Grow up with the enter-flow super-search while it shortens the index code.
-  while (m_stack.numTopModules() > 1) {
-    pollInterrupt();
-    // Enter-flow transform: the super-network's node flow is the module's index
-    // rate q; enter/exit, the teleport aggregates and the edges are the module's
-    // inter-module quantities, carried through unchanged.
+  // The super-network over the current top modules. Enter-flow transform: its node
+  // flow is the module's index rate q; enter/exit, the teleport aggregates and the
+  // edges are the module's inter-module quantities, carried through unchanged.
+  // curIndexCodelength receives the current top-level index codebook (flat):
+  // plogp(sum q) - sum plogp(q), over the same index rates a super-search
+  // optimizes (superNet.flow), so the two sides of its comparison measure the same
+  // codebook.
+  auto superNetwork = [&](double& curIndexCodelength) {
     Level superNet = m_stack.level(m_stack.topLevel());
     m_search.flow().setIndexRateAsFlow(superNet);
-
-    // Current top-level index codebook (flat): plogp(sum q) - sum plogp(q), over
-    // the same index rates the super-search below optimizes (superNet.flow), so
-    // the two sides of this comparison measure the same codebook.
     double sumEnter = 0.0, sumPlogpEnter = 0.0;
     for (double q : superNet.flow) {
       sumEnter += q;
       sumPlogpEnter += plogp(q);
     }
-    const double curIndexCodelength = plogp(sumEnter) - sumPlogpEnter;
+    curIndexCodelength = plogp(sumEnter) - sumPlogpEnter;
+    return superNet;
+  };
+
+  // With a top-module target (#1068) the levels grow without it while they stay at
+  // or above the target; the last unbiased super partition seeds the crossing
+  // regroup below.
+  const int target = targetTopModules();
+  std::vector<int> lastSuper;
+  int lastSuperK = 0;
+
+  // Grow up with the enter-flow super-search while it shortens the index code.
+  while (m_stack.numTopModules() > 1) {
+    pollInterrupt();
+    double curIndexCodelength = 0.0;
+    Level superNet = superNetwork(curIndexCodelength);
 
     ColumnarTwoLevel superOpt;
     superOpt.setInterruptCallback(m_search.interruptCallback());
@@ -783,12 +828,47 @@ double ColumnarHierarchy::buildHierarchyFromBottom(std::vector<int> bottom, int 
         ? superOpt.optimizeTwoLevel(superAggLimit, false)
         : superOpt.optimizeTwoLevel();
     const unsigned int superK = superOpt.numTopModules();
+    if (target > 0) {
+      lastSuper = superOpt.leafTopModule();
+      lastSuperK = static_cast<int>(superK);
+    }
 
     const bool trivial = superK <= 1 || static_cast<int>(superK) == m_stack.numTopModules();
     if (trivial || superCodelength >= curIndexCodelength - kMinImprovement)
       break;
+    // Below the target: the crossing lies between the current top and this level.
+    if (static_cast<int>(superK) < target)
+      break;
 
     m_stack.pushLevel(superOpt.leafTopModule(), static_cast<int>(superK));
+  }
+
+  // Crossing regroup: the top is still above the target, so group its modules
+  // with the bias, from singletons and from the last unbiased super partition, and
+  // push the better one if it beats leaving the top as it is -- index codebook
+  // plus |T - target|. Never a level further from the target than the top.
+  const int T = m_stack.numTopModules();
+  if (target > 0 && T > target) {
+    pollInterrupt();
+    double curIndexCodelength = 0.0;
+    ColumnarTwoLevel superOpt;
+    superOpt.setInterruptCallback(m_search.interruptCallback());
+    superOpt.buildFromLevel(superNetwork(curIndexCodelength), m_search.flow(), m_search.seed(), 0.0);
+    addTopLevelCorrections(superOpt);
+    double bestL = superOpt.optimizeTwoLevel();
+    std::vector<int> best = superOpt.leafTopModule();
+    int bestK = static_cast<int>(superOpt.numTopModules());
+    if (lastSuperK > 1 && lastSuperK < T) {
+      const double seededL = superOpt.optimizeTwoLevel(0, true, &lastSuper);
+      if (seededL < bestL - kMinImprovement) {
+        bestL = seededL;
+        best = superOpt.leafTopModule();
+        bestK = static_cast<int>(superOpt.numTopModules());
+      }
+    }
+    if (bestK > 1 && bestK < T && std::abs(bestK - target) <= T - target
+        && bestL < curIndexCodelength + (T - target) - kMinImprovement)
+      m_stack.pushLevel(std::move(best), bestK);
   }
 
   return hierarchicalCodelengthFromStack();
@@ -1347,6 +1427,8 @@ bool ColumnarHierarchy::refineTopLayer()
   ColumnarTwoLevel subOpt;
   subOpt.setInterruptCallback(m_search.interruptCallback());
   subOpt.buildFromLevel(std::move(sub), m_search.flow(), m_search.seed(), 0.0);
+  // Its modules become the top ones: price them with the top-level bias (#1068).
+  addTopLevelCorrections(subOpt);
   subOpt.optimizeTwoLevel();
   const int Ksub = static_cast<int>(subOpt.numTopModules());
   if (Ksub <= 1 || Ksub == nU)
@@ -1364,9 +1446,14 @@ bool ColumnarHierarchy::mergeLeafModulesWithinParents(bool externalSeed)
 
   // Corrections that reward coarsening (Mem/Meta/Lossy). No participants => the
   // base objective, where any merge only raises the codelength: nothing to do.
+  // Leaf modules are merged within their parent. With a level-2 grandparent each
+  // leaf module has an explicit parent; in a two-level tree (e.g. lossy) the
+  // parent is the root, i.e. one group whose codebook uses the top enter flows.
+  // Only there are the leaf modules the top ones (inMoveLoop, #1068).
+  const bool hasGrandparent = m_stack.numLevels() >= 3;
   std::vector<ColumnarCorrection*> corr;
   for (auto& c : corrections())
-    if (c->participatesInMoveLoop())
+    if (c->inMoveLoop(!hasGrandparent))
       corr.push_back(c.get());
   // ...unless the partition is an external seed (externalSeed, #824): "any merge only
   // raises the codelength" holds for a partition this engine's aggregation produced,
@@ -1380,10 +1467,6 @@ bool ColumnarHierarchy::mergeLeafModulesWithinParents(bool externalSeed)
     return false;
 
   const int K = m_stack.size(1); // leaf modules (level-0 -> 1)
-  // Leaf modules are merged within their parent. With a level-2 grandparent each
-  // leaf module has an explicit parent; in a two-level tree (e.g. lossy) the
-  // parent is the root, i.e. one group whose codebook uses the top enter flows.
-  const bool hasGrandparent = m_stack.numLevels() >= 3;
   const int numParents = hasGrandparent ? m_stack.size(2) : 1;
 
   // Seed the corrections' per-module state at the current leaf-module partition.
@@ -1771,13 +1854,12 @@ double ColumnarHierarchy::optimizeColumnar(unsigned int bottomBlockLimit, unsign
     probeEscalated = m_search.regroupEscalated();
     flatAggTop = m_search.leafTopModule();
     flatAggK = static_cast<int>(m_search.numTopModules());
-  } else {
-    m_search.optimizeTwoLevel(bottomBlockLimit, bottomBlockLimit == 0);
   }
   // The bottom every strategy grows from: the fine blocks of the probe's pass 1
-  // on a flat-first trial, else the two-level partition itself.
-  const std::vector<int>& bottom = m_flatFirstBottom ? m_search.leafBlocks() : m_search.leafTopModule();
-  int bottomK = static_cast<int>(m_search.numTopModules());
+  // on a flat-first trial, else the two-level partition itself (buildBottom).
+  std::vector<int> builtBottom;
+  int bottomK = m_flatFirstBottom ? 0 : buildBottom(bottomBlockLimit, builtBottom);
+  const std::vector<int>& bottom = m_flatFirstBottom ? m_search.leafBlocks() : builtBottom;
   if (m_flatFirstBottom) {
     bottomK = 0;
     for (int b : m_search.leafBlocks())
