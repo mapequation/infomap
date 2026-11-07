@@ -101,7 +101,7 @@ jobs:
       # pre-1.0 and, with no air.toml in the repo, its output is version-
       # dependent. Bump this pin and the AGENTS.md note together.
       - name: Set up Air
-        uses: posit-dev/setup-air@cf390573ff4fe0f198f35df3a642b1409328d859 # v1.0.1
+        uses: posit-dev/setup-air@fd20dd239848b9d807848a7ab92265cf197de694 # v1.0.2
         with:
           version: "0.9.0"
 
