@@ -49,6 +49,15 @@ When working on the new columnar core (wip branch `columnar-hierarchical-core`),
   useful part.
 - `columnar-search-runs.tsv` is the row-per-run log; tag each batch and read the `batch` column before
   comparing times across sessions.
+- **Nothing else per-PR goes into `columnar_wip`.** It holds the two documents, the benchmark set
+  (`benchmark-networks.*`, `fetch-benchmark-networks.py`), the run log above and the harness every
+  snapshot reuses (`bench-sync.py`, `retime-*.py`, `tables-1042.py`, `assemble-hier-gaps.py`). A PR's
+  own outputs (its A/B, re-time and per-run TSVs) and any driver, probe or table script written for
+  that one PR go in the session scratchpad, or in the shared notes folder when another session needs
+  them. They never go into `columnar_wip`, not even as evidence: the snapshot carries the numbers.
+  The one data file the harness reads is the results TSV that `bench-sync.py` takes as the row set
+  (`--rows`) and as the OO source (`--carry-oo`); a snapshot that changes neither leaves it as it is.
+  Ask before making a new script part of the harness.
 
 ### Where a change belongs
 - **Shared code** — anything outside `Columnar*` — goes to **master through a PR**, even when only the
