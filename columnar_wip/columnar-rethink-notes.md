@@ -6900,8 +6900,8 @@ A cap on F85's pairs (a group of lone units grows to 3, 4 or 8 before a new one 
 OO's default, not tuned. At seed 123 the fix keeps the large component in 11 modules (2 also holding small
 components) and the small components in 39 modules of up to 18.
 
-**Results** on the 24 preferred-modules runs against F85's binary (`columnar_wip/pref-linkless-vs-1417.tsv`,
-`columnar_wip/bench-pref-runs.py`, seconds and instructions the minimum of 3 interleaved):
+**Results** on the 24 preferred-modules runs against F85's binary (seconds and instructions the minimum of 3
+interleaved; #1420's snapshot has the table):
 - netscience K = 50 `-2`: 5.137312 → 4.841108 bits (−5.77%; +0.87% above OO, from +7.04%), 0.0115 → 0.0145 s.
 - air30k K = 20 `-2` −0.36% and standard −0.08% in bits, at +3.2% and +1.1% in instructions; science2001 K = 25
   `-2` −0.07% at −0.3%; polblogs K = 5 `-2` −0.16% at +0.1%.
