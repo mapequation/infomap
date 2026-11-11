@@ -518,7 +518,11 @@ TEST_CASE("Columnar --preferred-number-of-modules merges modules across connecte
   // codelength rounds to -1.5e-15 on both engines (#1416).
   if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)
     return;
-  for (const auto& [search, expected] : {std::pair<std::string, double>{"--two-level", 3.169925001442311}, {"", 1.5849625007211543}}) {
+  // Not a structured binding: CAPTURE takes it into a lambda, which clang rejects under
+  // OpenMP (the TSan job), and master builds as C++14 (#1404).
+  for (const auto& run : {std::pair<std::string, double>{"--two-level", 3.169925001442311}, {"", 1.5849625007211543}}) {
+    const std::string& search = run.first;
+    const double expected = run.second;
     CAPTURE(search);
     InfomapWrapper im(infomap::test::defaultFlags(search + " --preferred-number-of-modules 2"));
     for (unsigned int t = 0; t < 6; ++t) {
