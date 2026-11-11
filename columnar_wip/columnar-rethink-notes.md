@@ -6837,3 +6837,93 @@ Lessons:
   instructions, the state it adds costs every run, even where the branch never fires.
 - A count-based term (1 bit per module) prices every merge the same, so which merges happen is decided by
   the order the search offers them, not by their base cost. The gap to OO under `-2` is that order.
+
+### F86 — Preferred modules on many components: the large component was squeezed in the aggregation passes, because units without links only paired; OO's five targets, taken from the sweep order, close most of the gap (#1407) (2026-11-11)
+
+**The gap.** After F85, netscience (268 components, the largest 379 nodes) at K = 50 under `-C -2 -N5 --seed 123`
+gave 5.137312 bits against OO's 4.79945 (+7.04%), both at 50 top modules. The columnar engine kept the
+379-node component in 5 modules and spread the small components over 45 modules of up to 8; OO keeps it in 15
+and groups the small ones in 35 modules of up to 20.
+
+**Where the squeeze happens.** Traced per pass with temporary prints (not committed), trial 4, the winner:
+
+| pass | K | modules of the large component | modules of small components | most components in one |
+|---|--:|--:|--:|--:|
+| 1 (leaves) | 384 | 74 | 310 | 1 |
+| 2 | 172 | 22 | 150 | 2 |
+| 3 | 84 | 9 | 75 | 4 |
+| 4 | 50 | 5 | 45 | 8 |
+
+Not the leaf pass: OO with `--core-level-limit 1` (its level 1 plus one tune) ends at the same place, 381
+modules, 71 for the large component and 310 holding one component each. The aggregation passes are where the
+two differ. Every merge is worth the same bit while K > K_pref. The linked units of the large component chain
+into their neighbours' modules in every sweep (74 → 22 in pass 2). F85's candidate offered a unit without links
+only the module of the previous lone unit, so those units paired and stopped: a paired unit is not alone, and
+no neighbour's move marks a unit without links dirty again. They halved once per pass (310 → 150 → 75 → 45),
+and the linked units took the rest of the budget. OO with `--core-level-limit 2` has the small side at 96 modules
+of up to 7 components and the large component at 26 (5 of them also holding small components); its raw
+trajectory (`-vvv`) is 474 → 150 → 57 → 50 modules against the columnar 381 → 172 → 84 → 50.
+
+**How OO does it.** Its random target is the module of a random unit, linked or not, the best of 5 by
+codelength, in every sweep (`InfomapOptimizer`'s random moves for units of degree at most 2). A unit without
+links can join a pair or a group, not only another lone unit, and a unit in a group re-sorts into a cheaper
+one, which leaves its old partner alone to merge in turn.
+
+**The fix.** A unit without links is offered the modules of the next 5 units in the shuffled sweep, whether
+those hold one unit or many, and it stays in the sweep: each sweep shuffles anew, so each visit shows it 5 new
+modules. No random draw and no state across units; still only in the move loop a count-steering correction
+compiles in (`LinklessPartners`). It is offered them in every such loop, not only while K > K_pref: at K = K_pref
+a unit can still re-balance two groups, which only the base codelength prices. Six disjoint triangles at K = 2
+need that: with candidates only while K > K_pref, three pairs aggregate into 4 + 2 triangles (3.2516 bits) at
+every seed, and only the descending repair's re-sort at K = 2 reaches 3 + 3 (3.1699, OO's and the pinned test's).
+`rewardsUnlinkedMerges` is gone with it.
+
+The variants, netscience `-2` K = 50, the mean of seeds 1–5 at `-N5` (each seed's best of 5 trials):
+
+| variant (candidates while K > K_pref unless noted) | bits |
+|---|--:|
+| F85 (previous lone unit, each unit visited once) | 5.116 |
+| previous lone unit, units without links kept in the sweep | 5.110 |
+| next 5 units' modules, visited once | 5.048 |
+| next 5 units' modules, offered to grouped units too, visited once | 4.967 (seed 123: 4.971) |
+| next 5 units' modules, kept in the sweep | 4.882 |
+| the same plus F85's previous lone unit | 4.898 |
+| 5 random units' modules (a separate generator), kept in the sweep | 4.887 |
+| next 1 / 2 / 3 / 10 units, kept, plus the previous lone unit | 4.908 / 4.882 / 4.894 / 4.895 |
+| **next 5 units' modules, kept, in every loop the bias steers (this fix)** | **4.830** |
+| the same, kept in the sweep only while K > K_pref | 4.830 |
+| OO | 4.804 |
+
+A cap on F85's pairs (a group of lone units grows to 3, 4 or 8 before a new one starts) is not a fix: 4.943,
+5.049 and 5.280 bits at seed 123, and 6.497 without a cap. 2, 3 or 5 candidates cost about the same (netscience
+`-2` at seed 123: 222M, 219M and 228M instructions) and differ in bits by trajectory noise, so the count is
+OO's default, not tuned. At seed 123 the fix keeps the large component in 11 modules (2 also holding small
+components) and the small components in 39 modules of up to 18.
+
+**Results** on the 24 preferred-modules runs against F85's binary (`columnar_wip/pref-linkless-vs-1417.tsv`,
+`columnar_wip/bench-pref-runs.py`, seconds and instructions the minimum of 3 interleaved):
+- netscience K = 50 `-2`: 5.137312 → 4.841108 bits (−5.77%; +0.87% above OO, from +7.04%), 0.0115 → 0.0145 s.
+- air30k K = 20 `-2` −0.36% and standard −0.08% in bits, at +3.2% and +1.1% in instructions; science2001 K = 25
+  `-2` −0.07% at −0.3%; polblogs K = 5 `-2` −0.16% at +0.1%.
+- netscience K = 50 standard: the same 3.364651 bits at +13.7% in instructions (0.0339 → 0.0373 s). The standard
+  search groups whole components under a top module for free (F85), so the candidates' extra visits buy
+  nothing there; they are the cost. Counted on the intermediate version (candidates only while K > K_pref):
+  keeping the units in the sweep took that run from 18.6k to 30.5k visits of units without links.
+- polblogs K = 5 standard: +0.008% in bits at +3.7% in instructions, a different search path, not the
+  candidate's work: the whole run visits units without links 38 times.
+- The other 17 runs: the same codelength, instructions within −0.5% to +0.1%.
+- The 332 configurations of the snapshot: no codelength changes (its only biased row, word_assoc K = 25, is the
+  same); instructions +0.001% summed, median −0.005%; the 17 outliers in seconds re-time to −1.3% to +1.7%.
+
+**What is left.** OO's own aggregation ends at 4.904 bits at `-N1 --seed 123`, and its coarse-tune takes it to
+4.814. The columnar `-2` search has no step that splits a module and re-sorts the pieces against the bias; the
+remaining +0.87% is in that step's range, not in the candidate's.
+
+Lessons:
+- A candidate that only pairs lone units is a matching: it halves them once per pass, whatever the search
+  around it does. Under a count-based term, the rate at which one kind of merge can happen decides how the
+  budget is spent.
+- Trace the split per pass before designing the fix: the gap was in passes 2–3, not the leaf pass, and OO's
+  `--core-level-limit` gives its per-level split to compare against.
+- A candidate gated on the bias still rewarding a merge misses the moves that only the base codelength prices
+  at K = K_pref: the pinned six-triangles test caught it, not the 24 runs.
