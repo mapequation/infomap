@@ -82,6 +82,8 @@ export type Arguments = Partial<{
   multilayerRelaxLimitDown: number;
   multilayerRelaxByJsd: boolean;
   multilayerRelaxToSelf: boolean;
+  nonRedundant: boolean;
+  nonRedundantExact: boolean;
   // accuracy
   seed: number;
   numTrials: number;
@@ -91,6 +93,10 @@ export type Arguments = Partial<{
   coreLoopCodelengthThreshold: number;
   tuneIterationRelativeThreshold: number;
   fastHierarchicalSolution: 1 | 2 | 3;
+  hierFromBlocks: boolean;
+  columnarCheck: boolean;
+  columnarTwoLevel: boolean;
+  columnar: boolean;
   converge: boolean;
   preferModularSolution: boolean;
   numRandomMoves: number;
@@ -285,6 +291,10 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.multilayerRelaxToSelf) result += " --multilayer-relax-to-self";
 
+  if (args.nonRedundant) result += " --non-redundant";
+
+  if (args.nonRedundantExact) result += " --non-redundant-exact";
+
   if (args.seed != null) result += " --seed " + args.seed;
 
   if (args.numTrials != null) result += " --num-trials " + args.numTrials;
@@ -309,6 +319,14 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.fastHierarchicalSolution)
     result += " -" + "F".repeat(args.fastHierarchicalSolution);
+
+  if (args.hierFromBlocks) result += " --hier-from-blocks";
+
+  if (args.columnarCheck) result += " --columnar-check";
+
+  if (args.columnarTwoLevel) result += " --columnar-two-level";
+
+  if (args.columnar) result += " --columnar";
 
   if (args.converge) result += " --converge";
 

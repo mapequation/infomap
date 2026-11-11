@@ -1,0 +1,11 @@
+# path flow name node_id
+# One module per node, written as a depth-1 .tree. This is NOT ragged: every path is
+# one level deep, so initTree takes its `maxDepth == 2 || twoLevel` shortcut and gives
+# every top-level id a real module -- no leaf path is empty. Used as a regression guard
+# against the .clu spelling of the same partition (twotriangles_singletons.clu).
+1 0.3 "C" 3
+2 0.2 "B" 2
+3 0.15 "D" 4
+4 0.1 "E" 5
+5 0.1 "F" 6
+6 0.15 "A" 1

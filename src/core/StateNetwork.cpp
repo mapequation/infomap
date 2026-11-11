@@ -308,6 +308,7 @@ void StateNetwork::clearLinks()
   std::vector<unsigned int>().swap(m_linkTargets);
   std::vector<double>().swap(m_linkWeights);
   std::vector<double>().swap(m_linkFlows);
+  std::vector<double>().swap(m_codedLinkFlows);
   std::map<unsigned int, double>().swap(m_outWeights);
   std::deque<DroppedOppositeLink>().swap(m_droppedOppositeLinks);
   m_haveUndirectedLinkView = false;
@@ -336,6 +337,7 @@ void StateNetwork::clear()
   std::vector<unsigned int>().swap(m_linkTargets);
   std::vector<double>().swap(m_linkWeights);
   std::vector<double>().swap(m_linkFlows);
+  std::vector<double>().swap(m_codedLinkFlows);
   std::deque<DroppedOppositeLink>().swap(m_droppedOppositeLinks);
   m_haveUndirectedLinkView = false;
   m_physNodes.clear();
@@ -533,6 +535,7 @@ void StateNetwork::useUndirectedLinkView(bool undirected)
   m_linkTargets.resize(numKept);
   m_linkWeights.resize(numKept);
   std::vector<double>().swap(m_linkFlows); // flow is per run; free it before sizing it for the view
+  std::vector<double>().swap(m_codedLinkFlows);
   m_linkFlows.assign(numKept, 0.0);
   m_enteredNumLinks = m_numLinks;
   m_enteredNumAggregatedLinks = m_numAggregatedLinks;
@@ -557,6 +560,7 @@ void StateNetwork::restoreEnteredLinks()
     m_linkWeights[std::lower_bound(first, last, dropped.source) - m_linkTargets.begin()] = dropped.oppositeWeight;
   }
   std::vector<double>().swap(m_linkFlows); // the view's flows belong to its links
+  std::vector<double>().swap(m_codedLinkFlows);
 
   // Rebuild the rows with the dropped links merged back in target order. They were set aside
   // in row order, and in target order within a row.
@@ -693,6 +697,7 @@ void StateNetwork::buildCsrFromBuffer()
   // on a node with no other links made sumDegree() 0, and three made it wrap around.
   m_numSelfLinks = numSelfLinks;
   m_linkFlows.assign(m_linkTargets.size(), 0.0);
+  m_codedLinkFlows.clear();
 
   // m_outWeights is deliberately NOT derived in mode A: first-order consumers
   // don't read it (only the multilayer mode-B expansion does, where it's kept
@@ -723,6 +728,7 @@ void StateNetwork::definalize()
   m_linkTargets.clear();
   m_linkWeights.clear();
   m_linkFlows.clear();
+  m_codedLinkFlows.clear();
   m_linksFinalized = false;
 }
 
@@ -739,6 +745,7 @@ void StateNetwork::buildCsrFromMap()
   m_linkTargets.clear();
   m_linkWeights.clear();
   m_linkFlows.clear();
+  m_codedLinkFlows.clear();
   m_linkTargets.reserve(m_numLinks);
   m_linkWeights.reserve(m_numLinks);
   m_linkFlows.reserve(m_numLinks);
