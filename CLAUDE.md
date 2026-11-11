@@ -50,14 +50,19 @@ When working on the new columnar core (wip branch `columnar-hierarchical-core`),
 - `columnar-search-runs.tsv` is the row-per-run log; tag each batch and read the `batch` column before
   comparing times across sessions.
 - **Nothing else per-PR goes into `columnar_wip`.** It holds the two documents, the benchmark set
-  (`benchmark-networks.*`, `fetch-benchmark-networks.py`), the run log above and the harness every
-  snapshot reuses (`bench-sync.py`, `retime-*.py`, `tables-1042.py`, `assemble-hier-gaps.py`). A PR's
-  own outputs (its A/B, re-time and per-run TSVs) and any driver, probe or table script written for
-  that one PR go in the session scratchpad, or in the shared notes folder when another session needs
-  them. They never go into `columnar_wip`, not even as evidence: the snapshot carries the numbers.
-  The one data file the harness reads is the results TSV that `bench-sync.py` takes as the row set
-  (`--rows`) and as the OO source (`--carry-oo`); a snapshot that changes neither leaves it as it is.
-  Ask before making a new script part of the harness.
+  (`benchmark-networks.*`, `fetch-benchmark-networks.py`, `make-state-meta.py`,
+  `air30k-airports.tsv`), the run log above, `snapshot-results.tsv`, and the harness every snapshot
+  or sync reuses (`bench-sync.py`, `bench-feature-sync.py`, `bench-multilayer.py`,
+  `bench-identity.py`, `benchmark-labels.py`, `retime-*.py`, `tables-1042.py`,
+  `assemble-hier-gaps.py`). A PR's own outputs (its A/B, re-time and per-run TSVs) and any driver,
+  probe or table script written for that one PR go in the session scratchpad, or in the shared
+  notes folder when another session needs them. They never go into `columnar_wip`, not even as
+  evidence: the snapshot carries the numbers. Ask before making a new script part of the harness.
+- **`snapshot-results.tsv` is the snapshot's data**, under one name for every PR: `bench-sync.py`'s
+  results behind the snapshot's tables, which the next snapshot reads as its row set (`--rows`, the
+  default) and OO source (`--carry-oo`). Each snapshot replaces it. Write the sweep to the
+  scratchpad and copy it over at the end, since the sweep reads this file as its row set. Never add
+  a copy under a PR's own name.
 
 ### Where a change belongs
 - **Shared code** — anything outside `Columnar*` — goes to **master through a PR**, even when only the
