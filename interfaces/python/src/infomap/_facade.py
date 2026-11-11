@@ -713,7 +713,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin):
             .. versionchanged:: 2.15
                 Pass it via ``Options``; moves off this signature in 3.0.
         preferred_number_of_modules : int, optional
-            Penalize solutions by how far their number of modules differs from this
+            Penalize solutions by how far their number of top modules differs from this
             value.
 
             .. versionchanged:: 2.15

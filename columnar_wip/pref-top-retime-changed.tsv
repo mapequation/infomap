@@ -1,0 +1,40 @@
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	old	0	0.424113125	4439065601	11.94886955
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	new	0	0.629445125	7694262217	11.45853218
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	0	4.076666875	42267257699	11.24275371
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	0	6.229108666	73012682308	10.9293865
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	0	3.628724959	37562171754	11.64534667
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	0	4.177106125	49640571881	11.442104
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	0	3.967037709	42191272872	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	0	5.288728333	60561577561	11.442104
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	new	1	0.627608	7694371315	11.45853218
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	old	1	0.416031167	4429987657	11.94886955
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	1	6.137725292	73010152226	10.9293865
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	1	4.038640666	42274996053	11.24275371
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	1	4.299695	49647079797	11.442104
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	1	3.561670333	37558937790	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	1	5.348897584	60559686502	11.442104
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	1	3.901596	42192838182	11.64534667
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	old	2	0.425842375	4429232217	11.94886955
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	new	2	0.6164555	7687351612	11.45853218
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	2	4.050012625	42262192041	11.24275371
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	2	6.40979925	73032522082	10.9293865
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	2	3.581260667	37572051908	11.64534667
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	2	4.247558875	49636411382	11.442104
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	2	4.120253375	42211057317	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	2	5.271791791	60562687236	11.442104
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	new	3	0.596276459	7691276966	11.45853218
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	old	3	0.458971458	4434348854	11.94886955
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	3	6.163977334	73009363622	10.9293865
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	3	4.109248375	42275510069	11.24275371
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	3	4.225782667	49643264572	11.442104
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	3	3.58629525	37563358458	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	3	5.270791	60559210789	11.442104
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	3	3.97504875	42194478044	11.64534667
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	old	4	0.426553125	4433477536	11.94886955
+C1	word_assoc (pref.)	-C -N1 -d --preferred-number-of-modules 25	new	4	0.600586042	7691377109	11.45853218
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	old	4	4.00426825	42263707468	11.24275371
+L10	word_assoc (pref.)	-C --non-redundant -N10 -d --preferred-number-of-modules 25	new	4	6.210541208	73010386832	10.9293865
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	old	4	3.606363	37572258276	11.64534667
+F10	word_assoc (pref.)	-C -F -N10 -d --preferred-number-of-modules 25	new	4	4.270459208	49642786372	11.442104
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	old	4	3.965705708	42196916227	11.64534667
+C10	word_assoc (pref.)	-C -N10 -d --preferred-number-of-modules 25	new	4	5.08570175	60553611404	11.442104
