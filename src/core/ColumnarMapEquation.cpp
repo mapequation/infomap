@@ -378,18 +378,23 @@ const std::vector<int>& ColumnarTwoLevel::moveLeaves(const std::vector<int>& see
 
 unsigned int ColumnarTwoLevel::moveLoop(unsigned int sweepCap)
 {
+  // The corrections moveLoopWith puts in its loop, and whether one of them steers the
+  // number of modules (the preferred-modules bias).
+  const bool steersCount = std::any_of(m_corrections.begin(), m_corrections.end(), [&](const auto& c) {
+    return c->targetTopModules() > 0 && inMoveLoop(*c) && (m_leafMoveLoop || (m_moduleCorrActive && c->participatesInModuleMoves()));
+  });
   using Kind = ColumnarBoundaryFlow::TeleportKind;
   switch (m_tele.kind()) {
   case Kind::global:
-    return moveLoopWith<Kind::global>(sweepCap);
+    return steersCount ? moveLoopWith<Kind::global, true>(sweepCap) : moveLoopWith<Kind::global, false>(sweepCap);
   case Kind::layered:
-    return moveLoopWith<Kind::layered>(sweepCap);
+    return steersCount ? moveLoopWith<Kind::layered, true>(sweepCap) : moveLoopWith<Kind::layered, false>(sweepCap);
   default:
-    return moveLoopWith<Kind::none>(sweepCap);
+    return steersCount ? moveLoopWith<Kind::none, true>(sweepCap) : moveLoopWith<Kind::none, false>(sweepCap);
   }
 }
 
-template <ColumnarBoundaryFlow::TeleportKind Tele>
+template <ColumnarBoundaryFlow::TeleportKind Tele, bool LinklessPartners>
 unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
 {
   using infomath::plogp;
@@ -429,6 +434,10 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
   const int coMode = coMergeMode();
   const bool proposeExtra = !corr.empty()
       && (coMode == 1 || (coMode == 2 && m_seededPhase));
+
+  // Units without links get candidates beyond their (empty) neighbourhood (see the
+  // sweep), except during a purify-only polish, for the reason the empty module is.
+  const bool linklessPartners = LinklessPartners && !m_noEmptyTargets;
 
   double oldCodelength = m_codelength + correctionTotal;
   unsigned int numEffectiveLoops = 0;
@@ -504,6 +513,29 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
           for (int m : corrCand)
             if (m != cMod && dEnter[m] == 0.0 && dExit[m] == 0.0)
               touched.push_back(m);
+        }
+      }
+
+      // A unit with no links at this level -- after aggregation, a whole connected
+      // component -- can move only to an empty module, so the preferred-modules bias,
+      // which rewards any merge while K > K_pref, could never bring K below the
+      // number of components (#1407). Offer it the modules of the next
+      // kLinklessCandidates units in the shuffled sweep: OO's five random moves,
+      // without a draw. They may hold one unit or many, so the unit joins the
+      // cheapest of a pair or a group, and it stays in the sweep (below), so each
+      // sweep shows it five new modules: it re-sorts into a cheaper group, which can
+      // leave its old partner alone to merge in turn, and at K = K_pref it still
+      // re-balances groups, which only the base codelength prices. Pairing only lone
+      // units, while K > K_pref, halved them once per aggregation pass and left the
+      // rest of the merges to the linked units: netscience `-2` at K = 50 squeezed its
+      // 379-node component into 5 modules where OO keeps 15 (F86).
+      constexpr int kLinklessCandidates = 5;
+      const bool linkless = linklessPartners && lvl().outStart[u] == lvl().outStart[u + 1] && lvl().inStart[u] == lvl().inStart[u + 1];
+      if (linkless) {
+        for (int r = 1; r <= kLinklessCandidates; ++r) {
+          const int m = m_module[order[(idx + r) % n]];
+          if (std::find(touched.begin(), touched.end(), m) == touched.end())
+            touched.push_back(m);
         }
       }
 
@@ -587,7 +619,9 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
           dirty[lvl().outTarget[k]] = 1;
         for (int k = lvl().inStart[u]; k < lvl().inStart[u + 1]; ++k)
           dirty[lvl().inTarget[k]] = 1;
-      } else {
+      } else if (!linkless) {
+        // A unit without links stays in the sweep while it is offered partners: no
+        // neighbour's move marks it dirty again.
         dirty[u] = 0;
       }
 

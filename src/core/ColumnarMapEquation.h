@@ -493,7 +493,10 @@ private:
   // teleportation the teleport flow between a unit and a module is identically
   // zero, so that instantiation carries no teleport code in the per-candidate
   // path, and the global and per-layer kinds each inline their own sums.
-  template <ColumnarBoundaryFlow::TeleportKind Tele>
+  // LinklessPartners: only a loop with a correction that steers the number of modules
+  // offers units without links candidates (#1407, F86), so no other loop carries
+  // that code.
+  template <ColumnarBoundaryFlow::TeleportKind Tele, bool LinklessPartners>
   unsigned int moveLoopWith(unsigned int sweepCap);
   // Build the next level from the current module assignment; returns unit count.
   int consolidateToNextLevel();
