@@ -512,8 +512,8 @@ TEST_CASE("Columnar --preferred-number-of-modules merges modules across connecte
   // Six disjoint triangles: no link joins two of them, so a move loop that offers only
   // the modules of a unit's neighbours keeps every module inside one triangle, and the
   // search stopped at six top modules, a bit above K_pref for each. A unit without
-  // links is now offered the module of the previous such unit, so the bias can merge
-  // components, as OO's random moves let it. Both engines then give the same
+  // links is now offered the modules of the next units in the sweep, so the bias can
+  // merge components, as OO's random moves let it. Both engines then give the same
   // codelengths. Not checkRunSanity: with no flow between the top modules the index
   // codelength rounds to -1.5e-15 on both engines (#1416).
   if (infomap::test::testEngineFlags().find("--columnar") == std::string::npos)

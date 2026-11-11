@@ -435,6 +435,10 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
   const bool proposeExtra = !corr.empty()
       && (coMode == 1 || (coMode == 2 && m_seededPhase));
 
+  // Units without links get candidates beyond their (empty) neighbourhood (see the
+  // sweep), except during a purify-only polish, for the reason the empty module is.
+  const bool linklessPartners = LinklessPartners && !m_noEmptyTargets;
+
   double oldCodelength = m_codelength + correctionTotal;
   unsigned int numEffectiveLoops = 0;
   unsigned int coreLoopCount = 0;
@@ -445,11 +449,6 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
     ++coreLoopCount;
     std::shuffle(order.begin(), order.end(), rng);
     unsigned int numMoved = 0;
-    // Units without links get a partner only while some correction rewards a merge no
-    // link supports (see below); decided once per sweep.
-    const bool linklessPartners = LinklessPartners && !m_noEmptyTargets
-        && std::any_of(corr.begin(), corr.end(), [](const ColumnarCorrection* c) { return c->rewardsUnlinkedMerges(); });
-    int linklessMod = -1; // module of the previous unit without links in this sweep
 
     for (int idx = 0; idx < n; ++idx) {
       const int u = order[idx];
@@ -518,17 +517,27 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
       }
 
       // A unit with no links at this level -- after aggregation, a whole connected
-      // component -- can move only to an empty module, so a correction that rewards
-      // any merge (the preferred-modules bias while K > K_pref) could never bring K
-      // below the number of components (#1407). Offer it the module of the previous
-      // such unit in the shuffled sweep: a random partner, as OO's random moves pick
-      // one, without a search. Pairing units that no link reaches merges whole
-      // components, so the modules grow in pairs rather than into one. Suppressed
-      // during a purify-only polish, for the reason the empty module is.
+      // component -- can move only to an empty module, so the preferred-modules bias,
+      // which rewards any merge while K > K_pref, could never bring K below the
+      // number of components (#1407). Offer it the modules of the next
+      // kLinklessCandidates units in the shuffled sweep: OO's five random moves,
+      // without a draw. They may hold one unit or many, so the unit joins the
+      // cheapest of a pair or a group, and it stays in the sweep (below), so each
+      // sweep shows it five new modules: it re-sorts into a cheaper group, which can
+      // leave its old partner alone to merge in turn, and at K = K_pref it still
+      // re-balances groups, which only the base codelength prices. Pairing only lone
+      // units, while K > K_pref, halved them once per aggregation pass and left the
+      // rest of the merges to the linked units: netscience `-2` at K = 50 squeezed its
+      // 379-node component into 5 modules where OO keeps 15 (F86).
+      constexpr int kLinklessCandidates = 5;
       const bool linkless = linklessPartners && lvl().outStart[u] == lvl().outStart[u + 1] && lvl().inStart[u] == lvl().inStart[u + 1];
-      if (linkless && linklessMod >= 0 && linklessMod != cMod && m_mMembers[cMod] == 1 && m_mMembers[linklessMod] > 0
-          && std::any_of(corr.begin(), corr.end(), [](const ColumnarCorrection* c) { return c->rewardsUnlinkedMerges(); }))
-        touched.push_back(linklessMod);
+      if (linkless) {
+        for (int r = 1; r <= kLinklessCandidates; ++r) {
+          const int m = m_module[order[(idx + r) % n]];
+          if (std::find(touched.begin(), touched.end(), m) == touched.end())
+            touched.push_back(m);
+        }
+      }
 
       // Hoist the old-module (A-side) terms once per unit visit (6 of the 13 plogp
       // per candidate). Per-candidate math below is unchanged, so results stay
@@ -610,12 +619,11 @@ unsigned int ColumnarTwoLevel::moveLoopWith(unsigned int sweepCap)
           dirty[lvl().outTarget[k]] = 1;
         for (int k = lvl().inStart[u]; k < lvl().inStart[u + 1]; ++k)
           dirty[lvl().inTarget[k]] = 1;
-      } else {
+      } else if (!linkless) {
+        // A unit without links stays in the sweep while it is offered partners: no
+        // neighbour's move marks it dirty again.
         dirty[u] = 0;
       }
-      // A merged pair is done; the next unit without links starts a new one.
-      if (linkless)
-        linklessMod = bestMod == linklessMod ? -1 : m_module[u];
 
       // Reset scratch for the touched modules.
       for (int m : touched) {
